@@ -1,11 +1,11 @@
 package contracts
 
 import (
-	"gitlab.com/makeos/mosdef/logic/contracts/acquirenamespace"
 	"gitlab.com/makeos/mosdef/logic/contracts/createrepo"
 	"gitlab.com/makeos/mosdef/logic/contracts/depositproposalfee"
 	"gitlab.com/makeos/mosdef/logic/contracts/gitpush"
 	"gitlab.com/makeos/mosdef/logic/contracts/purchaseticket"
+	"gitlab.com/makeos/mosdef/logic/contracts/registernamespace"
 	"gitlab.com/makeos/mosdef/logic/contracts/registerpushkey"
 	"gitlab.com/makeos/mosdef/logic/contracts/registerrepopushkeys"
 	"gitlab.com/makeos/mosdef/logic/contracts/setdelcommission"
@@ -31,7 +31,7 @@ func init() {
 		createrepo.NewContract(),
 		registerpushkey.NewContract(),
 		updatedelpushkey.NewContract(),
-		acquirenamespace.NewContract(),
+		registernamespace.NewContract(),
 		updatenamespacedomains.NewContract(),
 		gitpush.NewContract(),
 		voteproposal.NewContract(),

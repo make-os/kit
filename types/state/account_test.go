@@ -43,7 +43,7 @@ var _ = Describe("Account", func() {
 		})
 	})
 
-	Describe(".GetSpendableBalance", func() {
+	Describe(".GetAvailableBalance", func() {
 		When("account has a stake entry of value=10 and unbond height=1", func() {
 			BeforeEach(func() {
 				acct.Stakes = map[string]*StakeInfo{"s1": {
@@ -53,7 +53,7 @@ var _ = Describe("Account", func() {
 			})
 
 			It("should return balance=10 when chain height = 1", func() {
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("10")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("10")))
 			})
 		})
 
@@ -66,7 +66,7 @@ var _ = Describe("Account", func() {
 			})
 
 			It("should return balance=0 when chain height = 1", func() {
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("0")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("0")))
 			})
 		})
 
@@ -76,8 +76,8 @@ var _ = Describe("Account", func() {
 			})
 
 			It("should return balance=10 at any chain height", func() {
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("10")))
-				Expect(acct.GetSpendableBalance(1000)).To(Equal(util.String("10")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("10")))
+				Expect(acct.GetAvailableBalance(1000)).To(Equal(util.String("10")))
 			})
 		})
 	})

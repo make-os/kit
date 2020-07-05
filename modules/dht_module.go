@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/dht"
@@ -106,10 +107,10 @@ func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // key: The data query key
 // val: The data to be stored
 func (m *DHTModule) Store(key string, val string) {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	if err := m.dht.Store(ctx, key, []byte(val)); err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
 
@@ -120,11 +121,11 @@ func (m *DHTModule) Store(key string, val string) {
 //
 // RETURNS: <[]bytes> - The data stored on the key
 func (m *DHTModule) Lookup(key string) interface{} {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	bz, err := m.dht.Lookup(ctx, key)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	return bz
 }
@@ -140,7 +141,7 @@ func (m *DHTModule) Announce(key string) {
 // GetRepoObjectProviders returns the providers for a given repo object
 //
 // ARGS:
-// hash: The object's hash
+// hash: The repo object's hash or DHT object hex-encoded key
 //
 // RETURNS: resp <[]map[string]interface{}>
 // resp.id <string>: The peer ID of the provider
@@ -150,14 +151,13 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	var err error
 	var key []byte
 
-	// If hash is 40-chars long, it's a git SHA1.
-	// Otherwise, its expected to be DHT object key
-	if len(hash) == 40 {
+	// A key is valid if it is a git SHA1 or a DHT hex-encoded object key
+	if govalidator.IsSHA1(hash) {
 		key = dht.MakeObjectKey(plumbing.HashToBytes(hash))
 	} else {
 		key, err = util.FromHex(hash)
 		if err != nil {
-			panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", err.Error()))
+			panic(util.StatusErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
 		}
 	}
 
@@ -165,7 +165,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, key)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 
 	for _, p := range peers {
@@ -190,11 +190,11 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 // resp.id <string>: The peer ID of the provider
 // resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, []byte(key))
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	for _, p := range peers {
 		var address []string
@@ -210,10 +210,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 }
 
 // getPeers returns a list of all connected peers
-func (m *DHTModule) GetPeers() []string {
-	peers := m.dht.Peers()
-	if len(peers) == 0 {
-		return []string{}
-	}
-	return peers
+func (m *DHTModule) GetPeers() (peers []string) {
+	peers = m.dht.Peers()
+	return
 }

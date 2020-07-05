@@ -63,7 +63,7 @@ func (c *ProposalVoteContract) Exec() error {
 	if prop.Config.Voter == state.VoterOwner &&
 		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
 		senderAcct := c.AccountKeeper().Get(spk.Addr())
-		increments = senderAcct.GetSpendableBalance(c.chainHeight).Float()
+		increments = senderAcct.GetAvailableBalance(c.chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly

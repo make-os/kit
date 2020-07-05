@@ -272,6 +272,11 @@ func (sv *Server) GetPruner() remotetypes.RepoPruner {
 	return sv.pruner
 }
 
+// SetPruner sets the pruner
+func (sv *Server) SetPruner(pruner remotetypes.RepoPruner) {
+	sv.pruner = pruner
+}
+
 // GetPushPool returns the push pool
 func (sv *Server) GetPushPool() pushtypes.PushPool {
 	return sv.pushPool

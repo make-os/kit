@@ -19,7 +19,8 @@ var (
 // promptFunc represents a function that can collect user input
 type promptFunc func(string, ...interface{}) string
 
-// Keystore defines functionalities to create, update, fetch and import accounts.
+// Keystore implements Keystore. It provides the ability to
+// create, update, fetch and import keys and accounts.
 type Keystore struct {
 	dir         string
 	getPassword promptFunc

@@ -21,7 +21,7 @@ func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*api.GetA
 
 	r := &api.GetAccountResponse{Account: state.BareAccount()}
 	if err = r.Account.FromMap(resp); err != nil {
-		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, util.StatusErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil

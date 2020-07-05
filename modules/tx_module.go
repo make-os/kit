@@ -1,9 +1,7 @@
 package modules
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"gitlab.com/makeos/mosdef/console"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
@@ -122,7 +120,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -131,7 +129,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -142,22 +140,17 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 // get returns a tx by hash
 func (m *TxModule) Get(hash string) util.Map {
 
-	if strings.ToLower(hash[:2]) == "0x" {
-		hash = hash[2:]
-	}
-
-	// decode the hash from hex to byte
-	bz, err := hex.DecodeString(hash)
+	bz, err := util.FromHex(hash)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
 	tx, err := m.logic.TxKeeper().GetTx(bz)
 	if err != nil {
 		if err == types.ErrTxNotFound {
-			panic(util.NewStatusError(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
+			panic(util.StatusErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.StructToMap(tx)
@@ -173,12 +166,12 @@ func (m *TxModule) Get(hash string) util.Map {
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		se := util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error())
+		se := util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error())
 		if bfe := util.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
 			se.Msg = bfe.Msg
 			se.Field = bfe.Field

@@ -169,7 +169,7 @@ func (m *Manager) GetByProposer(
 		if ok && qo.ImmatureOnly && t.MatureBy <= uint64(bi.Height) { // reject mature
 			ok = false
 		}
-		if ok && qo.MatureOnly && t.MatureBy > uint64(bi.Height) { // reject immature
+		if ok && qo.MaturedOnly && t.MatureBy > uint64(bi.Height) { // reject immature
 			ok = false
 		}
 		if ok && qo.DecayedOnly && t.DecayBy > uint64(bi.Height) {
@@ -393,8 +393,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
-			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero

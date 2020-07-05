@@ -32,7 +32,7 @@ type Modules struct {
 	Pool    PoolModule
 	Account AccountModule
 	PushKey PushKeyModule
-	Util    UtilModule
+	Util    ConsoleUtilModule
 	Ticket  TicketModule
 	Repo    RepoModule
 	NS      NamespaceModule
@@ -94,9 +94,9 @@ type AccountModule interface {
 	GetPublicKey(address string, passphrase ...string) string
 	GetNonce(address string, height ...uint64) string
 	GetAccount(address string, height ...uint64) util.Map
-	GetSpendableBalance(address string, height ...uint64) string
+	GetAvailableBalance(address string, height ...uint64) string
 	GetStakedBalance(address string, height ...uint64) string
-	GetPrivateValidator(includePrivKey ...bool) util.Map
+	GetValidatorInfo(includePrivKey ...bool) util.Map
 	SetCommission(params map[string]interface{}, options ...interface{}) util.Map
 }
 
@@ -104,27 +104,35 @@ type PushKeyModule interface {
 	Module
 	Register(params map[string]interface{}, options ...interface{}) util.Map
 	Get(id string, blockHeight ...uint64) util.Map
+	Unregister(params map[string]interface{}, options ...interface{}) util.Map
 	GetByAddress(address string) []string
 	GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map
 }
 
-type UtilModule interface {
+type ConsoleUtilModule interface {
 	Module
+	PrettyPrint(values ...interface{})
+	Dump(objs ...interface{})
+	Diff(a, b interface{})
+	Eval(src interface{}) otto.Value
+	EvalFile(file string) otto.Value
+	ReadFile(filename string) []byte
+	ReadTextFile(filename string) string
 	TreasuryAddress() string
-	GenKey(seed ...int64) interface{}
+	GenKey(seed ...int64) util.Map
 }
 
 type TicketModule interface {
 	Module
 	BuyValidatorTicket(params map[string]interface{}, options ...interface{}) util.Map
-	BuyHostTicket(params map[string]interface{}, options ...interface{}) interface{}
-	ListProposerValidatorTickets(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
-	ListProposerHostTickets(proposerPubKey string, queryOpts ...map[string]interface{}) interface{}
-	ListTopValidators(limit ...int) interface{}
-	ListTopHosts(limit ...int) interface{}
+	BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map
+	ListValidatorTicketsByProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
+	ListHostTicketsByProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
+	ListTopValidators(limit ...int) []util.Map
+	ListTopHosts(limit ...int) []util.Map
 	TicketStats(proposerPubKey ...string) (result util.Map)
 	ListRecent(limit ...int) []util.Map
-	UnbondHostTicket(params map[string]interface{}, options ...interface{}) interface{}
+	UnbondHostTicket(params map[string]interface{}, options ...interface{}) util.Map
 }
 
 type GetOptions struct {
@@ -144,7 +152,7 @@ type RepoModule interface {
 }
 type NamespaceModule interface {
 	Module
-	Lookup(name string, height ...uint64) interface{}
+	Lookup(name string, height ...uint64) util.Map
 	GetTarget(path string, height ...uint64) string
 	Register(params map[string]interface{}, options ...interface{}) util.Map
 	UpdateDomain(params map[string]interface{}, options ...interface{}) util.Map
@@ -175,5 +183,4 @@ type RPCModule interface {
 	Module
 	IsRunning() bool
 	ConnectLocal() util.Map
-	Connect(host string, port int, https bool, user, pass string) util.Map
 }

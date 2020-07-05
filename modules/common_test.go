@@ -1,11 +1,16 @@
-package modules_test
+package modules
 
 import (
 	"math/big"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/modules"
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -18,6 +23,91 @@ type TestCase struct {
 }
 
 var _ = Describe("Common", func() {
+	var ctrl *gomock.Controller
+	var mockKeepers *mocks.MockKeepers
+	var mockAcctKeeper *mocks.MockAccountKeeper
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockAcctKeeper = mocks.NewMockAccountKeeper(ctrl)
+		mockKeepers = mocks.NewMockKeepers(ctrl)
+		mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Describe(".parseOptions", func() {
+		It("should return no key and payloadOnly=false when options list contain 1 argument that is not a string or boolean", func() {
+			key, payloadOnly := parseOptions(1)
+			Expect(key).To(BeEmpty())
+			Expect(payloadOnly).To(BeFalse())
+		})
+
+		It("should panic when options list contain 1 argument that is a string and failed key validation", func() {
+			err := "private key is invalid: invalid format: version and/or checksum bytes missing"
+			assert.PanicsWithError(GinkgoT(), err, func() { parseOptions("invalid_key") })
+		})
+
+		It("should return key when options list contain 1 argument that is a string and passed key validation", func() {
+			pk := crypto.NewKeyFromIntSeed(1)
+			key, payloadOnly := parseOptions(pk.PrivKey().Base58())
+			Expect(payloadOnly).To(BeFalse())
+			Expect(key).To(Equal(pk.PrivKey().Base58()))
+		})
+
+		It("should return payloadOnly=true when options list contain 1 argument that is a boolean (true)", func() {
+			key, payloadOnly := parseOptions(true)
+			Expect(key).To(BeEmpty())
+			Expect(payloadOnly).To(BeTrue())
+		})
+
+		It("should panic when options list contain more than 1 arguments but arg=0 is not string", func() {
+			err := "failed to decode argument.0 to string"
+			assert.PanicsWithError(GinkgoT(), err, func() { parseOptions(1, "data") })
+		})
+
+		It("should panic when options list contain more than 1 arguments but arg=1 is not boolean", func() {
+			err := "failed to decode argument.1 to bool"
+			assert.PanicsWithError(GinkgoT(), err, func() { parseOptions("key", 123) })
+		})
+	})
+
+	Describe(".finalizeTx", func() {
+		It("should not sign the tx or set sender public key when key is not provided", func() {
+			tx := txns.NewBareTxCoinTransfer()
+			payloadOnly := finalizeTx(tx, mockKeepers)
+			Expect(payloadOnly).To(BeFalse())
+			Expect(tx.SenderPubKey.IsEmpty()).To(BeTrue())
+			Expect(tx.Sig).To(BeEmpty())
+		})
+
+		It("should not set nonce when key is not provided", func() {
+			tx := txns.NewBareTxCoinTransfer()
+			finalizeTx(tx, mockKeepers)
+			Expect(tx.Nonce).To(BeZero())
+		})
+
+		It("should set timestamp if not set", func() {
+			tx := txns.NewBareTxCoinTransfer()
+			Expect(tx.Timestamp).To(BeZero())
+			finalizeTx(tx, mockKeepers)
+			Expect(tx.Timestamp).ToNot(BeZero())
+		})
+
+		It("should sign the tx, set sender public key, sent nonce when key is provided", func() {
+			key := crypto.NewKeyFromIntSeed(1)
+			mockAcctKeeper.EXPECT().Get(key.Addr()).Return(&state.Account{Nonce: 1})
+
+			tx := txns.NewBareTxCoinTransfer()
+			payloadOnly := finalizeTx(tx, mockKeepers, key.PrivKey().Base58())
+			Expect(payloadOnly).To(BeFalse())
+			Expect(tx.SenderPubKey.IsEmpty()).To(BeFalse())
+			Expect(tx.Sig).ToNot(BeEmpty())
+			Expect(tx.Nonce).To(Equal(uint64(2)))
+		})
+	})
 
 	Describe(".Normalize", func() {
 
@@ -131,11 +221,11 @@ var _ = Describe("Common", func() {
 			_c := c
 			It(_c.Desc, func() {
 				if !_c.ShouldPanic {
-					result := modules.Normalize(_c.Obj, _c.FieldsToIgnore...)
+					result := Normalize(_c.Obj, _c.FieldsToIgnore...)
 					Expect(result).To(Equal(_c.Expected))
 				} else {
 					Expect(func() {
-						modules.Normalize(_c.Obj, _c.FieldsToIgnore...)
+						Normalize(_c.Obj, _c.FieldsToIgnore...)
 					}).To(Panic())
 				}
 			})

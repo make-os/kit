@@ -17,7 +17,7 @@ type TxRepoProposalVote struct {
 	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	RepoName   string `json:"name" msgpack:"name" mapstructure:"name"`
 	ProposalID string `json:"id" msgpack:"id" mapstructure:"id"`
-	Vote       int    `json:"vote" msgpack:"vote" mapstructure:"veto"`
+	Vote       int    `json:"vote" msgpack:"vote" mapstructure:"vote"`
 }
 
 // NewBareRepoProposalVote returns an instance of TxRepoProposalVote with zero values

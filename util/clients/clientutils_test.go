@@ -65,7 +65,7 @@ var _ = Describe("", func() {
 			remoteClient := mocks.NewMockClient(ctrl)
 			remoteClient.EXPECT().GetPushKeyOwnerNonce("pk-id").Return(nil, fmt.Errorf("error"))
 			rpcClient := mocks2.NewMockClient(ctrl)
-			rpcClientErr := util.NewStatusError(400, "100", "field", "error")
+			rpcClientErr := util.StatusErr(400, "100", "field", "error")
 			rpcClient.EXPECT().GetPushKeyOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{remoteClient})
 			Expect(err).ToNot(BeNil())
@@ -74,7 +74,7 @@ var _ = Describe("", func() {
 
 		It("should return err when only one rpc client is provided and it failed", func() {
 			rpcClient := mocks2.NewMockClient(ctrl)
-			rpcClientErr := util.NewStatusError(400, "100", "field", "error")
+			rpcClientErr := util.StatusErr(400, "100", "field", "error")
 			rpcClient.EXPECT().GetPushKeyOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{})
 			Expect(err).ToNot(BeNil())

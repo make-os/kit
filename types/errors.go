@@ -28,7 +28,11 @@ var (
 var (
 	// ErrIntSliceArgDecode means an interface slice parameter could not be decoded
 	ErrIntSliceArgDecode = func(castType string, index, sliceIndex int) error {
-		return fmt.Errorf("failed to decode argument.%d[%d] to %s", index, sliceIndex, castType)
+		sliceIndexStr := ""
+		if sliceIndex > -1 {
+			sliceIndexStr = fmt.Sprintf("[%d]", sliceIndex)
+		}
+		return fmt.Errorf("failed to decode argument.%d%s to %s", index, sliceIndexStr, castType)
 	}
 )
 

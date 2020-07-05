@@ -343,6 +343,18 @@ func (mr *MockRemoteServerMockRecorder) GetPruner() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPruner", reflect.TypeOf((*MockRemoteServer)(nil).GetPruner))
 }
 
+// SetPruner mocks base method
+func (m *MockRemoteServer) SetPruner(pruner types2.RepoPruner) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPruner", pruner)
+}
+
+// SetPruner indicates an expected call of SetPruner
+func (mr *MockRemoteServerMockRecorder) SetPruner(pruner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPruner", reflect.TypeOf((*MockRemoteServer)(nil).SetPruner), pruner)
+}
+
 // GetDHT mocks base method
 func (m *MockRemoteServer) GetDHT() types.DHT {
 	m.ctrl.T.Helper()

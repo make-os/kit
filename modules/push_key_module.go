@@ -46,7 +46,7 @@ func (m *PushKeyModule) methods() []*modulestypes.ModuleFunc {
 		},
 		{
 			Name:        "unregister",
-			Value:       m.UnRegister,
+			Value:       m.Unregister,
 			Description: "Remove a push key from the network",
 		},
 		{
@@ -89,15 +89,13 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePushKey, f.Name)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
 	return m.Completer
@@ -120,14 +118,14 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 //
 // RETURNS object <map>:
 // object.hash <string>: 				The transaction hash
-// object.pushKeyID <string>: 			The unique network ID of the push key
+// object.address <string>: 			The  push key address
 func (m *PushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -137,7 +135,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	pk := crypto.MustPubKeyFromBytes(tx.PublicKey.Bytes())
@@ -172,7 +170,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = false
 
@@ -183,7 +181,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -191,7 +189,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	}
 }
 
-// UnRegister removes a push key from the network
+// Unregister removes a push key from the network
 //
 // ARGS:
 // params <map>
@@ -206,13 +204,13 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 //
 // RETURNS object <map>:
 // object.hash <string>: 				The transaction hash
-func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = true
 	tx.FeeCap = ""
@@ -226,7 +224,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -244,7 +242,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 
 	if id == "" {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "id", "push key id is required"))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
 	targetHeight := uint64(0)
@@ -254,13 +252,13 @@ func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 
 	o := m.logic.PushKeyKeeper().Get(id, targetHeight)
 	if o.IsNil() {
-		panic(util.NewStatusError(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
+		panic(util.StatusErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
 	return util.StructToMap(o)
 }
 
-// ownedBy fetches push keys owned by the given address
+// GetByAddress returns a list of push key addresses owned by the given user address
 //
 // ARGS:
 // address: An address of an account
@@ -287,7 +285,7 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 
 	acct := m.logic.AccountKeeper().Get(pushKey["address"].(util.Address), targetHeight)
 	if acct.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
+		panic(util.StatusErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}
 
 	return util.StructToMap(acct)

@@ -41,7 +41,7 @@ func (c *DepositProposalFeeContract) Exec() error {
 	// Get the repo and proposal
 	repoKeeper := c.RepoKeeper()
 	repo := repoKeeper.Get(c.tx.RepoName)
-	prop := repo.Proposals.Get(c.tx.ProposalID)
+	prop := repo.Proposals.Get(c.tx.ID)
 
 	// Register proposal fee if set.
 	// If the sender already deposited, update their deposit.

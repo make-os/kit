@@ -58,7 +58,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxUpDelPushKey(o, index)
 	case *txns.TxPush:
 		return CheckTxPush(o, index)
-	case *txns.TxNamespaceAcquire:
+	case *txns.TxNamespaceRegister:
 		return CheckTxNamespaceAcquire(o, index)
 	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
@@ -99,7 +99,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxUpDelPushKeyConsistency(o, index, logic)
 	case *txns.TxPush:
 		return CheckTxPushConsistency(o, index, logic)
-	case *txns.TxNamespaceAcquire:
+	case *txns.TxNamespaceRegister:
 		return CheckTxNSAcquireConsistency(o, index, logic)
 	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)

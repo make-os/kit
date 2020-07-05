@@ -6,22 +6,22 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/console"
-	"gitlab.com/makeos/mosdef/mempool"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
 	console.ConsoleSuggestions
-	reactor  *mempool.Reactor
+	reactor  core.MempoolReactor
 	pushPool types.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
+func NewPoolModule(reactor core.MempoolReactor, pushPool types.PushPool) *PoolModule {
 	return &PoolModule{reactor: reactor, pushPool: pushPool}
 }
 
@@ -67,15 +67,13 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePool, f.Name)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
 	return m.Completer

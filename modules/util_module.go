@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,54 +20,55 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// UtilModule provides access to various utility functions
-type UtilModule struct {
+// ConsoleUtilModule provides access to various console utility functions.
+type ConsoleUtilModule struct {
 	console.ConsoleSuggestions
-	vm *otto.Otto
+	vm     *otto.Otto
+	stdout io.Writer
 }
 
-// NewUtilModule creates an instance of UtilModule
-func NewUtilModule() *UtilModule {
-	return &UtilModule{}
+// NewConsoleUtilModule creates an instance of ConsoleUtilModule
+func NewConsoleUtilModule(stdout io.Writer) *ConsoleUtilModule {
+	return &ConsoleUtilModule{stdout: stdout}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *UtilModule) ConsoleOnlyMode() bool {
+func (m *ConsoleUtilModule) ConsoleOnlyMode() bool {
 	return true
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *UtilModule) globals() []*types.ModuleFunc {
+func (m *ConsoleUtilModule) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{
-		{Name: "pp", Value: m.prettyPrint, Description: "Pretty print an object"},
-		{Name: "eval", Value: m.eval, Description: "Execute javascript code represented as a string"},
-		{Name: "evalFile", Value: m.evalFile, Description: "Execute javascript code stored in a file"},
-		{Name: "readFile", Value: m.readFile, Description: "Read a file"},
-		{Name: "readTextFile", Value: m.readTextFile, Description: "Read a text file"},
+		{Name: "pp", Value: m.PrettyPrint, Description: "Pretty print an object"},
+		{Name: "Eval", Value: m.Eval, Description: "Execute javascript code represented as a string"},
+		{Name: "EvalFile", Value: m.EvalFile, Description: "Execute javascript code stored in a file"},
+		{Name: "ReadFile", Value: m.ReadFile, Description: "Read a file"},
+		{Name: "ReadTextFile", Value: m.ReadTextFile, Description: "Read a text file"},
 		{Name: "treasuryAddress", Value: m.TreasuryAddress(), Description: "Get the treasury address"},
 		{Name: "genKey", Value: m.GenKey, Description: "Generate an Ed25519 key"},
-		{Name: "dump", Value: m.dump, Description: "Dump displays the passed parameters to standard out"},
-		{Name: "diff", Value: m.diff, Description: "Diff returns a human-readable report of the differences between two values"},
+		{Name: "Dump", Value: m.Dump, Description: "Dump displays the passed parameters to standard out"},
+		{Name: "Diff", Value: m.Diff, Description: "Diff returns a human-readable report of the differences between two values"},
 	}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *UtilModule) methods() []*types.ModuleFunc {
+func (m *ConsoleUtilModule) methods() []*types.ModuleFunc {
 	return m.globals()
 }
 
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
+func (m *ConsoleUtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.vm = vm
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceUtil, obj)
+	util.VMSet(m.vm, constants.NamespaceConsoleUtil, obj)
 
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUtil, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceConsoleUtil, f.Name)
 		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
@@ -79,36 +81,38 @@ func (m *UtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// prettyPrint pretty prints any object.
+// PrettyPrint pretty prints any object.
 // Useful for debugging.
-func (m *UtilModule) prettyPrint(values ...interface{}) {
+func (m *ConsoleUtilModule) PrettyPrint(values ...interface{}) {
 	var v interface{} = values
 	if len(values) == 1 {
 		v = values[0]
 	}
+
 	f := prettyjson.NewFormatter()
 	f.NewlineArray = ""
 	bs, err := f.Marshal(v)
 	if err != nil {
 		panic(m.vm.MakeCustomError("PrettyPrintError", err.Error()))
 	}
-	fmt.Println(string(bs))
+
+	fmt.Fprintf(m.stdout, string(bs))
 }
 
 // Dump displays the passed parameters to standard out.
-func (m *UtilModule) dump(objs ...interface{}) {
-	spew.Dump(objs...)
+func (m *ConsoleUtilModule) Dump(objs ...interface{}) {
+	spew.Fdump(m.stdout, objs...)
 }
 
 // Diff returns a human-readable report of the differences between two values.
 // It returns an empty string if and only if Equal returns true for the same
 // input values and options.
-func (m *UtilModule) diff(a, b interface{}) {
-	fmt.Print(cmp.Diff(a, b))
+func (m *ConsoleUtilModule) Diff(a, b interface{}) {
+	fmt.Fprint(m.stdout, cmp.Diff(a, b))
 }
 
-// eval executes javascript represent as string
-func (m *UtilModule) eval(src interface{}) interface{} {
+// Eval executes the given Javascript source and returns the output
+func (m *ConsoleUtilModule) Eval(src interface{}) otto.Value {
 	script, err := m.vm.Compile("", src)
 	if err != nil {
 		panic(m.vm.MakeCustomError("ExecError", err.Error()))
@@ -122,28 +126,23 @@ func (m *UtilModule) eval(src interface{}) interface{} {
 	return out
 }
 
-func (m *UtilModule) evalFile(file string) interface{} {
+// EvalFile executes given Javascript script file and returns the output
+func (m *ConsoleUtilModule) EvalFile(file string) otto.Value {
 
-	fullPath, err := filepath.Abs(file)
-	if err != nil {
-		panic(m.vm.MakeCustomError("ExecError", err.Error()))
-	}
-
+	fullPath, _ := filepath.Abs(file)
 	content, err := ioutil.ReadFile(fullPath)
 	if err != nil {
 		panic(m.vm.MakeCustomError("ExecError", err.Error()))
 	}
 
-	return m.eval(content)
+	return m.Eval(content)
 }
 
-func (m *UtilModule) readFile(filename string) interface{} {
+// ReadFile returns the content of the given file
+func (m *ConsoleUtilModule) ReadFile(filename string) []byte {
 
 	if !filepath.IsAbs(filename) {
-		dir, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
+		dir, _ := os.Getwd()
 		filename = filepath.Join(dir, filename)
 	}
 
@@ -155,18 +154,19 @@ func (m *UtilModule) readFile(filename string) interface{} {
 	return bz
 }
 
-func (m *UtilModule) readTextFile(filename string) string {
-	bz := m.readFile(filename)
-	return string(bz.([]byte))
+// ReadTextFile is like ReadTextFile but casts the content to string type.
+func (m *ConsoleUtilModule) ReadTextFile(filename string) string {
+	return string(m.ReadFile(filename))
 }
 
-func (m *UtilModule) TreasuryAddress() string {
+// TreasuryAddress returns the treasury address
+func (m *ConsoleUtilModule) TreasuryAddress() string {
 	return params.TreasuryAddress
 }
 
-// genKey generates an Ed25519 key.
+// GenKey generates an Ed25519 key.
 // seed: Specify an optional seed
-func (m *UtilModule) GenKey(seed ...int64) interface{} {
+func (m *ConsoleUtilModule) GenKey(seed ...int64) util.Map {
 
 	var s *int64 = nil
 	if len(seed) > 0 {

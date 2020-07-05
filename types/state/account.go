@@ -98,18 +98,15 @@ func (a *Account) SetBalance(bal string) {
 
 // IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
-	return a.Balance.Empty() || a.Balance.Equal("0") &&
-		a.Nonce == util.UInt64(0) &&
-		len(a.Stakes) == 0 &&
+	return util.IsZeroString(a.Balance.String()) && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
 		a.DelegatorCommission == float64(0)
 }
 
-// GetSpendableBalance returns the spendable balance of the account.
+// GetAvailableBalance returns the spendable balance of the account.
 // Formula: balance - total staked.
 // curHeight: The current blockchain height; Used to determine which stakes are unbonded.
-func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
-	return util.String(a.Balance.Decimal().
-		Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
+func (a *Account) GetAvailableBalance(curHeight uint64) util.String {
+	return util.String(a.Balance.Decimal().Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

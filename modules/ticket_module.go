@@ -54,13 +54,13 @@ func (m *TicketModule) methods() []*types.ModuleFunc {
 			Description: "BuyValidatorTicket a validator ticket",
 		},
 		{
-			Name:        "listProposerValidatorTickets",
-			Value:       m.ListProposerValidatorTickets,
+			Name:        "listValidatorTickets",
+			Value:       m.ListValidatorTicketsByProposer,
 			Description: "List validator tickets assigned to a given proposer public key",
 		},
 		{
-			Name:        "listProposerHostTickets",
-			Value:       m.ListProposerHostTickets,
+			Name:        "listHostTickets",
+			Value:       m.ListHostTicketsByProposer,
 			Description: "List host tickets assigned to a given proposer public key",
 		},
 		{
@@ -154,7 +154,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -164,7 +164,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -188,12 +188,12 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Derive BLS public key
@@ -208,7 +208,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -216,7 +216,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 	}
 }
 
-// ListProposerValidatorTickets finds validator tickets where the given public
+// ListValidatorTicketsByProposer finds validator tickets where the given public
 // key is the proposer; By default it will filter out decayed tickets. Use query
 // option to override this behaviour
 //
@@ -228,35 +228,26 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
 //
 // RETURNS <[]types.Ticket>
-func (m *TicketModule) ListProposerValidatorTickets(
+func (m *TicketModule) ListValidatorTicketsByProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) []util.Map {
 
-	var qopts tickettypes.QueryOptions
-
+	var qo tickettypes.QueryOptions
 	if len(queryOpts) > 0 {
-		// If the user didn't set 'decay' and 'nonDecayed' filters, we set the
-		// default of `nonDecayed` to true to return only non-decayed tickets
+		qo.SortByHeight = -1
 		qoMap := queryOpts[0]
-		if qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil {
-			qopts.NonDecayedOnly = true
-		}
-		_ = mapstructure.Decode(qoMap, &qopts)
-	}
-
-	// If no sort by height option, sort by height in descending order
-	if qopts.SortByHeight == 0 {
-		qopts.SortByHeight = -1
+		qo.NonDecayedOnly = qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil
+		mapstructure.Decode(qoMap, &qo)
 	}
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidProposerPubKey, "proposerPubKey", err.Error()))
 	}
 
-	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qo)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
@@ -266,7 +257,7 @@ func (m *TicketModule) ListProposerValidatorTickets(
 	return util.StructSliceToMap(tickets)
 }
 
-// ListProposerHostTickets finds host tickets where the given public
+// ListHostTicketsByProposer finds host tickets where the given public
 // key is the proposer
 //
 // ARGS:
@@ -275,118 +266,128 @@ func (m *TicketModule) ListProposerValidatorTickets(
 // [queryOpts] <map>
 // [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
-func (m *TicketModule) ListProposerHostTickets(
+func (m *TicketModule) ListHostTicketsByProposer(
 	proposerPubKey string,
-	queryOpts ...map[string]interface{}) interface{} {
+	queryOpts ...map[string]interface{}) []util.Map {
 
-	var qopts tickettypes.QueryOptions
+	var qo tickettypes.QueryOptions
 	if len(queryOpts) > 0 {
-		_ = mapstructure.Decode(queryOpts[0], &qopts)
-	}
-
-	// If no sort by height option, sort by height in descending order
-	if qopts.SortByHeight == 0 {
-		qopts.SortByHeight = -1
+		qo.SortByHeight = -1
+		mapstructure.Decode(queryOpts[0], &qo)
 	}
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
-	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qopts)
+	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qo)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
 		return []util.Map{}
 	}
 
-	return tickets
+	return util.StructSliceToMap(tickets)
 }
 
 // ListTopValidators returns top n validators
 //
 // ARGS:
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) ListTopValidators(limit ...int) interface{} {
+func (m *TicketModule) ListTopValidators(limit ...int) []util.Map {
+
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
 	}
+
 	tickets, err := m.ticketmgr.GetTopValidators(n)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
+
 	if len(tickets) == 0 {
 		return []util.Map{}
 	}
-	return tickets
+
+	return util.StructSliceToMap(tickets)
 }
 
 // ListTopHosts returns top n hosts
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) ListTopHosts(limit ...int) interface{} {
+func (m *TicketModule) ListTopHosts(limit ...int) []util.Map {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
 	}
+
 	tickets, err := m.ticketmgr.GetTopHosts(n)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
+
 	if len(tickets) == 0 {
 		return []util.Map{}
 	}
-	return tickets
+
+	return util.StructSliceToMap(tickets)
 }
 
-// TicketStats returns ticket statistics of the network; If proposerPubKey is
-// provided, the proposer's personalized ticket stats are included.
+// TicketStats returns ticket statistics of the network.
+// If proposerPubKey is provided, ticket stats for the
+// proposer public key is returned instead.
 //
 // ARGS:
-// [proposerPubKey]: Public key of a proposer. Set to return only stats for a given proposer
+// [proposerPubKey] 	<string>: 	Public key of a proposer
 //
 // RETURNS res <map>
-// result.valueOfNonDelegated 	<number>: 	The total value of non-delegated tickets owned by the proposer
-// result.valueOfDelegated 		<number>: 	The total value of tickets delegated to the proposer
-// result.publicKeyPower 		<number>: 	The total value staked coins power assigned to the proposer
-// result.valueOfAll 			<number>: 	The total value of all tickets
+// result.nonDelegated 	<number>: 	The total value of non-delegated tickets owned by the proposer
+// result.delegated 	<number>: 	The total value of tickets delegated to the proposer
+// result.power 		<number>: 	The total value of staked coins assigned to the proposer
+// result.all 			<number>: 	The total value of all tickets
 func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 
 	valNonDel, valDel := float64(0), float64(0)
 	res := make(map[string]interface{})
+	var err error
 
-	if len(proposerPubKey) > 0 {
-		pk, err := crypto.PubKeyFromBase58(proposerPubKey[0])
-		if err != nil {
-			panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
-		}
-
-		valNonDel, err = m.ticketmgr.ValueOfNonDelegatedTickets(pk.MustBytes32(), 0)
-		if err != nil {
-			panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
-		}
-
-		valDel, err = m.ticketmgr.ValueOfDelegatedTickets(pk.MustBytes32(), 0)
-		if err != nil {
-			panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
-		}
-
-		res["valueOfNonDelegated"] = valNonDel
-		res["valueOfDelegated"] = valDel
-		res["publicKeyPower"] = decimal.NewFromFloat(valNonDel).
-			Add(decimal.NewFromFloat(valDel)).String()
-	}
-
-	valAll, err := m.ticketmgr.ValueOfAllTickets(0)
+	// Get value of all tickets
+	res["all"], err = m.ticketmgr.ValueOfAllTickets(0)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
-	res["valueOfAll"] = valAll
+
+	// Return if no proposer public key was specified.
+	if len(proposerPubKey) == 0 {
+		return res
+	}
+
+	// At this point, we need to get stats for the given proposer public key.
+	pk, err := crypto.PubKeyFromBase58(proposerPubKey[0])
+	if err != nil {
+		panic(util.StatusErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
+	}
+
+	// Get value of non-delegated tickets belonging to the public key
+	valNonDel, err = m.ticketmgr.ValueOfNonDelegatedTickets(pk.MustBytes32(), 0)
+	if err != nil {
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Get value of delegated tickets belonging to the public key
+	valDel, err = m.ticketmgr.ValueOfDelegatedTickets(pk.MustBytes32(), 0)
+	if err != nil {
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	res["nonDelegated"] = valNonDel
+	res["delegated"] = valDel
+	res["total"] = decimal.NewFromFloat(valNonDel).Add(decimal.NewFromFloat(valDel)).String()
 
 	return res
 }
@@ -401,10 +402,8 @@ func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 		n = limit[0]
 	}
 
-	res := m.ticketmgr.Query(func(t *tickettypes.Ticket) bool { return true }, tickettypes.QueryOptions{
-		Limit:        n,
-		SortByHeight: -1,
-	})
+	qo := tickettypes.QueryOptions{Limit: n, SortByHeight: -1}
+	res := m.ticketmgr.Query(func(t *tickettypes.Ticket) bool { return true }, qo)
 
 	if len(res) == 0 {
 		return []util.Map{}
@@ -429,13 +428,12 @@ func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -444,7 +442,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{

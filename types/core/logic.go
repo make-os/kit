@@ -209,14 +209,14 @@ type PushKeyKeeper interface {
 	// Update sets a new value for the given public key id
 	//
 	// ARGS:
-	// gpgID: The public key unique ID
+	// pushKeyID: The public key unique ID
 	// udp: The updated object to replace the existing object.
-	Update(gpgID string, upd *state.PushKey) error
+	Update(pushKeyID string, upd *state.PushKey) error
 
-	// Get returns a GPG public key
+	// Get finds and returns a push key
 	//
 	// ARGS:
-	// gpgID: The unique ID of the public key
+	// pushKeyID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
@@ -226,13 +226,13 @@ type PushKeyKeeper interface {
 	//
 	// ARGS:
 	// address: The target address
-	GetByAddress(address string) (gpgIDs []string)
+	GetByAddress(address string) (pushKeys []string)
 
-	// Remove removes a gpg key by id
+	// Remove removes a push key by id
 	//
 	// ARGS:
-	// gpgID: The public key unique ID
-	Remove(gpgID string) bool
+	// pushKeyID: The public key unique ID
+	Remove(pushKeyID string) bool
 }
 
 // AtomicLogic is like Logic but allows all operations

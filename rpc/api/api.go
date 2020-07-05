@@ -15,7 +15,7 @@ type TestCase struct {
 }
 
 // APIs returns all API handlers
-func APIs(modulesHub types.ModulesHub, rpcServer *rpc.Server) rpc.APISet {
+func APIs(modulesHub types.ModulesHub, rpcServer *rpc.RPCServer) rpc.APISet {
 
 	// Create a new module instances for RPC environment.
 	modules := modulesHub.GetModules()

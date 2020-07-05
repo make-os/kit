@@ -102,7 +102,7 @@ func (c *RPCClient) GetOptions() *Options {
 // Call calls a method on the RPCClient service.
 // Returns:
 // res: JSON-RPC 2.0 success response
-// statusCode: Server response code
+// statusCode: RPCServer response code
 // err: Client error or JSON-RPC 2.0 error response.
 //      0 = Client error
 func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statusCode int, err error) {
@@ -160,7 +160,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 
 // makeClientStatusErr creates a StatusError representing a client error
 func makeClientStatusErr(msg string, args ...interface{}) *util.StatusError {
-	return util.NewStatusError(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
+	return util.StatusErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
 // makeStatusErrorFromCallErr converts error containing a JSON marshalled
@@ -173,7 +173,7 @@ func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError
 
 	// For non-json error, return an ErrCodeUnexpected status error
 	if !govalidator.IsJSON(err.Error()) {
-		return util.NewStatusError(callStatusCode, ErrCodeUnexpected, "", err.Error())
+		return util.StatusErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 
 	var errResp rpc.Response
@@ -184,5 +184,5 @@ func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError
 		data = errResp.Err.Data.(string)
 	}
 
-	return util.NewStatusError(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
+	return util.StatusErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
 }

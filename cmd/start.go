@@ -81,7 +81,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 		f.String("rpc.tmaddress", config.DefaultTMRPCAddress, "Set tendermint RPC listening address")
 		f.String("dht.address", config.DefaultDHTAddress, "Set the DHT listening address")
 		f.String("remote.address", config.DefaultRemoteServerAddress, "Set the remote server listening address")
-		f.String("node.addpeer", "", "Connect to one or more persistent node")
+		f.String("node.addpeer", "", "connect to one or more persistent node")
 		f.Bool("dht.on", true, "Run the DHT service and join the network")
 		f.String("dht.addpeer", "", "Register bootstrap peers for joining the DHT network")
 		f.StringSlice("node.exts", []string{}, "Specify an extension to run on startup")

@@ -75,10 +75,8 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -100,10 +98,8 @@ var _ = Describe("DepositProposalFeeContract", func() {
 
 				BeforeEach(func() {
 					err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-						TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-						TxValue:    &txns.TxValue{Value: proposalFee},
-						RepoName:   repoName,
-						ProposalID: propID,
+						TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -132,18 +128,14 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})

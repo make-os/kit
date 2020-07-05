@@ -1,4 +1,4 @@
-package acquirenamespace_test
+package registernamespace_test
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/acquirenamespace"
+	"gitlab.com/makeos/mosdef/logic/contracts/registernamespace"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -19,7 +19,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var _ = Describe("AcquireNamespaceContract", func() {
+var _ = Describe("RegisterNamespaceContract", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -47,8 +47,8 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
-			ct := acquirenamespace.NewContract()
-			Expect(ct.CanExec(txns.TxTypeNSAcquire)).To(BeTrue())
+			ct := registernamespace.NewContract()
+			Expect(ct.CanExec(txns.TxTypeNamespaceRegister)).To(BeTrue())
 			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeFalse())
 		})
 	})
@@ -63,7 +63,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
-				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
+				err = registernamespace.NewContract().Init(logic, &txns.TxNamespaceRegister{
 					Name:     nsName,
 					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					TxValue:  &txns.TxValue{Value: "1"},
@@ -112,7 +112,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
-				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
+				err = registernamespace.NewContract().Init(logic, &txns.TxNamespaceRegister{
 					Name:       nsName,
 					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					TxValue:    &txns.TxValue{Value: "1"},
@@ -136,7 +136,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
-				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
+				err = registernamespace.NewContract().Init(logic, &txns.TxNamespaceRegister{
 					Name:       nsName,
 					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					TxValue:    &txns.TxValue{Value: "1"},

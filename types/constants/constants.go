@@ -2,20 +2,20 @@ package constants
 
 // Namespace for JS Module and RPC methods
 const (
-	NamespaceRPC       = "rpc"
-	NamespaceChain     = "chain"
-	NamespaceTx        = "tx"
-	NamespaceCoin      = "coin"
-	NamespacePool      = "pool"
-	NamespaceUser      = "user"
-	NamespaceRepo      = "repo"
-	NamespaceNS        = "ns"
-	NamespacePushKey   = "pk"
-	NamespaceExtension = "ext"
-	NamespaceDHT       = "dht"
-	NamespaceUtil      = "util"
-	NamespaceTicket    = "ticket"
-	NamespaceHost      = "host"
+	NamespaceRPC         = "rpc"
+	NamespaceChain       = "chain"
+	NamespaceTx          = "tx"
+	NamespaceCoin        = "coin"
+	NamespacePool        = "pool"
+	NamespaceUser        = "user"
+	NamespaceRepo        = "repo"
+	NamespaceNS          = "ns"
+	NamespacePushKey     = "pk"
+	NamespaceExtension   = "ext"
+	NamespaceDHT         = "dht"
+	NamespaceConsoleUtil = "util"
+	NamespaceTicket      = "ticket"
+	NamespaceHost        = "host"
 )
 
 // Proposal action data keys

@@ -334,9 +334,9 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 	return nil
 }
 
-// CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceAcquire
+// CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceRegister
 func CheckTxNSAcquireConsistency(
-	tx *txns.TxNamespaceAcquire,
+	tx *txns.TxNamespaceRegister,
 	index int,
 	logic core.Logic) error {
 
@@ -569,7 +569,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	// The proposal must exist
-	proposal := repoState.Proposals.Get(tx.ProposalID)
+	proposal := repoState.Proposals.Get(tx.ID)
 	if proposal == nil {
 		return feI(index, "id", "proposal not found")
 	}

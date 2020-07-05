@@ -568,17 +568,17 @@ func (m *MockPushKeyKeeper) EXPECT() *MockPushKeyKeeperMockRecorder {
 }
 
 // Update mocks base method
-func (m *MockPushKeyKeeper) Update(gpgID string, upd *state.PushKey) error {
+func (m *MockPushKeyKeeper) Update(pushKeyID string, upd *state.PushKey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", gpgID, upd)
+	ret := m.ctrl.Call(m, "Update", pushKeyID, upd)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update
-func (mr *MockPushKeyKeeperMockRecorder) Update(gpgID, upd interface{}) *gomock.Call {
+func (mr *MockPushKeyKeeperMockRecorder) Update(pushKeyID, upd interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPushKeyKeeper)(nil).Update), gpgID, upd)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPushKeyKeeper)(nil).Update), pushKeyID, upd)
 }
 
 // Get mocks base method
@@ -615,17 +615,17 @@ func (mr *MockPushKeyKeeperMockRecorder) GetByAddress(address interface{}) *gomo
 }
 
 // Remove mocks base method
-func (m *MockPushKeyKeeper) Remove(gpgID string) bool {
+func (m *MockPushKeyKeeper) Remove(pushKeyID string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", gpgID)
+	ret := m.ctrl.Call(m, "Remove", pushKeyID)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove
-func (mr *MockPushKeyKeeperMockRecorder) Remove(gpgID interface{}) *gomock.Call {
+func (mr *MockPushKeyKeeperMockRecorder) Remove(pushKeyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushKeyKeeper)(nil).Remove), gpgID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushKeyKeeper)(nil).Remove), pushKeyID)
 }
 
 // MockAtomicLogic is a mock of AtomicLogic interface

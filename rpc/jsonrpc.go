@@ -212,9 +212,9 @@ func (s *JSONRPC) stop() {
 		return
 	}
 
-	s.log.Debug("Server is shutting down...")
+	s.log.Debug("RPCServer is shutting down...")
 	_ = s.server.Shutdown(context.Background())
-	s.log.Debug("Server has shutdown")
+	s.log.Debug("RPCServer has shutdown")
 }
 
 // HasAPI checks whether an API with matching full name exist

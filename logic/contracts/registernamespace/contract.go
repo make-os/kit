@@ -1,4 +1,4 @@
-package acquirenamespace
+package registernamespace
 
 import (
 	"gitlab.com/makeos/mosdef/crypto"
@@ -9,33 +9,33 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// AcquireNamespaceContract is a system contract to register a namespace.
-// AcquireNamespaceContract implements SystemContract.
-type AcquireNamespaceContract struct {
+// RegisterNamespaceContract is a system contract to register a namespace.
+// RegisterNamespaceContract implements SystemContract.
+type RegisterNamespaceContract struct {
 	core.Logic
-	tx          *txns.TxNamespaceAcquire
+	tx          *txns.TxNamespaceRegister
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of AcquireNamespaceContract
-func NewContract() *AcquireNamespaceContract {
-	return &AcquireNamespaceContract{}
+// NewContract creates a new instance of RegisterNamespaceContract
+func NewContract() *RegisterNamespaceContract {
+	return &RegisterNamespaceContract{}
 }
 
-func (c *AcquireNamespaceContract) CanExec(typ types.TxCode) bool {
-	return typ == txns.TxTypeNSAcquire
+func (c *RegisterNamespaceContract) CanExec(typ types.TxCode) bool {
+	return typ == txns.TxTypeNamespaceRegister
 }
 
 // Init initialize the contract
-func (c *AcquireNamespaceContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+func (c *RegisterNamespaceContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*txns.TxNamespaceAcquire)
+	c.tx = tx.(*txns.TxNamespaceRegister)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *AcquireNamespaceContract) Exec() error {
+func (c *RegisterNamespaceContract) Exec() error {
 	spk := crypto.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the current namespace object and re-populate it

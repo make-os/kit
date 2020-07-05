@@ -120,7 +120,7 @@ func (tx *TxTicketUnbond) FromMap(data map[string]interface{}) error {
 			}
 			tx.TicketHash = bz
 		} else {
-			return util.FieldError("addresses", fmt.Sprintf("invalid value type: has %T, "+
+			return util.FieldError("hash", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", tickHashVal.Inter()))
 		}
 	}

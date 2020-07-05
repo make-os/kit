@@ -165,7 +165,7 @@ var _ = Describe("Manager", func() {
 
 				Specify("that only mature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						MatureOnly: true,
+						MaturedOnly: true,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
@@ -183,7 +183,7 @@ var _ = Describe("Manager", func() {
 
 				Specify("that mature and immature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						MatureOnly: false,
+						MaturedOnly: false,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))

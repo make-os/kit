@@ -51,7 +51,7 @@ import (
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
-// Server represents the client
+// RPCServer represents the client
 type Node struct {
 	app            *App
 	cfg            *config.AppConfig
@@ -68,11 +68,11 @@ type Node struct {
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHT
 	modules        types2.ModulesHub
-	rpcServer      *rpc.Server
+	rpcServer      *rpc.RPCServer
 	remoteServer   core.RemoteServer
 }
 
-// NewNode creates an instance of Server
+// NewNode creates an instance of RPCServer
 func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 
 	// Parse tendermint RPC address
@@ -217,7 +217,7 @@ func (n *Node) Start() error {
 	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
 
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
-	n.log.Info("Server is now listening for connections", "Address", fullAddr)
+	n.log.Info("RPCServer is now listening for connections", "Address", fullAddr)
 
 	// Set references of various instances on the node
 	n.tm = tmNode

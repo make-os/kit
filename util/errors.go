@@ -85,9 +85,9 @@ type StatusError struct {
 	Field    string
 }
 
-// NewStatusError creates StatusError
+// StatusErr creates StatusError
 // It outputs the example format: `msg:'some error message', httpCode:'400', code:'mempool_add_err, field:'id'`
-func NewStatusError(httpCode int, code, field, msg string) *StatusError {
+func StatusErr(httpCode int, code, field, msg string) *StatusError {
 	return &StatusError{Code: code, HttpCode: httpCode, Msg: msg, Field: field}
 }
 
@@ -180,9 +180,8 @@ func getKeyFromFieldErrOutput(fieldErr, key string) string {
 	return string(buf2)
 }
 
-// BadFieldErrorFromStr attempts to convert a string to a BadFieldError. It expects the
-// string to match the BadFieldError#Error output.
-// Never returns an error even on failure.
+// BadFieldErrorFromStr attempts to convert a string to a BadFieldError.
+// It expects the string to match the BadFieldError error output.
 func BadFieldErrorFromStr(str string) *BadFieldError {
 	fe := &BadFieldError{
 		Field: getKeyFromFieldErrOutput(str, "field"),

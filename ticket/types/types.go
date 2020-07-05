@@ -25,7 +25,7 @@ type QueryOptions struct {
 	Limit          int  `json:"limit" mapstructure:"limit"`
 	SortByHeight   int  `json:"sortByHeight" mapstructure:"sortByHeight"`
 	ImmatureOnly   bool `json:"immature" mapstructure:"immature"`
-	MatureOnly     bool `json:"mature" mapstructure:"mature"`
+	MaturedOnly    bool `json:"mature" mapstructure:"mature"`
 	DecayedOnly    bool `json:"decayed" mapstructure:"decayed"`
 	NonDecayedOnly bool `json:"nonDecayed" mapstructure:"nonDecayed"`
 }

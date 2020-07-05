@@ -21,7 +21,7 @@ type TxNamespaceDomainUpdate struct {
 // NewBareTxNamespaceDomainUpdate returns an instance of TxNamespaceDomainUpdate with zero values
 func NewBareTxNamespaceDomainUpdate() *TxNamespaceDomainUpdate {
 	return &TxNamespaceDomainUpdate{
-		TxType:   &TxType{Type: TxTypeNSDomainUpdate},
+		TxType:   &TxType{Type: TxTypeNamespaceDomainUpdate},
 		TxCommon: NewBareTxCommon(),
 		Name:     "",
 		Domains:  make(map[string]string),

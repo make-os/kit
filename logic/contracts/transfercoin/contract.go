@@ -150,7 +150,7 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee
 	spendAmt := c.tx.Value.Decimal().Add(c.tx.Fee.Decimal())
-	senderBal := senderAcct.GetSpendableBalance(c.chainHeight).Decimal()
+	senderBal := senderAcct.GetAvailableBalance(c.chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
 		return fe(field, fmt.Sprintf("sender's spendable account balance is insufficient"))
 	}

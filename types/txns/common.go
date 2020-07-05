@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	msgpack2 "github.com/vmihailenco/msgpack/v4"
@@ -23,8 +24,8 @@ const (
 	TxTypeRepoCreate                                          // For creating a repository
 	TxTypeRegisterPushKey                                     // For adding a GPG public key
 	TxTypePush                                                // For pushing updates to a repository
-	TxTypeNSAcquire                                           // For namespace purchase
-	TxTypeNSDomainUpdate                                      // For setting namespace domains
+	TxTypeNamespaceRegister                                   // For namespace purchase
+	TxTypeNamespaceDomainUpdate                               // For setting namespace domains
 	TxTypeRepoProposalUpsertOwner                             // For creating a proposal to add repo owner
 	TxTypeRepoProposalVote                                    // For voting on a repo proposal
 	TxTypeRepoProposalUpdate                                  // For creating a repo update proposal
@@ -130,10 +131,14 @@ func NewBareTxCommon() *TxCommon {
 // ToMap returns a map equivalent of the transaction, decode-able by FromMap.
 func (tx *TxCommon) ToMap() map[string]interface{} {
 	m := util.StructToMap(tx, "mapstructure")
-	m["senderPubKey"] = crypto.MustPubKeyFromBytes(tx.SenderPubKey.Bytes()).Base58()
 	m["fee"] = tx.Fee.String()
 	m["sig"] = util.ToHex(tx.Sig)
 	m["nonce"] = fmt.Sprintf("%d", tx.Nonce)
+
+	if !tx.SenderPubKey.IsEmpty() {
+		m["senderPubKey"] = crypto.MustPubKeyFromBytes(tx.SenderPubKey.Bytes()).Base58()
+	}
+
 	return m
 }
 
@@ -318,11 +323,14 @@ func (tx *TxRecipient) FromMap(data map[string]interface{}) (err error) {
 
 	// To: expects string type in map
 	if toVal := o.Get("to"); !toVal.IsNil() {
-		if toVal.IsStr() {
+		switch v := toVal.Inter().(type) {
+		case string:
 			tx.To = util.Address(toVal.Str())
-		} else {
-			return util.FieldError("to", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", toVal.Inter()))
+		case util.Address:
+			tx.To = v
+		default:
+			return util.FieldError("to", fmt.Sprintf("invalid value type: has %T, wants string",
+				toVal.Inter()))
 		}
 	}
 
@@ -393,11 +401,14 @@ func (tx *TxProposalCommon) FromMap(data map[string]interface{}) (err error) {
 
 	// ProposalID: expects string type in map
 	if propIDVal := o.Get("id"); !propIDVal.IsNil() {
-		if propIDVal.IsStr() {
+		switch propIDVal.Inter().(type) {
+		case string:
 			tx.ID = propIDVal.Str()
-		} else {
+		case int, int64, float64, uint64:
+			tx.ID = cast.ToString(propIDVal.Inter())
+		default:
 			return util.FieldError("id", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", propIDVal.Inter()))
+				"wants string|int", propIDVal.Inter()))
 		}
 	}
 
@@ -473,9 +484,9 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 		tx = NewBareTxRegisterPushKey()
 	case TxTypePush:
 		tx = NewBareTxPush()
-	case TxTypeNSAcquire:
-		tx = NewBareTxNamespaceAcquire()
-	case TxTypeNSDomainUpdate:
+	case TxTypeNamespaceRegister:
+		tx = NewBareTxNamespaceRegister()
+	case TxTypeNamespaceDomainUpdate:
 		tx = NewBareTxNamespaceDomainUpdate()
 	case TxTypeRepoProposalUpsertOwner:
 		tx = NewBareRepoProposalUpsertOwner()

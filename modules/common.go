@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	StatusCodeAppErr                = "app_err"
+	StatusCodeServerErr             = "server_err"
 	StatusCodeInvalidPass           = "invalid_passphrase"
 	StatusCodeAddressRequire        = "addr_required"
 	StatusCodeAccountNotFound       = "account_not_found"
@@ -29,7 +29,7 @@ const (
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 
-var se = util.NewStatusError
+var se = util.StatusErr
 
 // parseOptions parse module options
 // If only 1 option, and it is a boolean = payload only instruction.
@@ -53,14 +53,17 @@ func parseOptions(options ...interface{}) (key string, payloadOnly bool) {
 		var ok bool
 		key, ok = options[0].(string)
 		if !ok {
-			panic(types.ErrIntSliceArgDecode("string", 1, 0))
+			panic(types.ErrIntSliceArgDecode("string", 0, -1))
 		}
 
 		payloadOnly, ok = options[1].(bool)
 		if !ok {
-			panic(types.ErrIntSliceArgDecode("bool", 1, 0))
+			panic(types.ErrIntSliceArgDecode("bool", 1, -1))
 		}
 
+	}
+
+	if key != "" {
 		if err := crypto.IsValidPrivKey(key); err != nil {
 			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
 		}
@@ -69,12 +72,10 @@ func parseOptions(options ...interface{}) (key string, payloadOnly bool) {
 	return
 }
 
-// finalizeTx sets the public key, timestamp and signs the transaction.
-//
-// options[0] is expected to be a base58 private key
-//
-// If options[1] is set to true, true is returned; meaning the user only wants
-// the finalized payload and does not want to send the transaction to the network
+// finalizeTx sets the public key, timestamp, nonce and signs the transaction.
+// It will not reset fields already set.
+// options[0]: <string|bool> 	- key or payloadOnly request
+// options[1]: [<bool>] 		- payload request
 func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) bool {
 
 	key, payloadOnly := parseOptions(options...)
@@ -100,7 +101,7 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) b
 	}
 
 	// Sign the tx only if unsigned
-	if len(tx.GetSignature()) == 0 {
+	if len(tx.GetSignature()) == 0 && key != "" {
 		sig, err := tx.Sign(key)
 		if err != nil {
 			panic(se(400, StatusCodeInvalidParam, "key", "failed to sign transaction"))

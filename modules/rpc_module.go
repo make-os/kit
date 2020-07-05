@@ -21,14 +21,15 @@ import (
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
 	console.ConsoleSuggestions
-	cfg       *config.AppConfig
-	rpcServer *rpc.Server
-	modFuncs  []*types.ModuleFunc
+	cfg                *config.AppConfig
+	server             rpc.Server
+	modFuncs           []*types.ModuleFunc
+	ClientContextMaker func(client client.Client) *ClientContext
 }
 
 // NewRPCModule creates an instance of RPCModule
-func NewRPCModule(cfg *config.AppConfig, rpcServer *rpc.Server) *RPCModule {
-	return &RPCModule{cfg: cfg, rpcServer: rpcServer}
+func NewRPCModule(cfg *config.AppConfig, server rpc.Server) *RPCModule {
+	return &RPCModule{cfg: cfg, server: server, ClientContextMaker: newClientContext}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -46,13 +47,13 @@ func (m *RPCModule) methods() []*types.ModuleFunc {
 		},
 		{
 			Name:        "connect",
-			Value:       m.Connect,
-			Description: "Connect to a RPC server",
+			Value:       m.connect,
+			Description: "connect to a RPC server",
 		},
 		{
 			Name:        "local",
 			Value:       m.ConnectLocal,
-			Description: "Connect to the local RPC server",
+			Description: "connect to the local RPC server",
 		},
 	}
 
@@ -90,7 +91,7 @@ func (m *RPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // isRunning checks whether the server is running
 func (m *RPCModule) IsRunning() bool {
-	return m.rpcServer != nil && m.rpcServer.IsRunning()
+	return m.server != nil && m.server.IsRunning()
 }
 
 // ConnectLocal returns an RPC client connected to the local RPC server
@@ -100,16 +101,16 @@ func (m *RPCModule) ConnectLocal() util.Map {
 		panic(err)
 	}
 	portInt, _ := strconv.Atoi(port)
-	return m.Connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
+	return m.connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
 }
 
-type RPCContext struct {
-	client  client.Client
-	objects map[string]interface{}
+type ClientContext struct {
+	Client  client.Client
+	Objects map[string]interface{}
 }
 
 // call is like callE but panics on error
-func (r *RPCContext) call(methodName string, params ...interface{}) interface{} {
+func (r *ClientContext) call(methodName string, params ...interface{}) util.Map {
 	out, err := r.callE(methodName, params...)
 	if err != nil {
 		panic(err)
@@ -118,19 +119,24 @@ func (r *RPCContext) call(methodName string, params ...interface{}) interface{} 
 }
 
 // callE calls the given RPC method and returns the error
-func (r *RPCContext) callE(methodName string, params ...interface{}) (interface{}, error) {
+func (r *ClientContext) callE(methodName string, params ...interface{}) (util.Map, error) {
 	var p interface{}
 	if len(params) > 0 {
 		p = params[0]
 	}
-	out, _, err := r.client.Call(methodName, p)
+	out, _, err := r.Client.Call(methodName, p)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Connect connects to an RPC server
+// newClientContext creates an instance of ClientContext
+func newClientContext(client client.Client) *ClientContext {
+	return &ClientContext{Client: client, Objects: map[string]interface{}{}}
+}
+
+// connect connects to an RPC server
 //
 // ARGS
 // host: The server's IP address
@@ -140,7 +146,7 @@ func (r *RPCContext) callE(methodName string, params ...interface{}) (interface{
 // pass: The server's password
 //
 // RETURNS <map>: A mapping of rpc methods under their respective namespaces.
-func (m *RPCModule) Connect(host string, port int, https bool, user, pass string) util.Map {
+func (m *RPCModule) connect(host string, port int, https bool, user, pass string) util.Map {
 
 	// Create a client
 	c := client.NewClient(&client.Options{
@@ -152,29 +158,29 @@ func (m *RPCModule) Connect(host string, port int, https bool, user, pass string
 	})
 
 	// Create a RPC context
-	ctx := &RPCContext{client: c, objects: map[string]interface{}{}}
+	ctx := m.ClientContextMaker(c)
 
 	// Add call function for raw calls
-	ctx.objects["call"] = ctx.call
+	ctx.Objects["call"] = ctx.call
 
 	// Attempt to query the methods from the RPC server.
 	// Panics if not successful.
 	methods := ctx.call("rpc_methods")
 
-	// Build RPC namespaces and add methods into their respective namespaces
-	for _, method := range methods.(util.Map)["methods"].([]interface{}) {
+	// Build RPC namespaces and add methods into them
+	for _, method := range methods["methods"].([]interface{}) {
 		o := objx.New(method)
 		namespace := o.Get("namespace").String()
 		name := o.Get("name").String()
-		nsObj, ok := ctx.objects[namespace]
+		nsObj, ok := ctx.Objects[namespace]
 		if !ok {
 			nsObj = make(map[string]interface{})
-			ctx.objects[namespace] = nsObj
+			ctx.Objects[namespace] = nsObj
 		}
 		nsObj.(map[string]interface{})[name] = func(params ...interface{}) interface{} {
 			return ctx.call(fmt.Sprintf("%s_%s", namespace, name), params...)
 		}
 	}
 
-	return ctx.objects
+	return ctx.Objects
 }

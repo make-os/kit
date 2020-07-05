@@ -694,7 +694,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := txns.NewBareTxNamespaceAcquire()
+				tx := txns.NewBareTxNamespaceRegister()
 				err = validation.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
 
@@ -707,7 +707,7 @@ var _ = Describe("TxValidator", func() {
 		When("target namespace exist and not expired", func() {
 			BeforeEach(func() {
 				name := "name1"
-				tx := txns.NewBareTxNamespaceAcquire()
+				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 9}, nil)
@@ -725,7 +725,7 @@ var _ = Describe("TxValidator", func() {
 		When("target repo does not exist", func() {
 			BeforeEach(func() {
 				name := "name1"
-				tx := txns.NewBareTxNamespaceAcquire()
+				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
 				tx.TransferTo = "repo1"
 
@@ -746,7 +746,7 @@ var _ = Describe("TxValidator", func() {
 		When("target account does not exist", func() {
 			BeforeEach(func() {
 				name := "name1"
-				tx := txns.NewBareTxNamespaceAcquire()
+				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
 				tx.TransferTo = "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"
 
@@ -766,7 +766,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("balance sufficiency dry-run fails", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareTxNamespaceAcquire()
+				tx := txns.NewBareTxNamespaceRegister()
 				tx.Value = "10.2"
 				tx.Name = "name1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
@@ -1346,7 +1346,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.ProposalID = "proposal_xyz"
+				tx.ID = "proposal_xyz"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
@@ -1365,7 +1365,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.ProposalID = "proposal1"
+				tx.ID = "proposal1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
@@ -1385,7 +1385,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.ProposalID = "proposal1"
+				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
@@ -1408,7 +1408,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.ProposalID = "proposal1"
+				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
@@ -1432,7 +1432,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.ProposalID = "proposal1"
+				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
@@ -1456,7 +1456,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.ProposalID = "proposal1"
+				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{

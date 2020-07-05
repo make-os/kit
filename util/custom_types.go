@@ -282,6 +282,11 @@ func (i *UInt64) UInt64() uint64 {
 	return uint64(*i)
 }
 
+// IsZero checks if the value is zero
+func (i *UInt64) IsZero() bool {
+	return uint64(*i) == uint64(0)
+}
+
 // Set sets the value
 func (i *UInt64) Set(v uint64) {
 	*i = UInt64(v)

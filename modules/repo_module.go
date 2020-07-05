@@ -24,12 +24,12 @@ type RepoModule struct {
 	console.ConsoleSuggestions
 	logic   core.Logic
 	service services.Service
-	repoMgr core.RemoteServer
+	repoSrv core.RemoteServer
 }
 
 // NewRepoModule creates an instance of RepoModule
-func NewRepoModule(service services.Service, repoMgr core.RemoteServer, logic core.Logic) *RepoModule {
-	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr}
+func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic core.Logic) *RepoModule {
+	return &RepoModule{service: service, logic: logic, repoSrv: repoSrv}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -246,12 +246,12 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 // force: When true, forcefully prunes the target repository
 func (m *RepoModule) Prune(name string, force bool) {
 	if force {
-		if err := m.repoMgr.GetPruner().Prune(name, true); err != nil {
-			panic(err)
+		if err := m.repoSrv.GetPruner().Prune(name, true); err != nil {
+			panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 		}
 		return
 	}
-	m.repoMgr.GetPruner().Schedule(name)
+	m.repoSrv.GetPruner().Schedule(name)
 }
 
 // Get finds and returns a repository.
@@ -265,7 +265,7 @@ func (m *RepoModule) Prune(name string, force bool) {
 //
 // RETURNS <map>
 func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {
-	var targetHeight uint64
+	var blockHeight uint64
 	var noProposals bool
 	var err error
 
@@ -273,7 +273,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		opt := opts[0]
 		noProposals = opt.NoProposals
 		if opt.Height != nil {
-			targetHeight, err = cast.ToUint64E(opt.Height)
+			blockHeight, err = cast.ToUint64E(opt.Height)
 			if err != nil {
 				panic(se(400, StatusCodeInvalidParam, "opts.height", "unexpected type"))
 			}
@@ -282,9 +282,9 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 
 	var repo *state.Repository
 	if !noProposals {
-		repo = m.logic.RepoKeeper().Get(name, targetHeight)
+		repo = m.logic.RepoKeeper().Get(name, blockHeight)
 	} else {
-		repo = m.logic.RepoKeeper().GetNoPopulate(name, targetHeight)
+		repo = m.logic.RepoKeeper().GetNoPopulate(name, blockHeight)
 		repo.Proposals = state.RepoProposals{}
 	}
 
@@ -398,7 +398,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 //
 // RETURNS object <map>
 // object.hash <string>: 							The transaction hash
-func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareRepoProposalRegisterPushKey()
@@ -430,6 +430,6 @@ func (m *RepoModule) AnnounceObjects(repoName string) {
 		if errors.Cause(err) == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeRepoNotFound, "repoName", err.Error()))
 		}
-		panic(se(500, StatusCodeAppErr, "", err.Error()))
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 }

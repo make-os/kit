@@ -48,7 +48,7 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := updatenamespacedomains.NewContract()
-			Expect(ct.CanExec(txns.TxTypeNSDomainUpdate)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeNamespaceDomainUpdate)).To(BeTrue())
 			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})

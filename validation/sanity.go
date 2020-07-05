@@ -486,10 +486,10 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 	return nil
 }
 
-// CheckTxNamespaceAcquire performs sanity checks on TxNamespaceAcquire
-func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
+// CheckTxNamespaceAcquire performs sanity checks on TxNamespaceRegister
+func CheckTxNamespaceAcquire(tx *txns.TxNamespaceRegister, index int) error {
 
-	if err := checkType(tx.TxType, txns.TxTypeNSAcquire, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNamespaceRegister, index); err != nil {
 		return err
 	}
 
@@ -531,7 +531,7 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
 // CheckTxNamespaceDomainUpdate performs sanity checks on TxNamespaceDomainUpdate
 func CheckTxNamespaceDomainUpdate(tx *txns.TxNamespaceDomainUpdate, index int) error {
 
-	if err := checkType(tx.TxType, txns.TxTypeNSDomainUpdate, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNamespaceDomainUpdate, index); err != nil {
 		return err
 	}
 
@@ -637,7 +637,7 @@ func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := checkProposalID(tx.ID, index); err != nil {
 		return err
 	}
 

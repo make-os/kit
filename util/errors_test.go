@@ -9,14 +9,14 @@ var _ = Describe("Errors", func() {
 
 	Describe(".StatusError.Error", func() {
 		It("should return expected err", func() {
-			err := NewStatusError(100, "bad_thing", "name", "something bad here")
+			err := StatusErr(100, "bad_thing", "name", "something bad here")
 			Expect(err).To(MatchError("field:'name', msg:'something bad here', httpCode:'100', code:'bad_thing'"))
 		})
 	})
 
 	Describe(".StatusErrorFromStr", func() {
 		It("should convert a StatusError.Error output back to same StatusError", func() {
-			err := NewStatusError(100, "bad_thing", "name", "something bad here")
+			err := StatusErr(100, "bad_thing", "name", "something bad here")
 			out := err.Error()
 			err2 := StatusErrorFromStr(out)
 			Expect(err).To(Equal(err2))

@@ -37,7 +37,7 @@ func (c *RPCClient) CreateRepo(args *CreateRepoArgs) (*api.CreateRepoResponse, *
 	var err error
 	tx.Sig, err = tx.Sign(args.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.NewStatusError(400, ErrCodeClient, "privKey", err.Error())
+		return nil, util.StatusErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
 	// call RPC method: repo_create
@@ -73,7 +73,7 @@ func (c *RPCClient) GetRepo(name string, opts ...*GetRepoOpts) (*api.GetRepoResp
 
 	var r = api.GetRepoResponse{Repository: state.BareRepository()}
 	if err := util.DecodeMap(resp, r.Repository); err != nil {
-		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, util.StatusErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

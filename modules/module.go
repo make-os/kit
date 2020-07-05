@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"os"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/config"
@@ -31,7 +33,7 @@ func New(
 	ticketmgr types2.TicketManager,
 	dht types.DHT,
 	extMgr *extensions.Manager,
-	rpcServer *rpc.Server,
+	rpcServer *rpc.RPCServer,
 	repoMgr core.RemoteServer) *Module {
 
 	return &Module{
@@ -43,10 +45,10 @@ func New(
 			PushKey: NewPushKeyModule(cfg, service, logic),
 			Ticket:  NewTicketModule(service, logic, ticketmgr),
 			Repo:    NewRepoModule(service, repoMgr, logic),
-			NS:      NewNSModule(service, repoMgr, logic),
+			NS:      NewNamespaceModule(service, repoMgr, logic),
 			DHT:     NewDHTModule(cfg, dht),
 			ExtMgr:  extMgr,
-			Util:    NewUtilModule(),
+			Util:    NewConsoleUtilModule(os.Stdout),
 			RPC:     NewRPCModule(cfg, rpcServer),
 			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
 		},

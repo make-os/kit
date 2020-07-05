@@ -79,6 +79,9 @@ type RemoteServer interface {
 	// GetPruner returns the repo pruner
 	GetPruner() remotetypes.RepoPruner
 
+	// SetPruner sets the pruner
+	SetPruner(pruner remotetypes.RepoPruner)
+
 	// GetDHT returns the dht service
 	GetDHT() types.DHT
 

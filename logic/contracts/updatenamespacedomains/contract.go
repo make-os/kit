@@ -22,7 +22,7 @@ func NewContract() *NamespaceDomainUpdateContract {
 }
 
 func (c *NamespaceDomainUpdateContract) CanExec(typ types.TxCode) bool {
-	return typ == txns.TxTypeNSDomainUpdate
+	return typ == txns.TxTypeNamespaceDomainUpdate
 }
 
 // Init initialize the contract

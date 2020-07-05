@@ -1,10 +1,7 @@
 package txns
 
 import (
-	"fmt"
-
 	"github.com/imdario/mergo"
-	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
@@ -13,21 +10,17 @@ import (
 // TxRepoProposalSendFee implements BaseTx, it describes a transaction for
 // sending units of the native coin as proposal fee.
 type TxRepoProposalSendFee struct {
-	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxValue   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	RepoName   string `json:"name" msgpack:"name" mapstructure:"name"`
-	ProposalID string `json:"id" msgpack:"id" mapstructure:"id"`
+	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 }
 
 // NewBareRepoProposalFeeSend returns an instance of TxRepoProposalSendFee with zero values
 func NewBareRepoProposalFeeSend() *TxRepoProposalSendFee {
 	return &TxRepoProposalSendFee{
-		TxCommon:   NewBareTxCommon(),
-		TxType:     &TxType{Type: TxTypeRepoProposalSendFee},
-		TxValue:    &TxValue{Value: "0"},
-		RepoName:   "",
-		ProposalID: "",
+		TxCommon:         NewBareTxCommon(),
+		TxType:           &TxType{Type: TxTypeRepoProposalSendFee},
+		TxProposalCommon: &TxProposalCommon{Value: "0"},
 	}
 }
 
@@ -42,7 +35,7 @@ func (tx *TxRepoProposalSendFee) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.SenderPubKey,
 		tx.RepoName,
-		tx.ProposalID)
+		tx.ID)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -56,7 +49,7 @@ func (tx *TxRepoProposalSendFee) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Timestamp,
 		&tx.SenderPubKey,
 		&tx.RepoName,
-		&tx.ProposalID)
+		&tx.ID)
 }
 
 // Bytes returns the serialized transaction
@@ -108,7 +101,7 @@ func (tx *TxRepoProposalSendFee) ToMap() map[string]interface{} {
 	m := util.StructToMap(tx, "mapstructure")
 	mergo.Map(&m, tx.TxCommon.ToMap())
 	mergo.Map(&m, tx.TxType.ToMap())
-	mergo.Map(&m, tx.TxValue.ToMap())
+	mergo.Map(&m, tx.TxProposalCommon.ToMap())
 	return m
 }
 
@@ -116,29 +109,6 @@ func (tx *TxRepoProposalSendFee) ToMap() map[string]interface{} {
 func (tx *TxRepoProposalSendFee) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
-	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })
-
-	o := objx.New(data)
-
-	// RepoName: expects string type in map
-	if nameVal := o.Get("name"); !nameVal.IsNil() {
-		if nameVal.IsStr() {
-			tx.RepoName = nameVal.Str()
-		} else {
-			return util.FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", nameVal.Inter()))
-		}
-	}
-
-	// ProposalID: expects string type in map
-	if proposalID := o.Get("id"); !proposalID.IsNil() {
-		if proposalID.IsStr() {
-			tx.ProposalID = proposalID.Str()
-		} else {
-			return util.FieldError("id", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", proposalID.Inter()))
-		}
-	}
-
+	err = util.CallOnNilErr(err, func() error { return tx.TxProposalCommon.FromMap(data) })
 	return err
 }

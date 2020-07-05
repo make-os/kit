@@ -8,11 +8,11 @@ import (
 
 // Manager provides RPC service management functionality.
 type Manager struct {
-	server *rpc.Server
+	server *rpc.RPCServer
 }
 
 // NewRPCManagerAPI creates an instance of Manager
-func NewRPCManagerAPI(srv *rpc.Server) *Manager {
+func NewRPCManagerAPI(srv *rpc.RPCServer) *Manager {
 	return &Manager{srv}
 }
 

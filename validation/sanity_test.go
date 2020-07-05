@@ -208,10 +208,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxNamespaceAcquire", func() {
-		var tx *txns.TxNamespaceAcquire
+		var tx *txns.TxNamespaceRegister
 		BeforeEach(func() {
 			params.CostOfNamespace = decimal.NewFromFloat(5)
-			tx = txns.NewBareTxNamespaceAcquire()
+			tx = txns.NewBareTxNamespaceRegister()
 			tx.Fee = "1"
 			tx.Name = "namespace"
 			tx.Value = util.String(params.CostOfNamespace.String())
@@ -1443,7 +1443,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is not numerical", func() {
 			tx.RepoName = "repo1"
-			tx.ProposalID = "abc"
+			tx.ID = "abc"
 			err := validation.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
@@ -1451,7 +1451,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id exceeds max length", func() {
 			tx.RepoName = "repo1"
-			tx.ProposalID = "1234556789"
+			tx.ID = "1234556789"
 			err := validation.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
@@ -1460,7 +1460,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when value is not provided", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = ""
-			tx.ProposalID = "1"
+			tx.ID = "1"
 			err := validation.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:value, msg:value is required"))

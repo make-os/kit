@@ -23,12 +23,9 @@ type NamespaceModule struct {
 	repoMgr core.RemoteServer
 }
 
-// NewNSModule creates an instance of NamespaceModule
-func NewNSModule(
-	service services.Service,
-	repoMgr core.RemoteServer,
-	logic core.Logic) *NamespaceModule {
-	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr}
+// NewNamespaceModule creates an instance of NamespaceModule
+func NewNamespaceModule(service services.Service, remoteSrv core.RemoteServer, logic core.Logic) *NamespaceModule {
+	return &NamespaceModule{service: service, logic: logic, repoMgr: remoteSrv}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -99,8 +96,8 @@ func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // RETURNS: resp <map|nil>
 // resp.name <string>: The name of the namespace
 // resp.expired <bool>: Indicates whether the namespace is expired
-// resp.expiring <bool>: Indicates whether the namespace is currently expiring
-func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
+// resp.grace <bool>: Indicates whether the namespace is currently within the grace period
+func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 
 	var targetHeight uint64
 	if len(height) > 0 {
@@ -111,22 +108,22 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 	if ns.IsNil() {
 		return nil
 	}
+
 	nsMap := util.StructToMap(ns)
 	nsMap["name"] = name
 	nsMap["expired"] = false
-	nsMap["expiring"] = false
+	nsMap["grace"] = false
 
-	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	if ns.GraceEndAt.UInt64() <= uint64(curBlockInfo.Height) {
+	if ns.ExpiresAt.UInt64() <= uint64(bi.Height) {
 		nsMap["expired"] = true
-	}
-
-	if ns.ExpiresAt.UInt64() <= uint64(curBlockInfo.Height) {
-		nsMap["expiring"] = true
+		if ns.GraceEndAt.UInt64() > uint64(bi.Height) {
+			nsMap["grace"] = true
+		}
 	}
 
 	return nsMap
@@ -148,7 +145,7 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 
 	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return target
@@ -176,9 +173,9 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 func (m *NamespaceModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = txns.NewBareTxNamespaceAcquire()
+	var tx = txns.NewBareTxNamespaceRegister()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -190,7 +187,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -219,7 +216,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 
 	var tx = txns.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -231,7 +228,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{

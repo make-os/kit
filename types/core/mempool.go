@@ -88,6 +88,6 @@ type MempoolReactor interface {
 
 // PoolSizeInfo describes the transaction byte size an count of the tx pool
 type PoolSizeInfo struct {
-	TotalTxSize int64 `json:"totalTxSize"`
-	TxCount     int   `json:"txCount"`
+	TotalTxSize int64 `json:"size"`
+	TxCount     int   `json:"count"`
 }

@@ -98,12 +98,12 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.service.GetBlock(blockHeight)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return res
@@ -114,11 +114,11 @@ func (m *ChainModule) GetCurrentHeight() util.Map {
 
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return map[string]interface{}{
-		"height": fmt.Sprintf("%d", bi.Height),
+		"height": bi.Height,
 	}
 }
 
@@ -130,12 +130,12 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.StructToMap(res)
@@ -158,17 +158,16 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	var vList []util.Map
 	for pubKey, valInfo := range validators {
-
 		var pub32 ed25519.PubKeyEd25519
 		copy(pub32[:], pubKey.Bytes())
 
