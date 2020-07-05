@@ -8,18 +8,13 @@ import (
 )
 
 // GetAccountNonce returns the nonce of the given address
-// Body:
-// - address <string>: The address of the account
-// - [height] <string>: The target query block height (default: latest).
-// Response:
-// - resp <state.Account -> map> - The account object
 func (c *ClientV1) GetAccountNonce(address string, blockHeight ...uint64) (*apitypes.GetAccountNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	path := api.V1Path(constants.NamespaceUser, apitypes.MethodNameGetNonce)
+	path := api.V1Path(constants.NamespaceUser, apitypes.MethodNameNonce)
 	resp, err := c.get(path, M{"address": address, "height": height})
 	if err != nil {
 		return nil, err
@@ -30,18 +25,13 @@ func (c *ClientV1) GetAccountNonce(address string, blockHeight ...uint64) (*apit
 }
 
 // GetAccount returns the account corresponding to the given address
-// Body:
-// - address <string>: The address of the account
-// - [height] <string>: The target query block height (default: latest).
-// Response:
-// - resp <state.Account -> map> - The account object
 func (c *ClientV1) GetAccount(address string, blockHeight ...uint64) (*apitypes.GetAccountResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	path := api.V1Path(constants.NamespaceUser, apitypes.MethodNameGetAccount)
+	path := api.V1Path(constants.NamespaceUser, apitypes.MethodNameAccount)
 	resp, err := c.get(path, M{"address": address, "height": height})
 	if err != nil {
 		return nil, err

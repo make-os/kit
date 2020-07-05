@@ -3,39 +3,34 @@ package client
 import (
 	"time"
 
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types/api"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// CreateRepoArgs contains arguments for CreateRepo
-type CreateRepoArgs struct {
-	Name       string
-	Nonce      uint64
-	Value      string
-	Fee        string
-	Config     *state.RepoConfig
-	SigningKey *crypto.Key
-}
-
 // CreateRepo creates a new repository
-func (c *RPCClient) CreateRepo(args *CreateRepoArgs) (*api.CreateRepoResponse, *util.StatusError) {
+func (c *RPCClient) CreateRepo(body *api.CreateRepoBody) (*api.CreateRepoResponse, error) {
+
+	if body.SigningKey == nil {
+		return nil, util.StatusErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+	}
 
 	// Create a TxRepoCreate object and fill it with args
 	tx := txns.NewBareTxRepoCreate()
-	tx.Name = args.Name
-	tx.Nonce = args.Nonce
-	tx.Value = util.String(args.Value)
-	tx.Fee = util.String(args.Fee)
+	tx.Name = body.Name
+	tx.Nonce = body.Nonce
+	tx.Value = util.String(body.Value)
+	tx.Fee = util.String(body.Fee)
 	tx.Timestamp = time.Now().Unix()
-	tx.Config = args.Config.ToMap()
-	tx.SenderPubKey = args.SigningKey.PubKey().ToPublicKey()
+	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
+	if body.Config != nil {
+		tx.Config = body.Config.ToMap()
+	}
 
 	// Sign the tx
 	var err error
-	tx.Sig, err = tx.Sign(args.SigningKey.PrivKey().Base58())
+	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
 		return nil, util.StatusErr(400, ErrCodeClient, "privKey", err.Error())
 	}
@@ -52,17 +47,11 @@ func (c *RPCClient) CreateRepo(args *CreateRepoArgs) (*api.CreateRepoResponse, *
 	return &r, nil
 }
 
-// GetRepoOpts contains arguments for GetRepo
-type GetRepoOpts struct {
-	Height      uint64 `json:"height"`
-	NoProposals bool   `json:"noProposals"`
-}
-
 // GetRepo finds and returns a repository
-func (c *RPCClient) GetRepo(name string, opts ...*GetRepoOpts) (*api.GetRepoResponse, *util.StatusError) {
+func (c *RPCClient) GetRepo(name string, opts ...*api.GetRepoOpts) (*api.GetRepoResponse, *util.StatusError) {
 
 	if len(opts) == 0 {
-		opts = []*GetRepoOpts{{}}
+		opts = []*api.GetRepoOpts{{}}
 	}
 
 	params := util.Map{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals}

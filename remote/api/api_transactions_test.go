@@ -1,34 +1,19 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var _ = Describe("Tx", func() {
+var _ = Describe("Transaction", func() {
 	var ctrl *gomock.Controller
-	var modules *types.Modules
-	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		modules = &types.Modules{}
-		restApi = &API{
-			modules: modules,
-			log:     logger.NewLogrusNoOp(),
-		}
 	})
 
 	AfterEach(func() {
@@ -36,12 +21,17 @@ var _ = Describe("Tx", func() {
 	})
 
 	Describe(".SendTxPayload", func() {
-		var w *httptest.ResponseRecorder
-		var req *http.Request
-		var testCases = map[string]TestCase{
-			"body should be passed to TxModule#SendPayload": {
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testPostRequestCases(map[string]TestCase{
+			"should return error when unable to decode body to json": {
+				paramsRaw:  []byte("{"),
+				resp:       `{"error":{"code":"0","msg":"malformed body"}}`,
+				statusCode: 400,
+			},
+			"should send payload": {
 				params:     map[string]string{},
-				body:       `{"hash":"0x000000"}`,
+				resp:       `{"hash":"0x000000"}`,
 				statusCode: 201,
 				mocker: func(tc *TestCase) {
 					mockTxModule := mocks.NewMockTxModule(ctrl)
@@ -49,25 +39,6 @@ var _ = Describe("Tx", func() {
 					modules.Tx = mockTxModule
 				},
 			},
-		}
-
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			When(tc, func() {
-				It(fmt.Sprintf("should return statusCode=%d, msg=%s", tp.statusCode, tp.body), func() {
-					w = httptest.NewRecorder()
-					body, _ := json.Marshal(tp.params)
-					req = httptest.NewRequest("POST", "http://", bytes.NewReader(body))
-					if tp.mocker != nil {
-						tp.mocker(&tp)
-					}
-
-					restApi.SendTxPayload(w, req)
-					_ = req.Body.Close()
-					Expect(w.Code).To(Equal(tp.statusCode))
-					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))
-				})
-			})
-		}
+		}, api.SendTxPayload)
 	})
 })

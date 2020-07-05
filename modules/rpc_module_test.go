@@ -81,8 +81,8 @@ var _ = Describe("RPCModule", func() {
 		})
 
 		It("should panic when unable to connect to RPC address", func() {
-			err := "Post http://127.0.0.1:4000: dial tcp 127.0.0.1:4000: connect: connection refused"
-			assert.PanicsWithError(GinkgoT(), err, func() {
+			err := &util.StatusError{Code: "connect_error", HttpCode: 500, Msg: "Post http://127.0.0.1:4000: dial tcp 127.0.0.1:4000: connect: connection refused", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ConnectLocal()
 			})
 		})

@@ -91,6 +91,11 @@ func StatusErr(httpCode int, code, field, msg string) *StatusError {
 	return &StatusError{Code: code, HttpCode: httpCode, Msg: msg, Field: field}
 }
 
+// IsSet returns true if code, http code and msg fields are set
+func (s *StatusError) IsSet() bool {
+	return s.Code != "" && s.HttpCode != 0 && s.Msg != ""
+}
+
 func (s *StatusError) Error() string {
 	var msgParts []string
 	if s.Field != "" {

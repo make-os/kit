@@ -27,28 +27,26 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".GetPushKeyOwnerNonce", func() {
-		When("keys id and block height are set", func() {
-			It("should send keys id and block height in request and receive nonce from server", func() {
-				client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
-					Expect(endpoint).To(Equal("/v1/pk/owner-nonce"))
-					Expect(params).To(HaveLen(2))
-					Expect(params).To(HaveKey("id"))
-					Expect(params["id"]).To(Equal("addr1"))
-					Expect(params["height"]).To(Equal(uint64(100)))
+		It("should send key id and block height in request and receive nonce from server", func() {
+			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				Expect(endpoint).To(Equal("/v1/pk/owner-nonce"))
+				Expect(params).To(HaveLen(2))
+				Expect(params).To(HaveKey("id"))
+				Expect(params["id"]).To(Equal("addr1"))
+				Expect(params["height"]).To(Equal(uint64(100)))
 
-					mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
-						data, _ := json.Marshal(util.Map{"nonce": "123"})
-						w.Write(data)
-					}
-					ts := httptest.NewServer(http.HandlerFunc(mockReqHandler))
-					resp, _ = req.Get(ts.URL)
-
-					return resp, nil
+				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
+					data, _ := json.Marshal(util.Map{"nonce": "123"})
+					w.Write(data)
 				}
-				resp, err := client.GetPushKeyOwnerNonce("addr1", 100)
-				Expect(err).To(BeNil())
-				Expect(resp.Nonce).To(Equal("123"))
-			})
+				ts := httptest.NewServer(http.HandlerFunc(mockReqHandler))
+				resp, _ = req.Get(ts.URL)
+
+				return resp, nil
+			}
+			resp, err := client.GetPushKeyOwnerNonce("addr1", 100)
+			Expect(err).To(BeNil())
+			Expect(resp.Nonce).To(Equal("123"))
 		})
 	})
 

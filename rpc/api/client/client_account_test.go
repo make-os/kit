@@ -24,47 +24,44 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".GetAccount", func() {
-		When("the RPC call returns an error", func() {
-			It("should return the error wrapped in a StatusError", func() {
-				client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
-					return nil, 0, fmt.Errorf("bad thing happened")
-				})
-				_, err := client.GetAccount("addr", 100)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(&util.StatusError{
-					Code:     client2.ErrCodeUnexpected,
-					HttpCode: 0,
-					Msg:      "bad thing happened",
-					Field:    "",
-				}))
+		It("should return StatusError when RPC call returns an error", func() {
+			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("user_get"))
+				return nil, 0, fmt.Errorf("error")
 			})
+			_, err := client.GetAccount("addr", 100)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.StatusError{
+				Code:     client2.ErrCodeUnexpected,
+				HttpCode: 0,
+				Msg:      "error",
+				Field:    "",
+			}))
 		})
 
-		When("the response from the RPC call could not be decoded into the return object", func() {
-			It("should return error", func() {
-				client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
-					return util.Map{"balance": 1000}, 0, nil
-				})
-				_, err := client.GetAccount("addr", 100)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(&util.StatusError{
-					Code:     "decode_error",
-					HttpCode: 500,
-					Msg:      "field:balance, msg:invalid value type: has int, wants string",
-					Field:    "",
-				}))
+		It("should return error when response could not be decoded", func() {
+			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("user_get"))
+				return util.Map{"balance": 1000}, 0, nil
 			})
+			_, err := client.GetAccount("addr", 100)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.StatusError{
+				Code:     "decode_error",
+				HttpCode: 500,
+				Msg:      "field:balance, msg:invalid value type: has int, wants string",
+				Field:    "",
+			}))
 		})
 
-		When("the RPC call returns a result", func() {
-			It("should return the result", func() {
-				client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
-					return util.Map{"balance": "1000"}, 0, nil
-				})
-				acct, err := client.GetAccount("addr", 100)
-				Expect(err).To(BeNil())
-				Expect(acct.Balance).To(Equal(util.String("1000")))
+		It("should return expected result on success", func() {
+			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("user_get"))
+				return util.Map{"balance": "1000"}, 0, nil
 			})
+			acct, err := client.GetAccount("addr", 100)
+			Expect(err).To(BeNil())
+			Expect(acct.Balance).To(Equal(util.String("1000")))
 		})
 	})
 })

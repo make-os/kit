@@ -1,6 +1,9 @@
 package api
 
-import "gitlab.com/makeos/mosdef/types/state"
+import (
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types/state"
+)
 
 // SendTxPayloadResponse is the response for a transaction
 // payload successfully added to the mempool pool.
@@ -32,4 +35,20 @@ type CreateRepoResponse struct {
 // GetRepoResponse is the response of a request to get a repository
 type GetRepoResponse struct {
 	*state.Repository
+}
+
+// CreateRepoBody contains arguments for CreateRepo
+type CreateRepoBody struct {
+	Name       string
+	Nonce      uint64
+	Value      string
+	Fee        string
+	Config     *state.RepoConfig
+	SigningKey *crypto.Key
+}
+
+// GetRepoOpts contains arguments for GetRepo
+type GetRepoOpts struct {
+	Height      uint64 `json:"height"`
+	NoProposals bool   `json:"noProposals"`
 }

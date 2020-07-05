@@ -1,38 +1,19 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/util"
 )
-
-type TestCase struct {
-	params     map[string]string
-	body       string
-	statusCode int
-	mocker     func(tc *TestCase)
-}
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var modules *types.Modules
-	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		modules = &types.Modules{}
-		restApi = &API{
-			modules: modules,
-			log:     logger.NewLogrusNoOp(),
-		}
 	})
 
 	AfterEach(func() {
@@ -40,84 +21,48 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".GetAccountNonce", func() {
-		var w *httptest.ResponseRecorder
-		var req *http.Request
-		var testCases = map[string]TestCase{
-			"address should be passed to UserModule#GetNonce": {
-				params:     map[string]string{"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"},
-				body:       `{"nonce":"100"}`,
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testGetRequestCases(map[string]TestCase{
+			"should return nonce": {
+				params:     map[string]string{"address": "maker1z"},
+				resp:       `{"nonce":"100"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
 					mockAcctModule := mocks.NewMockAccountModule(ctrl)
-					mockAcctModule.EXPECT().GetNonce("maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
+					mockAcctModule.EXPECT().GetNonce("maker1z", uint64(0)).Return("100")
 					modules.Account = mockAcctModule
 				},
 			},
-		}
-
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			When(tc, func() {
-				It(fmt.Sprintf("should return statusCode=%d, msg=%s", tp.statusCode, tp.body), func() {
-					w = httptest.NewRecorder()
-					req = httptest.NewRequest("GET", "http://", nil)
-					q := req.URL.Query()
-					for k, v := range tp.params {
-						q.Add(k, v)
-					}
-
-					if tp.mocker != nil {
-						tp.mocker(&tp)
-					}
-
-					req.URL.RawQuery = q.Encode()
-					restApi.GetAccountNonce(w, req)
-					_ = req.Body.Close()
-					Expect(w.Code).To(Equal(tp.statusCode))
-					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))
-				})
-			})
-		}
+			"should pass height to AccountModule.GetNonce if 'height' param is set": {
+				params:     map[string]string{"address": "maker1z", "height": "100"},
+				resp:       `{"nonce":"100"}`,
+				statusCode: 200,
+				mocker: func(tc *TestCase) {
+					mockAcctModule := mocks.NewMockAccountModule(ctrl)
+					mockAcctModule.EXPECT().GetNonce("maker1z", uint64(100)).Return("100")
+					modules.Account = mockAcctModule
+				},
+			},
+		}, api.GetAccountNonce)
 	})
 
-	Describe(".GetAccountNonce", func() {
-		var w *httptest.ResponseRecorder
-		var req *http.Request
-		var testCases = map[string]TestCase{
-			"address is valid": {
-				params:     map[string]string{"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"},
-				body:       `{"nonce":"100"}`,
+	Describe(".GetAccount", func() {
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testGetRequestCases(map[string]TestCase{
+			"should return account if found": {
+				params:     map[string]string{"address": "maker1zt", "height": "100"},
+				resp:       `{"balance":"1200"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
+					acct := util.Map{"balance": "1200"}
 					mockAcctModule := mocks.NewMockAccountModule(ctrl)
-					mockAcctModule.EXPECT().GetNonce("maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
+					mockAcctModule.EXPECT().
+						GetAccount("maker1zt", uint64(100)).Return(acct)
 					modules.Account = mockAcctModule
 				},
 			},
-		}
-
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			When(tc, func() {
-				It(fmt.Sprintf("should return statusCode=%d, msg=%s", tp.statusCode, tp.body), func() {
-					w = httptest.NewRecorder()
-					req = httptest.NewRequest("GET", "http://", nil)
-					q := req.URL.Query()
-					for k, v := range tp.params {
-						q.Add(k, v)
-					}
-
-					if tp.mocker != nil {
-						tp.mocker(&tp)
-					}
-
-					req.URL.RawQuery = q.Encode()
-					restApi.GetAccountNonce(w, req)
-					_ = req.Body.Close()
-					Expect(w.Code).To(Equal(tp.statusCode))
-					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))
-				})
-			})
-		}
+		}, api.GetAccount)
 	})
 })

@@ -1,4 +1,4 @@
-package validators_test
+package refsync_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestValidators(t *testing.T) {
+func TestRefsync(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Validators Suite")
+	RunSpecs(t, "Refsync Suite")
 }

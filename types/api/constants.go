@@ -1,9 +1,11 @@
 package api
 
 const (
-	MethodNameGetNonce    = "get-nonce"
-	MethodNameGetAccount  = "get-account"
+	MethodNameNonce       = "nonce"
+	MethodNameAccount     = "account"
 	MethodNameSendPayload = "send-payload"
 	MethodNameOwnerNonce  = "owner-nonce"
 	MethodNamePushKeyFind = "find"
+	MethodNameCreateRepo  = "create"
+	MethodNameGetRepo     = "get"
 )

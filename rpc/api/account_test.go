@@ -3,22 +3,16 @@ package api
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var acctApi *AccountAPI
-	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &types.Modules{}
-		acctApi = &AccountAPI{mods}
 	})
 
 	AfterEach(func() {
@@ -26,7 +20,9 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".getNonce", func() {
-		testCases := map[string]*TestCase{
+		mods := &types.Modules{}
+		api := &AccountAPI{mods}
+		testCases(map[string]*TestCase{
 			"when nonce is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"nonce": "100"},
@@ -36,23 +32,13 @@ var _ = Describe("Account", func() {
 					mods.Account = mockAcctMod
 				},
 			},
-		}
-
-		for tc, tp := range testCases {
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := acctApi.getNonce(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+		}, api.getNonce)
 	})
 
-	Describe(".getAccount()", func() {
-		testCases := map[string]*TestCase{
+	Describe(".getAccount", func() {
+		mods := &types.Modules{}
+		api := &AccountAPI{mods}
+		testCases(map[string]*TestCase{
 			"when account is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"balance": "100"},
@@ -64,18 +50,6 @@ var _ = Describe("Account", func() {
 					mods.Account = mockAcctMod
 				},
 			},
-		}
-
-		for tc, tp := range testCases {
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := acctApi.getAccount(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+		}, api.getAccount)
 	})
 })

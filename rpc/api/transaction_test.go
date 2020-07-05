@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
@@ -12,13 +11,9 @@ import (
 
 var _ = Describe("Transaction", func() {
 	var ctrl *gomock.Controller
-	var txApi *TransactionAPI
-	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &types.Modules{}
-		txApi = &TransactionAPI{mods}
 	})
 
 	AfterEach(func() {
@@ -26,12 +21,14 @@ var _ = Describe("Transaction", func() {
 	})
 
 	Describe(".sendPayload()", func() {
-		testCases := map[string]*TestCase{
-			"when params is not a map[string]interface{}": {
+		mods := &types.Modules{}
+		api := &TransactionAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a map": {
 				params: "{}",
 				err:    &rpc.Err{Code: "60001", Message: "field:params, msg:wrong value type, want 'map', got string"},
 			},
-			"when tx is successfully sent": {
+			"should return when tx is successfully sent": {
 				params: map[string]interface{}{},
 				result: util.Map{"hash": "0x0000"},
 				mocker: func(tp *TestCase) {
@@ -42,19 +39,6 @@ var _ = Describe("Transaction", func() {
 					mods.Tx = mockTxMod
 				},
 			},
-		}
-
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := txApi.sendPayload(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+		}, api.sendPayload)
 	})
 })

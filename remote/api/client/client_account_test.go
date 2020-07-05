@@ -28,7 +28,7 @@ var _ = Describe("Account", func() {
 	Describe(".GetAccountNonce", func() {
 		It("should send `address` and `block height` in request and return nonce sent from server", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
-				Expect(endpoint).To(Equal("/v1/user/get-nonce"))
+				Expect(endpoint).To(Equal("/v1/user/nonce"))
 				Expect(params).To(HaveLen(2))
 				Expect(params).To(HaveKey("address"))
 				Expect(params["address"]).To(Equal("addr1"))
@@ -53,7 +53,7 @@ var _ = Describe("Account", func() {
 	Describe(".GetAccount", func() {
 		It("should send `address` and `block height` in request and return account sent from server", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
-				Expect(endpoint).To(Equal("/v1/user/get-account"))
+				Expect(endpoint).To(Equal("/v1/user/account"))
 				Expect(params).To(HaveLen(2))
 				Expect(params).To(HaveKey("address"))
 				Expect(params["address"]).To(Equal("addr1"))

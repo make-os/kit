@@ -3,21 +3,15 @@ package api
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/rpc"
 )
 
 var _ = Describe("AccountLocal", func() {
 	var ctrl *gomock.Controller
-	var localAcctApi *LocalAccountAPI
-	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &types.Modules{}
-		localAcctApi = &LocalAccountAPI{mods}
 	})
 
 	AfterEach(func() {
@@ -25,8 +19,10 @@ var _ = Describe("AccountLocal", func() {
 	})
 
 	Describe(".listAccounts", func() {
-		testCases := map[string]*TestCase{
-			"when nonce is successfully returned": {
+		mods := &types.Modules{}
+		api := &LocalAccountAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return slice of addresses": {
 				params: nil,
 				result: map[string]interface{}{
 					"accounts": []string{"addr1", "addr2"},
@@ -37,18 +33,6 @@ var _ = Describe("AccountLocal", func() {
 					mods.Account = mockAcctMod
 				},
 			},
-		}
-
-		for tc, tp := range testCases {
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := localAcctApi.listAccounts(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+		}, api.listAccounts)
 	})
 })

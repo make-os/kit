@@ -25,6 +25,8 @@ const (
 	ErrCodeClient       = "client_error"
 	ErrCodeDecodeFailed = "decode_error"
 	ErrCodeUnexpected   = "unexpected_error"
+	ErrCodeConnect      = "connect_error"
+	ErrCodeBadParam     = "bad_param_error"
 )
 
 // Client represents a JSON-RPC client
@@ -136,7 +138,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, 0, err
+		return nil, 500, util.StatusErr(500, ErrCodeConnect, "", err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -173,6 +175,10 @@ func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError
 
 	// For non-json error, return an ErrCodeUnexpected status error
 	if !govalidator.IsJSON(err.Error()) {
+		se := util.StatusErrorFromStr(err.Error())
+		if se.IsSet() {
+			return se
+		}
 		return util.StatusErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 

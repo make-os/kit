@@ -8,11 +8,6 @@ import (
 )
 
 // GetPushKeyOwnerNonce returns the nonce of the push key owner account
-// Body:
-// - pushKeyID <string>: The push key ID
-// - [height] <string>: The target query block height (default: latest).
-// Response:
-// - resp <GetAccountNonceResponse>
 func (c *ClientV1) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*apitypes.GetAccountNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {

@@ -52,6 +52,7 @@ genmocks:
 	mockgen -source=remote/push/push_handler.go -destination=mocks/push_handler.go -package mocks
 	mockgen -source=remote/types/pruner.go -destination=mocks/pruner.go -package mocks
 	mockgen -source=remote/api/client/client.go -destination=mocks/rests_client.go -package mocks
+	mockgen -source=remote/api/api.go -destination=mocks/rests_api.go -package mocks
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks
 	mockgen -source=rpc/api/client/client.go -destination=mocks/rpc/client.go -package mocks
 	mockgen -source=rpc/server.go -destination=mocks/rpc/rpc_server.go -package mocks

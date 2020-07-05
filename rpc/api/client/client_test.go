@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Client", func() {
@@ -64,6 +65,17 @@ var _ = Describe("Client", func() {
 				Expect(err.Msg).To(Equal("some bad error"))
 				Expect(err.Code).To(Equal(ErrCodeUnexpected))
 				Expect(err.Field).To(Equal(""))
+			})
+		})
+
+		When("error contains a status error in string format", func() {
+			It("should format the string and return a StatusError object", func() {
+				se := util.StatusErr(500, "some_error", "field_a", "msg")
+				err := makeStatusErrorFromCallErr(500, fmt.Errorf(se.Error()))
+				Expect(err.HttpCode).To(Equal(500))
+				Expect(err.Msg).To(Equal("msg"))
+				Expect(err.Code).To(Equal("some_error"))
+				Expect(err.Field).To(Equal("field_a"))
 			})
 		})
 
