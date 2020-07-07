@@ -120,7 +120,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -129,7 +129,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -142,15 +142,15 @@ func (m *TxModule) Get(hash string) util.Map {
 
 	bz, err := util.FromHex(hash)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
 	tx, err := m.logic.TxKeeper().GetTx(bz)
 	if err != nil {
 		if err == types.ErrTxNotFound {
-			panic(util.StatusErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
+			panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 		}
-		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.ToMap(tx)
@@ -166,12 +166,12 @@ func (m *TxModule) Get(hash string) util.Map {
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		se := util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error())
+		se := util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error())
 		if bfe := util.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
 			se.Msg = bfe.Msg
 			se.Field = bfe.Field

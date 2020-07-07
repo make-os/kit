@@ -23,13 +23,13 @@ const (
 	StatusCodeAccountNotFound       = "account_not_found"
 	StatusCodeInvalidParam          = "invalid_param"
 	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
-	StatusCodeMempoolAddFail        = "mempool_add_err"
+	StatusCodeMempoolAddFail        = "err_mempool"
 	StatusCodePushKeyNotFound       = "push_key_not_found"
 	StatusCodeRepoNotFound          = "repo_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 
-var se = util.StatusErr
+var se = util.ReqErr
 
 // parseOptions parse module options
 // If only 1 option, and it is a boolean = payload only instruction.

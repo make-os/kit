@@ -71,7 +71,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Register", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"pubKey": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:pubKey, msg:invalid value type: has int, wants base58 string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:pubKey, msg:invalid value type: has int, wants base58 string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params)
 			})
@@ -102,7 +102,7 @@ var _ = Describe("PushKeyModule", func() {
 			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params, "", false)
 			})
@@ -124,7 +124,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Update", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has int, wants string|[]string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has int, wants string|[]string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params)
 			})
@@ -158,7 +158,7 @@ var _ = Describe("PushKeyModule", func() {
 			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params, "", false)
 			})
@@ -178,7 +178,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Unregister", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has int, wants string|[]string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has int, wants string|[]string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Unregister(params)
 			})
@@ -212,7 +212,7 @@ var _ = Describe("PushKeyModule", func() {
 			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Unregister(params, "", false)
 			})
@@ -233,7 +233,7 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should panic when push key address is not provided", func() {
 			id := ""
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "push key id is required", Field: "id"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "push key id is required", Field: "id"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get(id, 0)
 			})
@@ -241,7 +241,7 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should panic if unable to get push key", func() {
 			id := "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
-			err := &util.StatusError{Code: "push_key_not_found", HttpCode: 404, Msg: "push key not found", Field: ""}
+			err := &util.ReqError{Code: "push_key_not_found", HttpCode: 404, Msg: "push key not found", Field: ""}
 			mockPushKeyKeeper.EXPECT().Get(id, uint64(0)).Return(state.BarePushKey())
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get(id, 0)
@@ -286,7 +286,7 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should panic when unable push key owner account", func() {
 			mockAccountKeeper.EXPECT().Get(key.Addr(), uint64(1)).Return(state.BareAccount())
-			err := &util.StatusError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "pushKeyID"}
+			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "pushKeyID"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccountOfOwner(key.PushAddr().String(), 1)
 			})

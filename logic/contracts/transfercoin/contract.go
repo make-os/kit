@@ -142,13 +142,13 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 	senderAcct := acctKeeper.Get(util.Address(senderAddr))
 
 	// Ensure the transaction nonce is the next expected nonce
-	field := "value+fee"
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce.UInt64() != c.tx.Nonce {
-		return fe(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
+		return fe("nonce", fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
 	}
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee
+	field := "value+fee"
 	spendAmt := c.tx.Value.Decimal().Add(c.tx.Fee.Decimal())
 	senderBal := senderAcct.GetAvailableBalance(c.chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {

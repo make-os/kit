@@ -81,13 +81,13 @@ var _ = Describe("API", func() {
 			Expect(w.Code).To(Equal(500))
 		})
 
-		It("should recover from handler panic (where error is a StatusError)", func() {
+		It("should recover from handler panic (where error is a ReqError)", func() {
 			called := false
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest("GET", "/path/", bytes.NewBuffer(nil))
 			APIHandler("GET", log, func(w http.ResponseWriter, r *http.Request) {
 				called = true
-				panic(util.StatusErr(400, "", "", ""))
+				panic(util.ReqErr(400, "", "", ""))
 			})(w, r)
 			Expect(called).To(BeTrue())
 			Expect(w.Code).To(Equal(400))

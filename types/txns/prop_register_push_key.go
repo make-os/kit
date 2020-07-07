@@ -141,14 +141,14 @@ func (tx *TxRepoProposalRegisterPushKey) FromMap(data map[string]interface{}) er
 	o := objx.New(data)
 
 	// KeyIDs: expects string or slice of string types in map
-	if gpgID := o.Get("ids"); !gpgID.IsNil() {
-		if gpgID.IsStr() {
-			tx.KeyIDs = strings.Split(gpgID.Str(), ",")
-		} else if gpgID.IsStrSlice() {
-			tx.KeyIDs = gpgID.StrSlice()
+	if pkIDs := o.Get("ids"); !pkIDs.IsNil() {
+		if pkIDs.IsStr() {
+			tx.KeyIDs = strings.Split(pkIDs.Str(), ",")
+		} else if pkIDs.IsStrSlice() {
+			tx.KeyIDs = pkIDs.StrSlice()
 		} else {
 			return util.FieldError("gpgID", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|[]string", gpgID.Inter()))
+				"wants string|[]string", pkIDs.Inter()))
 		}
 	}
 

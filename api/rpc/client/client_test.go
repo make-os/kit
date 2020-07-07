@@ -48,7 +48,7 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".makeClientStatusErr", func() {
-		It("should return a StatusErr that describes a client error", func() {
+		It("should return a ReqErr that describes a client error", func() {
 			err := makeClientStatusErr("something bad on client: code %d", 11)
 			Expect(err.Field).To(Equal(""))
 			Expect(err.Code).To(Equal("client_error"))
@@ -69,8 +69,8 @@ var _ = Describe("Client", func() {
 		})
 
 		When("error contains a status error in string format", func() {
-			It("should format the string and return a StatusError object", func() {
-				se := util.StatusErr(500, "some_error", "field_a", "msg")
+			It("should format the string and return a ReqError object", func() {
+				se := util.ReqErr(500, "some_error", "field_a", "msg")
 				err := makeStatusErrorFromCallErr(500, fmt.Errorf(se.Error()))
 				Expect(err.HttpCode).To(Equal(500))
 				Expect(err.Msg).To(Equal("msg"))
@@ -80,7 +80,7 @@ var _ = Describe("Client", func() {
 		})
 
 		When("status code is not 0 and error is json encoding of rpc.Response", func() {
-			It("should return StatusErr populated with values from the encoded rpc.Response", func() {
+			It("should return ReqErr populated with values from the encoded rpc.Response", func() {
 				err := rpc.Response{Err: &rpc.Err{Code: "bad_code", Message: "we have a problem", Data: "bad_field"}}
 				se := makeStatusErrorFromCallErr(500, fmt.Errorf(`%s`, err.ToJSON()))
 				Expect(se.Code).To(Equal("bad_code"))

@@ -5,6 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/util"
 
 	. "github.com/onsi/ginkgo"
@@ -62,5 +63,27 @@ var _ = Describe("PushKey", func() {
 				},
 			},
 		}, api.getOwner)
+	})
+
+	Describe(".registerPushKey", func() {
+		mods := &types.Modules{}
+		api := &PushKeyAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a map": {
+				params:     "{}",
+				statusCode: 400,
+				err:        &rpc.Err{Code: "60000", Message: "param must be a map", Data: ""},
+			},
+			"should return code=200 on success": {
+				params:     map[string]interface{}{"key": "value"},
+				result:     util.Map{"address": "push1abc", "hash": "0x123"},
+				statusCode: 200,
+				mocker: func(tc *TestCase) {
+					mockPushKeyModule := mocks.NewMockPushKeyModule(ctrl)
+					mockPushKeyModule.EXPECT().Register(tc.params).Return(util.Map{"address": "push1abc", "hash": "0x123"})
+					mods.PushKey = mockPushKeyModule
+				},
+			},
+		}, api.registerPushKey)
 	})
 })

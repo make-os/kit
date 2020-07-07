@@ -27,12 +27,12 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".CreateRepo", func() {
-		It("should return StatusError when signing key is not provided", func() {
+		It("should return ReqError when signing key is not provided", func() {
 			_, err := client.CreateRepo(&types.CreateRepoBody{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -40,7 +40,7 @@ var _ = Describe("Client", func() {
 			}))
 		})
 
-		It("should return StatusError when call failed", func() {
+		It("should return ReqError when call failed", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(params).To(And(
 					HaveKey("senderPubKey"),
@@ -64,7 +64,7 @@ var _ = Describe("Client", func() {
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -92,7 +92,7 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".GetRepo", func() {
-		It("should return StatusError when call failed", func() {
+		It("should return ReqError when call failed", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("repo_get"))
 				Expect(params).To(And(
@@ -104,7 +104,7 @@ var _ = Describe("Client", func() {
 			}
 			_, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 500,
 				Msg:      "error",
@@ -112,7 +112,7 @@ var _ = Describe("Client", func() {
 			}))
 		})
 
-		It("should return StatusError when unable to decode call result", func() {
+		It("should return ReqError when unable to decode call result", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("repo_get"))
 				return util.Map{"balance": struct{}{}}, 0, nil

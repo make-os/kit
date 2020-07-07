@@ -247,7 +247,7 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 func (m *RepoModule) Prune(name string, force bool) {
 	if force {
 		if err := m.repoSrv.GetPruner().Prune(name, true); err != nil {
-			panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+			panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 		}
 		return
 	}

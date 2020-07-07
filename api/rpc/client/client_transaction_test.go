@@ -23,13 +23,13 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".SendTxPayload", func() {
-		It("should return StatusError when call failed", func() {
+		It("should return ReqError when call failed", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return nil, 0, fmt.Errorf("error")
 			}
 			_, err := client.SendTxPayload(map[string]interface{}{})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",

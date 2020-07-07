@@ -13,7 +13,7 @@ import (
 func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.StatusErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	// Create a TxRepoCreate object and fill it with args
@@ -32,7 +32,7 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.StatusErr(400, ErrCodeClient, "privKey", err.Error())
+		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
 	// call RPC method: repo_create
@@ -48,7 +48,7 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 }
 
 // GetRepo finds and returns a repository
-func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.StatusError) {
+func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}
@@ -62,7 +62,7 @@ func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.Get
 
 	var r = types.GetRepoResponse{Repository: state.BareRepository()}
 	if err := util.DecodeMap(resp, r.Repository); err != nil {
-		return nil, util.StatusErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

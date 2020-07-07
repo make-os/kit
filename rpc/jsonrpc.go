@@ -298,10 +298,10 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 		var resp *Response
 		var respCode int
 
-		// Check if a StatusError is the cause, then, we use the information
-		// in the StatusError to create a good error response, otherwise we return
+		// Check if a ReqError is the cause, then, we use the information
+		// in the ReqError to create a good error response, otherwise we return
 		// a less useful 500 error
-		se := &util.StatusError{}
+		se := &util.ReqError{}
 		cause := errors.Cause(err)
 		if errors2.As(cause, &se) {
 			respCode = se.HttpCode

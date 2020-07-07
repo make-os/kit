@@ -169,7 +169,7 @@ func (m *MockClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Re
 }
 
 // RegisterPushKey indicates an expected call of RegisterPushKey
-func (mr *MockClientMockRecorder) Register(body interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) RegisterPushKey(body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPushKey", reflect.TypeOf((*MockClient)(nil).RegisterPushKey), body)
 }

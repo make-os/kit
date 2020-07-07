@@ -110,7 +110,7 @@ func (m *DHTModule) Store(key string, val string) {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	if err := m.dht.Store(ctx, key, []byte(val)); err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
 
@@ -125,7 +125,7 @@ func (m *DHTModule) Lookup(key string) interface{} {
 	defer cn()
 	bz, err := m.dht.Lookup(ctx, key)
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	return bz
 }
@@ -157,7 +157,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	} else {
 		key, err = util.FromHex(hash)
 		if err != nil {
-			panic(util.StatusErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
+			panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
 		}
 	}
 
@@ -165,7 +165,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, key)
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 
 	for _, p := range peers {
@@ -194,7 +194,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, []byte(key))
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	for _, p := range peers {
 		var address []string

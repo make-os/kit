@@ -125,7 +125,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxRegister()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
@@ -135,7 +135,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	pk := crypto.MustPubKeyFromBytes(tx.PublicKey.Bytes())
@@ -170,7 +170,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = false
 
@@ -181,7 +181,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -210,7 +210,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = true
 	tx.FeeCap = ""
@@ -224,7 +224,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -242,7 +242,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 
 	if id == "" {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
 	targetHeight := uint64(0)
@@ -252,7 +252,7 @@ func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 
 	o := m.logic.PushKeyKeeper().Get(id, targetHeight)
 	if o.IsNil() {
-		panic(util.StatusErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
 	return util.ToMap(o)
@@ -285,7 +285,7 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 
 	acct := m.logic.AccountKeeper().Get(pushKey["address"].(util.Address), targetHeight)
 	if acct.IsNil() {
-		panic(util.StatusErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}
 
 	return util.ToMap(acct)

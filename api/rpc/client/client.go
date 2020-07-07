@@ -31,11 +31,12 @@ const (
 
 // Client represents a JSON-RPC client
 type Client interface {
-	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.StatusError)
-	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, *util.StatusError)
-	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, *util.StatusError)
+	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.ReqError)
+	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError)
+	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError)
+	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
-	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.StatusError)
+	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }
@@ -140,7 +141,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, 500, util.StatusErr(500, ErrCodeConnect, "", err.Error())
+		return nil, 500, util.ReqErr(500, ErrCodeConnect, "", err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -162,26 +163,26 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	return m, resp.StatusCode, nil
 }
 
-// makeClientStatusErr creates a StatusError representing a client error
-func makeClientStatusErr(msg string, args ...interface{}) *util.StatusError {
-	return util.StatusErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
+// makeClientStatusErr creates a ReqError representing a client error
+func makeClientStatusErr(msg string, args ...interface{}) *util.ReqError {
+	return util.ReqErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
 // makeStatusErrorFromCallErr converts error containing a JSON marshalled
-// status error to StatusError. If error does not contain a JSON object,
+// status error to ReqError. If error does not contain a JSON object,
 // an ErrCodeUnexpected status error including the error message is returned.
-func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError {
+func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.ReqError {
 	if err == nil {
 		return nil
 	}
 
 	// For non-json error, return an ErrCodeUnexpected status error
 	if !govalidator.IsJSON(err.Error()) {
-		se := util.StatusErrorFromStr(err.Error())
+		se := util.ReqErrorFromStr(err.Error())
 		if se.IsSet() {
 			return se
 		}
-		return util.StatusErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
+		return util.ReqErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 
 	var errResp rpc.Response
@@ -192,5 +193,5 @@ func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError
 		data = errResp.Err.Data.(string)
 	}
 
-	return util.StatusErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
+	return util.ReqErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
 }

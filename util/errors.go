@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// BadFieldError implements error, for describing an invalid input.
+// BadFieldError implements error. It describes an error relating to an object and/or field.
 // It outputs the example format: `field:id, msg:some error message about id, index:1`
 type BadFieldError struct {
 	Field string
@@ -71,32 +71,29 @@ func fieldErrorWithIndex(index int, field, err string) error {
 
 // WrongFieldValueMsg generates a message to indicate an unexpected field value type
 func WrongFieldValueMsg(expectedType string, actual interface{}) string {
-	return fmt.Sprintf("wrong value type, want '%s', got %T",
-		expectedType, reflect.TypeOf(actual).String())
+	return fmt.Sprintf("wrong value type, want '%s', got %T", expectedType, reflect.TypeOf(actual).String())
 }
 
-// StatusError describes a module error with information that allows
-// the error to be interpreted correctly by other dependent packages
-// such as rest and json-rpc services.
-type StatusError struct {
+// ReqError describes an error consumable by http services.
+type ReqError struct {
 	Code     string
 	HttpCode int
 	Msg      string
 	Field    string
 }
 
-// StatusErr creates StatusError
-// It outputs the example format: `msg:'some error message', httpCode:'400', code:'mempool_add_err, field:'id'`
-func StatusErr(httpCode int, code, field, msg string) *StatusError {
-	return &StatusError{Code: code, HttpCode: httpCode, Msg: msg, Field: field}
+// ReqErr creates ReqError
+// It outputs the example format: `msg:'some error message', httpCode:'400', code:'err_mempool, field:'id'`
+func ReqErr(httpCode int, code, field, msg string) *ReqError {
+	return &ReqError{Code: code, HttpCode: httpCode, Msg: msg, Field: field}
 }
 
 // IsSet returns true if code, http code and msg fields are set
-func (s *StatusError) IsSet() bool {
+func (s *ReqError) IsSet() bool {
 	return s.Code != "" && s.HttpCode != 0 && s.Msg != ""
 }
 
-func (s *StatusError) Error() string {
+func (s *ReqError) Error() string {
 	var msgParts []string
 	if s.Field != "" {
 		msgParts = append(msgParts, fmt.Sprintf("field:'%s'", s.Field))
@@ -113,21 +110,21 @@ func (s *StatusError) Error() string {
 	return strings.Join(msgParts, ", ")
 }
 
-func (s *StatusError) Is(target error) bool {
-	_, ok := target.(*StatusError)
+func (s *ReqError) Is(target error) bool {
+	_, ok := target.(*ReqError)
 	return ok
 }
 
-// StatusErrorFromStr attempts to convert a string to a StatusError. It expects the
-// string to match the StatusError#Error output.
+// ReqErrorFromStr attempts to convert a string to a ReqError. It expects the
+// string to match the ReqError#Error output.
 // Never returns an error even on failure.
-func StatusErrorFromStr(str string) *StatusError {
+func ReqErrorFromStr(str string) *ReqError {
 	var msgRe = regexp.MustCompile(`(?m)msg:'(.*?)'(,|$|\s)`)
 	var httpCodeRe = regexp.MustCompile(`(?m)httpCode:'(.*?)'`)
 	var codeRe = regexp.MustCompile(`(?m)code:'(.*?)'`)
 	var fieldRe = regexp.MustCompile(`(?m)field:'(.*?)'`)
 
-	err := &StatusError{}
+	err := &ReqError{}
 	if res := msgRe.FindStringSubmatch(str); res != nil {
 		err.Msg = res[1]
 	}

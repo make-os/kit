@@ -98,12 +98,12 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.service.GetBlock(blockHeight)
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return res
@@ -114,7 +114,7 @@ func (m *ChainModule) GetCurrentHeight() util.Map {
 
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -130,12 +130,12 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.ToMap(res)
@@ -158,12 +158,12 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.StatusErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
 	if err != nil {
-		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	var vList []util.Map

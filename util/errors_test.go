@@ -7,28 +7,28 @@ import (
 
 var _ = Describe("Errors", func() {
 
-	Describe(".StatusError.Error", func() {
+	Describe(".ReqError.Error", func() {
 		It("should return expected err", func() {
-			err := StatusErr(100, "bad_thing", "name", "something bad here")
+			err := ReqErr(100, "bad_thing", "name", "something bad here")
 			Expect(err).To(MatchError("field:'name', msg:'something bad here', httpCode:'100', code:'bad_thing'"))
 		})
 	})
 
-	Describe(".StatusErrorFromStr", func() {
-		It("should convert a StatusError.Error output back to same StatusError", func() {
-			err := StatusErr(100, "bad_thing", "name", "something bad here")
+	Describe(".ReqErrorFromStr", func() {
+		It("should convert a ReqError.Error output back to same ReqError", func() {
+			err := ReqErr(100, "bad_thing", "name", "something bad here")
 			out := err.Error()
-			err2 := StatusErrorFromStr(out)
+			err2 := ReqErrorFromStr(out)
 			Expect(err).To(Equal(err2))
 		})
 
 		When("msg contains a field error format: `msg:'field:id, msg:proposal id has been used, choose "+
-			"another', httpCode:'400', code:'mempool_add_err'`", func() {
+			"another', httpCode:'400', code:'err_mempool'`", func() {
 			It("should convert successfully without altering the field error", func() {
-				out := `msg:'field:id, msg:proposal id has been used, choose another', httpCode:'400', code:'mempool_add_err'`
-				err := StatusErrorFromStr(out)
-				Expect(err).To(Equal(&StatusError{
-					Code:     "mempool_add_err",
+				out := `msg:'field:id, msg:proposal id has been used, choose another', httpCode:'400', code:'err_mempool'`
+				err := ReqErrorFromStr(out)
+				Expect(err).To(Equal(&ReqError{
+					Code:     "err_mempool",
 					HttpCode: 400,
 					Msg:      "field:id, msg:proposal id has been used, choose another",
 					Field:    "",
@@ -36,12 +36,12 @@ var _ = Describe("Errors", func() {
 			})
 		})
 
-		When("msg contains a field error format: `msg:'field:id, msg:user's name is required', httpCode:'400', code:'mempool_add_err'`", func() {
+		When("msg contains a field error format: `msg:'field:id, msg:user's name is required', httpCode:'400', code:'err_mempool'`", func() {
 			It("should convert successfully without altering the field error", func() {
-				out := `msg:'field:id, msg:user's name is required', httpCode:'400', code:'mempool_add_err'`
-				err := StatusErrorFromStr(out)
-				Expect(err).To(Equal(&StatusError{
-					Code:     "mempool_add_err",
+				out := `msg:'field:id, msg:user's name is required', httpCode:'400', code:'err_mempool'`
+				err := ReqErrorFromStr(out)
+				Expect(err).To(Equal(&ReqError{
+					Code:     "err_mempool",
 					HttpCode: 400,
 					Msg:      "field:id, msg:user's name is required",
 					Field:    "",

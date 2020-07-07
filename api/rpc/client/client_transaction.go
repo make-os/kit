@@ -13,7 +13,7 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.StatusError) {
+func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.ReqError) {
 	out, statusCode, err := c.call("tx_sendPayload", data)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)

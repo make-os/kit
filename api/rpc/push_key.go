@@ -3,18 +3,19 @@ package rpc
 import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/modules/types"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 )
 
 // PushKeyAPI provides RPC methods for various push key functionality.
 type PushKeyAPI struct {
-	mods *types.Modules
+	mods *modulestypes.Modules
 }
 
 // NewPushKeyAPI creates an instance of PushKeyAPI
-func NewPushKeyAPI(mods *types.Modules) *PushKeyAPI {
+func NewPushKeyAPI(mods *modulestypes.Modules) *PushKeyAPI {
 	return &PushKeyAPI{mods: mods}
 }
 
@@ -36,6 +37,15 @@ func (a *PushKeyAPI) getOwner(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(account)
 }
 
+// registerPushKey creates a transaction to registers a public key as a push key
+func (a *PushKeyAPI) registerPushKey(params interface{}) (resp *rpc.Response) {
+	p, ok := params.(map[string]interface{})
+	if !ok {
+		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a map", "")
+	}
+	return rpc.Success(a.mods.PushKey.Register(p))
+}
+
 // APIs returns all API handlers
 func (a *PushKeyAPI) APIs() rpc.APISet {
 	return []rpc.APIInfo{
@@ -50,6 +60,12 @@ func (a *PushKeyAPI) APIs() rpc.APISet {
 			Namespace:   constants.NamespacePushKey,
 			Description: "Get the account of a push key owner",
 			Func:        a.getOwner,
+		},
+		{
+			Name:        "register",
+			Namespace:   constants.NamespacePushKey,
+			Description: "Register a public key as a push key",
+			Func:        a.registerPushKey,
 		},
 	}
 }

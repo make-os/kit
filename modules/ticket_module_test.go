@@ -64,7 +64,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyValidatorTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params)
 			})
@@ -93,7 +93,7 @@ var _ = Describe("TicketModule", func() {
 		It("should return panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params, "", false)
 			})
@@ -112,7 +112,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyHostTicket()", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params)
 			})
@@ -151,7 +151,7 @@ var _ = Describe("TicketModule", func() {
 
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params, key, payloadOnly)
 			})
@@ -175,7 +175,7 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".ListValidatorTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
-			err := &util.StatusError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "proposerPubKey"}
+			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "proposerPubKey"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListValidatorTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
@@ -188,7 +188,7 @@ var _ = Describe("TicketModule", func() {
 				SortByHeight:   -1,
 				NonDecayedOnly: true,
 			}).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
@@ -236,7 +236,7 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".ListHostTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
-			err := &util.StatusError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
+			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListHostTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
@@ -245,7 +245,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic when unable to get ticket by proposer public key", func() {
 			propPubKey := pk.PubKey().Base58()
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeHostTicket, pk.PubKey().MustBytes32(), types.QueryOptions{Limit: 0, SortByHeight: -1}).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListHostTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
@@ -274,7 +274,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".ListTopValidators", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopValidators(0).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListTopValidators()
 			})
@@ -300,7 +300,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".ListTopHosts()", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopHosts(0).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListTopHosts()
 			})
@@ -326,7 +326,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".TicketStats", func() {
 		It("should panic when unable to get all tickets value", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.TicketStats()
 			})
@@ -342,7 +342,7 @@ var _ = Describe("TicketModule", func() {
 
 		It("should panic when proposer public key is invalid", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
-			err := &util.StatusError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
+			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.TicketStats("invalid_pub_key")
 			})
@@ -351,7 +351,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic when unable to get value of non-delegated tickets of proposer public key", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.TicketStats(pk.PubKey().Base58())
 			})
@@ -361,7 +361,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(230), nil)
 			mockTicketMgr.EXPECT().ValueOfDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.TicketStats(pk.PubKey().Base58())
 			})
@@ -404,7 +404,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".UnbondHostTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"hash": 123}
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "field:hash, msg:invalid value type: has int, wants string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:hash, msg:invalid value type: has int, wants string", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnbondHostTicket(params)
 			})
@@ -429,7 +429,7 @@ var _ = Describe("TicketModule", func() {
 		It("should return panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "mempool_add_err", HttpCode: 400, Msg: "error", Field: ""}
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnbondHostTicket(params, "", false)
 			})

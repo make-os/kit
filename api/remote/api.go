@@ -80,7 +80,7 @@ func APIHandler(method string, log logger.Logger, handler func(w http.ResponseWr
 			cause := errors.Cause(r.(error))
 			log.Error("api handler error", "Err", cause.Error())
 
-			se := &util.StatusError{}
+			se := &util.ReqError{}
 			if errors2.As(cause, &se) {
 				util.WriteJSON(w, se.HttpCode, util.RESTApiErrorMsg(se.Msg, se.Field, se.Code))
 			} else {

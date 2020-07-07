@@ -24,14 +24,14 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".GetAccount", func() {
-		It("should return StatusError when RPC call returns an error", func() {
+		It("should return ReqError when RPC call returns an error", func() {
 			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("user_get"))
 				return nil, 0, fmt.Errorf("error")
 			})
 			_, err := client.GetAccount("addr", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     client2.ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -46,7 +46,7 @@ var _ = Describe("Client", func() {
 			})
 			_, err := client.GetAccount("addr", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.StatusError{
+			Expect(err).To(Equal(&util.ReqError{
 				Code:     "decode_error",
 				HttpCode: 500,
 				Msg:      "field:balance, msg:invalid value type: has int, wants string",

@@ -146,8 +146,8 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 	if scopesVal := o.Get("scopes"); !scopesVal.IsNil() {
 		if scopesVal.IsStr() {
 			tx.Scopes = strings.Split(scopesVal.Str(), ",")
-		} else if scopesVal.IsStrSlice() {
-			tx.Scopes = scopesVal.StrSlice()
+		} else if scopesVal.IsStrSlice() || scopesVal.IsInterSlice() {
+			tx.Scopes = cast.ToStringSlice(scopesVal.Inter())
 		} else {
 			return fe("scopes", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string|[]string", scopesVal.Inter()))

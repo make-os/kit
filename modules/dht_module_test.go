@@ -61,7 +61,7 @@ var _ = Describe("DHTModule", func() {
 	Describe(".Store", func() {
 		It("should panic if unable to store data", func() {
 			mockDHT.EXPECT().Store(gomock.Any(), "key", []byte("val")).Return(fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Store("key", "val")
 			})
@@ -76,7 +76,7 @@ var _ = Describe("DHTModule", func() {
 	Describe(".Lookup", func() {
 		It("should panic if unable to lookup key", func() {
 			mockDHT.EXPECT().Lookup(gomock.Any(), "key").Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Lookup("key")
 			})
@@ -99,7 +99,7 @@ var _ = Describe("DHTModule", func() {
 
 	Describe(".GetRepoObjectProviders", func() {
 		It("should panic if object key is not SHA1 and not a valid hex string", func() {
-			err := &util.StatusError{Code: "invalid_param", HttpCode: 400, Msg: "invalid object key", Field: "hash"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "invalid object key", Field: "hash"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetRepoObjectProviders("invalid_hex")
 			})
@@ -109,7 +109,7 @@ var _ = Describe("DHTModule", func() {
 			objHash := "8be2869859870fbdf9cb1265e27f202363d6e618"
 			key := dht.MakeObjectKey(plumbing.HashToBytes(objHash))
 			mockDHT.EXPECT().GetProviders(gomock.Any(), key).Return(nil, fmt.Errorf("error"))
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetRepoObjectProviders(objHash)
 			})
@@ -132,7 +132,7 @@ var _ = Describe("DHTModule", func() {
 
 	Describe(".GetProviders", func() {
 		It("should panic if unable to get providers", func() {
-			err := &util.StatusError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			mockDHT.EXPECT().GetProviders(gomock.Any(), []byte("key")).Return(nil, fmt.Errorf("error"))
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetProviders("key")
