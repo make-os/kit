@@ -22,7 +22,7 @@ const (
 	TxTypeHostTicket                                          // For purchasing host ticket
 	TxTypeUnbondHostTicket                                    // For unbonding host ticket
 	TxTypeRepoCreate                                          // For creating a repository
-	TxTypeRegisterPushKey                                     // For adding a GPG public key
+	TxTypeRegisterPushKey                                     // For adding a push key
 	TxTypePush                                                // For pushing updates to a repository
 	TxTypeNamespaceRegister                                   // For namespace purchase
 	TxTypeNamespaceDomainUpdate                               // For setting namespace domains
@@ -481,7 +481,7 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 	case TxTypeRepoCreate:
 		tx = NewBareTxRepoCreate()
 	case TxTypeRegisterPushKey:
-		tx = NewBareTxRegisterPushKey()
+		tx = NewBareTxRegister()
 	case TxTypePush:
 		tx = NewBareTxPush()
 	case TxTypeNamespaceRegister:
@@ -497,7 +497,7 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 	case TxTypeRepoProposalSendFee:
 		tx = NewBareRepoProposalFeeSend()
 	case TxTypeRepoProposalRegisterPushKey:
-		tx = NewBareRepoProposalRegisterPushKey()
+		tx = NewBareRepoProposalRegister()
 	case TxTypeUpDelPushKey:
 		tx = NewBareTxUpDelPushKey()
 	default:

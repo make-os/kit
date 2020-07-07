@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/imdario/mergo"
+	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -21,8 +22,8 @@ type TxRegisterPushKey struct {
 	FeeCap    util.String      `json:"feeCap" msgpack:"feeCap" mapstructure:"feeCap"`
 }
 
-// NewBareTxRegisterPushKey returns an instance of TxRegisterPushKey with zero values
-func NewBareTxRegisterPushKey() *TxRegisterPushKey {
+// NewBareTxRegister returns an instance of TxRegisterPushKey with zero values
+func NewBareTxRegister() *TxRegisterPushKey {
 	return &TxRegisterPushKey{
 		TxType:   &TxType{Type: TxTypeRegisterPushKey},
 		TxCommon: NewBareTxCommon(),
@@ -114,6 +115,7 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
 
+	fe := util.FieldError
 	o := objx.New(data)
 
 	// PublicKey: expects string type, base58 encoded
@@ -121,11 +123,21 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 		if pubKeyVal.IsStr() {
 			pubKey, err := crypto.PubKeyFromBase58(pubKeyVal.Str())
 			if err != nil {
-				return util.FieldError("pubKey", "unable to decode from base58")
+				return fe("pubKey", "unable to decode from base58")
+			}
+			tx.PublicKey = crypto.BytesToPublicKey(pubKey.MustBytes())
+		} else if pubKeyVal.IsInterSlice() {
+			var bz []byte
+			for _, i := range pubKeyVal.InterSlice() {
+				bz = append(bz, cast.ToUint8(i))
+			}
+			pubKey, err := crypto.PubKeyFromBytes(bz)
+			if err != nil {
+				return fe("pubKey", "unable to decode from byte slice")
 			}
 			tx.PublicKey = crypto.BytesToPublicKey(pubKey.MustBytes())
 		} else {
-			return util.FieldError("pubKey", fmt.Sprintf("invalid value type: has %T, "+
+			return fe("pubKey", fmt.Sprintf("invalid value type: has %T, "+
 				"wants base58 string", pubKeyVal.Inter()))
 		}
 	}
@@ -137,7 +149,7 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 		} else if scopesVal.IsStrSlice() {
 			tx.Scopes = scopesVal.StrSlice()
 		} else {
-			return util.FieldError("scopes", fmt.Sprintf("invalid value type: has %T, "+
+			return fe("scopes", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string|[]string", scopesVal.Inter()))
 		}
 	}
@@ -149,7 +161,7 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 		} else if feeCap.IsStr() {
 			tx.FeeCap = util.String(feeCap.Str())
 		} else {
-			return util.FieldError("feeCap", fmt.Sprintf("invalid value type: has %T, "+
+			return fe("feeCap", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string|int64|float", feeCap.Inter()))
 		}
 	}

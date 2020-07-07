@@ -12,7 +12,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// CreateAccount returns the nonce of the given address
+// CreateRepo creates transaction to create a new repository
 func (c *ClientV1) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
 
 	if body.SigningKey == nil {

@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/imroc/req"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -16,6 +18,7 @@ import (
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
 	var client *ClientV1
+	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		client = &ClientV1{apiRoot: ""}
@@ -73,6 +76,61 @@ var _ = Describe("Account", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Address).To(Equal(util.Address("addr1")))
 			Expect(resp.PubKey).To(Equal(expectedPubKey.ToPublicKey()))
+		})
+	})
+
+	Describe(".Register", func() {
+		It("should return error if signing key is not set", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				return nil, nil
+			}
+			_, err := client.RegisterPushKey(&types.RegisterPushKeyBody{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("signing key is required"))
+		})
+
+		It("should send payload and receive address tx hash from server", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				Expect(endpoint).To(Equal("/v1/pk/register"))
+				Expect(params).To(And(
+					HaveKey("sig"),
+					HaveKey("timestamp"),
+					HaveKey("senderPubKey"),
+					HaveKey("feeCap"),
+					HaveKey("pubKey"),
+					HaveKey("nonce"),
+					HaveKey("fee"),
+					HaveKey("type"),
+				))
+				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
+					data, _ := json.Marshal(util.Map{"address": "push1abc", "hash": "0x12345"})
+					w.WriteHeader(201)
+					w.Write(data)
+				}
+				ts := httptest.NewServer(http.HandlerFunc(mockReqHandler))
+				resp, _ = req.Get(ts.URL)
+				return resp, nil
+			}
+			resp, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
+				Nonce:      1,
+				Fee:        "1",
+				Scopes:     []string{"ns/repo", "repo1"},
+				FeeCap:     10.5,
+				PublicKey:  key.PubKey().ToPublicKey(),
+				SigningKey: key,
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.Address).To(Equal("push1abc"))
+			Expect(resp.Hash).To(Equal("0x12345"))
+		})
+
+		It("should return error if request fails", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				return nil, fmt.Errorf("error")
+			}
+			_, err := client.RegisterPushKey(&types.RegisterPushKeyBody{SigningKey: key})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
 		})
 	})
 })

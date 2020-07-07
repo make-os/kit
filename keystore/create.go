@@ -14,8 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 const (

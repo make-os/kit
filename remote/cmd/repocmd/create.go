@@ -18,7 +18,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/types/state"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // CreateArgs contains arguments for CreateCmd.

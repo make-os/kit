@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // ImportCmd creates a new key from a private key stored in a file.

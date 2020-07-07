@@ -75,11 +75,11 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		return
 	}
 
-	// Register the peer as a sender of the tx so we don't
+	// Add the peer as a sender of the tx so we don't
 	// broadcast the tx back to it
 	r.addSender(tx.GetHash().String(), string(src.ID()))
 
-	// Register the peer to the pool
+	// Add the transaction to the pool
 	_, err = r.AddTx(tx)
 	if err != nil {
 		return

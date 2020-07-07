@@ -12,7 +12,6 @@ import (
 
 // CreateRepo handles request to create a repository
 func (r *API) CreateRepo(w http.ResponseWriter, req *http.Request) {
-
 	var body = make(map[string]interface{})
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", "0"))

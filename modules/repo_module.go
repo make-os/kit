@@ -73,11 +73,11 @@ func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
 		{
 			Name:        "depositFee",
 			Value:       m.DepositFee,
-			Description: "Register fees to a deposit-enabled repository proposal",
+			Description: "Deposit fees into a proposal",
 		},
 		{
 			Name:        "addContributor",
-			Value:       m.RegisterPushKey,
+			Value:       m.Register,
 			Description: "Register one or more contributors",
 		},
 		{
@@ -374,7 +374,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 	}
 }
 
-// RegisterPushKey creates a proposal to register one or more push keys
+// Register creates a proposal to register one or more push keys
 //
 // ARGS:
 // params <map>
@@ -398,10 +398,10 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 //
 // RETURNS object <map>
 // object.hash <string>: 							The transaction hash
-func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = txns.NewBareRepoProposalRegisterPushKey()
+	var tx = txns.NewBareRepoProposalRegister()
 	if err = tx.FromMap(params); err != nil {
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}

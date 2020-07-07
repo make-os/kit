@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/spf13/cast"
@@ -30,4 +31,15 @@ func (r *API) GetPushKeyOwnerNonce(w http.ResponseWriter, req *http.Request) {
 	util.WriteJSON(w, 200, map[string]interface{}{
 		"nonce": acct["nonce"],
 	})
+}
+
+// Register creates a transaction to register a public key
+func (r *API) RegisterPushKey(w http.ResponseWriter, req *http.Request) {
+	var body = make(map[string]interface{})
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", "0"))
+		return
+	}
+
+	util.WriteJSON(w, 201, r.Modules().PushKey.Register(body))
 }

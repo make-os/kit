@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"gitlab.com/makeos/mosdef/keystore/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // UIUnlockKey renders a CLI UI to unlock a target key..

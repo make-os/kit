@@ -15,7 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"

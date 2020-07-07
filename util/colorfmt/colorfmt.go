@@ -1,4 +1,4 @@
-package fmt
+package colorfmt
 
 import (
 	"fmt"
@@ -6,6 +6,10 @@ import (
 	"github.com/fatih/color"
 	"gitlab.com/makeos/mosdef/config"
 )
+
+func colorStr(format string, attr []color.Attribute, a ...interface{}) string {
+	return NewColor(attr...).Sprintf(format, a...)
+}
 
 // ColorFmt wraps fatih's Color providing a way to turn color off
 // via a global variable set on app initialization
@@ -33,33 +37,33 @@ func (c *ColorFmt) Sprintf(format string, a ...interface{}) string {
 }
 
 func RedString(format string, a ...interface{}) string {
-	return NewColor(color.FgRed).Sprintf(format, a...)
+	return colorStr(format, []color.Attribute{color.FgRed}, a...)
 }
 
-func YellowString(format string, a ...interface{}) string {
-	return NewColor(color.FgYellow).Sprintf(format, a...)
+func YellowString(fmt string, a ...interface{}) string {
+	return colorStr(fmt, []color.Attribute{color.FgYellow}, a...)
 }
 
 func GreenString(format string, a ...interface{}) string {
-	return NewColor(color.FgGreen).Sprintf(format, a...)
+	return colorStr(format, []color.Attribute{color.FgGreen}, a...)
 }
 
 func CyanString(format string, a ...interface{}) string {
-	return NewColor(color.FgCyan).Sprintf(format, a...)
+	return colorStr(format, []color.Attribute{color.FgCyan}, a...)
 }
 
 func HiCyanString(format string, a ...interface{}) string {
-	return NewColor(color.FgHiCyan).Sprintf(format, a...)
+	return colorStr(format, []color.Attribute{color.FgHiCyan}, a...)
 }
 
 func HiBlackString(format string, a ...interface{}) string {
-	return NewColor(color.FgHiBlack).Sprintf(format, a...)
+	return colorStr(format, []color.Attribute{color.FgBlack}, a...)
 }
 
 func Red(format string, a ...interface{}) {
-	fmt.Print(NewColor(color.FgRed).Sprintf(format, a...))
+	fmt.Print(colorStr(format, []color.Attribute{color.FgRed}, a...))
 }
 
 func Magenta(format string, a ...interface{}) {
-	fmt.Print(NewColor(color.FgMagenta).Sprintf(format, a...))
+	fmt.Print(colorStr(format, []color.Attribute{color.FgMagenta}, a...))
 }

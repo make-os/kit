@@ -18,7 +18,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 var (

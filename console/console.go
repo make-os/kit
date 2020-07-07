@@ -11,7 +11,7 @@ import (
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/modules/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 
 	"github.com/pkg/errors"
 

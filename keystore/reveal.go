@@ -8,7 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints

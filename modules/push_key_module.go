@@ -123,7 +123,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = txns.NewBareTxRegisterPushKey()
+	var tx = txns.NewBareTxRegister()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.StatusErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}

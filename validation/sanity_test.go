@@ -841,7 +841,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			pushKey, err := crypto.NewKey(nil)
 			Expect(err).To(BeNil())
-			tx = txns.NewBareTxRegisterPushKey()
+			tx = txns.NewBareTxRegister()
 			tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
 			tx.Fee = "2"
 		})
@@ -1535,7 +1535,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *txns.TxRepoProposalRegisterPushKey
 
 		BeforeEach(func() {
-			tx = txns.NewBareRepoProposalRegisterPushKey()
+			tx = txns.NewBareRepoProposalRegister()
 			tx.Timestamp = time.Now().Unix()
 			tx.ID = "123"
 		})

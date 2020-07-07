@@ -14,8 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 	"gitlab.com/makeos/mosdef/util/crypto"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 

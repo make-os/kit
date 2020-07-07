@@ -44,6 +44,7 @@ var _ = Describe("API", func() {
 			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceTx, types.MethodNameSendPayload), gomock.Any())
 			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNameOwnerNonce), gomock.Any())
 			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyFind), gomock.Any())
+			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyRegister), gomock.Any())
 			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceRepo, types.MethodNameCreateRepo), gomock.Any())
 			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceRepo, types.MethodNameGetRepo), gomock.Any())
 			api.RegisterEndpoints(mockMux)

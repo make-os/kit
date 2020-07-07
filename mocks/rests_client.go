@@ -159,6 +159,21 @@ func (mr *MockClientMockRecorder) GetPushKey(pushKeyID interface{}, blockHeight 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKey", reflect.TypeOf((*MockClient)(nil).GetPushKey), varargs...)
 }
 
+// RegisterPushKey mocks base method
+func (m *MockClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterPushKey", body)
+	ret0, _ := ret[0].(*types.RegisterPushKeyResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RegisterPushKey indicates an expected call of RegisterPushKey
+func (mr *MockClientMockRecorder) Register(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPushKey", reflect.TypeOf((*MockClient)(nil).RegisterPushKey), body)
+}
+
 // CreateRepo mocks base method
 func (m *MockClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
 	m.ctrl.T.Helper()

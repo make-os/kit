@@ -42,7 +42,7 @@ func (m *DHTModule) methods() []*modulestypes.ModuleFunc {
 		{
 			Name:        "store",
 			Value:       m.Store,
-			Description: "Register a value that correspond to a given key",
+			Description: "Store a value for a given key",
 		},
 		{
 			Name:        "lookup",
@@ -52,7 +52,7 @@ func (m *DHTModule) methods() []*modulestypes.ModuleFunc {
 		{
 			Name:        "announce",
 			Value:       m.Announce,
-			Description: "Inform the network that this node can provide value for a key",
+			Description: "Announce ability to provide a key to the network",
 		},
 		{
 			Name:        "getRepoObjectProviders",

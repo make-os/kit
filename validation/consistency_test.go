@@ -505,7 +505,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := txns.NewBareTxRegisterPushKey()
+				tx := txns.NewBareTxRegister()
 				err = validation.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -517,7 +517,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("push public key has already been registered", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareTxRegisterPushKey()
+				tx := txns.NewBareTxRegister()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				pushKey := crypto.NewKeyFromIntSeed(1)
@@ -540,7 +540,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareTxRegisterPushKey()
+				tx := txns.NewBareTxRegister()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				pushKey := crypto.NewKeyFromIntSeed(1)
@@ -1697,7 +1697,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxRepoProposalRegisterPushKeyConsistency()", func() {
 		When("unable to get current block info", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegisterPushKey()
+				tx := txns.NewBareRepoProposalRegister()
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
@@ -1710,7 +1710,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegisterPushKey()
+				tx := txns.NewBareRepoProposalRegister()
 				tx.Namespace = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
@@ -1725,7 +1725,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespaceOnly is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegisterPushKey()
+				tx := txns.NewBareRepoProposalRegister()
 				tx.NamespaceOnly = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
@@ -1740,7 +1740,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegisterPushKey()
+				tx := txns.NewBareRepoProposalRegister()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
@@ -1758,7 +1758,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegisterPushKey()
+				tx := txns.NewBareRepoProposalRegister()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()

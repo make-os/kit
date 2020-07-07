@@ -14,8 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 	"gitlab.com/makeos/mosdef/util/crypto"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 func getAdapter(stateDBPath string) *storage.TMDBAdapter {

@@ -54,6 +54,7 @@ func (r *API) RegisterEndpoints(s ServeMux) {
 	s.HandleFunc(V1Path(constants.NamespaceTx, types2.MethodNameSendPayload), r.post(r.SendTxPayload))
 	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
 	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyFind), r.get(r.GetPushKey))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
 	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameCreateRepo), r.post(r.CreateRepo))
 	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameGetRepo), r.get(r.GetRepo))
 }
@@ -89,6 +90,7 @@ func APIHandler(method string, log logger.Logger, handler func(w http.ResponseWr
 
 		if strings.ToLower(r.Method) != strings.ToLower(method) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprint(w, http.StatusText(http.StatusMethodNotAllowed))
 			return
 		}
 

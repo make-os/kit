@@ -37,7 +37,7 @@ type GetRepoResponse struct {
 	*state.Repository
 }
 
-// CreateRepoBody contains arguments for CreateRepo
+// CreateRepoBody contains arguments for creating a repository
 type CreateRepoBody struct {
 	Name       string
 	Nonce      uint64
@@ -47,8 +47,24 @@ type CreateRepoBody struct {
 	SigningKey *crypto.Key
 }
 
-// GetRepoOpts contains arguments for GetRepo
+// GetRepoOpts contains arguments for fetching a repository
 type GetRepoOpts struct {
 	Height      uint64 `json:"height"`
 	NoProposals bool   `json:"noProposals"`
+}
+
+// RegisterPushKeyBody contains arguments for registering a push key
+type RegisterPushKeyBody struct {
+	Nonce      uint64
+	Fee        string
+	PublicKey  crypto.PublicKey
+	Scopes     []string
+	FeeCap     float64
+	SigningKey *crypto.Key
+}
+
+// RegisterPushKeyResponse is the response of a request to register a push key
+type RegisterPushKeyResponse struct {
+	Address string `json:"address"`
+	Hash    string `json:"hash"`
 }

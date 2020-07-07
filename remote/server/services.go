@@ -16,7 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push"
 	"gitlab.com/makeos/mosdef/remote/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )

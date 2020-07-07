@@ -64,7 +64,7 @@ var _ = Describe("CreateRepoContract", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
-				createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToBasicMap(),
+				createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
 					TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -90,7 +90,7 @@ var _ = Describe("CreateRepoContract", func() {
 			When("voter type is VoteByOwner", func() {
 				BeforeEach(func() {
 					repoCfg.Governance.Voter = state.VoterOwner
-					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToBasicMap(),
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
 						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
@@ -121,9 +121,8 @@ var _ = Describe("CreateRepoContract", func() {
 			When("non-nil repo config is provided", func() {
 				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalDuration: 1000}}
 				BeforeEach(func() {
-					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg2.ToBasicMap(),
-						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
-					}, 0).Exec()
+					tx := &txns.TxRepoCreate{Name: "repo", Config: repoCfg2.ToBasicMap(), TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					createrepo.NewContract().Init(logic, tx, 0).Exec()
 					Expect(err).To(BeNil())
 				})
 

@@ -29,6 +29,16 @@ var _ = Describe("PushKeyAPI", func() {
 				resp:       `{"error":{"code":"0","msg":"malformed body"}}`,
 				statusCode: 400,
 			},
+			"should return call module's Create method and return 201 on success": {
+				paramsRaw:  []byte("{}"),
+				resp:       `{"hash":"0x123"}`,
+				statusCode: 201,
+				mocker: func(tc *TestCase) {
+					mockRepoModule := mocks.NewMockRepoModule(ctrl)
+					mockRepoModule.EXPECT().Create(gomock.Any()).Return(util.Map{"hash": "0x123"})
+					modules.Repo = mockRepoModule
+				},
+			},
 		}, api.CreateRepo)
 	})
 

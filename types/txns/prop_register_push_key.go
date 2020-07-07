@@ -26,8 +26,8 @@ type TxRepoProposalRegisterPushKey struct {
 	NamespaceOnly     string                     `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
 }
 
-// NewBareRepoProposalRegisterPushKey returns an instance of TxRepoProposalRegisterPushKey with zero values
-func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
+// NewBareRepoProposalRegister returns an instance of TxRepoProposalRegisterPushKey with zero values
+func NewBareRepoProposalRegister() *TxRepoProposalRegisterPushKey {
 	return &TxRepoProposalRegisterPushKey{
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalRegisterPushKey},

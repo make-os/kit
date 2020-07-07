@@ -162,7 +162,8 @@ type RepoConfig struct {
 	Policies       RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
 }
 
-// FromMap populates c using m
+// FromMap populates c using m.
+// Expects m to only include key and values with basic go primitive types.
 func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
 	cfg := objx.New(m)
 

@@ -59,4 +59,26 @@ var _ = Describe("PushKeyAPI", func() {
 			},
 		}, api.GetPushKeyOwnerNonce)
 	})
+
+	Describe(".Register", func() {
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testPostRequestCases(map[string]TestCase{
+			"should return error when params could not be json decoded": {
+				paramsRaw:  []byte("{"),
+				resp:       `{"error":{"code":"0","msg":"malformed body"}}`,
+				statusCode: 400,
+			},
+			"should return call module's Register method and return 201 on success": {
+				paramsRaw:  []byte("{}"),
+				resp:       `{"hash":"0x123"}`,
+				statusCode: 201,
+				mocker: func(tc *TestCase) {
+					mockPushKeyModule := mocks.NewMockPushKeyModule(ctrl)
+					mockPushKeyModule.EXPECT().Register(gomock.Any()).Return(util.Map{"hash": "0x123"})
+					modules.PushKey = mockPushKeyModule
+				},
+			},
+		}, api.RegisterPushKey)
+	})
 })

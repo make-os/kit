@@ -680,23 +680,23 @@ func (mr *MockPushKeyModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockPushKeyModule)(nil).ConsoleOnlyMode))
 }
 
-// Register mocks base method
+// RegisterPushKey mocks base method
 func (m *MockPushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Register", varargs...)
+	ret := m.ctrl.Call(m, "RegisterPushKey", varargs...)
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// Register indicates an expected call of Register
+// RegisterPushKey indicates an expected call of RegisterPushKey
 func (mr *MockPushKeyModuleMockRecorder) Register(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockPushKeyModule)(nil).Register), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPushKey", reflect.TypeOf((*MockPushKeyModule)(nil).Register), varargs...)
 }
 
 // Get mocks base method
@@ -1437,23 +1437,23 @@ func (mr *MockNamespaceModuleMockRecorder) GetTarget(path interface{}, height ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTarget", reflect.TypeOf((*MockNamespaceModule)(nil).GetTarget), varargs...)
 }
 
-// Register mocks base method
+// RegisterPushKey mocks base method
 func (m *MockNamespaceModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Register", varargs...)
+	ret := m.ctrl.Call(m, "RegisterPushKey", varargs...)
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// Register indicates an expected call of Register
+// RegisterPushKey indicates an expected call of RegisterPushKey
 func (mr *MockNamespaceModuleMockRecorder) Register(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockNamespaceModule)(nil).Register), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPushKey", reflect.TypeOf((*MockNamespaceModule)(nil).Register), varargs...)
 }
 
 // UpdateDomain mocks base method

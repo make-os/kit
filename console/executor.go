@@ -6,7 +6,7 @@ import (
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // Executor is responsible for executing operations inside a

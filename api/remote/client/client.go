@@ -18,6 +18,7 @@ type Client interface {
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
 	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
 	GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error)
+	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
 }

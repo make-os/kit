@@ -17,7 +17,7 @@ var _ = Describe("TxContainer", func() {
 	var sender = crypto.NewKeyFromIntSeed(1)
 	var sender2 = crypto.NewKeyFromIntSeed(2)
 
-	Describe(".Register", func() {
+	Describe(".add", func() {
 		It("should return ErrContainerFull when capacity is reached", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			q := newTxContainer(0)

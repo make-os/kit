@@ -41,21 +41,20 @@ func (c *CreateRepoContract) Exec() error {
 
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
-	// Create the repo object; Set the config to default if
-	// the passed config is unset.
+	// Create an empty repository
 	newRepo := state.BareRepository()
-	newRepo.Config = state.MakeDefaultRepoConfig()
-	newRepo.Config.MergeMap(c.tx.Config)
+
+	// Add config
+	newRepo.Config = state.NewDefaultRepoConfigFromMap(c.tx.Config)
 
 	// Apply default policies when none is set
 	if len(newRepo.Config.Policies) == 0 {
 		policy.AddDefaultPolicies(newRepo.Config)
 	}
 
-	voterType := newRepo.Config.Governance.Voter
-
 	// Register sender as owner only if proposer type is ProposerOwner
 	// Register sender as a veto owner if proposer type is ProposerNetStakeholdersAndVetoOwner
+	voterType := newRepo.Config.Governance.Voter
 	if voterType == state.VoterOwner || voterType == state.VoterNetStakersAndVetoOwner {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,

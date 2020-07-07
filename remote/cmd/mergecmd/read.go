@@ -14,7 +14,7 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
