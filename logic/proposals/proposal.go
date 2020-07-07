@@ -36,7 +36,7 @@ func MakeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Governance.VoterAgeAsCurHeight {
+	if repo.Config.Governance.RequireVoterJoinHeight {
 		proposal.ProposerMaxJoinHeight = util.UInt64(chainHeight) + 1
 	}
 

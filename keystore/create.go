@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/util"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 const (
@@ -99,7 +100,7 @@ func (ks *Keystore) CreateCmd(
 	// If no passphrase is provided, start an interactive session to
 	// collect the passphrase
 	if !nopass && strings.TrimSpace(passphrase) == "" {
-		fmt.Fprint(ks.out, "Your new key needs to be locked with a passphrase. Please enter a passphrase.\n")
+		fmt.Fprintln(ks.out, "Your new key needs to be locked. Please enter a passphrase.")
 		passFromPrompt, err = ks.AskForPassword()
 		if err != nil {
 			return nil, err
@@ -131,11 +132,11 @@ func (ks *Keystore) CreateCmd(
 		return nil, err
 	}
 
-	fmt.Fprintln(ks.out, "New key created, encrypted and stored.")
+	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key successfully created!"))
 	if keyType == types.KeyTypeAccount {
-		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
+		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {
-		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
+		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.PushAddr().String()))
 	}
 
 	return key, nil

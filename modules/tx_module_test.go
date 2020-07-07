@@ -140,7 +140,7 @@ var _ = Describe("TxModule", func() {
 			hash := tx.GetID()
 			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(tx, nil)
 			res := m.Get(hash)
-			Expect(util.Map(util.StructToMap(tx))).To(Equal(res))
+			Expect(util.Map(util.ToMap(tx))).To(Equal(res))
 		})
 	})
 

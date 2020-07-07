@@ -13,6 +13,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type CustomInt int
+
+func (a CustomInt) MarshalJSON() ([]byte, error) {
+	var result string
+	if a == 0 {
+		result = `0`
+	} else {
+		result = fmt.Sprintf("%d", a)
+	}
+	return []byte(result), nil
+}
+
 var _ = Describe("Common", func() {
 
 	Describe(".ObjectsToBytes", func() {
@@ -297,7 +309,7 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".StructToMap", func() {
+	Describe(".ToBasicMap", func() {
 
 		type testStruct struct {
 			Name string
@@ -306,9 +318,26 @@ var _ = Describe("Common", func() {
 		It("should return correct map equivalent", func() {
 			s := testStruct{Name: "odion"}
 			expected := map[string]interface{}{"Name": "odion"}
-			Expect(StructToMap(s)).To(Equal(expected))
+			Expect(ToMap(s)).To(Equal(expected))
 		})
 
+	})
+
+	Describe(".ToBasicMap", func() {
+
+		type testStruct struct {
+			Name string
+			Age  CustomInt
+		}
+
+		It("should return correct map equivalent", func() {
+			s := testStruct{Name: "odion", Age: 100}
+			expected := map[string]interface{}{"Name": "odion", "Age": float64(100)}
+			Expect(ToBasicMap(s)).To(Equal(expected))
+
+			nonBasicExpected := map[string]interface{}{"Name": "odion", "Age": CustomInt(100)}
+			Expect(ToMap(s)).To(Equal(nonBasicExpected))
+		})
 	})
 
 	Describe(".StructSliceToMap", func() {

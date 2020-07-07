@@ -130,7 +130,7 @@ func Normalize(res interface{}, ignoreFields ...string) interface{} {
 
 	// Convert struct to map
 	case reflect.Struct:
-		m = util.StructToMap(res, "json")
+		m = util.ToMap(res, "json")
 
 	// Convert map to map[string]interface{}
 	case reflect.Map:

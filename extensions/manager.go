@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
@@ -16,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -330,7 +330,7 @@ func runExtension(ec *ExtensionControl) error {
 		defer func() {
 			r := recover()
 			if r != nil {
-				fmt.Println(color.RedString(r.(*otto.Error).String()))
+				fmt.Println(fmt2.RedString(r.(*otto.Error).String()))
 				ec.stop()
 			}
 		}()

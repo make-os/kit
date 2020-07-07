@@ -44,7 +44,7 @@ var _ = Describe("SignTag", func() {
 			Expect(err).To(Equal(ErrMissingPushKeyID))
 		})
 
-		It("should return error when unable to unlock push key", func() {
+		It("should return error when failed to unlock the signing key", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 			args := &SignTagArgs{}
 			args.PushKeyUnlocker = testPushKeyUnlocker(nil, fmt.Errorf("error"))

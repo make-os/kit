@@ -8,12 +8,14 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
@@ -211,8 +213,10 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 	}
 
 	if newIssue {
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New issue created!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
 	} else {
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New comment added!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, nComments))
 	}
 

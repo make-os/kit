@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	restclient "gitlab.com/makeos/mosdef/api/remote/client"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	"gitlab.com/makeos/mosdef/api/utils"
 	"gitlab.com/makeos/mosdef/config"
-	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/clients"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -43,16 +43,16 @@ type SignTagArgs struct {
 	ResetTokens bool
 
 	// RpcClient is the RPC client
-	RPCClient *client.RPCClient
+	RPCClient client.Client
 
 	// RemoteClients is the remote server API client.
 	RemoteClients []restclient.Client
 
-	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
-	PushKeyUnlocker cmd.PushKeyUnlocker
+	// KeyUnlocker is a function for getting and unlocking a push key from keystore
+	PushKeyUnlocker cmd.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce clients.NextNonceGetter
+	GetNextNonce utils.NextNonceGetter
 
 	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
 	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
@@ -122,7 +122,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := cmd.MakePassEnvVar(config.AppName, targetRepo.GetName())
+	passVar := cmd.MakeRepoScopedPassEnvVar(config.AppName, targetRepo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
 		defer func() { os.Setenv(passVar, "") }()

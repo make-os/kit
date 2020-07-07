@@ -8,11 +8,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
@@ -216,8 +218,10 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 	}
 
 	if newPost {
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New merge request created!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
 	} else {
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New comment added!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, nComments))
 	}
 

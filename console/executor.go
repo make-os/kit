@@ -3,10 +3,10 @@ package console
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 // Executor is responsible for executing operations inside a
@@ -46,18 +46,18 @@ func (e *Executor) exec(in string) {
 	// RecoverFunc recovers from panics.
 	defer func() {
 		if r := recover(); r != nil {
-			color.Red("Panic: %s", r)
+			fmt2.Red("Panic: %s", r)
 		}
 	}()
 
 	v, err := e.vm.Run(in)
 	if err != nil {
-		color.Red("%s", err.Error())
+		fmt2.Red("%s", err.Error())
 		return
 	}
 
 	if v.IsNull() || v.IsUndefined() {
-		color.Magenta("%s", v)
+		fmt2.Magenta("%s", v)
 		return
 	}
 

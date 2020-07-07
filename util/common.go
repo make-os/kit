@@ -268,7 +268,7 @@ func StructSliceToMap(s interface{}, tagName ...string) []Map {
 	case reflect.Slice:
 		var res = []Map{}
 		for i := 0; i < val.Len(); i++ {
-			res = append(res, StructToMap(val.Index(i).Interface(), tagName...))
+			res = append(res, ToMap(val.Index(i).Interface(), tagName...))
 		}
 		return res
 	default:
@@ -276,9 +276,22 @@ func StructSliceToMap(s interface{}, tagName ...string) []Map {
 	}
 }
 
-// StructToMap converts s to a map.
+// ToBasicMap converts s to a map stripping out custom types.
+// Panics if s cannot be (un)marshalled by encoding/json package.
+func ToBasicMap(s interface{}) (m map[string]interface{}) {
+	bz, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	if err = json.Unmarshal(bz, &m); err != nil {
+		panic(err)
+	}
+	return
+}
+
+// ToBasicMap converts s to a map.
 // If tagName is not provided, 'json' tag is used as a default.
-func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
+func ToMap(s interface{}, tagName ...string) map[string]interface{} {
 	st := structs.New(s)
 	st.TagName = "json"
 	if len(tagName) > 0 {
@@ -531,7 +544,7 @@ func ToStringMapInter(m interface{}, structToMap ...bool) map[string]interface{}
 		if len(structToMap) > 0 && structToMap[0] &&
 			(mapVal.Kind() == reflect.Struct ||
 				(mapVal.Kind() == reflect.Ptr && mapVal.Elem().Kind() == reflect.Struct)) {
-			res[k.String()] = StructToMap(mapVal.Interface())
+			res[k.String()] = ToMap(mapVal.Interface())
 			continue
 		}
 		res[k.String()] = v.MapIndex(k).Interface()

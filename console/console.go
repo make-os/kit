@@ -11,12 +11,11 @@ import (
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/modules/types"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 
 	"github.com/pkg/errors"
 
 	"gitlab.com/makeos/mosdef/util"
-
-	"github.com/fatih/color"
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
@@ -208,7 +207,7 @@ func (c *Console) SetVersions(protocol uint64, client, runtime, commit string) {
 func (c *Console) about() {
 	c.RLock()
 	defer c.RUnlock()
-	fmt.Println(color.CyanString("Welcome to the Javascript Console!"))
+	fmt.Println(fmt2.CyanString("Welcome to the Javascript Console!"))
 	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s", c.client, c.protocol, util.String(c.commit).SS(), c.runtime))
 	fmt.Println(" type '.exit' to exit console")
 	fmt.Println("")

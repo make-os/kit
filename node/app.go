@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"
@@ -20,6 +19,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	"gitlab.com/makeos/mosdef/validation"
 )
 
@@ -173,7 +173,7 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 		a.isCurrentBlockProposer = true
 	}
 
-	a.log.Info(color.YellowString("Processing a new block"),
+	a.log.Info(fmt2.YellowString("Processing a new block"),
 		"Height", req.Header.Height, "IsProposer", a.isCurrentBlockProposer)
 
 	return abcitypes.ResponseBeginBlock{}

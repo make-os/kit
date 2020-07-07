@@ -109,7 +109,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 		return nil
 	}
 
-	nsMap := util.StructToMap(ns)
+	nsMap := util.ToMap(ns)
 	nsMap["name"] = name
 	nsMap["expired"] = false
 	nsMap["grace"] = false

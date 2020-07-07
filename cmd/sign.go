@@ -4,12 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/api/utils"
 	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/cmd/signcmd"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/util/clients"
 )
 
 // signCmd represents the commit command
@@ -42,7 +40,7 @@ var signCommitCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
 		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
 			Message:               msg,
 			Fee:                   fee,
@@ -59,8 +57,8 @@ var signCommitCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
+			KeyUnlocker:           cmd2.UnlockKey,
+			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -82,7 +80,7 @@ var signTagCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
 
 		args = cmd.Flags().Args()
 		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
@@ -96,8 +94,8 @@ var signTagCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
+			PushKeyUnlocker:       cmd2.UnlockKey,
+			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -122,7 +120,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
 		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
 			Name:                  args[0],
 			Fee:                   fee,
@@ -134,22 +132,13 @@ var signNoteCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
+			PushKeyUnlocker:       cmd2.UnlockKey,
+			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
-}
-
-func addAPIConnectionFlags(pf *pflag.FlagSet) {
-	pf.String("rpc.user", "", "Set the RPC username")
-	pf.String("rpc.password", "", "Set the RPC password")
-	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
-	pf.Bool("rpc.https", false, "Force the client to use https:// protocol")
-	pf.Bool("no.remote", false, "Disable the ability to query the Remote API")
-	pf.Bool("no.rpc", false, "Disable the ability to query the JSON-RPC API")
 }
 
 func init() {

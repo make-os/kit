@@ -4,15 +4,15 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	restclient "gitlab.com/makeos/mosdef/api/remote/client"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	"gitlab.com/makeos/mosdef/api/utils"
 	"gitlab.com/makeos/mosdef/config"
-	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/clients"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -42,16 +42,16 @@ type SignNoteArgs struct {
 	ResetTokens bool
 
 	// RpcClient is the RPC client
-	RPCClient *client.RPCClient
+	RPCClient client.Client
 
 	// RemoteClients is the remote server API client.
 	RemoteClients []restclient.Client
 
-	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
-	PushKeyUnlocker cmd.PushKeyUnlocker
+	// KeyUnlocker is a function for getting and unlocking a push key from keystore
+	PushKeyUnlocker cmd.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce clients.NextNonceGetter
+	GetNextNonce utils.NextNonceGetter
 
 	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
 	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater

@@ -6,12 +6,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -136,7 +136,7 @@ func formatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + color.YellowString("merge-request %H% %n%") + `
+			format = `` + fmt2.YellowString("merge-request %H% %n%") + `
 Title:          %t%` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
 Author:         %a% <%e%>` + pusherKeyFmt + `
 Date:           %d%

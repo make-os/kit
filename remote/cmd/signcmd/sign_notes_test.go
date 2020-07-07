@@ -7,13 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	restclient "gitlab.com/makeos/mosdef/api/remote/client"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
-	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -54,7 +54,7 @@ var _ = Describe("SignNote", func() {
 			Expect(err).To(Equal(ErrMissingPushKeyID))
 		})
 
-		It("should return error when unable to unlock push key", func() {
+		It("should return error when failed to unlock the signing key", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 			args := &SignNoteArgs{}
 			args.PushKeyUnlocker = testPushKeyUnlocker(nil, fmt.Errorf("error"))

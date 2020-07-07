@@ -153,7 +153,7 @@ func (m *TxModule) Get(hash string) util.Map {
 		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return util.StructToMap(tx)
+	return util.ToMap(tx)
 }
 
 // sendPayload sends an already signed transaction object to the network

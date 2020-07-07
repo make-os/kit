@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
 	"gitlab.com/makeos/mosdef/keystore/types"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 // UIUnlockKey renders a CLI UI to unlock a target key..
@@ -23,7 +23,7 @@ func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (types.Stored
 		return nil, err
 	}
 
-	fmt.Fprint(ks.out, color.HiBlackString("Chosen Account: ")+storedAcct.GetAddress())
+	fmt.Fprint(ks.out, fmt2.HiBlackString("Chosen Account: ")+storedAcct.GetAddress())
 
 	// Set the passphrase to the default passphrase if account
 	// is encrypted with unprotected passphrase

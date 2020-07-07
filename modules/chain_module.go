@@ -138,7 +138,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 		panic(util.StatusErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return util.StructToMap(res)
+	return util.ToMap(res)
 }
 
 // getValidators returns validators of a given block

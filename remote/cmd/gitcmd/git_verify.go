@@ -7,11 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/types"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 type GitVerifyArgs struct {
@@ -21,8 +21,8 @@ type GitVerifyArgs struct {
 	// RepoGetter is the function for getting a local repository
 	RepoGetter func(path string) (types.LocalRepo, error)
 
-	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
-	PushKeyUnlocker cmd.PushKeyUnlocker
+	// KeyUnlocker is a function for getting and unlocking a push key from keystore
+	PushKeyUnlocker cmd.KeyUnlocker
 
 	// PemDecoder is a function for decoding PEM data
 	PemDecoder func(data []byte) (p *pem.Block, rest []byte)
@@ -103,7 +103,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	}
 
 	// Write output
-	cg := color.GreenString
+	cg := fmt2.GreenString
 	fmt.Fprintf(args.StdOut, "[GNUPG:] NEWSIG\n")
 	fmt.Fprintf(args.StdOut, "[GNUPG:] GOODSIG 0\n")
 	fmt.Fprintf(args.StdOut, "[GNUPG:] TRUST_FULLY 0 shell\n")

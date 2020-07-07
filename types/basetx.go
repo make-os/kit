@@ -74,7 +74,7 @@ type BaseTx interface {
 	// GetSize returns the size of the tx object (excluding nothing)
 	GetSize() int64
 
-	// ToMap returns a map equivalent of the transaction
+	// ToBasicMap returns a map equivalent of the transaction
 	ToMap() map[string]interface{}
 
 	// FromMap populate the fields from a map

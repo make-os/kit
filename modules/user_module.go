@@ -244,7 +244,7 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 		acct.Stakes = nil
 	}
 
-	return util.StructToMap(acct)
+	return util.ToMap(acct)
 }
 
 // GetAvailableBalance returns the spendable balance of an account.

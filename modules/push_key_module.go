@@ -255,7 +255,7 @@ func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 		panic(util.StatusErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
-	return util.StructToMap(o)
+	return util.ToMap(o)
 }
 
 // GetByAddress returns a list of push key addresses owned by the given user address
@@ -288,5 +288,5 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 		panic(util.StatusErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}
 
-	return util.StructToMap(acct)
+	return util.ToMap(acct)
 }

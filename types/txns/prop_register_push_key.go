@@ -122,9 +122,9 @@ func (tx *TxRepoProposalRegisterPushKey) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
-// ToMap returns a map equivalent of the transaction
+// ToBasicMap returns a map equivalent of the transaction
 func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
-	m := util.StructToMap(tx, "mapstructure")
+	m := util.ToMap(tx, "mapstructure")
 	mergo.Map(&m, tx.TxType.ToMap())
 	mergo.Map(&m, tx.TxCommon.ToMap())
 	mergo.Map(&m, tx.TxProposalCommon.ToMap())

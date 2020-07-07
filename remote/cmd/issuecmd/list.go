@@ -6,12 +6,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -112,7 +112,7 @@ func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + color.YellowString("issue %H% %n%") + `
+			format = `` + fmt2.YellowString("issue %H% %n%") + `
 Title:  %t%
 Author: %a% <%e%>` + pusherKeyFmt + `
 Date:   %d%

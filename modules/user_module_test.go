@@ -119,7 +119,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		When("key is unprotected", func() {
-			It("should panic when unable to unlock key", func() {
+			It("should panic when failed to unlock key", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))
@@ -192,7 +192,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		When("key is unprotected", func() {
-			It("should panic when unable to unlock key", func() {
+			It("should panic when failed to unlock key", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))

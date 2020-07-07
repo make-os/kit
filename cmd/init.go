@@ -15,13 +15,17 @@
 package cmd
 
 import (
+	"fmt"
 	golog "log"
+	"os"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmtypes "github.com/tendermint/tendermint/types"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 // initializeTendermint initializes tendermint
@@ -57,6 +61,7 @@ and creates default config and keys required to successfully
 launch the node.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		initializeTendermint()
+		fmt.Fprintln(os.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New node initialized!"))
 	},
 }
 

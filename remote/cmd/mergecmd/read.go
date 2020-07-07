@@ -14,6 +14,7 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -120,7 +121,7 @@ func formatAndPrintMergeRequestComments(
 	buf := bytes.NewBuffer(nil)
 
 	padding := strings.Repeat(" ", 25)
-	closeFmt := color.New(color.Bold, color.BgBlue, color.FgWhite).Sprintf(padding + "CLOSED" + padding)
+	closeFmt := fmt2.NewColor(color.Bold, color.BgBlue, color.FgWhite).Sprintf(padding + "CLOSED" + padding)
 	if isClosed && !args.NoCloseStatus {
 		buf.WriteString(closeFmt)
 		buf.WriteString("\n")
@@ -228,7 +229,7 @@ func formatAndPrintMergeRequestComments(
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + color.YellowString("comments %H% #%i%") + `
+			format = `` + fmt2.YellowString("comments %H% #%i%") + `
 Title:          %t%` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
 Author:         %a% <%e%>` + pusherKeyFmt + ` 
 Date:           %d%` + replyToFmt + `` + reactionsFmt + `

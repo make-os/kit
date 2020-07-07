@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 func getAdapter(stateDBPath string) *storage.TMDBAdapter {
@@ -93,14 +94,14 @@ func findAndPrintDiffKeys(version int64, paths ...string) []Diffs {
 
 func printBytesDiff(diffs []Diffs) {
 	for i, diff := range diffs {
-		fmt.Printf("Diff (%d): %s vs %s\n", i, color.GreenString(diff.pairsPath[0]), color.RedString(diff.pairsPath[1]))
+		fmt.Printf("Diff (%d): %s vs %s\n", i, fmt2.GreenString(diff.pairsPath[0]), fmt2.RedString(diff.pairsPath[1]))
 		fmt.Println(cmp.Diff(diff.pairs[0], diff.pairs[1]))
 	}
 }
 
 func printRawStrDiff(diffs []Diffs) {
 	for i, diff := range diffs {
-		fmt.Printf("Diff (%d): %s vs %s\n", i, color.GreenString(diff.pairsPath[0]), color.RedString(diff.pairsPath[1]))
+		fmt.Printf("Diff (%d): %s vs %s\n", i, fmt2.GreenString(diff.pairsPath[0]), color.RedString(diff.pairsPath[1]))
 		pp.Println(string(diff.pairs[0]))
 		fmt.Print("\n")
 		pp.Println(string(diff.pairs[1]))

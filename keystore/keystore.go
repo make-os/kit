@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/fatih/color"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 	"golang.org/x/crypto/scrypt"
 )
@@ -68,7 +67,7 @@ func (ks *Keystore) AskForPassword() (string, error) {
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
 func (ks *Keystore) AskForPasswordOnce() string {
-	fmt.Fprint(ks.out, color.CyanString("Enter your passphrase to unlock the key\n"))
+	fmt.Fprint(ks.out, "Enter your passphrase to unlock the key\n")
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {

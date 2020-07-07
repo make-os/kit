@@ -202,9 +202,9 @@ var _ = Describe("Repository", func() {
 		Context("Governance Merging", func() {
 			base := &RepoConfig{
 				Governance: &RepoConfigGovernance{
-					Voter:               1,
-					VoterAgeAsCurHeight: true,
-					ProposalQuorum:      1,
+					Voter:                  1,
+					RequireVoterJoinHeight: true,
+					ProposalQuorum:         1,
 				},
 				Policies: []*Policy{
 					{Subject: "user1", Object: "dev", Action: "deny"},
@@ -214,13 +214,13 @@ var _ = Describe("Repository", func() {
 			It("should update base object", func() {
 				base.MergeMap(map[string]interface{}{
 					"governance": map[string]interface{}{
-						"propVoter":           13,
-						"voterAgeAsCurHeight": false,
-						"propQuorum":          0,
+						"propVoter":              13,
+						"requireVoterJoinHeight": false,
+						"propQuorum":             0,
 					},
 				})
 				Expect(int(base.Governance.Voter)).To(Equal(13))
-				Expect(base.Governance.VoterAgeAsCurHeight).To(BeFalse())
+				Expect(base.Governance.RequireVoterJoinHeight).To(BeFalse())
 				Expect(base.Governance.ProposalQuorum).To(BeZero())
 			})
 		})
@@ -256,22 +256,52 @@ var _ = Describe("Repository", func() {
 				Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
 			})
 		})
+	})
 
-		Describe("RepoConfig.Clone", func() {
-			base := &RepoConfig{
-				Governance: &RepoConfigGovernance{
-					Voter:               1,
-					VoterAgeAsCurHeight: true,
-				},
-				Policies: []*Policy{},
-			}
+	Describe("RepoConfig.Clone", func() {
+		base := &RepoConfig{
+			Governance: &RepoConfigGovernance{
+				Voter:                  1,
+				RequireVoterJoinHeight: true,
+			},
+			Policies: []*Policy{},
+		}
 
-			It("should clone into a different RepoConfig object", func() {
-				clone := base.Clone()
-				Expect(base).To(Equal(clone))
-				Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
-				Expect(fmt.Sprintf("%p", base.Governance)).ToNot(Equal(fmt.Sprintf("%p", clone.Governance)))
-			})
+		It("should clone into a different RepoConfig object", func() {
+			clone := base.Clone()
+			Expect(base).To(Equal(clone))
+			Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
+			Expect(fmt.Sprintf("%p", base.Governance)).ToNot(Equal(fmt.Sprintf("%p", clone.Governance)))
+		})
+	})
+
+	Describe("RepoConfig.FromMap", func() {
+		var cfg1 = &RepoConfig{
+			Governance: &RepoConfigGovernance{
+				Voter:                    1,
+				ProposalCreator:          1,
+				RequireVoterJoinHeight:   true,
+				ProposalDuration:         12,
+				ProposalFeeDepositDur:    122,
+				ProposalTallyMethod:      1,
+				ProposalQuorum:           25,
+				ProposalThreshold:        40,
+				ProposalVetoQuorum:       50,
+				ProposalVetoOwnersQuorum: 30,
+				ProposalFee:              10,
+				ProposalFeeRefundType:    1,
+				NoProposalFeeForMergeReq: true,
+			},
+			Policies: []*Policy{
+				{Subject: "sub", Object: "obj", Action: "act"},
+			},
+		}
+
+		It("should populate from a map stripped of custom types", func() {
+			m := cfg1.ToBasicMap()
+			cfg2 := &RepoConfig{Governance: &RepoConfigGovernance{}, Policies: []*Policy{}}
+			cfg2.FromMap(m)
+			Expect(cfg1).To(Equal(cfg2))
 		})
 	})
 })

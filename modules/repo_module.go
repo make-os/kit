@@ -292,7 +292,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 
-	return util.StructToMap(repo)
+	return util.ToMap(repo)
 }
 
 // Update creates a proposal to update a repository

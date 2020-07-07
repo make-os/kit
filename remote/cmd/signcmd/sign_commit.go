@@ -8,15 +8,15 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	errors2 "github.com/pkg/errors"
+	restclient "gitlab.com/makeos/mosdef/api/remote/client"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	"gitlab.com/makeos/mosdef/api/utils"
 	"gitlab.com/makeos/mosdef/config"
-	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/clients"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -61,16 +61,16 @@ type SignCommitArgs struct {
 	ResetTokens bool
 
 	// RpcClient is the RPC client
-	RPCClient *client.RPCClient
+	RPCClient client.Client
 
 	// RemoteClients is the remote server API client.
 	RemoteClients []restclient.Client
 
-	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
-	PushKeyUnlocker cmd.PushKeyUnlocker
+	// KeyUnlocker is a function for getting and unlocking a push key from keystore
+	KeyUnlocker cmd.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce clients.NextNonceGetter
+	GetNextNonce utils.NextNonceGetter
 
 	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
 	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
@@ -92,9 +92,9 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	}
 
 	// Get and unlock the pusher key
-	key, err := args.PushKeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
+	key, err := args.KeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
 	if err != nil {
-		return errors2.Wrap(err, "unable to unlock push key")
+		return errors2.Wrap(err, "failed to unlock the signing key")
 	}
 
 	// Validate merge ID is set.
@@ -170,7 +170,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := cmd.MakePassEnvVar(config.AppName, targetRepo.GetName())
+	passVar := cmd.MakeRepoScopedPassEnvVar(config.AppName, targetRepo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		_ = os.Setenv(passVar, args.PushKeyPass)
 		defer func() { _ = os.Setenv(passVar, "") }()

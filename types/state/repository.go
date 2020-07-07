@@ -3,6 +3,8 @@ package state
 import (
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cast"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
@@ -122,7 +124,7 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 type RepoConfigGovernance struct {
 	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
 	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
-	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight,omitempty"`
+	RequireVoterJoinHeight   bool                  `json:"requireVoterJoinHeight" mapstructure:"requireVoterJoinHeight" msgpack:"requireVoterJoinHeight,omitempty"`
 	ProposalDuration         util.UInt64           `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
 	ProposalFeeDepositDur    util.UInt64           `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
 	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
@@ -160,6 +162,39 @@ type RepoConfig struct {
 	Policies       RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
 }
 
+// FromMap populates c using m
+func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
+	cfg := objx.New(m)
+
+	// Populate Governance config
+	obj := cfg.Get("governance").ObjxMap()
+	c.Governance.Voter = VoterType(cast.ToInt(obj.Get("propVoter").Inter()))
+	c.Governance.ProposalCreator = ProposalCreatorType(cast.ToInt(obj.Get("propCreator").Inter()))
+	c.Governance.RequireVoterJoinHeight = cast.ToBool(obj.Get("requireVoterJoinHeight").Inter())
+	c.Governance.ProposalDuration = util.UInt64(cast.ToUint64(obj.Get("propDur").Inter()))
+	c.Governance.ProposalFeeDepositDur = util.UInt64(cast.ToUint64(obj.Get("propFeeDepDur").Inter()))
+	c.Governance.ProposalTallyMethod = ProposalTallyMethod(cast.ToInt(obj.Get("propTallyMethod").Inter()))
+	c.Governance.ProposalQuorum = cast.ToFloat64(obj.Get("propQuorum").Inter())
+	c.Governance.ProposalThreshold = cast.ToFloat64(obj.Get("propThreshold").Inter())
+	c.Governance.ProposalVetoQuorum = cast.ToFloat64(obj.Get("propVetoQuorum").Inter())
+	c.Governance.ProposalVetoOwnersQuorum = cast.ToFloat64(obj.Get("propVetoOwnersQuorum").Inter())
+	c.Governance.ProposalFee = cast.ToFloat64(obj.Get("propFee").Inter())
+	c.Governance.ProposalFeeRefundType = ProposalFeeRefundType(cast.ToInt(obj.Get("propFeeRefundType").Inter()))
+	c.Governance.NoProposalFeeForMergeReq = cast.ToBool(obj.Get("noPropFeeForMergeReq").Inter())
+
+	// Populate Policies
+	policies := cfg.Get("policies").ObjxMapSlice()
+	for _, pol := range policies {
+		c.Policies = append(c.Policies, &Policy{
+			Object:  pol.Get("obj").String(),
+			Subject: pol.Get("sub").String(),
+			Action:  pol.Get("act").String(),
+		})
+	}
+
+	return c
+}
+
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return c.EncodeMulti(enc,
 		c.Governance,
@@ -175,7 +210,7 @@ func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 // Clone clones c
 func (c *RepoConfig) Clone() *RepoConfig {
 	var clone = BareRepoConfig()
-	m := util.StructToMap(c)
+	m := util.ToMap(c)
 	_ = mapstructure.Decode(m, &clone)
 	return clone
 }
@@ -201,9 +236,14 @@ func (c *RepoConfig) IsNil() bool {
 		len(c.Policies) == 0
 }
 
-// ToMap converts the object to map
+// ToBasicMap converts the object to a basic map with all custom types stripped.
+func (c *RepoConfig) ToBasicMap() map[string]interface{} {
+	return util.ToBasicMap(c)
+}
+
+// ToMap converts the object to a map
 func (c *RepoConfig) ToMap() map[string]interface{} {
-	return util.StructToMap(c, "mapstructure")
+	return util.ToMap(c)
 }
 
 var (
@@ -211,13 +251,21 @@ var (
 	DefaultRepoConfig = MakeDefaultRepoConfig()
 )
 
+// NewDefaultRepoConfigFromMap creates a repo config composed of default values + m
+func NewDefaultRepoConfigFromMap(m map[string]interface{}) *RepoConfig {
+	r := BareRepoConfig()
+	r.FromMap(m)
+	mergo.Merge(r, DefaultRepoConfig)
+	return r
+}
+
 // MakeDefaultRepoConfig returns sane defaults for repository configurations
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{
 			Voter:                    VoterOwner,
 			ProposalCreator:          ProposalCreatorAny,
-			VoterAgeAsCurHeight:      false,
+			RequireVoterJoinHeight:   false,
 			ProposalDuration:         util.UInt64(params.RepoProposalDur),
 			ProposalTallyMethod:      ProposalTallyMethodIdentity,
 			ProposalQuorum:           params.RepoProposalQuorum,

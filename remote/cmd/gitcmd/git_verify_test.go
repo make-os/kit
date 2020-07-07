@@ -107,7 +107,7 @@ var _ = Describe("GitVerify", func() {
 			Expect(err).To(MatchError("failed to get repo: error"))
 		})
 
-		It("should return err when unable to unlock push key", func() {
+		It("should return err when failed to unlock the signing key", func() {
 			f, _ := ioutil.TempFile(os.TempDir(), "")
 			f.Close()
 

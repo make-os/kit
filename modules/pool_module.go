@@ -81,7 +81,7 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
-	return util.StructToMap(m.reactor.GetPoolSize())
+	return util.ToMap(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool

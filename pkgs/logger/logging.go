@@ -10,6 +10,5 @@ type Logger interface {
 	Info(msg string, keyValues ...interface{})
 	Error(msg string, keyValues ...interface{})
 	Fatal(msg string, keyValues ...interface{})
-	// Fatalf(msg string, keyValues ...interface{})
 	Warn(msg string, keyValues ...interface{})
 }

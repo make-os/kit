@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	fmt2 "gitlab.com/makeos/mosdef/util/fmt"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints
@@ -66,9 +67,10 @@ unlock:
 		return errors.Wrap(err, "could not unlock key")
 	}
 
-	fmt.Fprintln(ks.out, color.HiBlackString("Address: ")+storedAcct.GetAddress())
-	fmt.Fprintln(ks.out, color.HiBlackString("Public Key: ")+storedAcct.GetKey().PubKey().Base58())
-	fmt.Fprintln(ks.out, color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
+	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key revealed successfully!"))
+	fmt.Fprintln(ks.out, "- Address: "+fmt2.HiCyanString(storedAcct.GetAddress()))
+	fmt.Fprintln(ks.out, "- Public Key: "+fmt2.HiCyanString(storedAcct.GetKey().PubKey().Base58()))
+	fmt.Fprintln(ks.out, "- Private Key:"+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
 
 	return nil
 }
