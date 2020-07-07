@@ -65,8 +65,8 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".Create", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"name": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"name": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Create(params)
 			})
@@ -80,7 +80,7 @@ var _ = Describe("RepoModule", func() {
 			Expect(res).To(HaveKey("name"))
 			Expect(res["name"]).To(Equal("repo1"))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoCreate)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoCreate)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -116,8 +116,8 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".UpsertOwner", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"addresses": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:addresses, msg:invalid value type: has int, wants string|[]string", Field: "params"}
+			params := map[string]interface{}{"addresses": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpsertOwner(params)
 			})
@@ -129,10 +129,10 @@ var _ = Describe("RepoModule", func() {
 			params := map[string]interface{}{"addresses": []string{"addr1"}}
 			res := m.UpsertOwner(params, key, payloadOnly)
 			Expect(res).To(HaveKey("addresses"))
-			Expect(res["addresses"]).To(Equal([]string{"addr1"}))
+			Expect(res["addresses"]).To(Equal([]interface{}{"addr1"}))
 			Expect(res["veto"]).To(BeFalse())
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoProposalUpsertOwner)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalUpsertOwner)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -166,8 +166,8 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".VoteOnProposal", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"name": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"name": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.VoteOnProposal(params)
 			})
@@ -180,7 +180,7 @@ var _ = Describe("RepoModule", func() {
 			res := m.VoteOnProposal(params, key, payloadOnly)
 			Expect(res["name"]).To(Equal("repo1"))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoProposalVote)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalVote)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -266,7 +266,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Update", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"config": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:config, msg:invalid value type: has int, wants map", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'config' expected a map, got 'int'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params)
 			})
@@ -279,7 +279,7 @@ var _ = Describe("RepoModule", func() {
 			res := m.Update(params, key, payloadOnly)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoProposalUpdate)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalUpdate)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -314,7 +314,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".DepositFee", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has struct {}, wants string|int", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.DepositFee(params)
 			})
@@ -327,7 +327,7 @@ var _ = Describe("RepoModule", func() {
 			res := m.DepositFee(params, key, payloadOnly)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoProposalSendFee)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalSendFee)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -361,7 +361,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Register", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:id, msg:invalid value type: has struct {}, wants string|int", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params)
 			})
@@ -374,7 +374,7 @@ var _ = Describe("RepoModule", func() {
 			res := m.Register(params, key, payloadOnly)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeRepoProposalRegisterPushKey)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalRegisterPushKey)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),

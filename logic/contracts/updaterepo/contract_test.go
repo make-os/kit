@@ -82,7 +82,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
-					Config:           config.ToMap(),
+					Config:           config.ToBasicMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -135,7 +135,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
-					Config:           config.ToMap(),
+					Config:           config.ToBasicMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -187,7 +187,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
-					Config:           config.ToMap(),
+					Config:           config.ToBasicMap(),
 				}, 200).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -213,7 +213,9 @@ var _ = Describe("UpdateRepoContract", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &state.RepoProposal{
-					ActionData: map[string]util.Bytes{constants.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToMap())},
+					ActionData: map[string]util.Bytes{
+						constants.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToBasicMap()),
+					},
 				}
 				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
 					Proposal:    proposal,
@@ -230,7 +232,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				cfg := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalQuorum: 120, ProposalDuration: 100}}
 				proposal := &state.RepoProposal{
 					ActionData: map[string]util.Bytes{
-						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToMap()),
+						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToBasicMap()),
 					},
 				}
 				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{

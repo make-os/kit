@@ -391,7 +391,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".SetCommission", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"commission": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:commission, msg:invalid value type: has struct {}, wants string|int64|float", Field: ""}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'commission' expected type 'util.String', got unconvertible type 'struct {}'", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SetCommission(params)
 			})
@@ -412,7 +412,7 @@ var _ = Describe("UserModule", func() {
 				HaveKey("fee"),
 				HaveKey("sig"),
 			))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeSetDelegatorCommission)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeSetDelegatorCommission)))
 		})
 
 		It("should return panic if unable to add tx to mempool", func() {

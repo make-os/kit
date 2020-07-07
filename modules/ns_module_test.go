@@ -125,8 +125,8 @@ var _ = Describe("NamespaceModule", func() {
 
 	Describe(".Register", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"name": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"name": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params)
 			})
@@ -140,7 +140,7 @@ var _ = Describe("NamespaceModule", func() {
 			Expect(res).To(HaveKey("name"))
 			Expect(res["name"]).To(Equal(crypto.HashNamespace("ns1")))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeNamespaceRegister)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeNamespaceRegister)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),
@@ -174,8 +174,8 @@ var _ = Describe("NamespaceModule", func() {
 
 	Describe(".UpdateDomain", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"name": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"name": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpdateDomain(params)
 			})
@@ -189,7 +189,7 @@ var _ = Describe("NamespaceModule", func() {
 			Expect(res).To(HaveKey("name"))
 			Expect(res["name"]).To(Equal(crypto.HashNamespace("ns1")))
 			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeNamespaceDomainUpdate)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeNamespaceDomainUpdate)))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
 				HaveKey("nonce"),

@@ -605,7 +605,7 @@ var _ = Describe("TxValidator", func() {
 		var cases = []map[string]interface{}{
 			{
 				"desc": "unexpected governance.propVoter field type",
-				"err":  "dry merge failed: cannot append two different types (string, int)",
+				"err":  "dry merge failed: cannot append two different types (string, float64)",
 				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": "1"}},
 			},
 			{
@@ -1535,7 +1535,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *txns.TxRepoProposalRegisterPushKey
 
 		BeforeEach(func() {
-			tx = txns.NewBareRepoProposalRegister()
+			tx = txns.NewBareRepoProposalRegisterPushKey()
 			tx.Timestamp = time.Now().Unix()
 			tx.ID = "123"
 		})

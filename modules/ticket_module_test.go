@@ -63,8 +63,8 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".BuyValidatorTicket", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"delegate": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"delegate": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params)
 			})
@@ -77,6 +77,8 @@ var _ = Describe("TicketModule", func() {
 			params := map[string]interface{}{"delegate": pk.PubKey().Base58()}
 			res := m.BuyValidatorTicket(params, key, payloadOnly)
 			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeValidatorTicket)))
+			Expect(res["blsPubKey"]).To(BeEmpty())
 			Expect(res).To(And(
 				HaveKey("delegate"),
 				HaveKey("type"),
@@ -86,8 +88,6 @@ var _ = Describe("TicketModule", func() {
 				HaveKey("sig"),
 				HaveKey("value"),
 			))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeValidatorTicket)))
-			Expect(res["blsPubKey"]).To(BeEmpty())
 		})
 
 		It("should return panic if unable to add tx to mempool", func() {
@@ -111,8 +111,8 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".BuyHostTicket()", func() {
 		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"delegate": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:name, msg:invalid value type: has int, wants string", Field: "params"}
+			params := map[string]interface{}{"delegate": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params)
 			})
@@ -129,6 +129,7 @@ var _ = Describe("TicketModule", func() {
 
 			res := m.BuyHostTicket(params, key, payloadOnly)
 			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeHostTicket)))
 			Expect(res).To(And(
 				HaveKey("delegate"),
 				HaveKey("type"),
@@ -138,7 +139,6 @@ var _ = Describe("TicketModule", func() {
 				HaveKey("sig"),
 				HaveKey("value"),
 			))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeHostTicket)))
 			Expect(res["blsPubKey"]).ToNot(BeEmpty())
 		})
 
@@ -404,7 +404,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".UnbondHostTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"hash": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:hash, msg:invalid value type: has int, wants string", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'hash': source data must be an array or slice, got int", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnbondHostTicket(params)
 			})
@@ -423,7 +423,7 @@ var _ = Describe("TicketModule", func() {
 				HaveKey("fee"),
 				HaveKey("sig"),
 			))
-			Expect(res["type"]).To(Equal(int(txns.TxTypeUnbondHostTicket)))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeUnbondHostTicket)))
 		})
 
 		It("should return panic if unable to add tx to mempool", func() {

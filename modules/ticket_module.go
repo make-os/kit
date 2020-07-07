@@ -196,11 +196,14 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	// Derive BLS public key
 	key, _ := parseOptions(options...)
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	blsKey := pk.BLSKey()
-	tx.BLSPubKey = blsKey.Public().Bytes()
+
+	// Derive BLS public key
+	if key != "" {
+		pk, _ := crypto.PrivKeyFromBase58(key)
+		blsKey := pk.BLSKey()
+		tx.BLSPubKey = blsKey.Public().Bytes()
+	}
 
 	if finalizeTx(tx, m.logic, options...) {
 		return tx.ToMap()

@@ -221,20 +221,19 @@ func (c *RepoConfig) Clone() *RepoConfig {
 // Empty field in upd will override non-empty fields in c.
 // Slice from upd will be merged into slice field in c.
 func (c *RepoConfig) MergeMap(upd map[string]interface{}) error {
-	var dst = c.ToMap()
+	var dst = c.ToBasicMap()
 	if err := mergo.Map(&dst, upd,
 		mergo.WithOverride,
 		mergo.WithOverwriteWithEmptyValue,
 		mergo.WithAppendSlice); err != nil {
 		return err
 	}
-	return mapstructure.Decode(dst, c)
+	return util.DecodeMap(dst, c)
 }
 
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
-	return (c.Governance == nil || *c.Governance == RepoConfigGovernance{}) &&
-		len(c.Policies) == 0
+	return (c.Governance == nil || *c.Governance == RepoConfigGovernance{}) && len(c.Policies) == 0
 }
 
 // ToBasicMap converts the object to a basic map with all custom types stripped.

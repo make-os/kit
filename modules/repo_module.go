@@ -104,15 +104,13 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRepo, f.Name)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
 	return m.Completer
@@ -401,7 +399,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 func (m *RepoModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = txns.NewBareRepoProposalRegister()
+	var tx = txns.NewBareRepoProposalRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}

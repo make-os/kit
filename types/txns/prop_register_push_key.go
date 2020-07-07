@@ -1,11 +1,6 @@
 package txns
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/imdario/mergo"
-	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -26,8 +21,8 @@ type TxRepoProposalRegisterPushKey struct {
 	NamespaceOnly     string                     `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
 }
 
-// NewBareRepoProposalRegister returns an instance of TxRepoProposalRegisterPushKey with zero values
-func NewBareRepoProposalRegister() *TxRepoProposalRegisterPushKey {
+// NewBareRepoProposalRegisterPushKey returns an instance of TxRepoProposalRegisterPushKey with zero values
+func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
 	return &TxRepoProposalRegisterPushKey{
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalRegisterPushKey},
@@ -124,11 +119,7 @@ func (tx *TxRepoProposalRegisterPushKey) Sign(privKey string) ([]byte, error) {
 
 // ToBasicMap returns a map equivalent of the transaction
 func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
-	m := util.ToMap(tx, "mapstructure")
-	mergo.Map(&m, tx.TxType.ToMap())
-	mergo.Map(&m, tx.TxCommon.ToMap())
-	mergo.Map(&m, tx.TxProposalCommon.ToMap())
-	return m
+	return util.ToBasicMap(tx)
 }
 
 // FromMap populates fields from a map.
@@ -137,78 +128,6 @@ func (tx *TxRepoProposalRegisterPushKey) FromMap(data map[string]interface{}) er
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
 	err = util.CallOnNilErr(err, func() error { return tx.TxProposalCommon.FromMap(data) })
-
-	o := objx.New(data)
-
-	// KeyIDs: expects string or slice of string types in map
-	if pkIDs := o.Get("ids"); !pkIDs.IsNil() {
-		if pkIDs.IsStr() {
-			tx.KeyIDs = strings.Split(pkIDs.Str(), ",")
-		} else if pkIDs.IsStrSlice() {
-			tx.KeyIDs = pkIDs.StrSlice()
-		} else {
-			return util.FieldError("gpgID", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|[]string", pkIDs.Inter()))
-		}
-	}
-
-	// Policies: expects slice in map
-	if acl := o.Get("policies"); !acl.IsNil() {
-		if acl.IsMSISlice() {
-			var policies []*state.ContributorPolicy
-			for _, m := range acl.MSISlice() {
-				var p state.ContributorPolicy
-				_ = util.DecodeMap(m, &p)
-				policies = append(policies, &p)
-			}
-			tx.Policies = policies
-		} else {
-			return util.FieldError("policies", fmt.Sprintf("invalid value type: has %T, "+
-				"wants []map[string]interface{}", acl.Inter()))
-		}
-	}
-
-	// FeeMode: expects int64 type in map
-	if feeMode := o.Get("feeMode"); !feeMode.IsNil() {
-		if feeMode.IsInt64() {
-			tx.FeeMode = state.FeeMode(feeMode.Int64())
-		} else {
-			return util.FieldError("feeMode", fmt.Sprintf(
-				"invalid value type: has %T, wants string", feeMode.Inter()))
-		}
-	}
-
-	// FeeCap: expects int64, float64 or string types in map
-	if feeCap := o.Get("feeCap"); !feeCap.IsNil() {
-		if feeCap.IsInt64() || feeCap.IsFloat64() {
-			tx.FeeCap = util.String(fmt.Sprintf("%v", feeCap.Inter()))
-		} else if feeCap.IsStr() {
-			tx.FeeCap = util.String(feeCap.Str())
-		} else {
-			return util.FieldError("feeCap", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|int64|float", feeCap.Inter()))
-		}
-	}
-
-	// Namespace: expects string type in map
-	if namespace := o.Get("namespace"); !namespace.IsNil() {
-		if namespace.IsStr() {
-			tx.Namespace = namespace.Str()
-		} else {
-			return util.FieldError("namespace", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|[]string", namespace.Inter()))
-		}
-	}
-
-	// NamespaceOnly: expects string type in map
-	if namespaceOnly := o.Get("namespaceOnly"); !namespaceOnly.IsNil() {
-		if namespaceOnly.IsStr() {
-			tx.NamespaceOnly = namespaceOnly.Str()
-		} else {
-			return util.FieldError("namespaceOnly", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|[]string", namespaceOnly.Inter()))
-		}
-	}
-
+	err = util.CallOnNilErr(err, func() error { return util.DecodeMap(data, &tx) })
 	return err
 }

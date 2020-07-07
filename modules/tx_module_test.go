@@ -61,7 +61,7 @@ var _ = Describe("TxModule", func() {
 	Describe(".SendCoin()", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"type": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:type, msg:invalid value type: has struct {}, wants int", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendCoin(params)
 			})
@@ -147,7 +147,7 @@ var _ = Describe("TxModule", func() {
 	Describe(".SendPayload", func() {
 		It("should panic if unable to decoded parameter", func() {
 			params := map[string]interface{}{"type": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "field:type, msg:invalid value type: has struct {}, wants int", Field: "params"}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(params)
 			})

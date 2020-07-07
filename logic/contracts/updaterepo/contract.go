@@ -86,6 +86,5 @@ func (c *UpdateRepoContract) Apply(args *core.ProposalApplyArgs) error {
 	if err := util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd); err != nil {
 		return err
 	}
-	args.Repo.Config.MergeMap(cfgUpd)
-	return nil
+	return args.Repo.Config.MergeMap(cfgUpd)
 }

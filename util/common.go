@@ -309,9 +309,9 @@ func GetPtrAddr(ptrAddr interface{}) *big.Int {
 	return ptrAddrInt
 }
 
-// DecodeMap decodes a map to a struct.
+// DecodeMapStrict decodes a map to a struct with strict type check.
 // Default tagname is 'json'
-func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
+func DecodeMapStrict(srcMap interface{}, dest interface{}, tagName ...string) error {
 	tn := "json"
 	if len(tagName) > 0 {
 		tn = tagName[0]
@@ -320,6 +320,26 @@ func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
 		Metadata: nil,
 		Result:   dest,
 		TagName:  tn,
+	})
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(srcMap)
+}
+
+// DecodeMap decodes a map to a struct with weak conversion.
+// Default tagname is 'json'
+func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
+	tn := "json"
+	if len(tagName) > 0 {
+		tn = tagName[0]
+	}
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           dest,
+		TagName:          tn,
+		WeaklyTypedInput: true,
 	})
 	if err != nil {
 		return err

@@ -1697,7 +1697,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxRepoProposalRegisterPushKeyConsistency()", func() {
 		When("unable to get current block info", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegister()
+				tx := txns.NewBareRepoProposalRegisterPushKey()
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
@@ -1710,7 +1710,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegister()
+				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.Namespace = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
@@ -1725,7 +1725,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespaceOnly is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegister()
+				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.NamespaceOnly = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
@@ -1740,7 +1740,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegister()
+				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
@@ -1758,7 +1758,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareRepoProposalRegister()
+				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
