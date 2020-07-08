@@ -86,3 +86,10 @@ type BaseTx interface {
 	// Id checks if the tx is a given type
 	Is(txType TxCode) bool
 }
+
+// ProposalTx describes a proposal creating transaction
+type ProposalTx interface {
+	GetProposalID() string
+	GetProposalRepoName() string
+	GetProposalValue() util.String
+}

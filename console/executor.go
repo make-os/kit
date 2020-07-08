@@ -46,18 +46,18 @@ func (e *Executor) exec(in string) {
 	// RecoverFunc recovers from panics.
 	defer func() {
 		if r := recover(); r != nil {
-			fmt2.Red("Panic: %s", r)
+			fmt2.Red("Panic: %s\n", r)
 		}
 	}()
 
 	v, err := e.vm.Run(in)
 	if err != nil {
-		fmt2.Red("%s", err.Error())
+		fmt2.Red("%s\n", err.Error())
 		return
 	}
 
 	if v.IsNull() || v.IsUndefined() {
-		fmt2.Magenta("%s", v)
+		fmt2.Magenta("%s\n", v)
 		return
 	}
 

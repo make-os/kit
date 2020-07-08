@@ -22,6 +22,7 @@ require (
 	github.com/dgraph-io/badger v1.6.1
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/emirpasic/gods v1.12.0
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0

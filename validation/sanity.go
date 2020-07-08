@@ -658,8 +658,8 @@ func checkProposalID(id string, index int) error {
 		return feI(index, "id", "proposal id is required")
 	} else if !govalidator.IsNumeric(id) {
 		return feI(index, "id", "proposal id is not valid")
-	} else if len(id) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	} else if len(id) > 16 {
+		return feI(index, "id", "proposal ID exceeded 16 characters limit")
 	}
 	return nil
 }

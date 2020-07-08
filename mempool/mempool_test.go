@@ -164,12 +164,55 @@ var _ = Describe("Mempool", func() {
 
 			It("should return 2 txs; 1 tx must remain in the pool and it must be a types.TxTypeValidatorTicket", func() {
 				Expect(len(res)).To(Equal(2))
-				Expect(mempool.pool.Size()).To(Equal(int64(1)))
+				Expect(mempool.pool.Size()).To(Equal(1))
 				Expect(mempool.pool.HasByHash(tx3.GetHash().String())).To(BeTrue())
 				actual := mempool.pool.Head()
 				Expect(actual.GetType()).To(Equal(txns.TxTypeValidatorTicket))
 			})
 		})
 
+		When("pool has three transactions; 1 is a coin transfer and 2 proposal transaction with same repo name and proposal ID", func() {
+			var tx types.BaseTx
+			var tx2, tx3 *txns.TxRepoProposalRegisterPushKey
+			var res []tmtypes.Tx
+			okRes := &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
+				Code: abci.CodeTypeOK,
+			}}}
+
+			BeforeEach(func() {
+				tx = txns.NewCoinTransferTx(0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+
+				tx2 = txns.NewBareRepoProposalRegisterPushKey()
+				tx2.RepoName = "repo1"
+				tx2.TxProposalCommon.ID = "1"
+				tx2.Fee = "1.2"
+				tx2.Nonce = 1
+				tx2.SenderPubKey = sender.PubKey().ToPublicKey()
+				tx2.Timestamp = time.Now().Unix()
+
+				tx3 = txns.NewBareRepoProposalRegisterPushKey()
+				tx3.RepoName = "repo1"
+				tx3.TxProposalCommon.ID = "1"
+				tx3.Fee = "1.5"
+				tx3.Nonce = 2
+				tx3.SenderPubKey = sender.PubKey().ToPublicKey()
+				tx3.Timestamp = time.Now().Unix()
+
+				mempool.addTx(tx.Bytes(), okRes)
+				mempool.addTx(tx2.Bytes(), okRes)
+				mempool.addTx(tx3.Bytes(), okRes)
+				Expect(mempool.Size()).To(Equal(3))
+
+				res = mempool.ReapMaxBytesMaxGas(1000, 0)
+			})
+
+			It("should return 2 txs; 1 coin tx and 1 proposal. Must not include multiple proposal tx with matching repo name and nonce", func() {
+				Expect(len(res)).To(Equal(2))
+				Expect(mempool.pool.Size()).To(Equal(1))
+				Expect(mempool.pool.HasByHash(tx3.GetHash().String())).To(BeTrue())
+				actual := mempool.pool.Head()
+				Expect(actual.GetType()).To(Equal(txns.TxTypeRepoProposalRegisterPushKey))
+			})
+		})
 	})
 })

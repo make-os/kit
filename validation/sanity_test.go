@@ -1309,10 +1309,10 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ID = "123456789"
+			tx.ID = strings.Repeat("1", 17)
 			err := validation.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal ID exceeded 16 characters limit"))
 		})
 
 		It("should return error when value is not provided", func() {
