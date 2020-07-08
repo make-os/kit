@@ -1490,7 +1490,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1510,7 +1510,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1530,7 +1530,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1550,7 +1550,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1573,7 +1573,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &core.BlockInfo{Height: 1}
 					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-					_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+					_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 				})
 
 				It("should return err", func() {
@@ -1597,7 +1597,7 @@ var _ = Describe("TxValidator", func() {
 					bi := &core.BlockInfo{Height: 1}
 					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 					mockLogic.EXPECT().DrySend(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+					_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 				})
 
 				It("should return no error", func() {
@@ -1622,7 +1622,7 @@ var _ = Describe("TxValidator", func() {
 				mockLogic.EXPECT().DrySend(key.PubKey(),
 					txProposal.Value, txCommon.Fee, txCommon.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				_, err = validation.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {

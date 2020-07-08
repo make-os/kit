@@ -10,7 +10,6 @@ import (
 	"gitlab.com/makeos/mosdef/crypto/bls"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -410,7 +409,6 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // CheckProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func CheckProposalCommonConsistency(
-	proposalType types.TxCode,
 	prop *txns.TxProposalCommon,
 	txCommon *txns.TxCommon,
 	index int,
@@ -476,7 +474,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}
@@ -614,7 +612,7 @@ func CheckTxRepoProposalUpdateConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}
@@ -651,7 +649,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		}
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}
