@@ -38,7 +38,7 @@ func (c *RPCClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Reg
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
-	tx := txns.NewBareTxRegister()
+	tx := txns.NewBareTxRegisterPushKey()
 	tx.PublicKey = body.PublicKey
 	tx.Nonce = body.Nonce
 	tx.Fee = util.String(body.Fee)

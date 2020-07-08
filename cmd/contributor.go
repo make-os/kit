@@ -10,23 +10,23 @@ import (
 	"gitlab.com/makeos/mosdef/remote/cmd/repocmd"
 )
 
-// repoCmd represents the repo command
-var repoCmd = &cobra.Command{
-	Use:   "repo",
-	Short: "Create, find and manage repositories",
+// contribCmd represents the contributor command
+var contribCmd = &cobra.Command{
+	Use:   "contributor",
+	Short: "Manage repository contributors",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
 }
 
-// repoCreateCmd represents a sub-command to create a repository
-var repoCreateCmd = &cobra.Command{
-	Use:   "create [flags] <name>",
-	Short: "Create a repository",
+// contribAddCmd represents a sub-command to add contributors to a repository
+var contribAddCmd = &cobra.Command{
+	Use:   "add [flags] <name>",
+	Short: "Add one or more contributors to a repository",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return fmt.Errorf("name is required")
+			return fmt.Errorf("account ID or public key is required")
 		}
 		return nil
 	},
@@ -60,22 +60,22 @@ var repoCreateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(repoCmd)
-	repoCmd.AddCommand(repoCreateCmd)
+	rootCmd.AddCommand(contribCmd)
+	contribCmd.AddCommand(contribAddCmd)
 
-	sp := repoCreateCmd.Flags().StringP
+	sp := contribAddCmd.Flags().StringP
 
 	// Set flags
 	sp("value", "v", "0", "The amount of coins to transfer to the repository")
 	sp("config", "c", "", "Path to a file containing a repository configuration")
 
 	// Set required field
-	repoCreateCmd.MarkFlagRequired("fee")
-	repoCreateCmd.MarkFlagRequired("account")
+	contribAddCmd.MarkFlagRequired("fee")
+	contribAddCmd.MarkFlagRequired("account")
 
 	// API connection config flags
-	addAPIConnectionFlags(repoCmd.PersistentFlags())
+	addAPIConnectionFlags(contribCmd.PersistentFlags())
 
 	// Common Tx flags
-	addCommonTxFlags(repoCreateCmd.Flags())
+	addCommonTxFlags(contribAddCmd.Flags())
 }

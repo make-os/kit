@@ -29,13 +29,13 @@ var signCommitCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
-		sk, _ := cmd.Flags().GetString("signing-key")
+		signingKey, _ := cmd.Flags().GetString("signing-key")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		head, _ := cmd.Flags().GetString("head")
 		branch, _ := cmd.Flags().GetString("branch")
 		forceCheckout, _ := cmd.Flags().GetBool("force")
 		amend, _ := cmd.Flags().GetBool("amend")
-		pass, _ := cmd.Flags().GetString("pass")
+		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
@@ -51,8 +51,8 @@ var signCommitCmd = &cobra.Command{
 			Head:                  head,
 			Branch:                branch,
 			ForceCheckout:         forceCheckout,
-			PushKeyID:             sk,
-			PushKeyPass:           pass,
+			PushKeyID:             signingKey,
+			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
@@ -74,8 +74,8 @@ var signTagCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
-		sk, _ := cmd.Flags().GetString("signing-key")
-		pass, _ := cmd.Flags().GetString("pass")
+		signingKey, _ := cmd.Flags().GetString("signing-key")
+		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
@@ -88,8 +88,8 @@ var signTagCmd = &cobra.Command{
 			Fee:                   fee,
 			Nonce:                 nonce,
 			Value:                 value,
-			PushKeyID:             sk,
-			PushKeyPass:           pass,
+			PushKeyID:             signingKey,
+			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
@@ -111,8 +111,8 @@ var signNoteCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
-		sk, _ := cmd.Flags().GetString("signing-key")
-		pass, _ := cmd.Flags().GetString("pass")
+		signingKey, _ := cmd.Flags().GetString("signing-key")
+		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
@@ -126,8 +126,8 @@ var signNoteCmd = &cobra.Command{
 			Fee:                   fee,
 			Nonce:                 nonce,
 			Value:                 value,
-			PushKeyID:             sk,
-			PushKeyPass:           pass,
+			PushKeyID:             signingKey,
+			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
@@ -150,7 +150,6 @@ func init() {
 	pf := signCmd.PersistentFlags()
 
 	// Top-level flags
-	pf.StringP("pass", "p", "", "Passphrase used to unlock the signing key")
 	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
 
 	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
@@ -161,12 +160,12 @@ func init() {
 
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")
-	pf.StringP("fee", "f", "0", "Set the network transaction fee")
 	pf.StringP("value", "v", "", "Set a value for paying additional fees")
-	pf.Uint64P("nonce", "n", 0, "Set the transaction nonce")
-	pf.StringP("signing-key", "s", "", "Set the signing key ID")
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
 	// API connection config flags
 	addAPIConnectionFlags(pf)
+
+	// Common Tx flags
+	addCommonTxFlags(pf)
 }

@@ -841,7 +841,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			pushKey, err := crypto.NewKey(nil)
 			Expect(err).To(BeNil())
-			tx = txns.NewBareTxRegister()
+			tx = txns.NewBareTxRegisterPushKey()
 			tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
 			tx.Fee = "2"
 		})

@@ -279,7 +279,7 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 	case TxTypeRepoCreate:
 		tx = NewBareTxRepoCreate()
 	case TxTypeRegisterPushKey:
-		tx = NewBareTxRegister()
+		tx = NewBareTxRegisterPushKey()
 	case TxTypePush:
 		tx = NewBareTxPush()
 	case TxTypeNamespaceRegister:

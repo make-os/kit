@@ -17,8 +17,8 @@ type TxRegisterPushKey struct {
 	FeeCap    util.String      `json:"feeCap" msgpack:"feeCap" mapstructure:"feeCap"`
 }
 
-// NewBareTxRegister returns an instance of TxRegisterPushKey with zero values
-func NewBareTxRegister() *TxRegisterPushKey {
+// NewBareTxRegisterPushKey returns an instance of TxRegisterPushKey with zero values
+func NewBareTxRegisterPushKey() *TxRegisterPushKey {
 	return &TxRegisterPushKey{
 		TxType:   &TxType{Type: TxTypeRegisterPushKey},
 		TxCommon: NewBareTxCommon(),

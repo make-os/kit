@@ -63,6 +63,12 @@ func (pk PublicKey) MustAddress() util.Address {
 	return MustPubKeyFromBytes(pk.Bytes()).Addr()
 }
 
+// MustPushKeyAddress derives a push key address from the key.
+// Panics on failure.
+func (pk PublicKey) MustPushKeyAddress() util.Address {
+	return MustPubKeyFromBytes(pk.Bytes()).PushAddr()
+}
+
 // IsEmpty checks whether the object is empty (having zero values)
 func (pk PublicKey) IsEmpty() bool {
 	return pk == EmptyPublicKey

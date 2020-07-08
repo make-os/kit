@@ -505,7 +505,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := txns.NewBareTxRegister()
+				tx := txns.NewBareTxRegisterPushKey()
 				err = validation.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -517,7 +517,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("push public key has already been registered", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareTxRegister()
+				tx := txns.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				pushKey := crypto.NewKeyFromIntSeed(1)
@@ -540,7 +540,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
-				tx := txns.NewBareTxRegister()
+				tx := txns.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				pushKey := crypto.NewKeyFromIntSeed(1)

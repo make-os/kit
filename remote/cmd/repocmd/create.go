@@ -41,10 +41,10 @@ type CreateArgs struct {
 	Fee string
 
 	// Account is the account whose key will be used to sign the transaction.
-	Account string
+	SigningKey string
 
 	// AccountPass is the passphrase for unlocking the signing key.
-	AccountPass string
+	SigningKeyPass string
 
 	// RpcClient is the RPC client
 	RPCClient client.Client
@@ -64,7 +64,7 @@ type CreateArgs struct {
 	Stdout io.Writer
 }
 
-// CreateCmd creates a repository
+// CreateCmd creates a transaction to create a repository
 func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 
 	// If path is set, read repo config from file.
@@ -94,7 +94,7 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 	}
 
 	// Get and unlock the signing key
-	key, err := args.KeyUnlocker(cfg, args.Account, args.AccountPass, nil)
+	key, err := args.KeyUnlocker(cfg, args.SigningKey, args.SigningKeyPass, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")
 	}
@@ -127,12 +127,11 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 		return errors.Wrap(err, "failed to create repo")
 	}
 
-	if args.Stdout == nil {
-		args.Stdout = ioutil.Discard
+	if args.Stdout != nil {
+		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
+		fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
+		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
 	}
-	fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
-	fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
-	fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
 
 	return nil
 }

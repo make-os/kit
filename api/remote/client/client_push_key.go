@@ -59,7 +59,7 @@ func (c *ClientV1) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Regi
 		return nil, fmt.Errorf("signing key is required")
 	}
 
-	tx := txns.NewBareTxRegister()
+	tx := txns.NewBareTxRegisterPushKey()
 	tx.PublicKey = body.PublicKey
 	tx.Nonce = body.Nonce
 	tx.Fee = util.String(body.Fee)

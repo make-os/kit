@@ -6,14 +6,14 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	rest "gitlab.com/makeos/mosdef/api/remote/client"
+	remote "gitlab.com/makeos/mosdef/api/remote/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/api/types"
 )
 
 // NextNonceGetter describes a function for getting the next nonce of an account.
 type NextNonceGetter func(address string, rpcClient client.Client,
-	remoteClients []rest.Client) (string, error)
+	remoteClients []remote.Client) (string, error)
 
 // GetNextNonceOfPushKeyOwner returns the next account nonce of the owner of a given push key.
 // It accepts a rpc client and one or more remote API clients represent different remotes.
@@ -22,7 +22,7 @@ type NextNonceGetter func(address string, rpcClient client.Client,
 func GetNextNonceOfPushKeyOwner(
 	pkID string,
 	rpcClient client.Client,
-	remoteClients []rest.Client) (nextNonce string, err error) {
+	remoteClients []remote.Client) (nextNonce string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		var err error
 		var acct *types.GetAccountResponse
@@ -32,7 +32,7 @@ func GetNextNonceOfPushKeyOwner(
 		}
 		return err
 
-	}, func(c rest.Client) error {
+	}, func(c remote.Client) error {
 		var err error
 		var resp *types.GetAccountNonceResponse
 		resp, err = c.GetPushKeyOwnerNonce(pkID)
@@ -52,7 +52,7 @@ func GetNextNonceOfPushKeyOwner(
 func GetNextNonceOfAccount(
 	address string,
 	rpcClient client.Client,
-	remoteClients []rest.Client) (nextNonce string, err error) {
+	remoteClients []remote.Client) (nextNonce string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		var err error
 		var acct *types.GetAccountResponse
@@ -62,7 +62,7 @@ func GetNextNonceOfAccount(
 		}
 		return err
 
-	}, func(c rest.Client) error {
+	}, func(c remote.Client) error {
 		var err error
 		var resp *types.GetAccountResponse
 		resp, err = c.GetAccount(address)
@@ -78,16 +78,16 @@ func GetNextNonceOfAccount(
 type RepoCreator func(
 	req *types.CreateRepoBody,
 	rpcClient client.Client,
-	remoteClients []rest.Client) (hash string, err error)
+	remoteClients []remote.Client) (hash string, err error)
 
-// CreateRepo creates a new repository transaction and returns the hash.
+// CreateRepo creates a repository creating transaction and returns the hash.
 // It accepts a rpc client and one or more remote API clients represent different remotes.
 // It will attempt to first request account information using the remote clients and fallback
 // to the RPC client if remote clients fail.
 func CreateRepo(
 	req *types.CreateRepoBody,
 	rpcClient client.Client,
-	remoteClients []rest.Client) (hash string, err error) {
+	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		resp, err := c.CreateRepo(req)
 		if err != nil {
@@ -96,8 +96,41 @@ func CreateRepo(
 		hash = resp.Hash
 		return err
 
-	}, func(c rest.Client) error {
+	}, func(c remote.Client) error {
 		resp, err := c.CreateRepo(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+	})
+	return
+}
+
+// RepoCreator describes a function for creating a repo creating transaction.
+type PushKeyRegister func(
+	req *types.RegisterPushKeyBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error)
+
+// RegisterPushKey creates a push key registration transaction and returns the hash.
+// It accepts a rpc client and one or more remote API clients represent different remotes.
+// It will attempt to first request account information using the remote clients and fallback
+// to the RPC client if remote clients fail.
+func RegisterPushKey(
+	req *types.RegisterPushKeyBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error) {
+	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+		resp, err := c.RegisterPushKey(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+
+	}, func(c remote.Client) error {
+		resp, err := c.RegisterPushKey(req)
 		if err != nil {
 			return err
 		}
@@ -121,9 +154,9 @@ func CreateRepo(
 // returns a nil error.
 func CallClients(
 	rpcClient client.Client,
-	remoteClients []rest.Client,
+	remoteClients []remote.Client,
 	rpcCaller func(client.Client) error,
-	remoteCaller func(rest.Client) error) error {
+	remoteCaller func(remote.Client) error) error {
 
 	// Return error when no remote client and RPC client were provided
 	if len(remoteClients) == 0 && (rpcClient == nil || reflect.ValueOf(rpcClient).IsNil()) {

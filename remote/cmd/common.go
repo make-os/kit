@@ -42,7 +42,8 @@ func UnlockKey(
 
 	// If passphrase is unset and target repo is set, attempt to get the
 	// passphrase from 'user.passphrase' config.
-	if !key.IsUnprotected() && passphrase == "" && targetRepo != nil {
+	unprotected := key.IsUnprotected()
+	if !unprotected && passphrase == "" && targetRepo != nil {
 		repoCfg, err := targetRepo.Config()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get repo config")
@@ -57,12 +58,12 @@ func UnlockKey(
 
 	// If key is protected and still no passphrase,
 	// try to get it from the general passphrase env variable
-	if !key.IsUnprotected() && passphrase == "" {
+	if !unprotected && passphrase == "" {
 		passphrase = os.Getenv(MakePassEnvVar(config.AppName))
 	}
 
 	// If key is protected and still no passphrase, exit with error
-	if !key.IsUnprotected() && passphrase == "" {
+	if !unprotected && passphrase == "" {
 		return nil, fmt.Errorf("passphrase of signing key is required")
 	}
 

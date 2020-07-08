@@ -127,6 +127,22 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 	pf.Bool("api.https", false, "Force the client to use https:// protocol")
 }
 
+// addCommonTxFlags adds flags required for commands that create network transactions
+func addCommonTxFlags(fs *pflag.FlagSet) {
+	if fs.Lookup("fee") == nil {
+		fs.StringP("fee", "f", "", "The transaction fee to pay to the network")
+	}
+	if fs.Lookup("nonce") == nil {
+		fs.Uint64P("nonce", "n", 0, "The next nonce of the account signing the transaction")
+	}
+	if fs.Lookup("signing-key") == nil {
+		fs.StringP("signing-key", "u", "", "Address or index of local account to use for signing the transaction")
+	}
+	if fs.Lookup("signing-key-pass") == nil {
+		fs.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
+	}
+}
+
 // rejectFlagCombo rejects unwanted flag combination
 func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
 	var found = []string{}
