@@ -67,7 +67,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 			repo = state.BareRepository()
 			repo.Config = state.DefaultRepoConfig
-			repo.Config.Governance.Voter = state.VoterOwner
+			repo.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -166,7 +166,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.ProposalDuration.UInt64() + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Gov.PropDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})

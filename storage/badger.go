@@ -47,7 +47,7 @@ func (b *Badger) GetDB() *badger.DB {
 // NewTx creates a new transaction.
 // autoFinish: ensure that the underlying transaction is committed after
 // each successful operation.
-// renew: reinitializes the transaction after each operation. Requires
+// renew: re-initializes the transaction after each operation. Requires
 // autoFinish to be enabled.
 func (b *Badger) NewTx(autoFinish, renew bool) Tx {
 	return NewBadgerFunctions(b.db, autoFinish, renew)

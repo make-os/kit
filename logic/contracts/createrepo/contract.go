@@ -58,9 +58,18 @@ func (c *CreateRepoContract) Exec() error {
 		newRepo.Balance = util.String(newRepoBal.String())
 	}
 
-	// Register sender as owner only if proposer type is ProposerOwner
-	// Register sender as a veto owner if proposer type is ProposerNetStakeholdersAndVetoOwner
-	voterType := newRepo.Config.Governance.Voter
+	// Add the creator as a contributor if allowed in config.
+	if newRepo.Config.Gov.CreatorAsContributor {
+		newRepo.Contributors[spk.PushAddr().String()] = &state.RepoContributor{
+			FeeMode: state.FeeModePusherPays,
+			FeeCap:  "0",
+			FeeUsed: "0",
+		}
+	}
+
+	// Register sender as owner only if voter type is VoterOwner or VoterNetStakersAndVetoOwner.
+	// If voter type is VoterNetStakersAndVetoOwner, give veto right to sender.
+	voterType := newRepo.Config.Gov.Voter
 	if voterType == state.VoterOwner || voterType == state.VoterNetStakersAndVetoOwner {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,

@@ -62,7 +62,7 @@ var _ = Describe("DepositProposalFeeContract", func() {
 			logic.AccountKeeper().Update(key2.Addr(), &state.Account{Balance: "20", DelegatorCommission: 0})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governance.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender has not previously deposited", func() {

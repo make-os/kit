@@ -53,7 +53,7 @@ func (c *ProposalVoteContract) Exec() error {
 	// When proposers are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposer will have 1 voting power.
 	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodIdentity {
+		prop.Config.PropTallyMethod == state.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 
@@ -61,14 +61,14 @@ func (c *ProposalVoteContract) Exec() error {
 	// each proposer will use the value of the voter's spendable account balance
 	// as their voting power.
 	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
+		prop.Config.PropTallyMethod == state.ProposalTallyMethodCoinWeighted {
 		senderAcct := c.AccountKeeper().Get(spk.Addr())
 		increments = senderAcct.GetAvailableBalance(c.chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
 		increments, err = c.GetTicketManager().
 			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
 		if err != nil {
@@ -78,7 +78,7 @@ func (c *ProposalVoteContract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = c.GetTicketManager().
 			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
 		if err != nil {
@@ -88,7 +88,7 @@ func (c *ProposalVoteContract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStake {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStake {
 
 		tickets, err := c.GetTicketManager().GetNonDecayedTickets(c.tx.SenderPubKey.ToBytes32(),
 			prop.ProposerMaxJoinHeight.UInt64())

@@ -224,7 +224,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		return errors.Wrap(err, "dry merge failed")
 	}
 
-	govCfg := base.Governance
+	govCfg := base.Gov
 	sf := fmt.Sprintf
 
 	// Ensure the voter type is known
@@ -240,7 +240,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	allowedPropCreator := []state.ProposalCreatorType{
 		state.ProposalCreatorAny,
 		state.ProposalCreatorOwner}
-	if !funk.Contains(allowedPropCreator, govCfg.ProposalCreator) {
+	if !funk.Contains(allowedPropCreator, govCfg.PropCreator) {
 		return feI(index, "governance.propCreator", sf("unknown value"))
 	}
 
@@ -252,32 +252,32 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
 	}
-	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
+	if !funk.Contains(allowedTallyMethod, govCfg.PropTallyMethod) {
 		return feI(index, "governance.propTallyMethod", sf("unknown value"))
 	}
 
-	if govCfg.ProposalQuorum < 0 {
+	if govCfg.PropQuorum < 0 {
 		return feI(index, "governance.propQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalThreshold < 0 {
+	if govCfg.PropThreshold < 0 {
 		return feI(index, "governance.propThreshold", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalVetoQuorum < 0 {
+	if govCfg.PropVetoQuorum < 0 {
 		return feI(index, "governance.propVetoQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalVetoOwnersQuorum < 0 {
+	if govCfg.PropVetoOwnersQuorum < 0 {
 		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalFee < params.MinProposalFee {
+	if govCfg.PropFee < params.MinProposalFee {
 		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	tallyMethod := govCfg.ProposalTallyMethod
+	tallyMethod := govCfg.PropTallyMethod
 	isNotOwnerProposer := govCfg.Voter != state.VoterOwner
 	if isNotOwnerProposer {
 		if tallyMethod == state.ProposalTallyMethodCoinWeighted || tallyMethod == state.ProposalTallyMethodIdentity {
@@ -764,8 +764,8 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 	}
 
 	// Ensure fee mode is valid
-	validFeeModes := []int{state.FeeModePusherPays, state.FeeModeRepoPays, state.FeeModeRepoPaysCapped}
-	if !funk.ContainsInt(validFeeModes, int(tx.FeeMode)) {
+	validFeeModes := []state.FeeMode{state.FeeModePusherPays, state.FeeModeRepoPays, state.FeeModeRepoPaysCapped}
+	if !funk.Contains(validFeeModes, tx.FeeMode) {
 		return feI(index, "feeMode", "fee mode is unknown")
 	}
 

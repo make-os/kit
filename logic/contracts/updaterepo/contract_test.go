@@ -63,7 +63,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", DelegatorCommission: 10})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governance.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -76,7 +76,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{ProposalDuration: 1000},
+					Gov: &state.RepoConfigGovernance{PropDuration: 1000},
 				}
 
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
@@ -102,7 +102,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			Specify("that config is updated", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
-				Expect(repo.Config.Governance.ProposalDuration.UInt64()).To(Equal(uint64(1000)))
+				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(1000)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
@@ -130,7 +130,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{ProposalDuration: 1000},
+					Gov: &state.RepoConfigGovernance{PropDuration: 1000},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -165,7 +165,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration.UInt64() + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Gov.PropDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -176,13 +176,13 @@ var _ = Describe("UpdateRepoContract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Governance.ProposalDuration = 1000
-				repoUpd.Config.Governance.ProposalFeeDepositDur = 100
+				repoUpd.Config.Gov.PropDuration = 1000
+				repoUpd.Config.Gov.PropFeeDepositDur = 100
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{ProposalDuration: 2000},
+					Gov: &state.RepoConfigGovernance{PropDuration: 2000},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -229,7 +229,7 @@ var _ = Describe("UpdateRepoContract", func() {
 
 		When("update config object is not empty", func() {
 			It("should change the config", func() {
-				cfg := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalQuorum: 120, ProposalDuration: 100}}
+				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropQuorum: 120, PropDuration: 100}}
 				proposal := &state.RepoProposal{
 					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToBasicMap()),
@@ -241,8 +241,8 @@ var _ = Describe("UpdateRepoContract", func() {
 					ChainHeight: 0,
 				})
 				Expect(err).To(BeNil())
-				Expect(repo.Config.Governance.ProposalQuorum).To(Equal(float64(120)))
-				Expect(repo.Config.Governance.ProposalDuration.UInt64()).To(Equal(uint64(100)))
+				Expect(repo.Config.Gov.PropQuorum).To(Equal(float64(120)))
+				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
 			})
 		})
 	})

@@ -98,7 +98,7 @@ var _ = Describe("SignCommit", func() {
 			}
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
-				Expect(req.Config.Governance.ProposalFee).To(Equal(float64(100)))
+				Expect(req.Config.Gov.PropFee).To(Equal(float64(100)))
 				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
 				Expect(req.Fee).To(Equal(1.2))
@@ -123,7 +123,7 @@ var _ = Describe("SignCommit", func() {
 			}
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
-				Expect(req.Config.Governance.ProposalFee).To(Equal(float64(100)))
+				Expect(req.Config.Gov.PropFee).To(Equal(float64(100)))
 				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
 				Expect(req.Fee).To(Equal(1.2))

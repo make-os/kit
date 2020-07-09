@@ -67,7 +67,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governance,
+					Config: state.MakeDefaultRepoConfig().Gov,
 				}
 				proposal.Config.Voter = state.VoterOwner
 				proposal.Creator = key.Addr().String()
@@ -75,7 +75,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal quorum is 40% and total votes received is 3", func() {
 				It("should return ProposalOutcomeQuorumNotMet", func() {
-					proposal.Config.ProposalQuorum = 40
+					proposal.Config.PropQuorum = 40
 					proposal.Yes = 2
 					proposal.No = 1
 					res := proposals.DetermineProposalOutcome(logic, proposal, repo, 100)
@@ -85,7 +85,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal quorum is 40% and total votes received is 4", func() {
 				It("should return ProposalOutcomeBelowThreshold", func() {
-					proposal.Config.ProposalQuorum = 40
+					proposal.Config.PropQuorum = 40
 					proposal.Yes = 2
 					proposal.No = 2
 					res := proposals.DetermineProposalOutcome(logic, proposal, repo, 100)
@@ -99,7 +99,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
 					proposal.ProposerMaxJoinHeight = 100
@@ -109,7 +109,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				When("proposal quorum is 40% and total votes received is 2", func() {
 					It("should return ProposalOutcomeQuorumNotMet", func() {
-						proposal.Config.ProposalQuorum = 40
+						proposal.Config.PropQuorum = 40
 						proposal.Yes = 1
 						proposal.No = 1
 						out := proposals.DetermineProposalOutcome(logic, proposal, repo, 100)
@@ -119,8 +119,8 @@ var _ = Describe("ProposalHandler", func() {
 
 				When("proposal quorum is 40%, threshold is 51% and total votes received is 3", func() {
 					It("should return ProposalOutcomeAccepted", func() {
-						proposal.Config.ProposalQuorum = 40
-						proposal.Config.ProposalThreshold = 51
+						proposal.Config.PropQuorum = 40
+						proposal.Config.PropThreshold = 51
 						proposal.Yes = 2
 						proposal.No = 1
 						out := proposals.DetermineProposalOutcome(logic, proposal, repo, 100)
@@ -149,8 +149,8 @@ var _ = Describe("ProposalHandler", func() {
 			var repo *state.Repository
 
 			BeforeEach(func() {
-				govCfg := state.MakeDefaultRepoConfig().Governance
-				govCfg.ProposalFee = 1
+				govCfg := state.MakeDefaultRepoConfig().Gov
+				govCfg.PropFee = 1
 				proposal = &state.RepoProposal{
 					Config:          govCfg,
 					FeeDepositEndAt: 100,
@@ -175,7 +175,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governance,
+					Config: state.MakeDefaultRepoConfig().Gov,
 				}
 				proposal.Config.Voter = state.VoterOwner
 				proposal.Creator = key.Addr().String()
@@ -221,7 +221,7 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = txns.TxTypeRepoProposalUpsertOwner
@@ -260,7 +260,7 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = txns.TxTypeRepoProposalUpsertOwner
@@ -272,7 +272,7 @@ var _ = Describe("ProposalHandler", func() {
 						"addresses": util.ToBytes("addr"),
 						"veto":      util.ToBytes(false),
 					}
-					proposal.Config.ProposalFeeRefundType = state.ProposalFeeRefundOnAccept
+					proposal.Config.PropFeeRefundType = state.ProposalFeeRefundOnAccept
 
 					repo = state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
@@ -300,11 +300,11 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governance,
+					Config: state.MakeDefaultRepoConfig().Gov,
 				}
 				proposal.Config.Voter = state.VoterNetStakers
 				proposal.Creator = key.Addr().String()
-				proposal.Config.ProposalQuorum = 40
+				proposal.Config.PropQuorum = 40
 				proposal.Yes = 100
 				proposal.No = 100
 				proposal.NoWithVeto = 50
@@ -325,10 +325,10 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
+					proposal.Config.PropQuorum = 40
 					proposal.Yes = 1
 					proposal.No = 1
 					proposal.NoWithVeto = 1
@@ -344,11 +344,11 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 10
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 10
 					proposal.Yes = 5
 					proposal.No = 4
 					proposal.NoWithVeto = 1
@@ -364,15 +364,15 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterNetStakersAndVetoOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 10
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 10
 					proposal.Yes = 700
 					proposal.No = 4
 					proposal.NoWithVeto = 1
-					proposal.Config.ProposalVetoOwnersQuorum = 40
+					proposal.Config.PropVetoOwnersQuorum = 40
 					proposal.NoWithVetoByOwners = 5
 
 					mockTickMgr := mocks.NewMockTicketManager(ctrl)
@@ -390,11 +390,11 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 0
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 0
 					proposal.Yes = 5
 					proposal.No = 4
 					proposal.NoWithVeto = 1
@@ -410,12 +410,12 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 10
-					proposal.Config.ProposalThreshold = 51
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 10
+					proposal.Config.PropThreshold = 51
 					proposal.Yes = 6
 					proposal.No = 4
 					proposal.NoWithVeto = 0
@@ -430,12 +430,12 @@ var _ = Describe("ProposalHandler", func() {
 			When("No threshold is reached", func() {
 				var proposal *state.RepoProposal
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 10
-					proposal.Config.ProposalThreshold = 51
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 10
+					proposal.Config.PropThreshold = 51
 					proposal.Yes = 4
 					proposal.No = 6
 					proposal.NoWithVeto = 0
@@ -451,12 +451,12 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Config.ProposalQuorum = 40
-					proposal.Config.ProposalVetoQuorum = 10
-					proposal.Config.ProposalThreshold = 51
+					proposal.Config.PropQuorum = 40
+					proposal.Config.PropVetoQuorum = 10
+					proposal.Config.PropThreshold = 51
 					proposal.Yes = 4
 					proposal.No = 4
 					proposal.NoWithVeto = 0
@@ -481,11 +481,11 @@ var _ = Describe("ProposalHandler", func() {
 			logic.SysKeeper().SetHelmRepo(helmRepoName)
 		})
 
-		makeMaybeProcessProposalFeeTest := func(refundType state.ProposalFeeRefundType,
+		makeMaybeProcessProposalFeeTest := func(refundType state.PropFeeRefundType,
 			outcome state.ProposalOutcome) error {
 			repo = state.BareRepository()
 			proposal = state.BareRepoProposal()
-			proposal.Config.ProposalFeeRefundType = refundType
+			proposal.Config.PropFeeRefundType = refundType
 			proposal.Fees[addr.String()] = "100"
 			proposal.Fees[addr2.String()] = "200"
 			proposal.Outcome = outcome

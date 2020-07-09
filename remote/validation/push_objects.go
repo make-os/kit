@@ -67,11 +67,11 @@ func CheckPushedReferenceConsistency(
 	isNewRef := !repoState.References.Has(ref.Name)
 	if plumbing2.IsMergeRequestReference(ref.Name) && isNewRef {
 
-		govCfg := repoState.Config.Governance
+		govCfg := repoState.Config.Gov
 
 		// When repo does not require a proposal fee, it must not be provided.
 		// Skip to end when repo does not require proposal fee
-		repoPropFee := govCfg.ProposalFee
+		repoPropFee := govCfg.PropFee
 		if repoPropFee == 0 {
 			if !refPropFee.Empty() {
 				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
@@ -80,7 +80,7 @@ func CheckPushedReferenceConsistency(
 		}
 
 		// When merge request proposal is exempted from paying proposal fee, skip to end
-		if govCfg.NoProposalFeeForMergeReq {
+		if govCfg.NoPropFeeForMergeReq {
 			goto end
 		}
 
@@ -90,7 +90,7 @@ func CheckPushedReferenceConsistency(
 
 		// When repo requires a proposal fee and a deposit period is not allowed,
 		// the full proposal fee must be provided.
-		hasDepositPeriod := govCfg.ProposalFeeDepositDur > 0
+		hasDepositPeriod := govCfg.PropFeeDepositDur > 0
 		if !hasDepositPeriod && refPropFee.Decimal().LessThan(decimal.NewFromFloat(repoPropFee)) {
 			return fe(-1, "value", constants.ErrFullProposalFeeRequired.Error())
 		}

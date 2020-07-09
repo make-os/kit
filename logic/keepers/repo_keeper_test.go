@@ -65,7 +65,7 @@ var _ = Describe("RepoKeeper", func() {
 			repoAtVersion1 := state2.BareRepository()
 
 			BeforeEach(func() {
-				repoAtVersion1.Config.Governance.ProposalFee = 100000
+				repoAtVersion1.Config.Gov.PropFee = 100000
 				state.Set(MakeRepoKey("repo1"), repoAtVersion1.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
@@ -83,7 +83,7 @@ var _ = Describe("RepoKeeper", func() {
 				repo := rk.Get("repo1", 0)
 				Expect(repo).ToNot(BeEquivalentTo(testRepo))
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get("1").Config).To(Equal(repoAtVersion1.Config.Governance))
+				Expect(repo.Proposals.Get("1").Config).To(Equal(repoAtVersion1.Config.Gov))
 			})
 		})
 
@@ -92,12 +92,12 @@ var _ = Describe("RepoKeeper", func() {
 
 			BeforeEach(func() {
 				// Version 1
-				repo.Config.Governance.ProposalFee = 100000
+				repo.Config.Gov.PropFee = 100000
 				state.Set(MakeRepoKey("repo1"), repo.Bytes())
 				state.SaveVersion()
 
 				// Version 2
-				repo.Config.Governance.ProposalFee = 200000
+				repo.Config.Gov.PropFee = 200000
 				state.Set(MakeRepoKey("repo1"), repo.Bytes())
 				state.SaveVersion()
 
@@ -114,7 +114,7 @@ var _ = Describe("RepoKeeper", func() {
 			It("should set proposal config to the config of the repo at", func() {
 				repo := rk.Get("repo1", 0)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get("1").Config).To(Equal(repo.Config.Governance))
+				Expect(repo.Proposals.Get("1").Config).To(Equal(repo.Config.Gov))
 			})
 		})
 	})

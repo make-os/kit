@@ -267,8 +267,8 @@ var _ = Describe("Validation", func() {
 			It("should return err when repo requires a proposal fee and 'Value' is zero (0)", func() {
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
-				repository.Config.Governance.ProposalFee = 100
-				repository.Config.Governance.NoProposalFeeForMergeReq = false
+				repository.Config.Gov.PropFee = 100
+				repository.Config.Gov.NoPropFeeForMergeReq = false
 				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
@@ -278,8 +278,8 @@ var _ = Describe("Validation", func() {
 				It("should return nil when repo requires a proposal fee and 'Value' is zero (0)", func() {
 					refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 					repository := &state.Repository{Config: state.DefaultRepoConfig}
-					repository.Config.Governance.ProposalFee = 100
-					repository.Config.Governance.NoProposalFeeForMergeReq = true
+					repository.Config.Gov.PropFee = 100
+					repository.Config.Gov.NoPropFeeForMergeReq = true
 					err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 					Expect(err).To(BeNil())
 				})

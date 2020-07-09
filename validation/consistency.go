@@ -424,7 +424,7 @@ func CheckProposalCommonConsistency(
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
 
-	repoPropFee := repo.Config.Governance.ProposalFee
+	repoPropFee := repo.Config.Gov.PropFee
 	propFeeDec := decimal.NewFromFloat(repoPropFee)
 
 	// When the repo does not require a proposal deposit,
@@ -436,7 +436,7 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if repo.Config.Governance.ProposalFeeDepositDur == 0 {
+	if repo.Config.Gov.PropFeeDepositDur == 0 {
 		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
 			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%f)", repoPropFee)
 			return nil, feI(index, "value", msg)
@@ -446,7 +446,7 @@ func CheckProposalCommonConsistency(
 	// Check if the sender is permitted to create the proposal.
 	// When proposal creator parameter is ProposalCreatorOwner, the sender is permitted only if they are an owner...
 	owner := repo.Owners.Get(txCommon.GetFrom().String())
-	propCreator := repo.Config.Governance.ProposalCreator
+	propCreator := repo.Config.Gov.PropCreator
 	if propCreator == state.ProposalCreatorOwner && owner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}

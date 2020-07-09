@@ -24,11 +24,11 @@ const (
 	ProposalCreatorOwner
 )
 
-// ProposalFeeRefundType describes the typeof refund scheme supported
-type ProposalFeeRefundType int
+// PropFeeRefundType describes the typeof refund scheme supported
+type PropFeeRefundType int
 
 const (
-	ProposalFeeRefundNo ProposalFeeRefundType = iota + 1
+	ProposalFeeRefundNo PropFeeRefundType = iota + 1
 	ProposalFeeRefundOnAccept
 	ProposalFeeRefundOnAcceptReject
 	ProposalFeeRefundOnAcceptAllReject
@@ -107,7 +107,7 @@ type Proposal interface {
 	GetRejectedWithVeto() float64
 	GetRejectedWithVetoByOwners() float64
 	GetFees() ProposalFees
-	GetRefundType() ProposalFeeRefundType
+	GetRefundType() PropFeeRefundType
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 	IncrAccept()
@@ -166,7 +166,7 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 // BareRepoProposal returns RepoProposal object with empty values
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
-		Config:     BareRepoConfig().Governance,
+		Config:     BareRepoConfig().Gov,
 		ActionData: make(map[string]util.Bytes),
 		Fees:       make(map[string]string),
 	}
@@ -185,7 +185,7 @@ func (p *RepoProposal) IsFeeDepositEnabled() bool {
 // IsDepositedFeeOK checks whether the fees deposited to the proposal
 // meets the minimum required deposit
 func (p *RepoProposal) IsDepositedFeeOK() bool {
-	propFee := decimal.NewFromFloat(p.Config.ProposalFee)
+	propFee := decimal.NewFromFloat(p.Config.PropFee)
 	return p.Fees.Total().GreaterThanOrEqual(propFee)
 }
 
@@ -277,18 +277,18 @@ func (p *RepoProposal) GetFees() ProposalFees {
 }
 
 // GetRefundType implements Proposal
-func (p *RepoProposal) GetRefundType() ProposalFeeRefundType {
-	return p.Config.ProposalFeeRefundType
+func (p *RepoProposal) GetRefundType() PropFeeRefundType {
+	return p.Config.PropFeeRefundType
 }
 
 // GetQuorum implements Proposal
 func (p *RepoProposal) GetQuorum() float64 {
-	return p.Config.ProposalQuorum
+	return p.Config.PropQuorum
 }
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.Config.ProposalTallyMethod
+	return p.Config.PropTallyMethod
 }
 
 // GetAction implements Proposal
@@ -303,17 +303,17 @@ func (p *RepoProposal) GetActionData() map[string]util.Bytes {
 
 // GetThreshold implements Proposal
 func (p *RepoProposal) GetThreshold() float64 {
-	return p.Config.ProposalThreshold
+	return p.Config.PropThreshold
 }
 
 // GetVetoQuorum implements Proposal
 func (p *RepoProposal) GetVetoQuorum() float64 {
-	return p.Config.ProposalVetoQuorum
+	return p.Config.PropVetoQuorum
 }
 
 // GetVetoOwnersQuorum implements Proposal
 func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
-	return p.Config.ProposalVetoOwnersQuorum
+	return p.Config.PropVetoOwnersQuorum
 }
 
 // GetAccepted implements Proposal

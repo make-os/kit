@@ -22,10 +22,10 @@ func MakeProposal(
 
 	proposal := &state.RepoProposal{
 		ID:         id,
-		Config:     repo.Config.Clone().Governance,
+		Config:     repo.Config.Clone().Gov,
 		Creator:    creatorAddress,
 		Height:     util.UInt64(chainHeight),
-		EndAt:      repo.Config.Governance.ProposalDuration + util.UInt64(chainHeight) + 1,
+		EndAt:      repo.Config.Gov.PropDuration + util.UInt64(chainHeight) + 1,
 		Fees:       map[string]string{},
 		ActionData: map[string]util.Bytes{},
 	}
@@ -36,15 +36,15 @@ func MakeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Governance.RequireVoterJoinHeight {
+	if repo.Config.Gov.ReqVoterJoinHeight {
 		proposal.ProposerMaxJoinHeight = util.UInt64(chainHeight) + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Governance.ProposalFeeDepositDur > 0 {
-		proposal.FeeDepositEndAt = 1 + util.UInt64(chainHeight) + repo.Config.Governance.ProposalFeeDepositDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDuration
+	if repo.Config.Gov.PropFeeDepositDur > 0 {
+		proposal.FeeDepositEndAt = 1 + util.UInt64(chainHeight) + repo.Config.Gov.PropFeeDepositDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Gov.PropDuration
 	}
 
 	// Register the proposal to the repo
