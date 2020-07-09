@@ -52,6 +52,12 @@ func (c *CreateRepoContract) Exec() error {
 		policy.AddDefaultPolicies(newRepo.Config)
 	}
 
+	// Add transaction value to repo balance
+	if !c.tx.Value.IsZero() {
+		newRepoBal := newRepo.Balance.Decimal().Add(c.tx.Value.Decimal())
+		newRepo.Balance = util.String(newRepoBal.String())
+	}
+
 	// Register sender as owner only if proposer type is ProposerOwner
 	// Register sender as a veto owner if proposer type is ProposerNetStakeholdersAndVetoOwner
 	voterType := newRepo.Config.Governance.Voter
@@ -66,8 +72,9 @@ func (c *CreateRepoContract) Exec() error {
 	// Store the new repo
 	c.RepoKeeper().Update(c.tx.Name, newRepo)
 
-	// Deduct fee from sender
-	common.DebitAccount(c, spk, c.tx.Fee.Decimal(), c.chainHeight)
+	// Deduct fee+value from sender
+	deductible := c.tx.Value.Decimal().Add(c.tx.Fee.Decimal())
+	common.DebitAccount(c, spk, deductible, c.chainHeight)
 
 	return nil
 }

@@ -160,13 +160,11 @@ func CheckTxRepoCreateConsistency(
 
 	repoState := logic.RepoKeeper().Get(tx.Name)
 	if !repoState.IsNil() {
-		msg := "name is not available. choose another"
-		return feI(index, "name", msg)
+		return feI(index, "name", "name is not available. choose another")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
 
