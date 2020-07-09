@@ -11,16 +11,21 @@ import (
 
 // Client describes methods for accessing REST API endpoints
 type Client interface {
-	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error)
-	GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
-	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
+
+	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error)
+
+	GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
+	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
+
 	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
 	GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error)
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
+
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
+	AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error)
 }
 
 // RequestFunc describes the function for making http requests

@@ -130,7 +130,7 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 // addCommonTxFlags adds flags required for commands that create network transactions
 func addCommonTxFlags(fs *pflag.FlagSet) {
 	if fs.Lookup("fee") == nil {
-		fs.StringP("fee", "f", "", "The transaction fee to pay to the network")
+		fs.Float64P("fee", "f", 0, "The transaction fee to pay to the network")
 	}
 	if fs.Lookup("nonce") == nil {
 		fs.Uint64P("nonce", "n", 0, "The next nonce of the account signing the transaction")

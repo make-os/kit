@@ -85,7 +85,7 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when to create repo", func() {
-			args := &CreateArgs{Name: "repo1", Value: "12.2", Fee: "1.2", SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
+			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
@@ -99,9 +99,9 @@ var _ = Describe("SignCommit", func() {
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(req.Config.Governance.ProposalFee).To(Equal(float64(100)))
-				Expect(req.Value).To(Equal("12.2"))
+				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
-				Expect(req.Fee).To(Equal("1.2"))
+				Expect(req.Fee).To(Equal(1.2))
 				return "", fmt.Errorf("error")
 			}
 			err := CreateCmd(cfg, args)
@@ -110,7 +110,7 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return nil on success", func() {
-			args := &CreateArgs{Name: "repo1", Value: "12.2", Fee: "1.2", SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
+			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
@@ -124,9 +124,9 @@ var _ = Describe("SignCommit", func() {
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(req.Config.Governance.ProposalFee).To(Equal(float64(100)))
-				Expect(req.Value).To(Equal("12.2"))
+				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
-				Expect(req.Fee).To(Equal("1.2"))
+				Expect(req.Fee).To(Equal(1.2))
 				return "0x123", nil
 			}
 			err := CreateCmd(cfg, args)

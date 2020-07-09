@@ -13,7 +13,7 @@ type TxRepoProposalRegisterPushKey struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	KeyIDs            []string                   `json:"ids" msgpack:"ids" mapstructure:"ids"`
+	PushKeys          []string                   `json:"keys" msgpack:"keys" mapstructure:"keys"`
 	Policies          []*state.ContributorPolicy `json:"policies" msgpack:"policies,omitempty" mapstructure:"policies,omitempty"`
 	FeeMode           state.FeeMode              `json:"feeMode" msgpack:"feeMode,omitempty" mapstructure:"feeMode,omitempty"`
 	FeeCap            util.String                `json:"feeCap" msgpack:"feeCap,omitempty" mapstructure:"feeCap,omitempty"`
@@ -27,7 +27,7 @@ func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalRegisterPushKey},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ID: ""},
-		KeyIDs:           []string{},
+		PushKeys:         []string{},
 		Policies:         []*state.ContributorPolicy{},
 		FeeMode:          state.FeeModePusherPays,
 	}
@@ -45,7 +45,7 @@ func (tx *TxRepoProposalRegisterPushKey) EncodeMsgpack(enc *msgpack.Encoder) err
 		tx.SenderPubKey,
 		tx.RepoName,
 		tx.ID,
-		tx.KeyIDs,
+		tx.PushKeys,
 		tx.Policies,
 		tx.FeeMode,
 		tx.FeeCap,
@@ -65,7 +65,7 @@ func (tx *TxRepoProposalRegisterPushKey) DecodeMsgpack(dec *msgpack.Decoder) err
 		&tx.SenderPubKey,
 		&tx.RepoName,
 		&tx.ID,
-		&tx.KeyIDs,
+		&tx.PushKeys,
 		&tx.Policies,
 		&tx.FeeMode,
 		&tx.FeeCap,

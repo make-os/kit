@@ -57,6 +57,7 @@ func (r *API) RegisterEndpoints(s ServeMux) {
 	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
 	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameCreateRepo), r.post(r.CreateRepo))
 	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameGetRepo), r.get(r.GetRepo))
+	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameAddRepoContribs), r.post(r.AddRepoContributors))
 }
 
 // V1Path creates a REST API v1 path

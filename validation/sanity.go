@@ -747,14 +747,18 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 		return err
 	}
 
+	if len(tx.PushKeys) == 0 {
+		return feI(index, "keys", "push key is required")
+	}
+
 	// Ensure all push key ids are unique and valid
 	found := map[string]struct{}{}
-	for _, pkID := range tx.KeyIDs {
+	for _, pkID := range tx.PushKeys {
 		if !crypto2.IsValidPushAddr(pkID) {
-			return feI(index, "ids", fmt.Sprintf("push key id (%s) is not valid", pkID))
+			return feI(index, "keys", fmt.Sprintf("push key id (%s) is not valid", pkID))
 		}
 		if _, ok := found[pkID]; ok {
-			return feI(index, "ids", fmt.Sprintf("push key id (%s) is a duplicate", pkID))
+			return feI(index, "keys", fmt.Sprintf("push key id (%s) is a duplicate", pkID))
 		}
 		found[pkID] = struct{}{}
 	}

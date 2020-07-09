@@ -65,4 +65,26 @@ var _ = Describe("PushKey", func() {
 			},
 		}, api.getRepo)
 	})
+
+	Describe(".addContributors", func() {
+		mods := &types.Modules{}
+		api := &RepoAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a map": {
+				params:     "{}",
+				statusCode: 400,
+				err:        &rpc.Err{Code: "60000", Message: "param must be a map", Data: ""},
+			},
+			"should return code=200 on success": {
+				params:     map[string]interface{}{"keys": []string{"push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"}},
+				result:     util.Map{"hash": "0x123"},
+				statusCode: 200,
+				mocker: func(tc *TestCase) {
+					mockRepoModule := mocks.NewMockRepoModule(ctrl)
+					mockRepoModule.EXPECT().AddContributor(tc.params).Return(util.Map{"hash": "0x123"})
+					mods.Repo = mockRepoModule
+				},
+			},
+		}, api.addContributors)
+	})
 })

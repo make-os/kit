@@ -62,7 +62,7 @@ func (c *ClientV1) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Regi
 	tx := txns.NewBareTxRegisterPushKey()
 	tx.PublicKey = body.PublicKey
 	tx.Nonce = body.Nonce
-	tx.Fee = util.String(body.Fee)
+	tx.Fee = util.String(cast.ToString(body.Fee))
 	tx.Scopes = body.Scopes
 	tx.Timestamp = time.Now().Unix()
 	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()

@@ -98,7 +98,7 @@ var _ = Describe("Client", func() {
 			}
 			_, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
 				Nonce:      100,
-				Fee:        "1",
+				Fee:        1,
 				Scopes:     []string{"scope1"},
 				FeeCap:     1.2,
 				PublicKey:  key.PubKey().ToPublicKey(),
@@ -120,7 +120,7 @@ var _ = Describe("Client", func() {
 			}
 			resp, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
 				Nonce:      100,
-				Fee:        "1",
+				Fee:        1,
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())

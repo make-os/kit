@@ -19,7 +19,7 @@ func NewRepoAPI(mods *modulestypes.Modules) *RepoAPI {
 	return &RepoAPI{mods: mods}
 }
 
-// createRepo creates a new repository
+// createRepo creates a transaction to create a repository
 func (a *RepoAPI) createRepo(params interface{}) (resp *rpc.Response) {
 	p, ok := params.(map[string]interface{})
 	if !ok {
@@ -44,10 +44,21 @@ func (a *RepoAPI) getRepo(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(a.mods.Repo.Get(name, opts))
 }
 
+// addContributors creates a transaction to add one or more push keys as contributors
+func (a *RepoAPI) addContributors(params interface{}) (resp *rpc.Response) {
+	p, ok := params.(map[string]interface{})
+	if !ok {
+		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a map", "")
+	}
+	return rpc.Success(a.mods.Repo.AddContributor(p))
+}
+
 // APIs returns all API handlers
 func (a *RepoAPI) APIs() rpc.APISet {
 	return []rpc.APIInfo{
 		{Name: "create", Namespace: constants.NamespaceRepo, Func: a.createRepo, Description: "Create a repository"},
 		{Name: "get", Namespace: constants.NamespaceRepo, Func: a.getRepo, Description: "Get a repository"},
+		{Name: "addContributors", Namespace: constants.NamespaceRepo, Func: a.addContributors,
+			Description: "Create a repository"},
 	}
 }

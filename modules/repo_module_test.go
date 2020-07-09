@@ -363,7 +363,7 @@ var _ = Describe("RepoModule", func() {
 			params := map[string]interface{}{"id": struct{}{}}
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Register(params)
+				m.AddContributor(params)
 			})
 		})
 
@@ -371,7 +371,7 @@ var _ = Describe("RepoModule", func() {
 			key := ""
 			payloadOnly := true
 			params := map[string]interface{}{"id": 1}
-			res := m.Register(params, key, payloadOnly)
+			res := m.AddContributor(params, key, payloadOnly)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalRegisterPushKey)))
@@ -381,7 +381,7 @@ var _ = Describe("RepoModule", func() {
 				HaveKey("policies"),
 				HaveKey("namespace"),
 				HaveKey("namespaceOnly"),
-				HaveKey("ids"),
+				HaveKey("keys"),
 				HaveKey("id"),
 				HaveKey("type"),
 				HaveKey("senderPubKey"),
@@ -395,7 +395,7 @@ var _ = Describe("RepoModule", func() {
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Register(params, "", false)
+				m.AddContributor(params, "", false)
 			})
 		})
 
@@ -403,7 +403,7 @@ var _ = Describe("RepoModule", func() {
 			params := map[string]interface{}{"id": 1}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
-			res := m.Register(params, "", false)
+			res := m.AddContributor(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
 		})

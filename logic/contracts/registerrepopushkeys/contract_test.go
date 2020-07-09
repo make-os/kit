@@ -80,7 +80,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 					TxProposalCommon: &txns.TxProposalCommon{RepoName: repoName, Value: proposalFee, ID: propID},
 					FeeMode:          state.FeeModePusherPays,
 					FeeCap:           "0",
-					KeyIDs:           []string{"push1_abc"},
+					PushKeys:         []string{"push1_abc"},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})

@@ -58,8 +58,8 @@ var _ = Describe("Client", func() {
 			_, err := client.CreateRepo(&types.CreateRepoBody{
 				Name:       "repo1",
 				Nonce:      100,
-				Value:      "10",
-				Fee:        "1",
+				Value:      10,
+				Fee:        1,
 				Config:     state.DefaultRepoConfig,
 				SigningKey: key,
 			})
@@ -80,8 +80,8 @@ var _ = Describe("Client", func() {
 			resp, err := client.CreateRepo(&types.CreateRepoBody{
 				Name:       "repo1",
 				Nonce:      100,
-				Value:      "10",
-				Fee:        "1",
+				Value:      10,
+				Fee:        1,
 				Config:     state.DefaultRepoConfig,
 				SigningKey: key,
 			})
@@ -132,6 +132,74 @@ var _ = Describe("Client", func() {
 			res, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).To(BeNil())
 			Expect(res.Balance.String()).To(Equal("100.2"))
+		})
+	})
+
+	Describe(".AddRepoContributors", func() {
+		It("should return ReqError when signing key is not provided", func() {
+			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{
+				SigningKey: nil,
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.ReqError{
+				Code:     ErrCodeBadParam,
+				HttpCode: 400,
+				Msg:      "signing key is required",
+				Field:    "signingKey",
+			}))
+		})
+
+		It("should return ReqError when call failed", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("repo_addContributors"))
+				Expect(params).To(And(
+					HaveKey("sig"),
+					HaveKey("timestamp"),
+					HaveKey("senderPubKey"),
+					HaveKey("value"),
+					HaveKey("id"),
+					HaveKey("name"),
+					HaveKey("namespace"),
+					HaveKey("namespaceOnly"),
+					HaveKey("policies"),
+					HaveKey("feeCap"),
+					HaveKey("feeMode"),
+					HaveKey("nonce"),
+					HaveKey("fee"),
+					HaveKey("type"),
+				))
+				return nil, 0, fmt.Errorf("error")
+			}
+			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{
+				RepoName:      "repo1",
+				ProposalID:    "1",
+				PushKeys:      []string{"push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
+				FeeCap:        13.2,
+				FeeMode:       12,
+				Nonce:         1,
+				Value:         10,
+				Fee:           1.2,
+				Namespace:     "ns1",
+				NamespaceOnly: "ns1",
+				Policies:      []*state.ContributorPolicy{{Object: "obj1", Action: "act1"}},
+				SigningKey:    key,
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.ReqError{
+				Code:     ErrCodeUnexpected,
+				HttpCode: 0,
+				Msg:      "error",
+				Field:    "",
+			}))
+		})
+
+		It("should return expected repo object on success", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				return util.Map{"address": "r/repo1", "hash": "0x123"}, 0, nil
+			}
+			resp, err := client.AddRepoContributors(&types.AddRepoContribsBody{SigningKey: key})
+			Expect(err).To(BeNil())
+			Expect(resp.Hash).To(Equal("0x123"))
 		})
 	})
 })

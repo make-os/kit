@@ -113,7 +113,7 @@ var _ = Describe("Account", func() {
 			}
 			resp, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
 				Nonce:      1,
-				Fee:        "1",
+				Fee:        1,
 				Scopes:     []string{"ns/repo", "repo1"},
 				FeeCap:     10.5,
 				PublicKey:  key.PubKey().ToPublicKey(),

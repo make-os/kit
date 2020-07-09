@@ -52,7 +52,7 @@ func (c *RegisterRepoPushKeysContract) Exec() error {
 	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalRegisterPushKey
 	proposal.ActionData = map[string]util.Bytes{
-		constants.ActionDataKeyIDs:      util.ToBytes(c.tx.KeyIDs),
+		constants.ActionDataKeyIDs:      util.ToBytes(c.tx.PushKeys),
 		constants.ActionDataKeyPolicies: util.ToBytes(c.tx.Policies),
 		constants.ActionDataKeyFeeMode:  util.ToBytes(c.tx.FeeMode),
 		constants.ActionDataKeyFeeCap:   util.ToBytes(c.tx.FeeCap.String()),

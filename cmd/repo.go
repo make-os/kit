@@ -31,8 +31,8 @@ var repoCreateCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fee, _ := cmd.Flags().GetString("fee")
-		value, _ := cmd.Flags().GetString("value")
+		fee, _ := cmd.Flags().GetFloat64("fee")
+		value, _ := cmd.Flags().GetFloat64("value")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
@@ -64,9 +64,10 @@ func init() {
 	repoCmd.AddCommand(repoCreateCmd)
 
 	sp := repoCreateCmd.Flags().StringP
+	fp := repoCreateCmd.Flags().Float64P
 
 	// Set flags
-	sp("value", "v", "0", "The amount of coins to transfer to the repository")
+	fp("value", "v", 0, "The amount of coins to transfer to the repository")
 	sp("config", "c", "", "Path to a file containing a repository configuration")
 
 	// Set required field

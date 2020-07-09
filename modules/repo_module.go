@@ -77,8 +77,8 @@ func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
 		},
 		{
 			Name:        "addContributor",
-			Value:       m.Register,
-			Description: "Register one or more contributors",
+			Value:       m.AddContributor,
+			Description: "Register one or more push key as contributors",
 		},
 		{
 			Name:        "announce",
@@ -396,7 +396,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 //
 // RETURNS object <map>
 // object.hash <string>: 							The transaction hash
-func (m *RepoModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) AddContributor(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareRepoProposalRegisterPushKey()

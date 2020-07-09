@@ -1348,6 +1348,25 @@ func (mr *MockRepoModuleMockRecorder) DepositFee(params interface{}, options ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositFee", reflect.TypeOf((*MockRepoModule)(nil).DepositFee), varargs...)
 }
 
+// AddContributor mocks base method
+func (m *MockRepoModule) AddContributor(params map[string]interface{}, options ...interface{}) util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{params}
+	for _, a := range options {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddContributor", varargs...)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// AddContributor indicates an expected call of AddContributor
+func (mr *MockRepoModuleMockRecorder) AddContributor(params interface{}, options ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{params}, options...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddContributor", reflect.TypeOf((*MockRepoModule)(nil).AddContributor), varargs...)
+}
+
 // MockNamespaceModule is a mock of NamespaceModule interface
 type MockNamespaceModule struct {
 	ctrl     *gomock.Controller

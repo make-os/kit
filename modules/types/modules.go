@@ -149,6 +149,7 @@ type RepoModule interface {
 	Get(name string, opts ...GetOptions) util.Map
 	Update(params map[string]interface{}, options ...interface{}) util.Map
 	DepositFee(params map[string]interface{}, options ...interface{}) util.Map
+	AddContributor(params map[string]interface{}, options ...interface{}) util.Map
 }
 type NamespaceModule interface {
 	Module

@@ -35,10 +35,10 @@ type CreateArgs struct {
 	Nonce uint64
 
 	// Value the the amount of coins to transfer from the signer's account to the repo account.
-	Value string
+	Value float64
 
 	// Fee is the transaction fee to be paid by the signing key
-	Fee string
+	Fee float64
 
 	// Account is the account whose key will be used to sign the transaction.
 	SigningKey string

@@ -33,7 +33,7 @@ var pushKeyRegCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		target := args[0]
 		targetPass, _ := cmd.Flags().GetString("pass")
-		fee, _ := cmd.Flags().GetString("fee")
+		fee, _ := cmd.Flags().GetFloat64("fee")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")

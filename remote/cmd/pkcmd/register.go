@@ -36,7 +36,7 @@ type RegisterArgs struct {
 	Nonce uint64
 
 	// Fee is the transaction fee to be paid by the signing key
-	Fee string
+	Fee float64
 
 	// Scopes are the namespaces and repo the contributor
 	Scopes []string

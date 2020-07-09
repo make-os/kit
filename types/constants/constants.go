@@ -26,7 +26,7 @@ const (
 	ActionDataKeyTargetHash    = "th"
 	ActionDataKeyAddrs         = "ads"
 	ActionDataKeyVeto          = "vet"
-	ActionDataKeyIDs           = "ids"
+	ActionDataKeyIDs           = "keys"
 	ActionDataKeyPolicies      = "pol"
 	ActionDataKeyFeeMode       = "fm"
 	ActionDataKeyFeeCap        = "fc"

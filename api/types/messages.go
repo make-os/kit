@@ -41,8 +41,8 @@ type GetRepoResponse struct {
 type CreateRepoBody struct {
 	Name       string
 	Nonce      uint64
-	Value      string
-	Fee        string
+	Value      float64
+	Fee        float64
 	Config     *state.RepoConfig
 	SigningKey *crypto.Key
 }
@@ -56,7 +56,7 @@ type GetRepoOpts struct {
 // RegisterPushKeyBody contains arguments for registering a push key
 type RegisterPushKeyBody struct {
 	Nonce      uint64
-	Fee        string
+	Fee        float64
 	PublicKey  crypto.PublicKey
 	Scopes     []string
 	FeeCap     float64
@@ -67,4 +67,25 @@ type RegisterPushKeyBody struct {
 type RegisterPushKeyResponse struct {
 	Address string `json:"address"`
 	Hash    string `json:"hash"`
+}
+
+// AddRepoContribsBody contains arguments for adding repo contributors
+type AddRepoContribsBody struct {
+	RepoName      string
+	ProposalID    string
+	PushKeys      []string
+	FeeCap        float64
+	FeeMode       int
+	Nonce         uint64
+	Value         float64
+	Fee           float64
+	Namespace     string
+	NamespaceOnly string
+	Policies      []*state.ContributorPolicy
+	SigningKey    *crypto.Key
+}
+
+// AddRepoContribsResponse is the response of a request to add repo contributors
+type AddRepoContribsResponse struct {
+	Hash string `json:"hash"`
 }

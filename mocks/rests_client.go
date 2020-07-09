@@ -34,6 +34,36 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
+// GetCall mocks base method
+func (m *MockClient) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCall", endpoint, params)
+	ret0, _ := ret[0].(*req.Resp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCall indicates an expected call of GetCall
+func (mr *MockClientMockRecorder) GetCall(endpoint, params interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCall", reflect.TypeOf((*MockClient)(nil).GetCall), endpoint, params)
+}
+
+// PostCall mocks base method
+func (m *MockClient) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PostCall", endpoint, body)
+	ret0, _ := ret[0].(*req.Resp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PostCall indicates an expected call of PostCall
+func (mr *MockClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockClient)(nil).PostCall), endpoint, body)
+}
+
 // SendTxPayload mocks base method
 func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error) {
 	m.ctrl.T.Helper()
@@ -87,36 +117,6 @@ func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, blockHeight...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
-}
-
-// GetCall mocks base method
-func (m *MockClient) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCall", endpoint, params)
-	ret0, _ := ret[0].(*req.Resp)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCall indicates an expected call of GetCall
-func (mr *MockClientMockRecorder) GetCall(endpoint, params interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCall", reflect.TypeOf((*MockClient)(nil).GetCall), endpoint, params)
-}
-
-// PostCall mocks base method
-func (m *MockClient) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PostCall", endpoint, body)
-	ret0, _ := ret[0].(*req.Resp)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PostCall indicates an expected call of PostCall
-func (mr *MockClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockClient)(nil).PostCall), endpoint, body)
 }
 
 // GetPushKeyOwnerNonce mocks base method
@@ -207,4 +207,19 @@ func (mr *MockClientMockRecorder) GetRepo(name interface{}, opts ...interface{})
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockClient)(nil).GetRepo), varargs...)
+}
+
+// AddRepoContributors mocks base method
+func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRepoContributors", body)
+	ret0, _ := ret[0].(*types.AddRepoContribsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddRepoContributors indicates an expected call of AddRepoContributors
+func (mr *MockClientMockRecorder) AddRepoContributors(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepoContributors", reflect.TypeOf((*MockClient)(nil).AddRepoContributors), body)
 }

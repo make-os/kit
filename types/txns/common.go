@@ -215,9 +215,15 @@ func (tx *TxValue) FromMap(data map[string]interface{}) (err error) {
 
 // TxProposalCommon describes fields for a proposal
 type TxProposalCommon struct {
-	RepoName string      `json:"name" msgpack:"name" mapstructure:"name"`
-	Value    util.String `json:"value" msgpack:"value" mapstructure:"value"`
-	ID       string      `json:"id,omitempty" msgpack:"id" mapstructure:"id"`
+
+	// RepoName is the target repository to create the proposal on.
+	RepoName string `json:"name" msgpack:"name" mapstructure:"name"`
+
+	// Value is the sometimes optional proposal fee
+	Value util.String `json:"value" msgpack:"value" mapstructure:"value"`
+
+	// ID is the proposal ID
+	ID string `json:"id,omitempty" msgpack:"id" mapstructure:"id"`
 }
 
 // GetProposalID returns the proposal ID

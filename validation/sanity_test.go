@@ -1451,10 +1451,10 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id exceeds max length", func() {
 			tx.RepoName = "repo1"
-			tx.ID = "1234556789"
+			tx.ID = strings.Repeat("1", 17)
 			err := validation.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
+			Expect(err.Error()).To(Equal("field:id, msg:proposal ID exceeded 16 characters limit"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1507,10 +1507,10 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ID = "123456789"
+			tx.ID = strings.Repeat("1", 17)
 			err := validation.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal ID exceeded 16 characters limit"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1538,6 +1538,7 @@ var _ = Describe("TxValidator", func() {
 			tx = txns.NewBareRepoProposalRegisterPushKey()
 			tx.Timestamp = time.Now().Unix()
 			tx.ID = "123"
+			tx.PushKeys = []string{"push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"}
 		})
 
 		It("should return error='type is invalid'", func() {
@@ -1578,10 +1579,10 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ID = "123456789"
+			tx.ID = strings.Repeat("1", 17)
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal ID exceeded 16 characters limit"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1592,38 +1593,48 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:value, msg:value is required"))
 		})
 
+		It("should return error no push key is provided", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.PushKeys = nil
+			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:keys, msg:push key is required"))
+		})
+
 		It("should return error when value below minimum network proposal fee", func() {
 			params.MinProposalFee = 100
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:value, msg:proposal creation fee cannot be less than network minimum"))
 		})
 
 		It("should return error when a push key id is not valid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1_abc")
+			tx.PushKeys = append(tx.PushKeys, "push1_abc")
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:ids, msg:push key id (push1_abc) is not valid"))
+			Expect(err).To(MatchError("field:keys, msg:push key id (push1_abc) is not valid"))
 		})
 
 		It("should return error when a push id is a duplicate", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:ids, msg:push key id " +
+			Expect(err).To(MatchError("field:keys, msg:push key id " +
 				"(push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t) is a duplicate"))
 		})
 
 		It("should return error when fee mode is unknown", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = 100
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
@@ -1633,7 +1644,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is unset", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = ""
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1644,7 +1655,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not numeric", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = "ten"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1655,7 +1666,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not a positive number", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = "-1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1666,7 +1677,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is not FeeModeRepoCapped but fee cap is set", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.FeeCap = "1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1677,7 +1688,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespace value format is invalid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.Namespace = "inv&alid"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1688,7 +1699,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespace is set but namespaceOnly is also set", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.Namespace = "ns1"
 			tx.NamespaceOnly = "ns2"
@@ -1700,7 +1711,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespaceOnly value format is invalid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.KeyIDs = append(tx.KeyIDs, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.NamespaceOnly = "inv&alid"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
