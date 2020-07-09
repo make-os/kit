@@ -140,6 +140,21 @@ func (mr *MockClientMockRecorder) GetRepo(name interface{}, opts ...interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockClient)(nil).GetRepo), varargs...)
 }
 
+// AddRepoContributors mocks base method
+func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRepoContributors", body)
+	ret0, _ := ret[0].(*types.AddRepoContribsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddRepoContributors indicates an expected call of AddRepoContributors
+func (mr *MockClientMockRecorder) AddRepoContributors(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepoContributors", reflect.TypeOf((*MockClient)(nil).AddRepoContributors), body)
+}
+
 // GetOptions mocks base method
 func (m *MockClient) GetOptions() *client.Options {
 	m.ctrl.T.Helper()

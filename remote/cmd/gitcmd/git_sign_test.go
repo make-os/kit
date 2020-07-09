@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/server"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -53,7 +54,7 @@ var _ = Describe("GitSign", func() {
 		It("should return error when unable to get and unlock the push key", func() {
 			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}}
 			args.RepoGetter = func(path string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (types.StoredKey, error) {
 				return nil, fmt.Errorf("error")
 			}
 			err := GitSignCmd(cfg, strings.NewReader("data"), args)
@@ -65,7 +66,7 @@ var _ = Describe("GitSign", func() {
 			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}}
 			args.RepoGetter = func(path string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 			config.AppName = "MY_APP"
@@ -78,7 +79,7 @@ var _ = Describe("GitSign", func() {
 			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}}
 			args.RepoGetter = func(path string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 			config.AppName = "MY_TEST_APP"
@@ -93,7 +94,7 @@ var _ = Describe("GitSign", func() {
 			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}, StdOut: out, StdErr: out}
 			args.RepoGetter = func(path string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 

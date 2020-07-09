@@ -48,7 +48,7 @@ type SignNoteArgs struct {
 	RemoteClients []restclient.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
-	PushKeyUnlocker cmd.KeyUnlocker
+	KeyUnlocker cmd.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce utils.NextNonceGetter
@@ -69,7 +69,13 @@ func SignNoteCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignNo
 	}
 
 	// Get and unlock the pusher key
-	key, err := args.PushKeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
+	key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: args.PushKeyID,
+		Passphrase:   args.PushKeyPass,
+		AskPass:      true,
+		TargetRepo:   targetRepo,
+		Prompt:       "Enter passphrase to unlock the signing key\n",
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
 	}

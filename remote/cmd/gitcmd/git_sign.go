@@ -47,7 +47,12 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 	}
 
 	// Get and unlock the pusher key
-	key, err := args.PushKeyUnlocker(cfg, pushKeyID, "", targetRepo)
+	key, err := args.PushKeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: pushKeyID,
+		Passphrase:   "",
+		AskPass:      false,
+		TargetRepo:   targetRepo,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get push key")
 	}

@@ -234,6 +234,53 @@ var _ = Describe("", func() {
 		})
 	})
 
+	Describe(".AddRepoContributors", func() {
+		It("should return err when two remote clients are provided and both failed", func() {
+			client := mocks.NewMockClient(ctrl)
+			client2 := mocks.NewMockClient(ctrl)
+
+			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			client.EXPECT().AddRepoContributors(args).Return(nil, fmt.Errorf("error"))
+			client2.EXPECT().AddRepoContributors(args).Return(nil, fmt.Errorf("error"))
+
+			_, err := AddRepoContributors(args, nil, []rest.Client{client, client2})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("Remote API: error"))
+		})
+
+		It("should return err when only one remote client and one rpc client are provided and both failed", func() {
+			remoteClient := mocks.NewMockClient(ctrl)
+			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			remoteClient.EXPECT().AddRepoContributors(args).Return(nil, fmt.Errorf("error"))
+
+			rpcClient := mocks2.NewMockClient(ctrl)
+			rpcClientErr := util.ReqErr(400, "100", "field", "error")
+			rpcClient.EXPECT().AddRepoContributors(args).Return(nil, rpcClientErr)
+
+			_, err := AddRepoContributors(args, rpcClient, []rest.Client{remoteClient})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("Remote API: error"))
+		})
+
+		It("should return no err and response when only an rpc client is provided and it succeeded", func() {
+			remoteClient := mocks.NewMockClient(ctrl)
+			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			remoteClient.EXPECT().AddRepoContributors(args).Return(&types.AddRepoContribsResponse{Hash: "0x123"}, nil)
+			hash, err := AddRepoContributors(args, nil, []rest.Client{remoteClient})
+			Expect(err).To(BeNil())
+			Expect(hash).To(Equal("0x123"))
+		})
+
+		It("should return no err and response when only a remote client is provided and it succeeded", func() {
+			rpcClient := mocks2.NewMockClient(ctrl)
+			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			rpcClient.EXPECT().AddRepoContributors(args).Return(&types.AddRepoContribsResponse{Hash: "0x123"}, nil)
+			hash, err := AddRepoContributors(args, rpcClient, []rest.Client{})
+			Expect(err).To(BeNil())
+			Expect(hash).To(Equal("0x123"))
+		})
+	})
+
 	Describe(".CallClients", func() {
 		It("should return error when no caller callbacks were provided", func() {
 			err := CallClients(&client.RPCClient{}, []rest.Client{&rest.ClientV1{}}, nil, nil)

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 
+	"gitlab.com/makeos/mosdef/util/colorfmt"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 	"golang.org/x/crypto/scrypt"
 )
@@ -48,7 +49,16 @@ func (ks *Keystore) SetOutput(out io.Writer) {
 
 // AskForPassword starts an interactive prompt to collect passphrase.
 // Returns error if passphrase and repeated passphrases do not match
-func (ks *Keystore) AskForPassword() (string, error) {
+func (ks *Keystore) AskForPassword(prompt ...string) (string, error) {
+
+	// Set and print prompt.
+	// If prompt is passed in, use it instead of the default
+	promptStr := ""
+	if len(prompt) > 0 {
+		promptStr = prompt[0]
+	}
+	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
+
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {
@@ -66,8 +76,16 @@ func (ks *Keystore) AskForPassword() (string, error) {
 
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
-func (ks *Keystore) AskForPasswordOnce() string {
-	fmt.Fprint(ks.out, "Enter your passphrase to unlock the key\n")
+func (ks *Keystore) AskForPasswordOnce(prompt ...string) string {
+
+	// Set and print prompt.
+	// If prompt is passed in, use it instead of the default
+	promptStr := "Enter your passphrase to unlock the key\n"
+	if len(prompt) > 0 {
+		promptStr = prompt[0]
+	}
+	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
+
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {

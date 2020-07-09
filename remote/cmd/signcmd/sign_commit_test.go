@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -24,9 +25,8 @@ var testGetNextNonce = func(pushKeyID string, rpcClient client.Client, remoteCli
 	return "1", nil
 }
 
-func testPushKeyUnlocker(key types.StoredKey, err error) func(cfg *config.AppConfig, pushKeyID,
-	defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
-	return func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+func testPushKeyUnlocker(key types.StoredKey, err error) cmd.KeyUnlocker {
+	return func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (types.StoredKey, error) {
 		return key, err
 	}
 }

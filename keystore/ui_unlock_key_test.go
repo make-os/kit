@@ -39,7 +39,7 @@ var _ = Describe("Reveal", func() {
 
 		When("address does not exist", func() {
 			It("should return err", func() {
-				_, err := ks.UIUnlockKey("unknown", "pass")
+				_, err := ks.UIUnlockKey("unknown", "pass", "")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
@@ -55,7 +55,7 @@ var _ = Describe("Reveal", func() {
 			})
 
 			It("should unlock account without providing a passphrase", func() {
-				acct, err := ks.UIUnlockKey(key.Addr().String(), "")
+				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
 				Expect(acct.GetAddress()).To(Equal(key.Addr().String()))
@@ -77,7 +77,7 @@ var _ = Describe("Reveal", func() {
 					prompted = true
 					return "my_pass"
 				}
-				acct, err := ks.UIUnlockKey(key.Addr().String(), "")
+				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
 				Expect(acct.GetAddress()).To(Equal(key.Addr().String()))
@@ -90,7 +90,7 @@ var _ = Describe("Reveal", func() {
 					prompted = true
 					return "my_wrong_pass"
 				}
-				_, err := ks.UIUnlockKey(key.Addr().String(), "")
+				_, err := ks.UIUnlockKey(key.Addr().String(), "", "")
 				Expect(prompted).To(BeTrue())
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("invalid passphrase"))

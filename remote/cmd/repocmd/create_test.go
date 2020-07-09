@@ -15,7 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	kstypes "gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/testutil"
 )
 
@@ -58,9 +58,9 @@ var _ = Describe("SignCommit", func() {
 
 		It("should return error when failed to unlock account", func() {
 			args := &CreateArgs{SigningKey: "1", SigningKeyPass: "pass"}
-			args.KeyUnlocker = func(cfg *config.AppConfig, keyAddrOrIdx, defaultPassphrase string, targetRepo types.LocalRepo) (kstypes.StoredKey, error) {
-				Expect(keyAddrOrIdx).To(Equal(args.SigningKey))
-				Expect(defaultPassphrase).To(Equal(args.SigningKeyPass))
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (kstypes.StoredKey, error) {
+				Expect(a.KeyAddrOrIdx).To(Equal(args.SigningKey))
+				Expect(a.Passphrase).To(Equal(args.SigningKeyPass))
 				return nil, fmt.Errorf("error")
 			}
 			err := CreateCmd(cfg, args)
@@ -72,7 +72,7 @@ var _ = Describe("SignCommit", func() {
 			args := &CreateArgs{SigningKey: "1", SigningKeyPass: "pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
-			args.KeyUnlocker = func(cfg *config.AppConfig, keyAddrOrIdx, defaultPassphrase string, targetRepo types.LocalRepo) (kstypes.StoredKey, error) {
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
@@ -89,7 +89,7 @@ var _ = Describe("SignCommit", func() {
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
-			args.KeyUnlocker = func(cfg *config.AppConfig, keyAddrOrIdx, defaultPassphrase string, targetRepo types.LocalRepo) (kstypes.StoredKey, error) {
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
@@ -114,7 +114,7 @@ var _ = Describe("SignCommit", func() {
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
-			args.KeyUnlocker = func(cfg *config.AppConfig, keyAddrOrIdx, defaultPassphrase string, targetRepo types.LocalRepo) (kstypes.StoredKey, error) {
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *cmd.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {

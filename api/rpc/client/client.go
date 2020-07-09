@@ -37,6 +37,7 @@ type Client interface {
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError)
+	AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }

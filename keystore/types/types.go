@@ -52,9 +52,9 @@ type KeyPayload struct {
 // Keystore describes a module for managing keys
 type Keystore interface {
 	SetOutput(out io.Writer)
-	AskForPassword() (string, error)
-	AskForPasswordOnce() string
-	UIUnlockKey(addressOrIndex, passphrase string) (StoredKey, error)
+	AskForPassword(prompt ...string) (string, error)
+	AskForPasswordOnce(prompt ...string) string
+	UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (StoredKey, error)
 	UpdateCmd(addressOrIndex, passphrase string) error
 	RevealCmd(addrOrIdx, pass string) error
 	ImportCmd(keyfile string, keyType KeyType, pass string) error

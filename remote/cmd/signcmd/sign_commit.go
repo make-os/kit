@@ -92,7 +92,13 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	}
 
 	// Get and unlock the pusher key
-	key, err := args.KeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
+	key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: args.PushKeyID,
+		Passphrase:   args.PushKeyPass,
+		AskPass:      true,
+		TargetRepo:   targetRepo,
+		Prompt:       "Enter passphrase to unlock the signing key\n",
+	})
 	if err != nil {
 		return errors2.Wrap(err, "failed to unlock the signing key")
 	}

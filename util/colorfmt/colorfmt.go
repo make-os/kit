@@ -56,8 +56,12 @@ func HiCyanString(format string, a ...interface{}) string {
 	return colorStr(format, []color.Attribute{color.FgHiCyan}, a...)
 }
 
-func HiBlackString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgBlack}, a...)
+func BoldString(format string, a ...interface{}) string {
+	return colorStr(format, []color.Attribute{color.Bold}, a...)
+}
+
+func WhiteBoldString(format string, a ...interface{}) string {
+	return colorStr(format, []color.Attribute{color.FgWhite, color.Bold}, a...)
 }
 
 func Red(format string, a ...interface{}) {

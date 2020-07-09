@@ -1,23 +1,53 @@
 package contribcmd
 
 import (
+	"fmt"
 	"io"
 	"strconv"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	restclient "gitlab.com/makeos/mosdef/api/remote/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/api/utils"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/types/state"
+	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
 // AddArgs contains arguments for AddCmd.
 type AddArgs struct {
 
-	// Name is the unique name of the repository
+	// Name is the name of the repository where the contributors will be added to.
 	Name string
+
+	// PushKeys are a list of push keys to add as contributors
+	PushKeys []string
+
+	// PropID is the unique proposal ID
+	PropID string
+
+	// FeeCap is the contributors' fee cap
+	FeeCap float64
+
+	// FeeMode is the contributors' fee mode
+	FeeMode int
+
+	// Value is the proposal fee
+	Value float64
+
+	// Policies include policies specific to the contributor(s)
+	Policies []*state.ContributorPolicy
+
+	// Namespace adds the contributor(s) as namespace-level contributor(s)
+	Namespace string
+
+	// NamespaceOnly adds the contributor(s) only as namespace-level contributor(s)
+	NamespaceOnly string
 
 	// Nonce is the next nonce of the signing key's account
 	Nonce uint64
@@ -25,14 +55,11 @@ type AddArgs struct {
 	// Fee is the transaction fee to be paid by the signing key
 	Fee float64
 
-	// Scopes are the namespaces and repo the contributor
-	Scopes []string
-
-	// Account is the account whose key will be used to sign the transaction.
-	Account string
+	// SigningKey is the account whose key will be used to sign the transaction.
+	SigningKey string
 
 	// AccountPass is the passphrase for unlocking the signing key.
-	AccountPass string
+	SigningKeyPass string
 
 	// RpcClient is the RPC client
 	RPCClient client.Client
@@ -47,16 +74,23 @@ type AddArgs struct {
 	GetNextNonce utils.NextNonceGetter
 
 	// CreateRepo is a function for generating a transaction for creating a repository
-	CreateRepo utils.RepoCreator
+	AddRepoContributors utils.RepoContributorsAdder
 
 	Stdout io.Writer
 }
 
-// AddCmd creates a transaction to add a contributor
+// AddCmd creates a proposal transaction to add contributors to a repository
 func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 
 	// Get and unlock the signing key
-	key, err := args.KeyUnlocker(cfg, args.Account, args.AccountPass, nil)
+	key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: args.SigningKey,
+		Passphrase:   args.SigningKeyPass,
+		AskPass:      true,
+		TargetRepo:   nil,
+		Prompt:       "Enter passphrase to unlock signing key.\n",
+		Stdout:       args.Stdout,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")
 	}
@@ -71,23 +105,35 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.RegisterPushKeyBody{
-		Nonce:      nonce,
-		Fee:        args.Fee,
-		SigningKey: key.GetKey(),
+	if args.PropID == "" {
+		args.PropID = cast.ToString(time.Now().Unix())
 	}
-	_ = body
+
+	body := &types.AddRepoContribsBody{
+		RepoName:      args.Name,
+		ProposalID:    args.PropID,
+		PushKeys:      args.PushKeys,
+		FeeCap:        args.FeeCap,
+		FeeMode:       args.FeeMode,
+		Nonce:         nonce,
+		Value:         args.Value,
+		Fee:           args.Fee,
+		Namespace:     args.Namespace,
+		NamespaceOnly: args.NamespaceOnly,
+		Policies:      nil,
+		SigningKey:    key.GetKey(),
+	}
+
 	// Create the repo creating transaction
-	// hash, err := args.CreateRepo(body, args.RPCClient, args.RemoteClients)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to create repo")
-	// }
-	//
-	// if args.Stdout != nil {
-	// fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
-	// fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
-	// fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
-	// }
+	hash, err := args.AddRepoContributors(body, args.RPCClient, args.RemoteClients)
+	if err != nil {
+		return errors.Wrap(err, "failed to add contributors")
+	}
+
+	if args.Stdout != nil {
+		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
+		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+	}
 
 	return nil
 }

@@ -94,7 +94,7 @@ var signTagCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			PushKeyUnlocker:       cmd2.UnlockKey,
+			KeyUnlocker:           cmd2.UnlockKey,
 			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
@@ -132,7 +132,7 @@ var signNoteCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			PushKeyUnlocker:       cmd2.UnlockKey,
+			KeyUnlocker:           cmd2.UnlockKey,
 			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {

@@ -775,7 +775,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 			return err
 		}
 	} else {
-		if tx.FeeCap != "" {
+		if !tx.FeeCap.IsZero() {
 			return feI(index, "feeCap", "value not expected for the chosen fee mode")
 		}
 	}

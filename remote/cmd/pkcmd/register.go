@@ -79,7 +79,13 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 		pk, _ := crypto.PubKeyFromBase58(args.Target)
 		pubKeyToReg = pk.ToPublicKey()
 	} else {
-		key, err := args.KeyUnlocker(cfg, args.Target, args.TargetPass, nil)
+		key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+			KeyAddrOrIdx: args.Target,
+			Passphrase:   args.TargetPass,
+			AskPass:      true,
+			TargetRepo:   nil,
+			Prompt:       "Enter passphrase to unlock the target local account.\n",
+		})
 		if err != nil {
 			return errors.Wrap(err, "failed to unlock the local key")
 		}
@@ -87,7 +93,13 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 	}
 
 	// Get and unlock the signing key
-	key, err := args.KeyUnlocker(cfg, args.SigningKey, args.SigningKeyPass, nil)
+	key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: args.SigningKey,
+		Passphrase:   args.SigningKeyPass,
+		AskPass:      true,
+		TargetRepo:   nil,
+		Prompt:       "Enter passphrase to unlock signing key.\n",
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")
 	}

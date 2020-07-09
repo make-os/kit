@@ -40,10 +40,10 @@ type CreateArgs struct {
 	// Fee is the transaction fee to be paid by the signing key
 	Fee float64
 
-	// Account is the account whose key will be used to sign the transaction.
+	// SigningKey is the account whose key will be used to sign the transaction.
 	SigningKey string
 
-	// AccountPass is the passphrase for unlocking the signing key.
+	// SigningKeyPass is the passphrase for unlocking the signing key.
 	SigningKeyPass string
 
 	// RpcClient is the RPC client
@@ -94,7 +94,12 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 	}
 
 	// Get and unlock the signing key
-	key, err := args.KeyUnlocker(cfg, args.SigningKey, args.SigningKeyPass, nil)
+	key, err := args.KeyUnlocker(cfg, &cmd.UnlockKeyArgs{
+		KeyAddrOrIdx: args.SigningKey,
+		Passphrase:   args.SigningKeyPass,
+		AskPass:      true,
+		TargetRepo:   nil,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")
 	}

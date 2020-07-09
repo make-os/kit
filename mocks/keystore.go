@@ -212,47 +212,55 @@ func (mr *MockKeystoreMockRecorder) SetOutput(out interface{}) *gomock.Call {
 }
 
 // AskForPassword mocks base method
-func (m *MockKeystore) AskForPassword() (string, error) {
+func (m *MockKeystore) AskForPassword(prompt ...string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AskForPassword")
+	varargs := []interface{}{}
+	for _, a := range prompt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AskForPassword", varargs...)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AskForPassword indicates an expected call of AskForPassword
-func (mr *MockKeystoreMockRecorder) AskForPassword() *gomock.Call {
+func (mr *MockKeystoreMockRecorder) AskForPassword(prompt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPassword", reflect.TypeOf((*MockKeystore)(nil).AskForPassword))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPassword", reflect.TypeOf((*MockKeystore)(nil).AskForPassword), prompt...)
 }
 
 // AskForPasswordOnce mocks base method
-func (m *MockKeystore) AskForPasswordOnce() string {
+func (m *MockKeystore) AskForPasswordOnce(prompt ...string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AskForPasswordOnce")
+	varargs := []interface{}{}
+	for _, a := range prompt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AskForPasswordOnce", varargs...)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // AskForPasswordOnce indicates an expected call of AskForPasswordOnce
-func (mr *MockKeystoreMockRecorder) AskForPasswordOnce() *gomock.Call {
+func (mr *MockKeystoreMockRecorder) AskForPasswordOnce(prompt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPasswordOnce", reflect.TypeOf((*MockKeystore)(nil).AskForPasswordOnce))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPasswordOnce", reflect.TypeOf((*MockKeystore)(nil).AskForPasswordOnce), prompt...)
 }
 
 // UIUnlockKey mocks base method
-func (m *MockKeystore) UIUnlockKey(addressOrIndex, passphrase string) (types.StoredKey, error) {
+func (m *MockKeystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UIUnlockKey", addressOrIndex, passphrase)
+	ret := m.ctrl.Call(m, "UIUnlockKey", addressOrIndex, passphrase, promptMsg)
 	ret0, _ := ret[0].(types.StoredKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UIUnlockKey indicates an expected call of UIUnlockKey
-func (mr *MockKeystoreMockRecorder) UIUnlockKey(addressOrIndex, passphrase interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) UIUnlockKey(addressOrIndex, passphrase, promptMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UIUnlockKey", reflect.TypeOf((*MockKeystore)(nil).UIUnlockKey), addressOrIndex, passphrase)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UIUnlockKey", reflect.TypeOf((*MockKeystore)(nil).UIUnlockKey), addressOrIndex, passphrase, promptMsg)
 }
 
 // UpdateCmd mocks base method

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -13,63 +13,67 @@ import (
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 )
 
+// UnlockKeyArgs contains arguments for UnlockKey
+type UnlockKeyArgs struct {
+	KeyAddrOrIdx string
+	AskPass      bool
+	Passphrase   string
+	TargetRepo   remotetypes.LocalRepo
+	Prompt       string
+	Stdout       io.Writer
+}
+
 // KeyUnlocker describes a function for unlocking a keystore key.
-type KeyUnlocker func(
-	cfg *config.AppConfig,
-	keyAddrOrIdx,
-	defaultPassphrase string,
-	targetRepo remotetypes.LocalRepo) (types.StoredKey, error)
+type KeyUnlocker func(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, error)
 
 // UnlockKey takes a key address or index, unlocks it and returns the key.
 // - It will using the given passphrase if set, otherwise
 // - if the target repo is set, it will try to get it from the git config (user.passphrase).
 // - If passphrase is still unknown, it will attempt to get it from an environment variable.
-func UnlockKey(
-	cfg *config.AppConfig,
-	keyAddrOrIdx,
-	passphrase string,
-	targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, error) {
 
 	// Get the key from the key store
 	ks := keystore.New(cfg.KeystoreDir())
-	ks.SetOutput(ioutil.Discard)
+	if args.Stdout != nil {
+		ks.SetOutput(args.Stdout)
+	}
 
-	// Ensure the key exist
-	key, err := ks.GetByIndexOrAddress(keyAddrOrIdx)
+	// Get the key by address or index
+	key, err := ks.GetByIndexOrAddress(args.KeyAddrOrIdx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find key (%s)", keyAddrOrIdx)
+		return nil, errors.Wrapf(err, "failed to find key (%s)", args.KeyAddrOrIdx)
 	}
 
 	// If passphrase is unset and target repo is set, attempt to get the
 	// passphrase from 'user.passphrase' config.
 	unprotected := key.IsUnprotected()
-	if !unprotected && passphrase == "" && targetRepo != nil {
-		repoCfg, err := targetRepo.Config()
+	if !unprotected && args.Passphrase == "" && args.TargetRepo != nil {
+		repoCfg, err := args.TargetRepo.Config()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get repo config")
 		}
-		passphrase = repoCfg.Raw.Section("user").Option("passphrase")
+		args.Passphrase = repoCfg.Raw.Section("user").Option("passphrase")
 
 		// If we still don't have a passphrase, get it from the repo scoped env variable.
-		if passphrase == "" {
-			passphrase = os.Getenv(MakeRepoScopedPassEnvVar(config.AppName, targetRepo.GetName()))
+		if args.Passphrase == "" {
+			args.Passphrase = os.Getenv(MakeRepoScopedPassEnvVar(config.AppName, args.TargetRepo.GetName()))
 		}
 	}
 
 	// If key is protected and still no passphrase,
 	// try to get it from the general passphrase env variable
-	if !unprotected && passphrase == "" {
-		passphrase = os.Getenv(MakePassEnvVar(config.AppName))
+	if !unprotected && args.Passphrase == "" {
+		args.Passphrase = os.Getenv(MakePassEnvVar(config.AppName))
 	}
 
 	// If key is protected and still no passphrase, exit with error
-	if !unprotected && passphrase == "" {
+	if !unprotected && args.Passphrase == "" && !args.AskPass {
 		return nil, fmt.Errorf("passphrase of signing key is required")
 	}
 
-	key, err = ks.UIUnlockKey(keyAddrOrIdx, passphrase)
+	key, err = ks.UIUnlockKey(args.KeyAddrOrIdx, args.Passphrase, args.Prompt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unlock key (%s)", keyAddrOrIdx)
+		return nil, errors.Wrapf(err, "failed to unlock key (%s)", args.KeyAddrOrIdx)
 	}
 
 	return key, nil

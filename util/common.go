@@ -72,6 +72,11 @@ func (s String) String() string {
 	return string(s)
 }
 
+// IsZero returns true if str is empty or equal "0"
+func (s String) IsZero() bool {
+	return IsZeroString(string(s))
+}
+
 // IsNumeric checks whether s is numeric
 func (s String) IsNumeric() bool {
 	return govalidator.IsFloat(s.String())

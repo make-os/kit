@@ -140,6 +140,40 @@ func RegisterPushKey(
 	return
 }
 
+// RepoContributorsAdder describes a function for creating a
+// proposal to add contributors to a repo.
+type RepoContributorsAdder func(
+	req *types.AddRepoContribsBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error)
+
+// AddRepoContributors creates a proposal transaction to add contributors to a repo and returns the hash.
+// It accepts a rpc client and one or more remote API clients represent different remotes.
+// It will attempt to first request account information using the remote clients and fallback
+// to the RPC client if remote clients fail.
+func AddRepoContributors(
+	req *types.AddRepoContribsBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error) {
+	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+		resp, err := c.AddRepoContributors(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+
+	}, func(c remote.Client) error {
+		resp, err := c.AddRepoContributors(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+	})
+	return
+}
+
 // CallClients allows the caller to perform calls on multiple remote clients
 // and an RPC client. Callers must provide rpcCaller callback function to perform
 // operation with the given rpc client.

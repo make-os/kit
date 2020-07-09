@@ -17,7 +17,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 	}
 
 	// Unlock the key
-	account, err := ks.UIUnlockKey(addressOrIndex, passphrase)
+	account, err := ks.UIUnlockKey(addressOrIndex, passphrase, "")
 	if err != nil {
 		return err
 	}
