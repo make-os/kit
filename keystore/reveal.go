@@ -70,7 +70,7 @@ unlock:
 	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key revealed successfully!"))
 	fmt.Fprintln(ks.out, "- Address: "+fmt2.HiCyanString(storedAcct.GetAddress()))
 	fmt.Fprintln(ks.out, "- Public Key: "+fmt2.HiCyanString(storedAcct.GetKey().PubKey().Base58()))
-	fmt.Fprintln(ks.out, "- Private Key:"+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
+	fmt.Fprintln(ks.out, "- Private Key: "+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
 
 	return nil
 }

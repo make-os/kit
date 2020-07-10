@@ -3,6 +3,7 @@ package createrepo
 import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
+	"gitlab.com/makeos/mosdef/logic/contracts/registerpushkey"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -60,6 +61,16 @@ func (c *CreateRepoContract) Exec() error {
 
 	// Add the creator as a contributor if allowed in config.
 	if newRepo.Config.Gov.CreatorAsContributor {
+
+		// Register sender's public key as a push key
+		if err := registerpushkey.NewContract().Init(c.Logic, &txns.TxRegisterPushKey{
+			TxCommon:  &txns.TxCommon{Fee: "0", SenderPubKey: c.tx.SenderPubKey},
+			PublicKey: spk.ToPublicKey(),
+			FeeCap:    "0",
+		}, c.chainHeight).Exec(); err != nil {
+			return err
+		}
+
 		newRepo.Contributors[spk.PushAddr().String()] = &state.RepoContributor{
 			FeeMode: state.FeeModePusherPays,
 			FeeCap:  "0",
