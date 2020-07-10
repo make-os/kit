@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -21,7 +20,7 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	service services.Service
 	keepers core.Keepers
 }

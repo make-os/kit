@@ -5,7 +5,6 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/console"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -15,7 +14,7 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	console.ConsoleSuggestions
+	modulestypes.ConsoleSuggestions
 	reactor  core.MempoolReactor
 	pushPool types.PushPool
 }

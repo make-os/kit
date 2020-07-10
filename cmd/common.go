@@ -3,12 +3,14 @@ package cmd
 import (
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 	remote "gitlab.com/makeos/mosdef/api/remote/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
@@ -226,4 +228,12 @@ func getIssueRef(curRepo types.LocalRepo, args []string) string {
 	}
 
 	return ref
+}
+
+// viperBindFlagSet binds flags of a command to viper only if the command
+// is the currently executed command.
+func viperBindFlagSet(cmd *cobra.Command) {
+	if len(os.Args) > 1 && os.Args[1] == cmd.Name() {
+		viper.BindPFlags(cmd.Flags())
+	}
 }

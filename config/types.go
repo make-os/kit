@@ -88,6 +88,7 @@ type RPCConfig struct {
 	Password      string `json:"password" mapstructure:"password"`
 	DisableAuth   bool   `json:"disableauth" mapstructure:"disableauth"`
 	AuthPubMethod bool   `json:"authpubmethod" mapstructure:"authpubmethod"`
+	HTTPS         bool   `json:"https" mapstructure:"https"`
 	TMRPCAddress  string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 
@@ -239,9 +240,9 @@ func (c *AppConfig) SetRepoRoot(dir string) {
 	c.repoDir = dir
 }
 
-// ConsoleOnly checks whether --only flag is set
-func (c *AppConfig) ConsoleOnly() bool {
-	return viper.GetBool("console.only")
+// IsAttachMode checks whether the node was started in attach mode
+func (c *AppConfig) IsAttachMode() bool {
+	return viper.GetBool("attachmode")
 }
 
 // GetAppDBDir returns the path where app's database files are stored

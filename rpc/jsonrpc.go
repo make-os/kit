@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -145,7 +146,7 @@ func (s *JSONRPC) APIs() APISet {
 		{
 			Name:        "methods",
 			Description: "List RPC methods",
-			Namespace:   "rpc",
+			Namespace:   constants.NamespaceRPC,
 			Func: func(interface{}) *Response {
 				return Success(util.Map{"methods": s.Methods()})
 			},

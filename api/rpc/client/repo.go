@@ -48,7 +48,7 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 }
 
 // GetRepo finds and returns a repository
-func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError) {
+func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}

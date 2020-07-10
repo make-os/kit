@@ -7,7 +7,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -20,7 +19,7 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	service   services.Service
 	logic     core.Logic
 	ticketmgr tickettypes.TicketManager

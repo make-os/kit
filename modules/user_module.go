@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore"
 	keystoretypes "gitlab.com/makeos/mosdef/keystore/types"
@@ -21,9 +20,9 @@ import (
 )
 
 // UserModule provides account management functionalities
-// that are accessed through the javascript console environment
+// that are accessed through the JavaScript console environment
 type UserModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	cfg      *config.AppConfig
 	keystore keystoretypes.Keystore
 	service  services.Service

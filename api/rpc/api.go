@@ -5,15 +5,6 @@ import (
 	"gitlab.com/makeos/mosdef/rpc"
 )
 
-type TestCase struct {
-	params     interface{}
-	body       string
-	statusCode int
-	mocker     func(tc *TestCase)
-	result     map[string]interface{}
-	err        *rpc.Err
-}
-
 // APIs returns all API handlers
 func APIs(modulesHub types.ModulesHub, rpcServer *rpc.RPCServer) rpc.APISet {
 

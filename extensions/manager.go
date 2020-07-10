@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
@@ -23,7 +22,7 @@ import (
 
 // Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	cfg        *config.AppConfig
 	main       types.ModulesHub
 	runningExt map[string]*ExtensionControl

@@ -11,7 +11,7 @@ import (
 )
 
 // GetPushKeyOwner gets the account that owns a push key
-func (c *RPCClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError) {
+func (c *RPCClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {

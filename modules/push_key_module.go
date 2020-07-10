@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -20,7 +19,7 @@ import (
 
 // PushKeyModule manages and provides access to push keys.
 type PushKeyModule struct {
-	console.ConsoleSuggestions
+	modulestypes.ConsoleSuggestions
 	cfg     *config.AppConfig
 	service services.Service
 	logic   core.Logic

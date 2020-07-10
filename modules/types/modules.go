@@ -185,3 +185,17 @@ type RPCModule interface {
 	IsRunning() bool
 	ConnectLocal() util.Map
 }
+
+// ConsoleSuggestions provides functionalities for providing the console with suggestions.
+// It is meant to be embedded in a module to allow it handle console suggestion provisioning.
+type ConsoleSuggestions struct {
+	Suggestions []prompt.Suggest
+}
+
+// Completer returns suggestions for console input
+func (m *ConsoleSuggestions) Completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.Suggestions, words, true)
+	}
+	return nil
+}

@@ -119,9 +119,9 @@ var _ = Describe("Client", func() {
 			}
 			_, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Code).To(Equal(ErrCodeDecodeFailed))
-			Expect(err.HttpCode).To(Equal(500))
-			Expect(err.Msg).To(ContainSubstring("expected type 'util.String', got unconvertible type 'struct {}'"))
+			Expect(err.(*util.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
+			Expect(err.(*util.ReqError).HttpCode).To(Equal(500))
+			Expect(err.(*util.ReqError).Msg).To(ContainSubstring("expected type 'util.String', got unconvertible type 'struct {}'"))
 		})
 
 		It("should return expected repo object on success", func() {

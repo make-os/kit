@@ -62,5 +62,5 @@ func (m *Module) GetModules() *modulestypes.Modules {
 
 // ConfigureVM instructs VM-accessible modules accessible to configure the VM
 func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Completer) {
-	return m.Modules.ConfigureVM(vm, m.cfg.ConsoleOnly())
+	return m.Modules.ConfigureVM(vm, m.cfg.IsAttachMode())
 }

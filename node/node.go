@@ -8,7 +8,7 @@ import (
 	"os"
 
 	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
-	server2 "gitlab.com/makeos/mosdef/dht/server"
+	dhtserver "gitlab.com/makeos/mosdef/dht/server"
 	"gitlab.com/makeos/mosdef/dht/server/types"
 	types2 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/server"
@@ -129,7 +129,7 @@ func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMem
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
-	if n.cfg.ConsoleOnly() {
+	if n.cfg.IsAttachMode() {
 		return n.startConsoleOnly()
 	}
 
@@ -160,19 +160,13 @@ func (n *Node) Start() error {
 
 	// Create DHT reactor and add it to the switch
 	key, _ := n.cfg.G().PrivVal.GetKey()
-	n.dht, err = server2.New(
-		context.Background(),
-		n.cfg, key.PrivKey().Key(),
-		n.cfg.DHT.Address)
+	n.dht, err = dhtserver.New(context.Background(), n.cfg, key.PrivKey().Key(), n.cfg.DHT.Address)
 	if err != nil {
 		return err
 	}
 	if err = n.dht.Start(); err != nil {
 		return err
 	}
-
-	// Register custom reactor channels
-	// node.AddChannels([]byte{server.PushNoteReactorChannel, server.PushEndReactorChannel})
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
@@ -190,13 +184,12 @@ func (n *Node) Start() error {
 	remoteServer := server.NewRemoteServer(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
 	n.remoteServer = remoteServer
 	n.logic.SetRemoteServer(remoteServer)
-
 	for _, ch := range remoteServer.GetChannels() {
 		node.AddChannels([]byte{ch.ID})
 	}
 
 	// Create node
-	tmNode, err := nm.NewNodeWithCustomMempool(
+	n.tm, err = nm.NewNodeWithCustomMempool(
 		n.tmcfg,
 		pv,
 		n.nodeKey,
@@ -211,16 +204,15 @@ func (n *Node) Start() error {
 	}
 
 	// Register the custom reactors
-	tmNode.Switch().AddReactor("PushReactor", remoteServer)
+	n.tm.Switch().AddReactor("PushReactor", remoteServer)
 
 	// Pass the proxy app to the mempool
-	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
+	memp.SetProxyApp(n.tm.ProxyApp().Mempool())
 
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
-	n.log.Info("RPCServer is now listening for connections", "Address", fullAddr)
+	n.log.Info("Now listening for connections", "Address", fullAddr)
 
 	// Set references of various instances on the node
-	n.tm = tmNode
 	n.mempoolReactor = mempR
 
 	// Pass repo manager to logic manager
@@ -342,8 +334,8 @@ func (n *Node) ConsoleOn() bool {
 	return os.Args[1] == "console"
 }
 
-// GetModulesAggregator returns the javascript module instance
-func (n *Node) GetModulesAggregator() types2.ModulesHub {
+// GetModulesHub returns the modules hub
+func (n *Node) GetModulesHub() types2.ModulesHub {
 	return n.modules
 }
 
@@ -398,7 +390,7 @@ func (n *Node) Stop() {
 		n.stateTreeDB.Close()
 	}
 
-	if !n.cfg.ConsoleOnly() {
+	if !n.cfg.IsAttachMode() {
 		n.log.Info("Databases have been closed")
 	}
 

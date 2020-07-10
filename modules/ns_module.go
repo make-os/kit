@@ -5,7 +5,6 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -17,7 +16,7 @@ import (
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer

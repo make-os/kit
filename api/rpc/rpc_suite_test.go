@@ -6,14 +6,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/util"
 )
 
-type testCase struct {
-	params interface{}
-	err    *rpc.Err
-	result util.Map
-	mocker func(tp testCase)
+type TestCase struct {
+	params     interface{}
+	body       string
+	statusCode int
+	mocker     func(tc *TestCase)
+	result     map[string]interface{}
+	err        *rpc.Err
 }
 
 func testCases(testCases map[string]*TestCase, f func(params interface{}) *rpc.Response) {

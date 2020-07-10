@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/params"
@@ -22,7 +21,7 @@ import (
 
 // ConsoleUtilModule provides access to various console utility functions.
 type ConsoleUtilModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	vm     *otto.Otto
 	stdout io.Writer
 }
@@ -41,14 +40,14 @@ func (m *ConsoleUtilModule) ConsoleOnlyMode() bool {
 func (m *ConsoleUtilModule) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{
 		{Name: "pp", Value: m.PrettyPrint, Description: "Pretty print an object"},
-		{Name: "Eval", Value: m.Eval, Description: "Execute javascript code represented as a string"},
-		{Name: "EvalFile", Value: m.EvalFile, Description: "Execute javascript code stored in a file"},
-		{Name: "ReadFile", Value: m.ReadFile, Description: "Read a file"},
-		{Name: "ReadTextFile", Value: m.ReadTextFile, Description: "Read a text file"},
+		{Name: "eval", Value: m.Eval, Description: "Execute JavaScript code represented as a string"},
+		{Name: "evalFile", Value: m.EvalFile, Description: "Execute JavaScript code stored in a file"},
+		{Name: "readFile", Value: m.ReadFile, Description: "Read a file"},
+		{Name: "readTextFile", Value: m.ReadTextFile, Description: "Read a text file"},
 		{Name: "treasuryAddress", Value: m.TreasuryAddress(), Description: "Get the treasury address"},
 		{Name: "genKey", Value: m.GenKey, Description: "Generate an Ed25519 key"},
-		{Name: "Dump", Value: m.Dump, Description: "Dump displays the passed parameters to standard out"},
-		{Name: "Diff", Value: m.Diff, Description: "Diff returns a human-readable report of the differences between two values"},
+		{Name: "dump", Value: m.Dump, Description: "Dump displays the passed parameters to standard out"},
+		{Name: "diff", Value: m.Diff, Description: "Diff returns a human-readable report of the differences between two values"},
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 // GetAccount gets an account corresponding to a given address
-func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError) {
+func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {

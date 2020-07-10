@@ -3,7 +3,6 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/console"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -18,7 +17,7 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	console.ConsoleSuggestions
+	modulestypes.ConsoleSuggestions
 	logic   core.Logic
 	service services.Service
 }

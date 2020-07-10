@@ -7,7 +7,6 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/dht/server/types"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
@@ -21,7 +20,7 @@ import (
 
 // DHTModule provides access to the DHT service
 type DHTModule struct {
-	console.ConsoleSuggestions
+	modulestypes.ConsoleSuggestions
 	cfg *config.AppConfig
 	dht types.DHT
 }

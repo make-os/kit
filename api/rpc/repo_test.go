@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-var _ = Describe("PushKey", func() {
+var _ = Describe("Repo", func() {
 	var ctrl *gomock.Controller
 
 	BeforeEach(func() {

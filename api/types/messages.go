@@ -2,6 +2,7 @@ package types
 
 import (
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
@@ -88,4 +89,9 @@ type AddRepoContribsBody struct {
 // AddRepoContribsResponse is the response of a request to add repo contributors
 type AddRepoContribsResponse struct {
 	Hash string `json:"hash"`
+}
+
+// GetMethodResponse is the response for RPC server methods
+type GetMethodResponse struct {
+	Methods []rpc.MethodInfo
 }

@@ -31,12 +31,12 @@ const (
 
 // Client represents a JSON-RPC client
 type Client interface {
-	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.ReqError)
-	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError)
-	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError)
+	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error)
+	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
+	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error)
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
-	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError)
+	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
 	AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)

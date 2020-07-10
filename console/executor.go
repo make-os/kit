@@ -10,7 +10,7 @@ import (
 )
 
 // Executor is responsible for executing operations inside a
-// javascript VM.
+// JavaScript VM.
 type Executor struct {
 
 	// vm is an Otto instance for JS evaluation
@@ -41,7 +41,7 @@ func (e *Executor) OnInput(in string) {
 	}
 }
 
-func (e *Executor) exec(in string) {
+func (e *Executor) exec(in interface{}) {
 
 	// RecoverFunc recovers from panics.
 	defer func() {

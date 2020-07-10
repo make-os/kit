@@ -16,8 +16,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/node"
 )
@@ -25,22 +23,20 @@ import (
 // consoleCmd represents the console command
 var consoleCmd = &cobra.Command{
 	Use:   "console",
-	Short: "Start an interactive javascript console mode and start the node",
-	Long:  `Start an interactive javascript console mode and start the node`,
+	Short: "Start a Javascript console mode and start the node",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Start the node and also start the console after the node has started
 		start(func(n *node.Node) {
-			console := console.New(cfg.GetConsoleHistoryPath(), cfg, log)
-			console.SetVersions(config.GetNetVersion(), BuildVersion, GoVersion, BuildCommit)
+			console := console.New(cfg)
 
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
 				itr.Close()
 			})
 
-			// Register JS module
-			console.SetModulesHub(n.GetModulesAggregator())
+			// Register JS module hub
+			console.SetModulesHub(n.GetModulesHub())
 
 			// Run the console
 			go func() {
@@ -54,9 +50,5 @@ var consoleCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(consoleCmd)
-
-	consoleCmd.Flags().Bool("only", false, "Run only the console (no servers)")
-	viper.BindPFlag("console.only", consoleCmd.Flags().Lookup("only"))
-
 	setStartFlags(consoleCmd)
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
-	"gitlab.com/makeos/mosdef/console"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -21,7 +20,7 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	console.ConsoleSuggestions
+	modulestypes.ConsoleSuggestions
 	logic   core.Logic
 	service services.Service
 	repoSrv core.RemoteServer

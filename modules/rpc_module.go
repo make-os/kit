@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -20,7 +19,7 @@ import (
 
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
-	console.ConsoleSuggestions
+	types.ConsoleSuggestions
 	cfg                *config.AppConfig
 	server             rpc.Server
 	modFuncs           []*types.ModuleFunc
