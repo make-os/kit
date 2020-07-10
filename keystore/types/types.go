@@ -56,7 +56,7 @@ type Keystore interface {
 	AskForPasswordOnce(prompt ...string) string
 	UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (StoredKey, error)
 	UpdateCmd(addressOrIndex, passphrase string) error
-	RevealCmd(addrOrIdx, pass string) error
+	GetCmd(addrOrIdx, pass string, showPrivKey bool) error
 	ImportCmd(keyfile string, keyType KeyType, pass string) error
 	Exist(address string) (bool, error)
 	GetByIndex(i int) (StoredKey, error)

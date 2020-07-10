@@ -36,11 +36,11 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // SendTxPayload mocks base method
-func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.ReqError) {
+func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendTxPayload", data)
 	ret0, _ := ret[0].(*types.SendTxPayloadResponse)
-	ret1, _ := ret[1].(*util.ReqError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -51,7 +51,7 @@ func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
 }
 
 // GetAccount mocks base method
-func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError) {
+func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
@@ -59,7 +59,7 @@ func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*types.G
 	}
 	ret := m.ctrl.Call(m, "GetAccount", varargs...)
 	ret0, _ := ret[0].(*types.GetAccountResponse)
-	ret1, _ := ret[1].(*util.ReqError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -71,7 +71,7 @@ func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ..
 }
 
 // GetPushKeyOwner mocks base method
-func (m *MockClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, *util.ReqError) {
+func (m *MockClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
@@ -79,7 +79,7 @@ func (m *MockClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.G
 	}
 	ret := m.ctrl.Call(m, "GetPushKeyOwner", varargs...)
 	ret0, _ := ret[0].(*types.GetAccountResponse)
-	ret1, _ := ret[1].(*util.ReqError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -121,7 +121,7 @@ func (mr *MockClientMockRecorder) CreateRepo(body interface{}) *gomock.Call {
 }
 
 // GetRepo mocks base method
-func (m *MockClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, *util.ReqError) {
+func (m *MockClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range opts {
@@ -129,7 +129,7 @@ func (m *MockClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.Ge
 	}
 	ret := m.ctrl.Call(m, "GetRepo", varargs...)
 	ret0, _ := ret[0].(*types.GetRepoResponse)
-	ret1, _ := ret[1].(*util.ReqError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 

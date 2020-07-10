@@ -277,18 +277,18 @@ func (mr *MockKeystoreMockRecorder) UpdateCmd(addressOrIndex, passphrase interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCmd", reflect.TypeOf((*MockKeystore)(nil).UpdateCmd), addressOrIndex, passphrase)
 }
 
-// RevealCmd mocks base method
-func (m *MockKeystore) RevealCmd(addrOrIdx, pass string) error {
+// GetCmd mocks base method
+func (m *MockKeystore) GetCmd(addrOrIdx, pass string, showPrivKey bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevealCmd", addrOrIdx, pass)
+	ret := m.ctrl.Call(m, "GetCmd", addrOrIdx, pass, showPrivKey)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RevealCmd indicates an expected call of RevealCmd
-func (mr *MockKeystoreMockRecorder) RevealCmd(addrOrIdx, pass interface{}) *gomock.Call {
+// GetCmd indicates an expected call of GetCmd
+func (mr *MockKeystoreMockRecorder) GetCmd(addrOrIdx, pass, showPrivKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevealCmd", reflect.TypeOf((*MockKeystore)(nil).RevealCmd), addrOrIdx, pass)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCmd", reflect.TypeOf((*MockKeystore)(nil).GetCmd), addrOrIdx, pass, showPrivKey)
 }
 
 // ImportCmd mocks base method

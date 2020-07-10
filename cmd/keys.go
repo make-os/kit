@@ -156,16 +156,17 @@ key.
 	},
 }
 
-var keyRevealCmd = &cobra.Command{
-	Use:   "reveal [flags] <address>",
-	Short: "Reveal the private key of a key.",
-	Long: `This command reveals the private key of a key. You will be prompted to 
-provide your password. 
+var keyGetCmd = &cobra.Command{
+	Use:   "get [flags] <address>",
+	Short: "Get a key",
+	Long: `This command gets a key and prints out its information. You will be prompted to 
+provide the passphrase to unlock the key.
 	
 You can skip the interactive mode by providing your password via the '--pass' flag. 
 Also, the flag accepts a path to a file containing a password.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		showKey, _ := cmd.Flags().GetBool("showKey")
 
 		var address string
 		if len(args) >= 1 {
@@ -176,7 +177,7 @@ Also, the flag accepts a path to a file containing a password.
 		pass := viper.GetString("node.passphrase")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.RevealCmd(address, pass); err != nil {
+		if err := ks.GetCmd(address, pass, showKey); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -214,7 +215,7 @@ func init() {
 	keysCmd.AddCommand(keyListCmd)
 	keysCmd.AddCommand(keyUpdateCmd)
 	keysCmd.AddCommand(keyImportCmd)
-	keysCmd.AddCommand(keyRevealCmd)
+	keysCmd.AddCommand(keyGetCmd)
 	keysCmd.AddCommand(keyGenCmd)
 	keysCmd.PersistentFlags().String("pass", "", "Password to unlock the target key and skip interactive mode")
 	keyCreateCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
@@ -222,4 +223,5 @@ func init() {
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
 	keyCreateCmd.Flags().Bool("push", false, "Create a push key")
 	keyImportCmd.Flags().Bool("push", false, "Create a push key")
+	keyGetCmd.Flags().Bool("showKey", false, "Show the private key")
 }

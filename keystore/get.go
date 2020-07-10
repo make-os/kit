@@ -9,6 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints
@@ -22,12 +23,13 @@ func readPassFromFile(path string) (string, error) {
 	return strings.TrimSpace(strings.Trim(string(content), "/n")), nil
 }
 
-// RevealCmd decrypts a key and prints the private key.
+// GetCmd decrypts a key and prints all information about the key.
 // If pass is provide and it is not a file path, it is used as
 // the passphrase. Otherwise, the file content is used as the
 // passphrase. When pass is not set, the user is prompted to
 // provide their passphrase.
-func (ks *Keystore) RevealCmd(addrOrIdx, pass string) error {
+// If showPrivKey is true, the private key will be printed out.
+func (ks *Keystore) GetCmd(addrOrIdx, pass string, showPrivKey bool) error {
 
 	if addrOrIdx == "" {
 		return fmt.Errorf("address is required")
@@ -69,8 +71,16 @@ unlock:
 
 	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key revealed successfully!"))
 	fmt.Fprintln(ks.out, "- Address: "+fmt2.HiCyanString(storedAcct.GetAddress()))
+
+	if !crypto.IsValidPushAddr(storedAcct.GetAddress()) {
+		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetKey().PushAddr().String()))
+	}
+
 	fmt.Fprintln(ks.out, "- Public Key: "+fmt2.HiCyanString(storedAcct.GetKey().PubKey().Base58()))
-	fmt.Fprintln(ks.out, "- Private Key: "+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
+
+	if showPrivKey {
+		fmt.Fprintln(ks.out, "- Private Key: "+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
+	}
 
 	return nil
 }
