@@ -46,4 +46,32 @@ var _ = Describe("Client", func() {
 			Expect(txInfo.Hash).To(Equal("0x123"))
 		})
 	})
+
+	Describe(".GetTransaction()", func() {
+		It("should return ReqError when call failed", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("tx_get"))
+				Expect(params).To(Equal("0x123"))
+				return nil, 500, fmt.Errorf("error")
+			}
+			_, err := client.GetTransaction("0x123")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.ReqError{
+				Code:     ErrCodeUnexpected,
+				HttpCode: 500,
+				Msg:      "error",
+				Field:    "",
+			}))
+		})
+
+		It("should return expected repo object on success", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("tx_get"))
+				return util.Map{"value": "100.2"}, 0, nil
+			}
+			res, err := client.GetTransaction("0x123")
+			Expect(err).To(BeNil())
+			Expect(res["value"]).To(Equal("100.2"))
+		})
+	})
 })

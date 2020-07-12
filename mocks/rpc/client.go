@@ -70,6 +70,21 @@ func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
 }
 
+// GetTransaction mocks base method
+func (m *MockClient) GetTransaction(hash string) (map[string]interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransaction", hash)
+	ret0, _ := ret[0].(map[string]interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransaction indicates an expected call of GetTransaction
+func (mr *MockClientMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockClient)(nil).GetTransaction), hash)
+}
+
 // GetPushKeyOwner mocks base method
 func (m *MockClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 	m.ctrl.T.Helper()

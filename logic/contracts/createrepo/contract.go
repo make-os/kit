@@ -63,8 +63,8 @@ func (c *CreateRepoContract) Exec() error {
 	if newRepo.Config.Gov.CreatorAsContributor {
 
 		// Register sender's public key as a push key
-		if err := registerpushkey.NewContract().Init(c.Logic, &txns.TxRegisterPushKey{
-			TxCommon:  &txns.TxCommon{Fee: "0", SenderPubKey: c.tx.SenderPubKey},
+		if err := registerpushkey.NewContractWithNoSenderUpdate().Init(c.Logic, &txns.TxRegisterPushKey{
+			TxCommon:  &txns.TxCommon{SenderPubKey: c.tx.SenderPubKey},
 			PublicKey: spk.ToPublicKey(),
 			FeeCap:    "0",
 		}, c.chainHeight).Exec(); err != nil {

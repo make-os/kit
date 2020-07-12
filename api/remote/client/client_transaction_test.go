@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -62,6 +63,38 @@ var _ = Describe("Account", func() {
 			_, err := client.SendTxPayload(map[string]interface{}{"type": 1})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal(`{"hash":"0x12345"}`))
+		})
+	})
+
+	Describe(".GetTransaction", func() {
+		It("should return error if request failed", func() {
+			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				Expect(endpoint).To(Equal("/v1/tx/get"))
+				Expect(params).To(HaveKey("hash"))
+				Expect(params["hash"]).To(Equal("0x123"))
+				return resp, fmt.Errorf("error")
+			}
+			_, err := client.GetTransaction("0x123")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return response on success", func() {
+			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
+					data, _ := json.Marshal(map[string]interface{}{"value": "10.4"})
+					w.WriteHeader(200)
+					w.Write(data)
+				}
+				ts := httptest.NewServer(http.HandlerFunc(mockReqHandler))
+				resp, _ = req.Get(ts.URL)
+				return resp, nil
+			}
+			resp, err := client.GetTransaction("repo1")
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(map[string]interface{}{
+				"value": "10.4",
+			}))
 		})
 	})
 })

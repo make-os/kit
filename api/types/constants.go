@@ -10,5 +10,6 @@ const (
 	MethodNamePushKeyRegister = "register"
 	MethodNameCreateRepo      = "create"
 	MethodNameGetRepo         = "get"
+	MethodNameGetTx           = "get"
 	MethodNameAddRepoContribs = "addContributors"
 )

@@ -312,7 +312,7 @@ var _ = Describe("CoinTransferContract", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("namespace not found"))
+				Expect(err).To(MatchError("recipient account not found"))
 			})
 		})
 	})

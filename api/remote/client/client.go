@@ -14,6 +14,7 @@ type Client interface {
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
 	SendTxPayload(data map[string]interface{}) (*types.HashResponse, error)
+	GetTransaction(hash string) (map[string]interface{}, error)
 	GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
 	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
 	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)

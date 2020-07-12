@@ -41,4 +41,21 @@ var _ = Describe("Transaction", func() {
 			},
 		}, api.SendTxPayload)
 	})
+
+	Describe(".GetTransaction", func() {
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testGetRequestCases(map[string]TestCase{
+			"should return result": {
+				params:     map[string]string{"hash": "0x123"},
+				resp:       `{"value":"10.4"}`,
+				statusCode: 200,
+				mocker: func(tc *TestCase) {
+					mockTxModule := mocks.NewMockTxModule(ctrl)
+					mockTxModule.EXPECT().Get("0x123").Return(map[string]interface{}{"value": "10.4"})
+					modules.Tx = mockTxModule
+				},
+			},
+		}, api.GetTransaction)
+	})
 })

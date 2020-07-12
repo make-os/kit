@@ -8,10 +8,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -36,19 +34,10 @@ var _ = Describe("API", func() {
 	})
 
 	Describe(".RegisterEndpoints", func() {
-		It("should register handlers for routes", func() {
+		It("should register all handlers", func() {
 			api := &API{}
 			mockMux := mocks.NewMockServeMux(ctrl)
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceUser, types.MethodNameNonce), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceUser, types.MethodNameAccount), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceUser, types.MethodNameSendCoin), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceTx, types.MethodNameSendPayload), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNameOwnerNonce), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyFind), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyRegister), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceRepo, types.MethodNameCreateRepo), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceRepo, types.MethodNameGetRepo), gomock.Any())
-			mockMux.EXPECT().HandleFunc(V1Path(constants.NamespaceRepo, types.MethodNameAddRepoContribs), gomock.Any())
+			mockMux.EXPECT().HandleFunc(gomock.Any(), gomock.Any()).Times(11)
 			api.RegisterEndpoints(mockMux)
 		})
 	})

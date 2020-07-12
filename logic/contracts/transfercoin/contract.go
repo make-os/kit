@@ -82,6 +82,11 @@ func (c *CoinTransferContract) Exec() error {
 		recvAcct = acctKeeper.Get(recipientAddr)
 	}
 
+	// Return error if at this point we don't have a recipient account object,
+	if recvAcct == nil {
+		return fmt.Errorf("recipient account not found")
+	}
+
 	// Get the sender's account and balance
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()

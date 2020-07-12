@@ -20,7 +20,7 @@ var _ = Describe("Transaction", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".sendPayload()", func() {
+	Describe(".sendPayload", func() {
 		mods := &types.Modules{}
 		api := &TransactionAPI{mods}
 		testCases(map[string]*TestCase{
@@ -40,5 +40,27 @@ var _ = Describe("Transaction", func() {
 				},
 			},
 		}, api.sendPayload)
+	})
+
+	Describe(".getTransaction", func() {
+		mods := &types.Modules{}
+		api := &TransactionAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a string": {
+				params:     map[string]interface{}{},
+				statusCode: 400,
+				err:        &rpc.Err{Code: "60000", Message: "param must be a string", Data: ""},
+			},
+			"should return result on success": {
+				params:     "0x123",
+				statusCode: 200,
+				result:     util.Map{"value": "10.2"},
+				mocker: func(tc *TestCase) {
+					mockTxModule := mocks.NewMockTxModule(ctrl)
+					mockTxModule.EXPECT().Get("0x123").Return(util.Map{"value": "10.2"})
+					mods.Tx = mockTxModule
+				},
+			},
+		}, api.getTransaction)
 	})
 })

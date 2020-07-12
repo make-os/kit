@@ -79,6 +79,21 @@ func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTxPayload", reflect.TypeOf((*MockClient)(nil).SendTxPayload), data)
 }
 
+// GetTransaction mocks base method
+func (m *MockClient) GetTransaction(hash string) (map[string]interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransaction", hash)
+	ret0, _ := ret[0].(map[string]interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransaction indicates an expected call of GetTransaction
+func (mr *MockClientMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockClient)(nil).GetTransaction), hash)
+}
+
 // GetAccountNonce mocks base method
 func (m *MockClient) GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
 	m.ctrl.T.Helper()

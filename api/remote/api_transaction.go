@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,4 +16,12 @@ func (r *API) SendTxPayload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	util.WriteJSON(w, 201, r.Modules().Tx.SendPayload(body))
+}
+
+// GetTransaction queries a transaction by its hash
+func (r *API) GetTransaction(w http.ResponseWriter, req *http.Request) {
+	var body = objx.MustFromURLQuery(req.URL.Query().Encode())
+	hash := body.Get("hash").Str()
+	tx := r.Modules().Tx.Get(hash)
+	util.WriteJSON(w, 200, tx)
 }

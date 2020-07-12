@@ -33,6 +33,7 @@ const (
 type Client interface {
 	SendTxPayload(data map[string]interface{}) (*types.HashResponse, error)
 	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
+	GetTransaction(hash string) (map[string]interface{}, error)
 	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error)
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
