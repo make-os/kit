@@ -9,6 +9,10 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+
+	"github.com/asaskevich/govalidator"
+	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // Constants
@@ -330,4 +334,71 @@ func (i *Int64) Int64() int64 {
 // Set sets the value
 func (i *Int64) Set(v int64) {
 	*i = Int64(v)
+}
+
+// String represents a custom string
+type String string
+
+// Bytes returns the bytes equivalent of the string
+func (s String) Bytes() []byte {
+	return []byte(s)
+}
+
+// Address converts the String to an Address
+func (s String) Address() identifier.Address {
+	return identifier.Address(s)
+}
+
+// Equal check whether s and o are the same
+func (s String) Equal(o String) bool {
+	return s.String() == o.String()
+}
+
+func (s String) String() string {
+	return string(s)
+}
+
+// IsZero returns true if str is empty or equal "0"
+func (s String) IsZero() bool {
+	return IsZeroString(string(s))
+}
+
+// IsNumeric checks whether s is numeric
+func (s String) IsNumeric() bool {
+	return govalidator.IsFloat(s.String())
+}
+
+// Empty returns true if the string is empty
+func (s String) Empty() bool {
+	return len(s) == 0
+}
+
+// SS returns a short version of String() with the middle
+// characters truncated when length is at least 32
+func (s String) SS() string {
+	if len(s) >= 32 {
+		return fmt.Sprintf("%s...%s", string(s)[0:10], string(s)[len(s)-10:])
+	}
+	return string(s)
+}
+
+// Decimal returns the decimal representation of the string.
+// Panics if string failed to be converted to decimal.
+func (s String) Decimal() decimal.Decimal {
+	return StrToDec(s.String())
+}
+
+// Float returns the float equivalent of the numeric value.
+// Panics if not convertible to float64
+func (s String) Float() float64 {
+	f, err := strconv.ParseFloat(string(s), 64)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+// IsDecimal checks whether the string can be converted to Decimal
+func (s String) IsDecimal() bool {
+	return govalidator.IsFloat(string(s))
 }

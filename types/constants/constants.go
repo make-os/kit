@@ -5,7 +5,6 @@ const (
 	NamespaceRPC         = "rpc"
 	NamespaceChain       = "chain"
 	NamespaceTx          = "tx"
-	NamespaceCoin        = "coin"
 	NamespacePool        = "pool"
 	NamespaceUser        = "user"
 	NamespaceRepo        = "repo"

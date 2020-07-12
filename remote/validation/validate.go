@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -257,7 +258,7 @@ func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey cor
 func IsBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromParams *state.Namespace) bool {
 	blocked := true
 	for _, scope := range scopes {
-		if util.IsNamespaceURI(scope) {
+		if identifier.IsNamespace(scope) {
 			ns, domain, _ := util.SplitNamespaceDomain(scope)
 
 			// If scope is r/repo-name, make sure tx info namespace is unset and repo name is 'repo-name'.

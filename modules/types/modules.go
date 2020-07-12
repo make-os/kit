@@ -30,7 +30,7 @@ type Modules struct {
 	Tx      TxModule
 	Chain   ChainModule
 	Pool    PoolModule
-	Account AccountModule
+	User    UserModule
 	PushKey PushKeyModule
 	Util    ConsoleUtilModule
 	Ticket  TicketModule
@@ -75,7 +75,6 @@ type ChainModule interface {
 
 type TxModule interface {
 	Module
-	SendCoin(params map[string]interface{}, options ...interface{}) util.Map
 	Get(hash string) util.Map
 	SendPayload(params map[string]interface{}) util.Map
 }
@@ -87,7 +86,7 @@ type PoolModule interface {
 	GetPushPoolSize() int
 }
 
-type AccountModule interface {
+type UserModule interface {
 	Module
 	ListLocalAccounts() []string
 	GetKey(address string, passphrase ...string) string
@@ -98,6 +97,7 @@ type AccountModule interface {
 	GetStakedBalance(address string, height ...uint64) string
 	GetValidatorInfo(includePrivKey ...bool) util.Map
 	SetCommission(params map[string]interface{}, options ...interface{}) util.Map
+	SendCoin(params map[string]interface{}, options ...interface{}) util.Map
 }
 
 type PushKeyModule interface {

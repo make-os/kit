@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/makeos/mosdef/api/utils"
-	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/remote/cmd/signcmd"
+	"gitlab.com/makeos/mosdef/commands/common"
+	"gitlab.com/makeos/mosdef/commands/signcmd"
 	"gitlab.com/makeos/mosdef/remote/server"
 )
 
@@ -57,7 +57,7 @@ var signCommitCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			KeyUnlocker:           cmd2.UnlockKey,
+			KeyUnlocker:           common.UnlockKey,
 			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
@@ -94,7 +94,7 @@ var signTagCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			KeyUnlocker:           cmd2.UnlockKey,
+			KeyUnlocker:           common.UnlockKey,
 			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
@@ -132,7 +132,7 @@ var signNoteCmd = &cobra.Command{
 			ResetTokens:           resetRemoteTokens,
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
-			KeyUnlocker:           cmd2.UnlockKey,
+			KeyUnlocker:           common.UnlockKey,
 			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {

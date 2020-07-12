@@ -41,7 +41,7 @@ func New(
 		Modules: &modulestypes.Modules{
 			Tx:      NewTxModule(service, logic),
 			Chain:   NewChainModule(service, logic),
-			Account: NewUserModule(cfg, acctmgr, service, logic),
+			User:    NewUserModule(cfg, acctmgr, service, logic),
 			PushKey: NewPushKeyModule(cfg, service, logic),
 			Ticket:  NewTicketModule(service, logic, ticketmgr),
 			Repo:    NewRepoModule(service, repoMgr, logic),

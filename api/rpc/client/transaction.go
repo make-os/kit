@@ -13,13 +13,13 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error) {
+func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.HashResponse, error) {
 	out, statusCode, err := c.call("tx_sendPayload", data)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var result types.SendTxPayloadResponse
+	var result types.HashResponse
 	_ = util.DecodeMap(out, &result)
 
 	return &result, nil

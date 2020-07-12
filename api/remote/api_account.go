@@ -14,7 +14,7 @@ func (r *API) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 	address := body.Get("address").Str()
 	blockHeight := cast.ToUint64(body.Get("height").Inter())
 	util.WriteJSON(w, 200, map[string]interface{}{
-		"nonce": r.Modules().Account.GetNonce(address, blockHeight),
+		"nonce": r.Modules().User.GetNonce(address, blockHeight),
 	})
 }
 
@@ -23,6 +23,6 @@ func (r *API) GetAccount(w http.ResponseWriter, req *http.Request) {
 	var body = objx.MustFromURLQuery(req.URL.Query().Encode())
 	address := body.Get("address").Str()
 	blockHeight := cast.ToUint64(body.Get("height").Inter())
-	acct := r.Modules().Account.GetAccount(address, blockHeight)
+	acct := r.Modules().User.GetAccount(address, blockHeight)
 	util.WriteJSON(w, 200, acct)
 }

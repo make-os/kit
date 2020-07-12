@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,7 +52,7 @@ var _ = Describe("Logic", func() {
 			cfg.GenesisFileEntries = testGenData
 			for _, a := range testGenData {
 				if a.Type == config.GenDataTypeAccount {
-					res := logic.AccountKeeper().Get(util.Address(a.Address))
+					res := logic.AccountKeeper().Get(identifier.Address(a.Address))
 					Expect(res.Balance).To(Equal(util.String("0")))
 					Expect(res.Nonce.UInt64()).To(Equal(uint64(0)))
 				}
@@ -61,9 +62,9 @@ var _ = Describe("Logic", func() {
 		})
 
 		It("should successfully add all accounts with expected balance", func() {
-			addr1Res := logic.AccountKeeper().Get(util.Address(testGenData[0].Address))
+			addr1Res := logic.AccountKeeper().Get(identifier.Address(testGenData[0].Address))
 			Expect(addr1Res.Balance).To(Equal(util.String("100")))
-			addr2Res := logic.AccountKeeper().Get(util.Address(testGenData[1].Address))
+			addr2Res := logic.AccountKeeper().Get(identifier.Address(testGenData[1].Address))
 			Expect(addr2Res.Balance).To(Equal(util.String("200")))
 		})
 

@@ -51,6 +51,7 @@ func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w 
 func (r *API) RegisterEndpoints(s ServeMux) {
 	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameNonce), r.get(r.GetAccountNonce))
 	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameAccount), r.get(r.GetAccount))
+	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameSendCoin), r.post(r.SendCoin))
 	s.HandleFunc(V1Path(constants.NamespaceTx, types2.MethodNameSendPayload), r.post(r.SendTxPayload))
 	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
 	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyFind), r.get(r.GetPushKey))

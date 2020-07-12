@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // Logic is the central point for defining and accessing
@@ -261,7 +262,7 @@ func (l *Logic) WriteGenesisState() error {
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
-			l.accountKeeper.Update(util.Address(ga.Address), newAcct)
+			l.accountKeeper.Update(identifier.Address(ga.Address), newAcct)
 		}
 
 		// Create repository

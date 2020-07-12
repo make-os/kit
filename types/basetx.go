@@ -4,6 +4,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 type TxCode int
@@ -47,7 +48,7 @@ type BaseTx interface {
 	GetFee() util.String
 
 	// GetFrom returns the address of the transaction sender
-	GetFrom() util.Address
+	GetFrom() identifier.Address
 
 	// GetHash returns the hash of the transaction
 	GetHash() util.HexBytes

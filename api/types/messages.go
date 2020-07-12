@@ -4,11 +4,11 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
-// SendTxPayloadResponse is the response for a transaction
-// payload successfully added to the mempool pool.
-type SendTxPayloadResponse struct {
+// HashResponse contains the hash of a transaction request
+type HashResponse struct {
 	Hash string `json:"hash"`
 }
 
@@ -33,11 +33,6 @@ type CreateRepoResponse struct {
 	Hash    string `json:"hash"`
 }
 
-// GetRepoResponse is the response of a request to get a repository
-type GetRepoResponse struct {
-	*state.Repository
-}
-
 // CreateRepoBody contains arguments for creating a repository
 type CreateRepoBody struct {
 	Name       string
@@ -46,6 +41,11 @@ type CreateRepoBody struct {
 	Fee        float64
 	Config     *state.RepoConfig
 	SigningKey *crypto.Key
+}
+
+// GetRepoResponse is the response of a request to get a repository
+type GetRepoResponse struct {
+	*state.Repository
 }
 
 // GetRepoOpts contains arguments for fetching a repository
@@ -86,12 +86,16 @@ type AddRepoContribsBody struct {
 	SigningKey    *crypto.Key
 }
 
-// AddRepoContribsResponse is the response of a request to add repo contributors
-type AddRepoContribsResponse struct {
-	Hash string `json:"hash"`
-}
-
 // GetMethodResponse is the response for RPC server methods
 type GetMethodResponse struct {
 	Methods []rpc.MethodInfo
+}
+
+// SendCoinBody contains arguments for sending coins
+type SendCoinBody struct {
+	Nonce      uint64
+	Value      float64
+	Fee        float64
+	To         identifier.Address
+	SigningKey *crypto.Key
 }

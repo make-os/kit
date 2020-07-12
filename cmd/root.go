@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/commands/common"
+	"gitlab.com/makeos/mosdef/commands/gitcmd"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/remote/cmd/gitcmd"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
 
@@ -122,7 +122,7 @@ var fallbackCmd = &cobra.Command{
 			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
 				Args:            os.Args,
 				RepoGetter:      repo.Get,
-				PushKeyUnlocker: cmd2.UnlockKey,
+				PushKeyUnlocker: common.UnlockKey,
 				StdErr:          os.Stderr,
 				StdOut:          os.Stdout,
 			}); err != nil {
@@ -135,7 +135,7 @@ var fallbackCmd = &cobra.Command{
 			if err := gitcmd.GitVerifyCmd(cfg, &gitcmd.GitVerifyArgs{
 				Args:            args,
 				RepoGetter:      repo.Get,
-				PushKeyUnlocker: cmd2.UnlockKey,
+				PushKeyUnlocker: common.UnlockKey,
 				PemDecoder:      pem.Decode,
 				StdOut:          os.Stdout,
 				StdErr:          os.Stderr,

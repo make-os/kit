@@ -20,6 +20,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/mosdef/util/identifier"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -132,11 +133,11 @@ func CheckPushNoteSanity(note types.PushNote) error {
 	if note.GetRepoName() == "" {
 		return util.FieldError("repo", "repo name is required")
 	}
-	if util.IsValidName(note.GetRepoName()) != nil {
+	if identifier.IsValidResourceName(note.GetRepoName()) != nil {
 		return util.FieldError("repo", "repo name is not valid")
 	}
 
-	if note.GetNamespace() != "" && util.IsValidName(note.GetNamespace()) != nil {
+	if note.GetNamespace() != "" && identifier.IsValidResourceName(note.GetNamespace()) != nil {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
@@ -239,7 +240,7 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 		if ns.IsNil() {
 			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}
-		if !funk.ContainsString(funk.Values(ns.Domains).([]string), util.RepoIDPrefix+note.GetRepoName()) {
+		if !funk.ContainsString(funk.Values(ns.Domains).([]string), identifier.NativeNamespaceRepo+note.GetRepoName()) {
 			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.GetNamespace()))
 		}
 	}

@@ -12,6 +12,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // MakeMergeRequestProposalID returns the full proposal ID of a given merge request ID
@@ -34,7 +35,7 @@ type MergeRequestData struct {
 	Fee util.String
 
 	// CreatorAddress is the address of the proposal creator
-	CreatorAddress util.Address
+	CreatorAddress identifier.Address
 
 	// BaseBranch is the destination branch name
 	BaseBranch string

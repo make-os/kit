@@ -69,7 +69,7 @@ func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.Get
 }
 
 // AddRepoContributors creates transaction to create a add repo contributors
-func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error) {
+func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -104,7 +104,7 @@ func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.AddRepoContribsResponse
+	var r types.HashResponse
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil

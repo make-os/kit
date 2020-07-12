@@ -3,6 +3,7 @@ package modules_test
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -22,6 +23,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("UserModule", func() {
@@ -242,7 +244,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetNonce", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetNonce("addr1")
@@ -252,7 +254,7 @@ var _ = Describe("UserModule", func() {
 		It("should return account nonce on success", func() {
 			acct := state.BareAccount()
 			acct.Nonce = 100
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			nonce := m.GetNonce("addr1")
 			Expect(nonce).To(Equal("100"))
 		})
@@ -260,7 +262,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetAccount", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccount("addr1")
@@ -271,7 +273,7 @@ var _ = Describe("UserModule", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100.22"
 			acct.Nonce = 100
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			res := m.GetAccount("addr1")
 			Expect(res).To(Equal(util.Map{
 				"balance":             util.String("100.22"),
@@ -285,7 +287,7 @@ var _ = Describe("UserModule", func() {
 			acct.Balance = "100.22"
 			acct.Nonce = 100
 			acct.Stakes.Add(state.StakeTypeHost, "10", 1000)
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			res := m.GetAccount("addr1")
 			Expect(res).To(Equal(util.Map{
 				"balance":             util.String("100.22"),
@@ -300,7 +302,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetAvailableBalance", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAvailableBalance("addr1")
@@ -310,7 +312,7 @@ var _ = Describe("UserModule", func() {
 		It("should return 100 when balance is 100 and no staked balance", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 			res := m.GetAvailableBalance("addr1")
 			Expect(res).To(Equal("100"))
@@ -320,7 +322,7 @@ var _ = Describe("UserModule", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 			res := m.GetAvailableBalance("addr1")
 			Expect(res).To(Equal("90"))
@@ -329,7 +331,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetStakedBalance()", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStakedBalance("addr1")
@@ -339,7 +341,7 @@ var _ = Describe("UserModule", func() {
 		It("should return 0 when no staked balance", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 			res := m.GetStakedBalance("addr1")
 			Expect(res).To(Equal("0"))
@@ -349,7 +351,7 @@ var _ = Describe("UserModule", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
-			mockAcctKeeper.EXPECT().Get(util.Address("addr1")).Return(acct)
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 			res := m.GetStakedBalance("addr1")
 			Expect(res).To(Equal("10"))
@@ -433,4 +435,54 @@ var _ = Describe("UserModule", func() {
 			Expect(res["hash"]).To(Equal(hash))
 		})
 	})
+
+	Describe(".SendCoin()", func() {
+		It("should panic when unable to decode params", func() {
+			params := map[string]interface{}{"type": struct{}{}}
+			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SendCoin(params)
+			})
+		})
+
+		It("should return tx map equivalent if payloadOnly=true", func() {
+			key := ""
+			payloadOnly := true
+			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
+			params := tx.ToMap()
+			res := m.SendCoin(params, key, payloadOnly)
+			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res).To(And(
+				HaveKey("nonce"),
+				HaveKey("type"),
+				HaveKey("senderPubKey"),
+				HaveKey("to"),
+				HaveKey("timestamp"),
+				HaveKey("fee"),
+				HaveKey("sig"),
+				HaveKey("value"),
+			))
+		})
+
+		It("should return panic if unable to add tx to mempool", func() {
+			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
+			params := tx.ToMap()
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SendCoin(params, "", false)
+			})
+		})
+
+		It("should return tx hash on success", func() {
+			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
+			params := tx.ToMap()
+			hash := util.StrToHexBytes("tx_hash")
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
+			res := m.SendCoin(params, "", false)
+			Expect(res).To(HaveKey("hash"))
+			Expect(res["hash"]).To(Equal(hash))
+		})
+	})
+
 })

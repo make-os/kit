@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("Account", func() {
@@ -74,7 +75,7 @@ var _ = Describe("Account", func() {
 			}
 			resp, err := client.GetPushKey("pushKeyID", 100)
 			Expect(err).To(BeNil())
-			Expect(resp.Address).To(Equal(util.Address("addr1")))
+			Expect(resp.Address).To(Equal(identifier.Address("addr1")))
 			Expect(resp.PubKey).To(Equal(expectedPubKey.ToPublicKey()))
 		})
 	})

@@ -69,7 +69,7 @@ func (c *ClientV1) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetR
 }
 
 // AddRepoContributors creates transaction to create a add repo contributors
-func (c *ClientV1) AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error) {
+func (c *ClientV1) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -104,6 +104,6 @@ func (c *ClientV1) AddRepoContributors(body *types.AddRepoContribsBody) (*types.
 		return nil, err
 	}
 
-	var result types.AddRepoContribsResponse
+	var result types.HashResponse
 	return &result, resp.ToJSON(&result)
 }

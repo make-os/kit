@@ -6,6 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // TxCoinTransfer implements BaseTx, it describes a transaction that transfers
@@ -30,7 +31,7 @@ func NewBareTxCoinTransfer() *TxCoinTransfer {
 // NewCoinTransferTx creates and populates a coin transfer transaction
 func NewCoinTransferTx(
 	nonce uint64,
-	to util.Address,
+	to identifier.Address,
 	senderKey *crypto.Key,
 	value util.String,
 	fee util.String,

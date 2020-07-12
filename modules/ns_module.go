@@ -48,7 +48,7 @@ func (m *NamespaceModule) methods() []*types.ModuleFunc {
 		{
 			Name:        "getTarget",
 			Value:       m.GetTarget,
-			Description: "Lookup the target of a full namespace URI",
+			Description: "Lookup the target of a full namespace path",
 		},
 		{
 			Name:        "updateDomain",

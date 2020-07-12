@@ -29,19 +29,19 @@ var _ = Describe("Account", func() {
 				resp:       `{"nonce":"100"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
-					mockAcctModule := mocks.NewMockAccountModule(ctrl)
+					mockAcctModule := mocks.NewMockUserModule(ctrl)
 					mockAcctModule.EXPECT().GetNonce("maker1z", uint64(0)).Return("100")
-					modules.Account = mockAcctModule
+					modules.User = mockAcctModule
 				},
 			},
-			"should pass height to AccountModule.GetNonce if 'height' param is set": {
+			"should pass height to UserModule.GetNonce if 'height' param is set": {
 				params:     map[string]string{"address": "maker1z", "height": "100"},
 				resp:       `{"nonce":"100"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
-					mockAcctModule := mocks.NewMockAccountModule(ctrl)
+					mockAcctModule := mocks.NewMockUserModule(ctrl)
 					mockAcctModule.EXPECT().GetNonce("maker1z", uint64(100)).Return("100")
-					modules.Account = mockAcctModule
+					modules.User = mockAcctModule
 				},
 			},
 		}, api.GetAccountNonce)
@@ -57,10 +57,10 @@ var _ = Describe("Account", func() {
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
 					acct := util.Map{"balance": "1200"}
-					mockAcctModule := mocks.NewMockAccountModule(ctrl)
+					mockAcctModule := mocks.NewMockUserModule(ctrl)
 					mockAcctModule.EXPECT().
 						GetAccount("maker1zt", uint64(100)).Return(acct)
-					modules.Account = mockAcctModule
+					modules.User = mockAcctModule
 				},
 			},
 		}, api.GetAccount)

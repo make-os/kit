@@ -1,6 +1,7 @@
 package keystore
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -69,6 +70,7 @@ var _ = Describe("AccountMgr", func() {
 
 	Describe(".askForPasswordOnce", func() {
 		am := New(accountPath)
+		am.SetOutput(ioutil.Discard)
 
 		It("should return the first input received", func() {
 			count := 0

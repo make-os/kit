@@ -4,6 +4,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // BarePushKey returns a PushKey object with zero values
@@ -18,11 +19,11 @@ func BarePushKey() *PushKey {
 // PushKey represents a push key
 type PushKey struct {
 	util.CodecUtil `json:"-" msgpack:"-"`
-	PubKey         crypto.PublicKey `json:"pubKey,omitempty" mapstructure:"pubKey,omitempty" msgpack:"pubKey,omitempty"`
-	Address        util.Address     `json:"address,omitempty" mapstructure:"address,omitempty" msgpack:"address,omitempty"`
-	Scopes         []string         `json:"scopes,omitempty" mapstructure:"scopes,omitempty" msgpack:"scopes,omitempty"`
-	FeeCap         util.String      `json:"feeCap,omitempty" mapstructure:"feeCap,omitempty" msgpack:"feeCap,omitempty"`
-	FeeUsed        util.String      `json:"feeUsed,omitempty" mapstructure:"feeUsed,omitempty" msgpack:"feeUsed,omitempty"`
+	PubKey         crypto.PublicKey   `json:"pubKey,omitempty" mapstructure:"pubKey,omitempty" msgpack:"pubKey,omitempty"`
+	Address        identifier.Address `json:"address,omitempty" mapstructure:"address,omitempty" msgpack:"address,omitempty"`
+	Scopes         []string           `json:"scopes,omitempty" mapstructure:"scopes,omitempty" msgpack:"scopes,omitempty"`
+	FeeCap         util.String        `json:"feeCap,omitempty" mapstructure:"feeCap,omitempty" msgpack:"feeCap,omitempty"`
+	FeeUsed        util.String        `json:"feeUsed,omitempty" mapstructure:"feeUsed,omitempty" msgpack:"feeUsed,omitempty"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

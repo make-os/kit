@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // All Transaction type
@@ -159,7 +160,7 @@ func (tx *TxCommon) SetSenderPubKey(pk []byte) {
 
 // GetFrom returns the address of the transaction sender
 // Panics if sender's public key is invalid
-func (tx *TxCommon) GetFrom() util.Address {
+func (tx *TxCommon) GetFrom() identifier.Address {
 	pk, err := crypto.PubKeyFromBytes(tx.SenderPubKey.Bytes())
 	if err != nil {
 		panic(err)
@@ -185,11 +186,11 @@ func SignTransaction(tx types.BaseTx, privKey string) ([]byte, error) {
 
 // TxRecipient describes a transaction receiver
 type TxRecipient struct {
-	To util.Address `json:"to" msgpack:"to" mapstructure:"to"`
+	To identifier.Address `json:"to" msgpack:"to" mapstructure:"to"`
 }
 
 // SetRecipient sets the recipient
-func (tx *TxRecipient) SetRecipient(to util.Address) {
+func (tx *TxRecipient) SetRecipient(to identifier.Address) {
 	tx.To = to
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var (
@@ -84,12 +85,12 @@ func (c *nonceCollection) remove(nonce uint64) {
 	delete(c.nonces, nonce)
 }
 
-type senderNonces map[util.Address]*nonceCollection
+type senderNonces map[identifier.Address]*nonceCollection
 
 // remove removes a nonce associated with a sender address.
 // The entire map entry for the sender is removed if no other
 // nonce exist after the operation
-func (sn *senderNonces) remove(senderAddr util.Address, nonce uint64) {
+func (sn *senderNonces) remove(senderAddr identifier.Address, nonce uint64) {
 	nc, ok := (*sn)[senderAddr]
 	if !ok {
 		return
@@ -131,7 +132,7 @@ func NewTxContainer(cap int) *TxContainer {
 	q.Cap = cap
 	q.lck = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
-	q.senderNonceIndex = map[util.Address]*nonceCollection{}
+	q.senderNonceIndex = map[identifier.Address]*nonceCollection{}
 	return q
 }
 
@@ -144,7 +145,7 @@ func NewTxContainerNoSort(cap int) *TxContainer {
 	q.lck = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
 	q.noSorting = true
-	q.senderNonceIndex = map[util.Address]*nonceCollection{}
+	q.senderNonceIndex = map[identifier.Address]*nonceCollection{}
 	return q
 }
 

@@ -60,7 +60,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("recipient address is not base58 encoded but a namespaced address", func() {
+		When("recipient address is not base58 encoded but a path address", func() {
 			It("should return no error", func() {
 				tx := txns.NewBareTxCoinTransfer()
 				tx.To = "namespace/domain"
@@ -69,7 +69,17 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("recipient address is not base58 encoded but a prefixed address", func() {
+		When("recipient address is not base58 encoded but a non-prefixed identifier", func() {
+			It("should return err", func() {
+				tx := txns.NewBareTxCoinTransfer()
+				tx.To = "repo1"
+				err := validation.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:to, msg:recipient address is not valid"))
+			})
+		})
+
+		When("recipient address is not base58 encoded but a native repo address", func() {
 			It("should return no error", func() {
 				tx := txns.NewBareTxCoinTransfer()
 				tx.To = "r/domain"
@@ -78,7 +88,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("recipient address is not base58 encoded but a prefixed account address", func() {
+		When("recipient address is not base58 encoded but a native account address", func() {
 			It("should return err", func() {
 				tx := txns.NewBareTxCoinTransfer()
 				tx.To = "a/abcdef"
@@ -835,6 +845,17 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".CheckScopes", func() {
+		It("", func() {
+			Expect(validation.CheckScopes([]string{"r/"}, -1)).ToNot(BeNil())
+			Expect(validation.CheckScopes([]string{"r/abc"}, -1)).To(BeNil())
+			Expect(validation.CheckScopes([]string{"ns1/"}, -1)).To(BeNil())
+			Expect(validation.CheckScopes([]string{"ns1/abc"}, -1)).To(BeNil())
+			Expect(validation.CheckScopes([]string{"abc"}, -1)).To(BeNil())
+			Expect(validation.CheckScopes([]string{"a/abc"}, -1)).ToNot(BeNil())
+		})
+	})
+
 	Describe(".CheckTxRegisterPushKey", func() {
 		var tx *txns.TxRegisterPushKey
 
@@ -863,16 +884,15 @@ var _ = Describe("TxValidator", func() {
 
 			It("has invalid scopes", func() {
 				scopes := []string{
-					"maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
-					"a/maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
 					"repo_&*",
+					"a/maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
 				}
 				for _, s := range scopes {
 					tx.Scopes = []string{s}
 					err := validation.CheckTxRegisterPushKey(tx, -1)
 					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("field:scopes[0], msg:not an acceptable scope. " +
-						"Expects a namespace URI or repository name"))
+					Expect(err).To(MatchError("field:scopes[0], msg:scope is invalid. " +
+						"Expected a namespace path or repository name"))
 				}
 			})
 
@@ -981,14 +1001,14 @@ var _ = Describe("TxValidator", func() {
 				tx.AddScopes = []string{"inv*alid"}
 				err := validation.CheckTxUpDelPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:scopes[0], msg:not an acceptable scope. Expects a namespace URI or repository name"))
+				Expect(err.Error()).To(Equal("field:scopes[0], msg:scope is invalid. Expected a namespace path or repository name"))
 			})
 
 			It("has invalid entry in addScopes", func() {
 				tx.AddScopes = []string{"inv*alid"}
 				err := validation.CheckTxUpDelPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:scopes[0], msg:not an acceptable scope. Expects a namespace URI or repository name"))
+				Expect(err.Error()).To(Equal("field:scopes[0], msg:scope is invalid. Expected a namespace path or repository name"))
 			})
 
 			It("has invalid fee cap", func() {

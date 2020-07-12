@@ -35,7 +35,7 @@ func New(dir string) *Keystore {
 	am := new(Keystore)
 	am.dir = dir
 	am.getPassword = func(s string, args ...interface{}) string {
-		s = fmt.Sprintf("\033[33m%s:\033[0m ", s)
+		s = fmt.Sprintf("\033[33m%s>\033[0m ", s)
 		return io2.ReadInput(fmt.Sprintf(s, args...), &io2.InputReaderArgs{Password: true})
 	}
 	am.out = os.Stdout

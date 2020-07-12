@@ -28,9 +28,9 @@ var _ = Describe("AccountLocal", func() {
 					"accounts": []string{"addr1", "addr2"},
 				},
 				mocker: func(tp *TestCase) {
-					mockAcctMod := mocks.NewMockAccountModule(ctrl)
+					mockAcctMod := mocks.NewMockUserModule(ctrl)
 					mockAcctMod.EXPECT().ListLocalAccounts().Return([]string{"addr1", "addr2"})
-					mods.Account = mockAcctMod
+					mods.User = mockAcctMod
 				},
 			},
 		}, api.listAccounts)

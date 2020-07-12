@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -409,7 +410,7 @@ var _ = Describe("senderNonces", func() {
 
 	BeforeEach(func() {
 		nc = defaultNonceCollection()
-		sn = map[util.Address]*nonceCollection{}
+		sn = map[identifier.Address]*nonceCollection{}
 	})
 
 	Describe(".remove", func() {

@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // RegisterNamespaceContract is a system contract to register a namespace.
@@ -61,11 +62,11 @@ func (c *RegisterNamespaceContract) Exec() error {
 	acctKeeper.Update(spk.Addr(), senderAcct)
 
 	// Send the value to the treasury
-	treasuryAcct := acctKeeper.Get(util.Address(params.TreasuryAddress), c.chainHeight)
+	treasuryAcct := acctKeeper.Get(identifier.Address(params.TreasuryAddress), c.chainHeight)
 	treasuryBal := treasuryAcct.Balance.Decimal()
 	treasuryAcct.Balance = util.String(treasuryBal.Add(c.tx.Value.Decimal()).String())
 	treasuryAcct.Clean(c.chainHeight)
-	acctKeeper.Update(util.Address(params.TreasuryAddress), treasuryAcct)
+	acctKeeper.Update(identifier.Address(params.TreasuryAddress), treasuryAcct)
 
 	// Update the namespace
 	c.NamespaceKeeper().Update(c.tx.Name, ns)

@@ -3,6 +3,7 @@ package util
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("Errors", func() {
@@ -176,4 +177,106 @@ var _ = Describe("Errors", func() {
 			})
 		})
 	})
+
+	Describe("String", func() {
+		Describe(".Address", func() {
+			It("should return Address type", func() {
+				Expect(String("addr1").Address()).To(Equal(identifier.Address("addr1")))
+			})
+		})
+
+		Describe(".Empty", func() {
+			It("should return true when empty and false when not", func() {
+				Expect(String("").Empty()).To(BeTrue())
+				Expect(String("xyz").Empty()).To(BeFalse())
+			})
+		})
+
+		Describe(".Bytes", func() {
+			It("should return expected bytes value", func() {
+				s := String("abc")
+				Expect(s.Bytes()).To(Equal([]uint8{0x61, 0x62, 0x63}))
+			})
+		})
+
+		Describe(".Equal", func() {
+			It("should equal b", func() {
+				a := String("abc")
+				b := String("abc")
+				Expect(a.Equal(b)).To(BeTrue())
+			})
+
+			It("should not equal b", func() {
+				a := String("abc")
+				b := String("xyz")
+				Expect(a.Equal(b)).ToNot(BeTrue())
+			})
+		})
+
+		Describe(".SS", func() {
+			Context("when string is greater than 32 characters", func() {
+				It("should return short form", func() {
+					s := String("abcdefghijklmnopqrstuvwxyz12345678")
+					Expect(s.SS()).To(Equal("abcdefghij...yz12345678"))
+				})
+			})
+
+			Context("when string is less than 32 characters", func() {
+				It("should return unchanged", func() {
+					s := String("abcdef")
+					Expect(s.SS()).To(Equal("abcdef"))
+				})
+			})
+		})
+
+		Describe(".Decimal", func() {
+			It("should return decimal", func() {
+				d := String("12.50").Decimal()
+				Expect(d.String()).To(Equal("12.5"))
+			})
+
+			It("should panic if string is not convertible to decimal", func() {
+				Expect(func() {
+					String("12a50").Decimal()
+				}).To(Panic())
+			})
+		})
+
+		Describe(".IsDecimal", func() {
+			It("should return true if convertible to decimal", func() {
+				actual := String("12.50").IsDecimal()
+				Expect(actual).To(BeTrue())
+			})
+
+			It("should return false if not convertible to decimal", func() {
+				actual := String("12a50").IsDecimal()
+				Expect(actual).To(BeFalse())
+			})
+		})
+
+		Describe(".Float", func() {
+			It("should panic if unable to convert to float64", func() {
+				Expect(func() {
+					String("1.0a").Float()
+				}).To(Panic())
+			})
+
+			It("should return float64 if string is numeric", func() {
+				Expect(String("1.3").Float()).To(Equal(1.3))
+			})
+		})
+
+		Describe(".IsDecimal", func() {
+			It("should return true if string contains integer", func() {
+				Expect(String("23").IsDecimal()).To(BeTrue())
+			})
+			It("should return true if string contains float", func() {
+				Expect(String("23.726").IsDecimal()).To(BeTrue())
+			})
+			It("should return false if string is not numerical", func() {
+				Expect(String("23a").IsDecimal()).To(BeFalse())
+			})
+		})
+	})
+
 })

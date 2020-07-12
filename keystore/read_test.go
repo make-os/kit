@@ -127,6 +127,18 @@ var _ = Describe("Read", func() {
 				Expect(err).To(BeNil())
 			})
 
+			It("should return error if empty argument is provided", func() {
+				_, err := am.GetByIndexOrAddress("")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index or address of key is required"))
+			})
+
+			It("should return error if key was not found", func() {
+				_, err := am.GetByIndexOrAddress("unknown")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(types.ErrKeyUnknown))
+			})
+
 			It("should successfully get key by its address", func() {
 				act, err := am.GetByIndexOrAddress(address.Addr().String())
 				Expect(err).To(BeNil())

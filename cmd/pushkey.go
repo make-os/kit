@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/makeos/mosdef/api/utils"
-	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/remote/cmd/pkcmd"
+	"gitlab.com/makeos/mosdef/commands/common"
+	"gitlab.com/makeos/mosdef/commands/pkcmd"
 )
 
 // pushKeyCmd represents
@@ -52,7 +52,7 @@ var pushKeyRegCmd = &cobra.Command{
 			RemoteClients:   remoteClients,
 			Scopes:          scopes,
 			FeeCap:          feeCap,
-			KeyUnlocker:     cmd2.UnlockKey,
+			KeyUnlocker:     common.UnlockKey,
 			GetNextNonce:    utils.GetNextNonceOfAccount,
 			RegisterPushKey: utils.RegisterPushKey,
 			Stdout:          os.Stdout,

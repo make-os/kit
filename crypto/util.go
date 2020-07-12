@@ -9,6 +9,7 @@ import (
 	"github.com/tendermint/tendermint/libs/bech32"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // PublicKey represents a 32-byte ED25519 public key
@@ -59,13 +60,13 @@ func (pk PublicKey) Hex() []byte {
 
 // MustAddress derives an address from the key.
 // Panics on failure.
-func (pk PublicKey) MustAddress() util.Address {
+func (pk PublicKey) MustAddress() identifier.Address {
 	return MustPubKeyFromBytes(pk.Bytes()).Addr()
 }
 
 // MustPushKeyAddress derives a push key address from the key.
 // Panics on failure.
-func (pk PublicKey) MustPushKeyAddress() util.Address {
+func (pk PublicKey) MustPushKeyAddress() identifier.Address {
 	return MustPubKeyFromBytes(pk.Bytes()).PushAddr()
 }
 

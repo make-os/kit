@@ -65,10 +65,10 @@ func (mr *MockClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.C
 }
 
 // SendTxPayload mocks base method
-func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error) {
+func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.HashResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendTxPayload", data)
-	ret0, _ := ret[0].(*types.SendTxPayloadResponse)
+	ret0, _ := ret[0].(*types.HashResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -210,10 +210,10 @@ func (mr *MockClientMockRecorder) GetRepo(name interface{}, opts ...interface{})
 }
 
 // AddRepoContributors mocks base method
-func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error) {
+func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddRepoContributors", body)
-	ret0, _ := ret[0].(*types.AddRepoContribsResponse)
+	ret0, _ := ret[0].(*types.HashResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -222,4 +222,19 @@ func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*type
 func (mr *MockClientMockRecorder) AddRepoContributors(body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepoContributors", reflect.TypeOf((*MockClient)(nil).AddRepoContributors), body)
+}
+
+// SendCoin mocks base method
+func (m *MockClient) SendCoin(body *types.SendCoinBody) (*types.HashResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendCoin", body)
+	ret0, _ := ret[0].(*types.HashResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendCoin indicates an expected call of SendCoin
+func (mr *MockClientMockRecorder) SendCoin(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoin", reflect.TypeOf((*MockClient)(nil).SendCoin), body)
 }

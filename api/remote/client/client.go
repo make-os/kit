@@ -13,19 +13,16 @@ import (
 type Client interface {
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
-
-	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error)
-
+	SendTxPayload(data map[string]interface{}) (*types.HashResponse, error)
 	GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
 	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
-
 	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
 	GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error)
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
-
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
-	AddRepoContributors(body *types.AddRepoContribsBody) (*types.AddRepoContribsResponse, error)
+	AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error)
+	SendCoin(body *types.SendCoinBody) (*types.HashResponse, error)
 }
 
 // RequestFunc describes the function for making http requests

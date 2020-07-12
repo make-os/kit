@@ -19,13 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/cbroglie/mustache"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
-
 	"github.com/vmihailenco/msgpack"
 
 	"github.com/fatih/structs"
@@ -47,73 +45,6 @@ var Big0 = new(big.Int).SetInt64(0)
 
 func init() {
 	r.Seed(time.Now().UnixNano())
-}
-
-// String represents a custom string
-type String string
-
-// Bytes returns the bytes equivalent of the string
-func (s String) Bytes() []byte {
-	return []byte(s)
-}
-
-// Address converts the String to an Address
-func (s String) Address() Address {
-	return Address(s)
-}
-
-// Equal check whether s and o are the same
-func (s String) Equal(o String) bool {
-	return s.String() == o.String()
-}
-
-func (s String) String() string {
-	return string(s)
-}
-
-// IsZero returns true if str is empty or equal "0"
-func (s String) IsZero() bool {
-	return IsZeroString(string(s))
-}
-
-// IsNumeric checks whether s is numeric
-func (s String) IsNumeric() bool {
-	return govalidator.IsFloat(s.String())
-}
-
-// Empty returns true if the string is empty
-func (s String) Empty() bool {
-	return len(s) == 0
-}
-
-// SS returns a short version of String() with the middle
-// characters truncated when length is at least 32
-func (s String) SS() string {
-	if len(s) >= 32 {
-		return fmt.Sprintf("%s...%s", string(s)[0:10], string(s)[len(s)-10:])
-	}
-	return string(s)
-}
-
-// Decimal returns the decimal representation of the string.
-// Panics if string failed to be converted to decimal.
-func (s String) Decimal() decimal.Decimal {
-	return StrToDec(s.String())
-}
-
-// Float returns the float equivalent of the numeric value.
-// Panics if not convertible to float64
-func (s String) Float() float64 {
-	f, err := strconv.ParseFloat(string(s), 64)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
-// IsDecimal checks whether the string can be converted to Decimal
-func (s String) IsDecimal() bool {
-	return govalidator.IsFloat(string(s))
 }
 
 // ToBytes returns msgpack encoded representation of s.
@@ -580,37 +511,6 @@ func ToStringMapInter(m interface{}, structToMap ...bool) map[string]interface{}
 // IsZeroString returns true if str is empty or equal "0"
 func IsZeroString(str string) bool {
 	return str == "" || str == "0"
-}
-
-// IsValidName checks whether a user-defined identifier/name is valid
-func IsValidName(name string) error {
-	if len(name) <= 2 {
-		return fmt.Errorf("name is too short. Must be at least 3 characters long")
-	}
-	if !govalidator.Matches(name, "^[a-z0-9][a-zA-Z0-9_-]+$") {
-		if name != "" && (name[0] == '_' || name[0] == '-') {
-			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
-		}
-		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
-	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
-	}
-	return nil
-}
-
-// IsValidNameNoLen checks whether a user-defined identifier/name is valid but it does not enforce a length requirement
-func IsValidNameNoLen(name string) error {
-	if !govalidator.Matches(name, "^[a-z0-9]([a-zA-Z0-9_-]+)?$") {
-		if name != "" && (name[0] == '_' || name[0] == '-') {
-			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
-		}
-		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
-	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
-	}
-	return nil
 }
 
 // EditorReaderFunc describes a function that collects input from an editor program

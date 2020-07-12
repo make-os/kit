@@ -6,6 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 const (
@@ -34,7 +35,7 @@ func DebitAccount(logic core.Logic, targetAcct *crypto.PubKey, amount decimal.De
 }
 
 // DebitAccountByAddress is like DebitAccount but accepts the address of the debit account.
-func DebitAccountByAddress(logic core.Logic, targetAddr util.Address, amt decimal.Decimal, chainHeight uint64) {
+func DebitAccountByAddress(logic core.Logic, targetAddr identifier.Address, amt decimal.Decimal, chainHeight uint64) {
 
 	// Get the sender account and balance
 	acctKeeper := logic.AccountKeeper()
@@ -54,7 +55,7 @@ func DebitAccountByAddress(logic core.Logic, targetAddr util.Address, amt decima
 
 // DebitAccountObject is like DebitAccount, but it accepts the debit account object.
 // It increments the account's nonce and persist the updates.
-func DebitAccountObject(logic core.Logic, targetAddr util.Address, targetAcct *state.Account, amount decimal.Decimal,
+func DebitAccountObject(logic core.Logic, targetAddr identifier.Address, targetAcct *state.Account, amount decimal.Decimal,
 	chainHeight uint64) {
 
 	senderBal := targetAcct.Balance.Decimal()

@@ -12,13 +12,12 @@ import (
 )
 
 // NextNonceGetter describes a function for getting the next nonce of an account.
-type NextNonceGetter func(address string, rpcClient client.Client,
+type NextNonceGetter func(
+	address string,
+	rpcClient client.Client,
 	remoteClients []remote.Client) (string, error)
 
 // GetNextNonceOfPushKeyOwner returns the next account nonce of the owner of a given push key.
-// It accepts a rpc client and one or more remote API clients represent different remotes.
-// It will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients fail.
 func GetNextNonceOfPushKeyOwner(
 	pkID string,
 	rpcClient client.Client,
@@ -46,9 +45,6 @@ func GetNextNonceOfPushKeyOwner(
 }
 
 // GetNextNonceOfAccount returns the next account nonce of an account.
-// It accepts a rpc client and one or more remote API clients represent different remotes.
-// It will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients fail.
 func GetNextNonceOfAccount(
 	address string,
 	rpcClient client.Client,
@@ -81,9 +77,6 @@ type RepoCreator func(
 	remoteClients []remote.Client) (hash string, err error)
 
 // CreateRepo creates a repository creating transaction and returns the hash.
-// It accepts a rpc client and one or more remote API clients represent different remotes.
-// It will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients fail.
 func CreateRepo(
 	req *types.CreateRepoBody,
 	rpcClient client.Client,
@@ -114,9 +107,6 @@ type PushKeyRegister func(
 	remoteClients []remote.Client) (hash string, err error)
 
 // RegisterPushKey creates a push key registration transaction and returns the hash.
-// It accepts a rpc client and one or more remote API clients represent different remotes.
-// It will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients fail.
 func RegisterPushKey(
 	req *types.RegisterPushKeyBody,
 	rpcClient client.Client,
@@ -147,10 +137,8 @@ type RepoContributorsAdder func(
 	rpcClient client.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
-// AddRepoContributors creates a proposal transaction to add contributors to a repo and returns the hash.
-// It accepts a rpc client and one or more remote API clients represent different remotes.
-// It will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients fail.
+// AddRepoContributors creates a proposal transaction to add contributors
+// to a repo and returns the hash.
 func AddRepoContributors(
 	req *types.AddRepoContribsBody,
 	rpcClient client.Client,
@@ -174,6 +162,37 @@ func AddRepoContributors(
 	return
 }
 
+// CoinSender describes a function for sending coins
+type CoinSender func(
+	req *types.SendCoinBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error)
+
+// SendCoin creates a transaction to send coins from user account to
+// another user/repo account.
+func SendCoin(
+	req *types.SendCoinBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error) {
+	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+		resp, err := c.SendCoin(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+
+	}, func(c remote.Client) error {
+		resp, err := c.SendCoin(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+	})
+	return
+}
+
 // CallClients allows the caller to perform calls on multiple remote clients
 // and an RPC client. Callers must provide rpcCaller callback function to perform
 // operation with the given rpc client.
@@ -181,10 +200,8 @@ func AddRepoContributors(
 // Likewise, caller must provide remoteCaller callback function to perform operation
 // with the given remote API clients.
 //
-// No further calls to remote API clients will occur once nil is
-// returned from one of the clients.
-//
-// The rpcClient is not called when one of the remote API client
+// No further calls to remote API clients will occur once nil is returned from one
+// of the clients. The rpcClient is not called when one of the remote API client
 // returns a nil error.
 func CallClients(
 	rpcClient client.Client,

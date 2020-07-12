@@ -17,6 +17,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("ProposalHandler", func() {
@@ -472,8 +473,8 @@ var _ = Describe("ProposalHandler", func() {
 
 	Describe(".MaybeProcessProposalFee", func() {
 		var proposal *state.RepoProposal
-		var addr = util.Address("addr1")
-		var addr2 = util.Address("addr2")
+		var addr = identifier.Address("addr1")
+		var addr2 = identifier.Address("addr2")
 		var repo *state.Repository
 		var helmRepoName = "helm"
 

@@ -273,25 +273,6 @@ func (mr *MockTxModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockTxModule)(nil).ConsoleOnlyMode))
 }
 
-// SendCoin mocks base method
-func (m *MockTxModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{params}
-	for _, a := range options {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SendCoin", varargs...)
-	ret0, _ := ret[0].(util.Map)
-	return ret0
-}
-
-// SendCoin indicates an expected call of SendCoin
-func (mr *MockTxModuleMockRecorder) SendCoin(params interface{}, options ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoin", reflect.TypeOf((*MockTxModule)(nil).SendCoin), varargs...)
-}
-
 // Get mocks base method
 func (m *MockTxModule) Get(hash string) util.Map {
 	m.ctrl.T.Helper()
@@ -413,31 +394,31 @@ func (mr *MockPoolModuleMockRecorder) GetPushPoolSize() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPoolSize", reflect.TypeOf((*MockPoolModule)(nil).GetPushPoolSize))
 }
 
-// MockAccountModule is a mock of AccountModule interface
-type MockAccountModule struct {
+// MockUserModule is a mock of UserModule interface
+type MockUserModule struct {
 	ctrl     *gomock.Controller
-	recorder *MockAccountModuleMockRecorder
+	recorder *MockUserModuleMockRecorder
 }
 
-// MockAccountModuleMockRecorder is the mock recorder for MockAccountModule
-type MockAccountModuleMockRecorder struct {
-	mock *MockAccountModule
+// MockUserModuleMockRecorder is the mock recorder for MockUserModule
+type MockUserModuleMockRecorder struct {
+	mock *MockUserModule
 }
 
-// NewMockAccountModule creates a new mock instance
-func NewMockAccountModule(ctrl *gomock.Controller) *MockAccountModule {
-	mock := &MockAccountModule{ctrl: ctrl}
-	mock.recorder = &MockAccountModuleMockRecorder{mock}
+// NewMockUserModule creates a new mock instance
+func NewMockUserModule(ctrl *gomock.Controller) *MockUserModule {
+	mock := &MockUserModule{ctrl: ctrl}
+	mock.recorder = &MockUserModuleMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockAccountModule) EXPECT() *MockAccountModuleMockRecorder {
+func (m *MockUserModule) EXPECT() *MockUserModuleMockRecorder {
 	return m.recorder
 }
 
 // ConfigureVM mocks base method
-func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
+func (m *MockUserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].(prompt.Completer)
@@ -445,13 +426,13 @@ func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 }
 
 // ConfigureVM indicates an expected call of ConfigureVM
-func (mr *MockAccountModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockAccountModule)(nil).ConfigureVM), vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockUserModule)(nil).ConfigureVM), vm)
 }
 
 // ConsoleOnlyMode mocks base method
-func (m *MockAccountModule) ConsoleOnlyMode() bool {
+func (m *MockUserModule) ConsoleOnlyMode() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
 	ret0, _ := ret[0].(bool)
@@ -459,13 +440,13 @@ func (m *MockAccountModule) ConsoleOnlyMode() bool {
 }
 
 // ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
-func (mr *MockAccountModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+func (mr *MockUserModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockAccountModule)(nil).ConsoleOnlyMode))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockUserModule)(nil).ConsoleOnlyMode))
 }
 
 // ListLocalAccounts mocks base method
-func (m *MockAccountModule) ListLocalAccounts() []string {
+func (m *MockUserModule) ListLocalAccounts() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListLocalAccounts")
 	ret0, _ := ret[0].([]string)
@@ -473,13 +454,13 @@ func (m *MockAccountModule) ListLocalAccounts() []string {
 }
 
 // ListLocalAccounts indicates an expected call of ListLocalAccounts
-func (mr *MockAccountModuleMockRecorder) ListLocalAccounts() *gomock.Call {
+func (mr *MockUserModuleMockRecorder) ListLocalAccounts() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLocalAccounts", reflect.TypeOf((*MockAccountModule)(nil).ListLocalAccounts))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLocalAccounts", reflect.TypeOf((*MockUserModule)(nil).ListLocalAccounts))
 }
 
 // GetKey mocks base method
-func (m *MockAccountModule) GetKey(address string, passphrase ...string) string {
+func (m *MockUserModule) GetKey(address string, passphrase ...string) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range passphrase {
@@ -491,14 +472,14 @@ func (m *MockAccountModule) GetKey(address string, passphrase ...string) string 
 }
 
 // GetKey indicates an expected call of GetKey
-func (mr *MockAccountModuleMockRecorder) GetKey(address interface{}, passphrase ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetKey(address interface{}, passphrase ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, passphrase...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKey", reflect.TypeOf((*MockAccountModule)(nil).GetKey), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKey", reflect.TypeOf((*MockUserModule)(nil).GetKey), varargs...)
 }
 
 // GetPublicKey mocks base method
-func (m *MockAccountModule) GetPublicKey(address string, passphrase ...string) string {
+func (m *MockUserModule) GetPublicKey(address string, passphrase ...string) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range passphrase {
@@ -510,14 +491,14 @@ func (m *MockAccountModule) GetPublicKey(address string, passphrase ...string) s
 }
 
 // GetPublicKey indicates an expected call of GetPublicKey
-func (mr *MockAccountModuleMockRecorder) GetPublicKey(address interface{}, passphrase ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetPublicKey(address interface{}, passphrase ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, passphrase...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicKey", reflect.TypeOf((*MockAccountModule)(nil).GetPublicKey), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicKey", reflect.TypeOf((*MockUserModule)(nil).GetPublicKey), varargs...)
 }
 
 // GetNonce mocks base method
-func (m *MockAccountModule) GetNonce(address string, height ...uint64) string {
+func (m *MockUserModule) GetNonce(address string, height ...uint64) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range height {
@@ -529,14 +510,14 @@ func (m *MockAccountModule) GetNonce(address string, height ...uint64) string {
 }
 
 // GetNonce indicates an expected call of GetNonce
-func (mr *MockAccountModuleMockRecorder) GetNonce(address interface{}, height ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetNonce(address interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, height...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonce", reflect.TypeOf((*MockAccountModule)(nil).GetNonce), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonce", reflect.TypeOf((*MockUserModule)(nil).GetNonce), varargs...)
 }
 
 // GetAccount mocks base method
-func (m *MockAccountModule) GetAccount(address string, height ...uint64) util.Map {
+func (m *MockUserModule) GetAccount(address string, height ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range height {
@@ -548,14 +529,14 @@ func (m *MockAccountModule) GetAccount(address string, height ...uint64) util.Ma
 }
 
 // GetAccount indicates an expected call of GetAccount
-func (mr *MockAccountModuleMockRecorder) GetAccount(address interface{}, height ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetAccount(address interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, height...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountModule)(nil).GetAccount), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockUserModule)(nil).GetAccount), varargs...)
 }
 
 // GetAvailableBalance mocks base method
-func (m *MockAccountModule) GetAvailableBalance(address string, height ...uint64) string {
+func (m *MockUserModule) GetAvailableBalance(address string, height ...uint64) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range height {
@@ -567,14 +548,14 @@ func (m *MockAccountModule) GetAvailableBalance(address string, height ...uint64
 }
 
 // GetAvailableBalance indicates an expected call of GetAvailableBalance
-func (mr *MockAccountModuleMockRecorder) GetAvailableBalance(address interface{}, height ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetAvailableBalance(address interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, height...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableBalance", reflect.TypeOf((*MockAccountModule)(nil).GetAvailableBalance), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableBalance", reflect.TypeOf((*MockUserModule)(nil).GetAvailableBalance), varargs...)
 }
 
 // GetStakedBalance mocks base method
-func (m *MockAccountModule) GetStakedBalance(address string, height ...uint64) string {
+func (m *MockUserModule) GetStakedBalance(address string, height ...uint64) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range height {
@@ -586,14 +567,14 @@ func (m *MockAccountModule) GetStakedBalance(address string, height ...uint64) s
 }
 
 // GetStakedBalance indicates an expected call of GetStakedBalance
-func (mr *MockAccountModuleMockRecorder) GetStakedBalance(address interface{}, height ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetStakedBalance(address interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, height...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStakedBalance", reflect.TypeOf((*MockAccountModule)(nil).GetStakedBalance), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStakedBalance", reflect.TypeOf((*MockUserModule)(nil).GetStakedBalance), varargs...)
 }
 
 // GetValidatorInfo mocks base method
-func (m *MockAccountModule) GetValidatorInfo(includePrivKey ...bool) util.Map {
+func (m *MockUserModule) GetValidatorInfo(includePrivKey ...bool) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range includePrivKey {
@@ -605,13 +586,13 @@ func (m *MockAccountModule) GetValidatorInfo(includePrivKey ...bool) util.Map {
 }
 
 // GetValidatorInfo indicates an expected call of GetValidatorInfo
-func (mr *MockAccountModuleMockRecorder) GetValidatorInfo(includePrivKey ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) GetValidatorInfo(includePrivKey ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorInfo", reflect.TypeOf((*MockAccountModule)(nil).GetValidatorInfo), includePrivKey...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorInfo", reflect.TypeOf((*MockUserModule)(nil).GetValidatorInfo), includePrivKey...)
 }
 
 // SetCommission mocks base method
-func (m *MockAccountModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *MockUserModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
@@ -623,10 +604,29 @@ func (m *MockAccountModule) SetCommission(params map[string]interface{}, options
 }
 
 // SetCommission indicates an expected call of SetCommission
-func (mr *MockAccountModuleMockRecorder) SetCommission(params interface{}, options ...interface{}) *gomock.Call {
+func (mr *MockUserModuleMockRecorder) SetCommission(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommission", reflect.TypeOf((*MockAccountModule)(nil).SetCommission), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommission", reflect.TypeOf((*MockUserModule)(nil).SetCommission), varargs...)
+}
+
+// SendCoin mocks base method
+func (m *MockUserModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{params}
+	for _, a := range options {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendCoin", varargs...)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// SendCoin indicates an expected call of SendCoin
+func (mr *MockUserModuleMockRecorder) SendCoin(params interface{}, options ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{params}, options...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoin", reflect.TypeOf((*MockUserModule)(nil).SendCoin), varargs...)
 }
 
 // MockPushKeyModule is a mock of PushKeyModule interface

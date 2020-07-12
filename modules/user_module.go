@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	address2 "gitlab.com/makeos/mosdef/util/identifier"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -95,6 +96,11 @@ func (m *UserModule) methods() []*types.ModuleFunc {
 			Name:        "setCommission",
 			Value:       m.SetCommission,
 			Description: "Set the percentage of reward to share with a delegator",
+		},
+		{
+			Name:        "send",
+			Value:       m.SendCoin,
+			Description: "Send coins to another user account or a repository",
 		},
 	}
 }
@@ -223,7 +229,7 @@ func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
@@ -234,7 +240,7 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
@@ -250,7 +256,7 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
@@ -271,7 +277,7 @@ func (m *UserModule) GetAvailableBalance(address string, height ...uint64) strin
 //
 // RETURNS <string>: numeric value
 func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
@@ -330,6 +336,44 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 	var tx = txns.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
+	}
+
+	if finalizeTx(tx, m.logic, options...) {
+		return tx.ToMap()
+	}
+
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+	}
+
+	return map[string]interface{}{
+		"hash": hash,
+	}
+}
+
+// sendCoin sends the native coin from a source account to a destination account.
+//
+// ARGS:
+// params <map>
+// params.value 		<string>: 			The amount of coin to send
+// params.to 			<string>: 			The address of the recipient
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *UserModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
+	var err error
+
+	var tx = txns.NewBareTxCoinTransfer()
+	if err = tx.FromMap(params); err != nil {
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if finalizeTx(tx, m.logic, options...) {

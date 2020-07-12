@@ -17,6 +17,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("CoinTransferContract", func() {
@@ -162,9 +163,9 @@ var _ = Describe("CoinTransferContract", func() {
 			})
 		})
 
-		When("recipient address is a namespaced URI with a user account target", func() {
+		When("recipient address is a user namespace path with a user account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.Address(ns + "/domain")
+			var senderNamespaceURI = identifier.Address(ns + "/domain")
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
@@ -214,9 +215,9 @@ var _ = Describe("CoinTransferContract", func() {
 			})
 		})
 
-		When("recipient address is a namespace URI with a repo account target", func() {
+		When("recipient address is a user namespace path with a repo account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.Address(ns + "/domain")
+			var senderNamespaceURI = identifier.Address(ns + "/domain")
 			var repoName = "repo1"
 
 			BeforeEach(func() {
@@ -257,7 +258,7 @@ var _ = Describe("CoinTransferContract", func() {
 				var repoName = "repo1"
 
 				BeforeEach(func() {
-					recipient := util.Address("r/" + repoName)
+					recipient := identifier.Address("r/" + repoName)
 					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
 						TxRecipient: &txns.TxRecipient{To: recipient},
 						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
@@ -276,6 +277,42 @@ var _ = Describe("CoinTransferContract", func() {
 					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.GetBalance()).To(Equal(util.String("10")))
 				})
+			})
+		})
+
+		When("recipient address is a partial user namespace", func() {
+			var recipient = identifier.Address("ns1/")
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+					TxRecipient: &txns.TxRecipient{To: recipient},
+					TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+				ct := transfercoin.NewContract().Init(logic, tx, 0)
+				err = ct.Exec()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace not found"))
+			})
+		})
+
+		When("recipient address is a partial native namespace", func() {
+			var recipient = identifier.Address("r/")
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+					TxRecipient: &txns.TxRecipient{To: recipient},
+					TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+				ct := transfercoin.NewContract().Init(logic, tx, 0)
+				err = ct.Exec()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace not found"))
 			})
 		})
 	})

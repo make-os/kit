@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/mosdef/util/identifier"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 )
 
@@ -311,7 +312,7 @@ func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
 			return fe(-1, makeField("labels", commitHash), "expected a string list")
 		}
 		for i, val := range labels.InterSlice() {
-			if err := util.IsValidNameNoLen(strings.TrimPrefix(val.(string), "-")); err != nil {
+			if err := identifier.IsValidResourceNameNoMinLen(strings.TrimPrefix(val.(string), "-")); err != nil {
 				return fe(i, makeField("labels", commitHash), err.Error())
 			}
 		}

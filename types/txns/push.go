@@ -5,6 +5,7 @@ import (
 	pptyp "gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 type PushEndorsements []*pptyp.PushEndorsement
@@ -140,7 +141,7 @@ func (tx *TxPush) GetNonce() uint64 {
 
 // GetFrom returns the address of the transaction sender
 // Because TxPush is a wrapper transaction, we use the pusher's address.
-func (tx *TxPush) GetFrom() util.Address {
+func (tx *TxPush) GetFrom() identifier.Address {
 	return tx.Note.GetPusherAddress()
 }
 

@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 // BlockValidators contains validators of a block
@@ -84,14 +85,14 @@ type AccountKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	Get(address util.Address, blockNum ...uint64) *state.Account
+	Get(address identifier.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
 	// address: The address of the account to update
 	// udp: The updated account object to replace the existing object.
-	Update(address util.Address, upd *state.Account)
+	Update(address identifier.Address, upd *state.Account)
 }
 
 // RepoKeeper describes an interface for accessing repository data

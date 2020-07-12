@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/makeos/mosdef/api/utils"
-	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/remote/cmd/contribcmd"
+	"gitlab.com/makeos/mosdef/commands/common"
+	"gitlab.com/makeos/mosdef/commands/contribcmd"
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
@@ -70,7 +70,7 @@ var contribAddCmd = &cobra.Command{
 			SigningKeyPass:      signingKeyPass,
 			RPCClient:           client,
 			RemoteClients:       remoteClients,
-			KeyUnlocker:         cmd2.UnlockKey,
+			KeyUnlocker:         common.UnlockKey,
 			GetNextNonce:        utils.GetNextNonceOfAccount,
 			AddRepoContributors: utils.AddRepoContributors,
 			Stdout:              os.Stdout,
@@ -103,5 +103,5 @@ func init() {
 	// Set required field
 	contribAddCmd.MarkFlagRequired("name")
 	contribAddCmd.MarkFlagRequired("fee")
-	contribAddCmd.MarkFlagRequired("account")
+	contribAddCmd.MarkFlagRequired("signing-key")
 }

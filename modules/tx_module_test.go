@@ -58,55 +58,6 @@ var _ = Describe("TxModule", func() {
 		})
 	})
 
-	Describe(".SendCoin()", func() {
-		It("should panic when unable to decode params", func() {
-			params := map[string]interface{}{"type": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.SendCoin(params)
-			})
-		})
-
-		It("should return tx map equivalent if payloadOnly=true", func() {
-			key := ""
-			payloadOnly := true
-			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			params := tx.ToMap()
-			res := m.SendCoin(params, key, payloadOnly)
-			Expect(res).ToNot(HaveKey("hash"))
-			Expect(res).To(And(
-				HaveKey("nonce"),
-				HaveKey("type"),
-				HaveKey("senderPubKey"),
-				HaveKey("to"),
-				HaveKey("timestamp"),
-				HaveKey("fee"),
-				HaveKey("sig"),
-				HaveKey("value"),
-			))
-		})
-
-		It("should return panic if unable to add tx to mempool", func() {
-			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			params := tx.ToMap()
-			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.SendCoin(params, "", false)
-			})
-		})
-
-		It("should return tx hash on success", func() {
-			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			params := tx.ToMap()
-			hash := util.StrToHexBytes("tx_hash")
-			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
-			res := m.SendCoin(params, "", false)
-			Expect(res).To(HaveKey("hash"))
-			Expect(res["hash"]).To(Equal(hash))
-		})
-	})
-
 	Describe(".Get", func() {
 		It("should panic if transaction hash is not valid", func() {
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "invalid transaction hash", Field: "hash"}

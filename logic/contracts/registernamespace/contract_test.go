@@ -17,6 +17,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("RegisterNamespaceContract", func() {
@@ -94,12 +95,12 @@ var _ = Describe("RegisterNamespaceContract", func() {
 			})
 
 			Specify("that value is paid to the treasury address", func() {
-				acct := logic.AccountKeeper().Get(util.Address(params.TreasuryAddress))
+				acct := logic.AccountKeeper().Get(identifier.Address(params.TreasuryAddress))
 				Expect(acct.Balance).To(Equal(util.String("1")))
 			})
 
 			Specify("that nonce was incremented", func() {
-				acct := logic.AccountKeeper().Get(util.Address(sender.Addr()))
+				acct := logic.AccountKeeper().Get(identifier.Address(sender.Addr()))
 				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})

@@ -15,6 +15,7 @@ import (
 	core "gitlab.com/makeos/mosdef/types/core"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
+	identifier "gitlab.com/makeos/mosdef/util/identifier"
 	reflect "reflect"
 )
 
@@ -280,7 +281,7 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockAccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Account {
+func (m *MockAccountKeeper) Get(address identifier.Address, blockNum ...uint64) *state.Account {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockNum {
@@ -299,7 +300,7 @@ func (mr *MockAccountKeeperMockRecorder) Get(address interface{}, blockNum ...in
 }
 
 // Update mocks base method
-func (m *MockAccountKeeper) Update(address util.Address, upd *state.Account) {
+func (m *MockAccountKeeper) Update(address identifier.Address, upd *state.Account) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Update", address, upd)
 }

@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 var _ = Describe("ChainModule", func() {
@@ -125,7 +126,7 @@ var _ = Describe("ChainModule", func() {
 			res := m.GetValidators("1")
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]["publicKey"]).To(Equal("48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC"))
-			Expect(res[0]["address"]).To(Equal(util.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
+			Expect(res[0]["address"]).To(Equal(identifier.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
 			Expect(res[0]["tmAddress"]).To(Equal("171E68F02E6F66BF9FF65C13C75D9B2B492C2F40"))
 			Expect(res[0]["ticketId"]).To(Equal("0x7469636b65745f6964"))
 		})

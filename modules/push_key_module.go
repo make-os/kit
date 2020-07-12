@@ -12,6 +12,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -282,7 +283,7 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 		targetHeight = blockHeight[0]
 	}
 
-	acct := m.logic.AccountKeeper().Get(pushKey["address"].(util.Address), targetHeight)
+	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), targetHeight)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}

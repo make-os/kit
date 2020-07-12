@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/identifier"
 )
 
 func MakeProposal(
@@ -145,7 +146,7 @@ func DetermineProposalOutcome(
 // refundProposalFees refunds all fees back to their senders
 func refundProposalFees(keepers core.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
-		sender := util.Address(senderAddr)
+		sender := identifier.Address(senderAddr)
 		acct := keepers.AccountKeeper().Get(sender)
 		acct.Balance = util.String(acct.Balance.Decimal().Add(util.String(fee).Decimal()).String())
 		keepers.AccountKeeper().Update(sender, acct)

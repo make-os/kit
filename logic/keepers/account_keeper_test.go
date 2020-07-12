@@ -6,6 +6,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	state2 "gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util/identifier"
 
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -48,7 +49,7 @@ var _ = Describe("Account", func() {
 
 	Describe(".Update", func() {
 		It("should update balance", func() {
-			key := util.Address("addr1")
+			key := identifier.Address("addr1")
 			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
 			Expect(acct.Nonce.UInt64()).To(Equal(uint64(0)))

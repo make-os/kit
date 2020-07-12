@@ -10,6 +10,7 @@ import (
 	types "gitlab.com/makeos/mosdef/remote/push/types"
 	types0 "gitlab.com/makeos/mosdef/remote/types"
 	util "gitlab.com/makeos/mosdef/util"
+	identifier "gitlab.com/makeos/mosdef/util/identifier"
 	reflect "reflect"
 )
 
@@ -253,10 +254,10 @@ func (mr *MockPushNoteMockRecorder) GetPusherKeyID() *gomock.Call {
 }
 
 // GetPusherAddress mocks base method
-func (m *MockPushNote) GetPusherAddress() util.Address {
+func (m *MockPushNote) GetPusherAddress() identifier.Address {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPusherAddress")
-	ret0, _ := ret[0].(util.Address)
+	ret0, _ := ret[0].(identifier.Address)
 	return ret0
 }
 
