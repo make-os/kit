@@ -15,7 +15,6 @@ import (
 	tmconfig "github.com/tendermint/tendermint/config"
 	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/mitchellh/go-homedir"
 	"gitlab.com/makeos/mosdef/config"
 )
 
@@ -27,7 +26,7 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	}
 
 	// Create test directory
-	dir, _ := homedir.Dir()
+	dir := os.TempDir()
 	dataDir := path.Join(dir, dataDirName)
 	os.MkdirAll(dataDir, 0700)
 

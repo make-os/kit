@@ -193,6 +193,36 @@ func SendCoin(
 	return
 }
 
+// TxGetter describes a function for getting a finalized transaction
+type TxGetter func(
+	hash string,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (res map[string]interface{}, err error)
+
+// GetTransaction gets a finalized transaction by hash
+func GetTransaction(
+	hash string,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (res map[string]interface{}, err error) {
+	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+		resp, err := c.GetTransaction(hash)
+		if err != nil {
+			return err
+		}
+		res = resp
+		return err
+
+	}, func(c remote.Client) error {
+		resp, err := c.GetTransaction(hash)
+		if err != nil {
+			return err
+		}
+		res = resp
+		return err
+	})
+	return
+}
+
 // CallClients allows the caller to perform calls on multiple remote clients
 // and an RPC client. Callers must provide rpcCaller callback function to perform
 // operation with the given rpc client.

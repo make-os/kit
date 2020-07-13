@@ -281,6 +281,45 @@ var _ = Describe("ClientUtils", func() {
 		})
 	})
 
+	Describe(".GetTransaction", func() {
+		It("should return err when two remote clients are provided and both failed", func() {
+			hash := "0x123"
+			client1.EXPECT().GetTransaction(hash).Return(nil, fmt.Errorf("error"))
+			client2.EXPECT().GetTransaction(hash).Return(nil, fmt.Errorf("error"))
+			_, err := GetTransaction(hash, nil, []rest.Client{client1, client2})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("Remote API: error"))
+		})
+
+		It("should return err when only one remote client and one rpc client are provided and both failed", func() {
+			hash := "0x123"
+			remoteClient.EXPECT().GetTransaction(hash).Return(nil, fmt.Errorf("error"))
+			rpcClientErr := util.ReqErr(400, "100", "field", "error")
+			rpcClient.EXPECT().GetTransaction(hash).Return(nil, rpcClientErr)
+			_, err := GetTransaction(hash, rpcClient, []rest.Client{remoteClient})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("Remote API: error"))
+		})
+
+		It("should return no err and response when only an rpc client is provided and it succeeded", func() {
+			hash := "0x123"
+			expectedRes := map[string]interface{}{"type": "1", "value": "10.2"}
+			remoteClient.EXPECT().GetTransaction(hash).Return(expectedRes, nil)
+			res, err := GetTransaction(hash, nil, []rest.Client{remoteClient})
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(expectedRes))
+		})
+
+		It("should return no err and response when only a remote client is provided and it succeeded", func() {
+			hash := "0x123"
+			expectedRes := map[string]interface{}{"type": "1", "value": "10.2"}
+			rpcClient.EXPECT().GetTransaction(hash).Return(expectedRes, nil)
+			res, err := GetTransaction(hash, rpcClient, []rest.Client{})
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(expectedRes))
+		})
+	})
+
 	Describe(".CallClients", func() {
 		It("should return error when no caller callbacks were provided", func() {
 			err := CallClients(&client.RPCClient{}, []rest.Client{&rest.ClientV1{}}, nil, nil)
