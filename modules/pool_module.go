@@ -5,6 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -14,9 +15,14 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	modulestypes.ConsoleSuggestions
+	modulestypes.ModuleCommon
 	reactor  core.MempoolReactor
 	pushPool types.PushPool
+}
+
+// NewAttachablePoolModule creates an instance of PoolModule suitable in attach mode
+func NewAttachablePoolModule(client client.Client) *PoolModule {
+	return &PoolModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
 // NewPoolModule creates an instance of PoolModule
@@ -24,19 +30,14 @@ func NewPoolModule(reactor core.MempoolReactor, pushPool types.PushPool) *PoolMo
 	return &PoolModule{reactor: reactor, pushPool: pushPool}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *PoolModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // globals are functions exposed in the VM's global namespace
-func (m *PoolModule) globals() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{}
+func (m *PoolModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *PoolModule) methods() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{
+func (m *PoolModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "getSize",
 			Value:       m.GetSize,

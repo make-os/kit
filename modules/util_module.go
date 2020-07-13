@@ -21,7 +21,7 @@ import (
 
 // ConsoleUtilModule provides access to various console utility functions.
 type ConsoleUtilModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	vm     *otto.Otto
 	stdout io.Writer
 }
@@ -31,14 +31,9 @@ func NewConsoleUtilModule(stdout io.Writer) *ConsoleUtilModule {
 	return &ConsoleUtilModule{stdout: stdout}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *ConsoleUtilModule) ConsoleOnlyMode() bool {
-	return true
-}
-
 // globals are functions exposed in the VM's global namespace
-func (m *ConsoleUtilModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *ConsoleUtilModule) globals() []*types.VMMember {
+	return []*types.VMMember{
 		{Name: "pp", Value: m.PrettyPrint, Description: "Pretty print an object"},
 		{Name: "eval", Value: m.Eval, Description: "Execute JavaScript code represented as a string"},
 		{Name: "evalFile", Value: m.EvalFile, Description: "Execute JavaScript code stored in a file"},
@@ -52,7 +47,7 @@ func (m *ConsoleUtilModule) globals() []*types.ModuleFunc {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *ConsoleUtilModule) methods() []*types.ModuleFunc {
+func (m *ConsoleUtilModule) methods() []*types.VMMember {
 	return m.globals()
 }
 
@@ -95,7 +90,7 @@ func (m *ConsoleUtilModule) PrettyPrint(values ...interface{}) {
 		panic(m.vm.MakeCustomError("PrettyPrintError", err.Error()))
 	}
 
-	fmt.Fprintf(m.stdout, string(bs))
+	fmt.Fprintln(m.stdout, string(bs))
 }
 
 // Dump displays the passed parameters to standard out.
@@ -110,7 +105,7 @@ func (m *ConsoleUtilModule) Diff(a, b interface{}) {
 	fmt.Fprint(m.stdout, cmp.Diff(a, b))
 }
 
-// Eval executes the given Javascript source and returns the output
+// Eval executes the given JavaScript source and returns the output
 func (m *ConsoleUtilModule) Eval(src interface{}) otto.Value {
 	script, err := m.vm.Compile("", src)
 	if err != nil {
@@ -125,7 +120,7 @@ func (m *ConsoleUtilModule) Eval(src interface{}) otto.Value {
 	return out
 }
 
-// EvalFile executes given Javascript script file and returns the output
+// EvalFile executes given JavaScript script file and returns the output
 func (m *ConsoleUtilModule) EvalFile(file string) otto.Value {
 
 	fullPath, _ := filepath.Abs(file)

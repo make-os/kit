@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -20,7 +21,7 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	service services.Service
 	keepers core.Keepers
 }
@@ -30,19 +31,19 @@ func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule
 	return &ChainModule{service: service, keepers: keepers}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *ChainModule) ConsoleOnlyMode() bool {
-	return false
+// NewAttachableChainModule creates an instance of ChainModule suitable in attach mode
+func NewAttachableChainModule(client client.Client) *ChainModule {
+	return &ChainModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *ChainModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{}
+func (m *ChainModule) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *ChainModule) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *ChainModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "getBlock",
 			Value:       m.GetBlock,

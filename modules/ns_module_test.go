@@ -46,12 +46,6 @@ var _ = Describe("NamespaceModule", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
-	})
-
 	Describe(".ConfigureVM", func() {
 		It("should configure namespace(s) into VM context", func() {
 			vm := otto.New()
@@ -153,7 +147,7 @@ var _ = Describe("NamespaceModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "ns1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -201,7 +195,7 @@ var _ = Describe("NamespaceModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "ns1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}

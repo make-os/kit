@@ -3,6 +3,9 @@ package modules
 import (
 	"fmt"
 
+	"github.com/spf13/cast"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
@@ -20,10 +23,15 @@ import (
 
 // PushKeyModule manages and provides access to push keys.
 type PushKeyModule struct {
-	modulestypes.ConsoleSuggestions
+	modulestypes.ModuleCommon
 	cfg     *config.AppConfig
 	service services.Service
 	logic   core.Logic
+}
+
+// NewAttachablePushKeyModule creates an instance of PushKeyModule suitable in attach mode
+func NewAttachablePushKeyModule(client client.Client) *PushKeyModule {
+	return &PushKeyModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
@@ -31,14 +39,9 @@ func NewPushKeyModule(cfg *config.AppConfig, service services.Service, logic cor
 	return &PushKeyModule{cfg: cfg, service: service, logic: logic}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *PushKeyModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *PushKeyModule) methods() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{
+func (m *PushKeyModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "register",
 			Value:       m.Register,
@@ -73,8 +76,8 @@ func (m *PushKeyModule) methods() []*modulestypes.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *PushKeyModule) globals() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{}
+func (m *PushKeyModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -122,17 +125,31 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 func (m *PushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	if printPayload {
 		return tx.ToMap()
 	}
 
-	// Process the transaction
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.RegisterPushKey(&apitypes.RegisterPushKeyBody{
+			PublicKey:  tx.PublicKey,
+			Scopes:     tx.Scopes,
+			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),
+			Nonce:      tx.Nonce,
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
+	}
+
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
@@ -174,7 +191,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	}
 	tx.Delete = false
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -217,7 +234,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	tx.AddScopes = nil
 	tx.RemoveScopes = nil
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -236,21 +253,21 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 //
 // ARGS:
 // id: 				The push key ID
-// [blockHeight]: 	The target block height to query (default: latest)
+// [height]: 	The target block height to query (default: latest)
 //
 // RETURNS state.PushKey
-func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
+func (m *PushKeyModule) Get(id string, height ...uint64) util.Map {
 
 	if id == "" {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
-	targetHeight := uint64(0)
-	if len(blockHeight) > 0 {
-		targetHeight = blockHeight[0]
+	h := uint64(0)
+	if len(height) > 0 {
+		h = height[0]
 	}
 
-	o := m.logic.PushKeyKeeper().Get(id, targetHeight)
+	o := m.logic.PushKeyKeeper().Get(id, h)
 	if o.IsNil() {
 		panic(util.ReqErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
@@ -272,18 +289,26 @@ func (m *PushKeyModule) GetByAddress(address string) []string {
 //
 // ARGS:
 // pushKeyID: The push key id
-// [blockHeight]: 	The target block height to query (default: latest)
+// [height]: 	The target block height to query (default: latest)
 //
 // RETURNS state.Account
-func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint64) util.Map {
-	pushKey := m.Get(pushKeyID, blockHeight...)
+func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, height ...uint64) util.Map {
 
-	targetHeight := uint64(0)
-	if len(blockHeight) > 0 {
-		targetHeight = blockHeight[0]
+	h := uint64(0)
+	if len(height) > 0 {
+		h = height[0]
 	}
 
-	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), targetHeight)
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.GetPushKeyOwner(pushKeyID, h)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
+	}
+
+	pushKey := m.Get(pushKeyID, height...)
+	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), h)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}

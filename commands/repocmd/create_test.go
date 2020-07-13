@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/objx"
 	restclient "gitlab.com/makeos/mosdef/api/remote/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	types2 "gitlab.com/makeos/mosdef/api/types"
@@ -98,7 +99,7 @@ var _ = Describe("SignCommit", func() {
 			}
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
-				Expect(req.Config.Gov.PropFee).To(Equal(float64(100)))
+				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
 				Expect(req.Fee).To(Equal(1.2))
@@ -123,7 +124,7 @@ var _ = Describe("SignCommit", func() {
 			}
 			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
-				Expect(req.Config.Gov.PropFee).To(Equal(float64(100)))
+				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
 				Expect(req.Nonce).To(Equal(uint64(2)))
 				Expect(req.Fee).To(Equal(1.2))

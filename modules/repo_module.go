@@ -7,6 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
+	"gitlab.com/makeos/mosdef/crypto"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -20,10 +23,15 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	modulestypes.ConsoleSuggestions
+	modulestypes.ModuleCommon
 	logic   core.Logic
 	service services.Service
 	repoSrv core.RemoteServer
+}
+
+// NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
+func NewAttachableRepoModule(client client.Client) *RepoModule {
+	return &RepoModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
 // NewRepoModule creates an instance of RepoModule
@@ -31,14 +39,9 @@ func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic co
 	return &RepoModule{service: service, logic: logic, repoSrv: repoSrv}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *RepoModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{
+func (m *RepoModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "create",
 			Value:       m.Create,
@@ -71,7 +74,7 @@ func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
 		},
 		{
 			Name:        "depositFee",
-			Value:       m.DepositFee,
+			Value:       m.DepositProposalFee,
 			Description: "Deposit fees into a proposal",
 		},
 		{
@@ -88,8 +91,8 @@ func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *RepoModule) globals() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{}
+func (m *RepoModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -135,15 +138,30 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // object.hash <string>: 					The transaction hash
 // object.address <string: 					The address of the repository
 func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) util.Map {
-	var err error
 
 	var tx = txns.NewBareTxRepoCreate()
-	if err = tx.FromMap(params); err != nil {
+	if err := tx.FromMap(params); err != nil {
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	if printPayload {
 		return tx.ToMap()
+	}
+
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.CreateRepo(&apitypes.CreateRepoBody{
+			Name:       tx.Name,
+			Nonce:      tx.Nonce,
+			Value:      cast.ToFloat64(tx.Value.String()),
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			Config:     tx.Config,
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -183,7 +201,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -222,7 +240,7 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -277,6 +295,17 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		}
 	}
 
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.GetRepo(name, &apitypes.GetRepoOpts{
+			NoProposals: noProposals,
+			Height:      blockHeight,
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
+	}
+
 	var repo *state.Repository
 	if !noProposals {
 		repo = m.logic.RepoKeeper().Get(name, blockHeight)
@@ -318,7 +347,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -332,7 +361,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 	}
 }
 
-// DepositFee creates a transaction to deposit a fee to a proposal
+// DepositProposalFee creates a transaction to deposit a fee to a proposal
 //
 // ARGS:
 // params <map>
@@ -349,7 +378,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 //
 // RETURNS object <map>
 // object.hash <string>: 					The transaction hash
-func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) DepositProposalFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareRepoProposalFeeSend()
@@ -357,7 +386,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -403,8 +432,30 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	if printPayload {
 		return tx.ToMap()
+	}
+
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.AddRepoContributors(&apitypes.AddRepoContribsBody{
+			RepoName:      tx.RepoName,
+			ProposalID:    tx.ID,
+			PushKeys:      tx.PushKeys,
+			FeeCap:        cast.ToFloat64(tx.FeeCap.String()),
+			FeeMode:       cast.ToInt(tx.FeeMode),
+			Nonce:         tx.Nonce,
+			Namespace:     tx.Namespace,
+			NamespaceOnly: tx.NamespaceOnly,
+			Policies:      tx.Policies,
+			Value:         cast.ToFloat64(tx.Value.String()),
+			Fee:           cast.ToFloat64(tx.Fee.String()),
+			SigningKey:    crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)

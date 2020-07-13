@@ -4,13 +4,20 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/fatih/structs"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// ModuleFunc describes a module function
-type ModuleFunc struct {
-	Name        string
-	Value       interface{}
+// VMMember describes a member function or variable of a VM
+type VMMember struct {
+
+	// Name of the member
+	Name string
+
+	// Value is the value of the member
+	Value interface{}
+
+	// Description is the brief human description of the member
 	Description string
 }
 
@@ -42,27 +49,19 @@ type Modules struct {
 }
 
 // ConfigureVM applies all modules' VM configurations to the given VM.
-func (m *Modules) ConfigureVM(vm *otto.Otto, consoleOnly bool) (completers []prompt.Completer) {
+func (m *Modules) ConfigureVM(vm *otto.Otto) (completers []prompt.Completer) {
 	for _, f := range structs.Fields(m) {
 		mod, ok := f.Value().(Module)
 		if !ok {
 			continue
 		}
-		if !consoleOnly {
-			completers = append(completers, mod.ConfigureVM(vm))
-			continue
-		}
-
-		if mod.ConsoleOnlyMode() {
-			completers = append(completers, mod.ConfigureVM(vm))
-		}
+		completers = append(completers, mod.ConfigureVM(vm))
 	}
 	return
 }
 
 type Module interface {
 	ConfigureVM(vm *otto.Otto) prompt.Completer
-	ConsoleOnlyMode() bool
 }
 
 type ChainModule interface {
@@ -148,7 +147,7 @@ type RepoModule interface {
 	Prune(name string, force bool)
 	Get(name string, opts ...GetOptions) util.Map
 	Update(params map[string]interface{}, options ...interface{}) util.Map
-	DepositFee(params map[string]interface{}, options ...interface{}) util.Map
+	DepositProposalFee(params map[string]interface{}, options ...interface{}) util.Map
 	AddContributor(params map[string]interface{}, options ...interface{}) util.Map
 }
 type NamespaceModule interface {
@@ -186,14 +185,22 @@ type RPCModule interface {
 	ConnectLocal() util.Map
 }
 
-// ConsoleSuggestions provides functionalities for providing the console with suggestions.
-// It is meant to be embedded in a module to allow it handle console suggestion provisioning.
-type ConsoleSuggestions struct {
+// ModuleCommon provides common module fields and methods.
+type ModuleCommon struct {
+	// Suggestions contains console suggestions
 	Suggestions []prompt.Suggest
+
+	// attachedClient is the RPC client the console is currently attached to in attach mode.
+	AttachedClient client.Client
+}
+
+// InAttachMode checks whether the module is in attach mode.
+func (m *ModuleCommon) InAttachMode() bool {
+	return m.AttachedClient != nil
 }
 
 // Completer returns suggestions for console input
-func (m *ConsoleSuggestions) Completer(d prompt.Document) []prompt.Suggest {
+func (m *ModuleCommon) Completer(d prompt.Document) []prompt.Suggest {
 	if words := d.GetWordBeforeCursor(); len(words) > 1 {
 		return prompt.FilterHasPrefix(m.Suggestions, words, true)
 	}

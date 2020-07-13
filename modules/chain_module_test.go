@@ -39,12 +39,6 @@ var _ = Describe("ChainModule", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
-	})
-
 	Describe(".ConfigureVM", func() {
 		It("should configure namespace(s) into VM context", func() {
 			vm := otto.New()

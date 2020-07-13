@@ -19,12 +19,12 @@ type GetAccountNonceResponse struct {
 
 // GetAccountResponse is the response of a request for an account.
 type GetAccountResponse struct {
-	*state.Account
+	*state.Account `json:",flatten"`
 }
 
 // GetAccountResponse is the response of a request for a push key.
 type GetPushKeyResponse struct {
-	*state.PushKey
+	*state.PushKey `json:",flatten"`
 }
 
 // CreateRepoResponse is the response of a request to create a repository
@@ -39,13 +39,13 @@ type CreateRepoBody struct {
 	Nonce      uint64
 	Value      float64
 	Fee        float64
-	Config     *state.RepoConfig
+	Config     map[string]interface{}
 	SigningKey *crypto.Key
 }
 
 // GetRepoResponse is the response of a request to get a repository
 type GetRepoResponse struct {
-	*state.Repository
+	*state.Repository `json:",flatten"`
 }
 
 // GetRepoOpts contains arguments for fetching a repository

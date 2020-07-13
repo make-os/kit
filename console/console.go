@@ -27,7 +27,7 @@ import (
 )
 
 // Console defines functionalities for create and using
-// an interactive Javascript console to perform and query
+// an interactive JavaScript console to perform and query
 // the system.
 type Console struct {
 	sync.RWMutex
@@ -41,10 +41,6 @@ type Console struct {
 
 	// suggestMgr managers prompt suggestions
 	completerMgr *CompleterManager
-
-	// attached indicates whether the console
-	// is in attach mode.
-	attached bool
 
 	// historyFile is the path to the file
 	// where the file is stored.
@@ -90,23 +86,8 @@ func New(cfg *config.AppConfig) *Console {
 	return c
 }
 
-// Prepare sets up the console's prompt
-// colors, suggestions etc.
+// Prepare prepares the console and VM
 func (c *Console) Prepare() error {
-
-	var err error
-	var rpcMethods *apitypes.GetMethodResponse
-	var rpcClient client.Client
-	var isAttachMode = c.cfg.IsAttachMode()
-
-	// In attach mode, we need to connect to an RPC server
-	// to gain access to the server's modules.
-	if isAttachMode {
-		rpcClient, rpcMethods, err = c.connectToNote()
-		if err != nil {
-			return errors.Wrapf(err, "failed to connect to RPC server @ %s", c.cfg.RPC.Address)
-		}
-	}
 
 	// Set some options
 	options := []prompt.Option{
@@ -124,19 +105,12 @@ func (c *Console) Prepare() error {
 		prompt.OptionHistory(c.history),
 	}
 
-	// In console mode, pass the VM to the system modules for context configuration
-	if !isAttachMode && c.modules != nil {
+	// Pass the VM to the system modules for context configuration
+	if c.modules != nil {
 		c.completerMgr.add(c.modules.ConfigureVM(c.executor.vm)...)
 	}
 
-	// In attach mode,
-	if isAttachMode {
-		ac := NewAttachHandler(rpcClient, rpcMethods.Methods)
-		c.completerMgr.add(ac.ConfigureVM(c.executor.vm)...)
-	}
-
-	// create new prompt and configure it
-	// with the options create above
+	// Create new prompt
 	p := prompt.New(func(in string) {
 		c.history = append(c.history, in)
 		switch in {
@@ -145,8 +119,7 @@ func (c *Console) Prepare() error {
 		case ".exit":
 			c.Stop(true)
 
-		// pass other expressions
-		// to the JS executor
+		// pass other expressions to the JS executor
 		default:
 			c.confirmedStop = false
 			c.executor.OnInput(in)
@@ -257,7 +230,7 @@ func (c *Console) Stop(immediately bool) {
 func (c *Console) about() {
 	c.RLock()
 	defer c.RUnlock()
-	fmt.Println(fmt2.CyanString("Welcome to the Javascript Console!"))
+	fmt.Println(fmt2.CyanString("Welcome to the JavaScript Console!"))
 	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s",
 		c.cfg.VersionInfo.BuildVersion,
 		config.GetNetVersion(),

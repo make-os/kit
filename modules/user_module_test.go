@@ -10,11 +10,13 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/config"
 	crypto2 "gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
+	mocks2 "gitlab.com/makeos/mosdef/mocks/rpc"
 	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/testutil"
 	types2 "gitlab.com/makeos/mosdef/types"
@@ -59,12 +61,6 @@ var _ = Describe("UserModule", func() {
 		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
-	})
-
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
 	})
 
 	Describe(".ConfigureVM", func() {
@@ -261,6 +257,25 @@ var _ = Describe("UserModule", func() {
 	})
 
 	Describe(".GetAccount", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetAccount("maker1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetAccount("maker1abc", 1)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetAccount("maker1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.GetAccount("maker1abc", 1)
+			})
+		})
+
 		It("should panic when account does not exist", func() {
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
@@ -417,7 +432,7 @@ var _ = Describe("UserModule", func() {
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeSetDelegatorCommission)))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"commission": 90.2}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -464,7 +479,28 @@ var _ = Describe("UserModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().SendCoin(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			params := map[string]interface{}{"value": "10"}
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SendCoin(params)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			params := map[string]interface{}{"value": "10"}
+			mockClient.EXPECT().SendCoin(gomock.Any()).Return(&apitypes.HashResponse{}, nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.SendCoin(params)
+			})
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			params := tx.ToMap()
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))

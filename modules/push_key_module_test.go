@@ -9,9 +9,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/config"
 	crypto2 "gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
+	mocks2 "gitlab.com/makeos/mosdef/mocks/rpc"
 	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -30,6 +32,7 @@ var _ = Describe("PushKeyModule", func() {
 	var mockMempoolReactor *mocks.MockMempoolReactor
 	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var mockAccountKeeper *mocks.MockAccountKeeper
+	var pk = crypto2.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -50,12 +53,6 @@ var _ = Describe("PushKeyModule", func() {
 		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
-	})
-
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
 	})
 
 	Describe(".ConfigureVM", func() {
@@ -80,7 +77,6 @@ var _ = Describe("PushKeyModule", func() {
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
 			payloadOnly := true
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			res := m.Register(params, key, payloadOnly)
 			Expect(res).To(HaveKey("pubKey"))
@@ -98,8 +94,28 @@ var _ = Describe("PushKeyModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			mockClient.EXPECT().RegisterPushKey(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			m.AttachedClient = mockClient
+			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Register(params, "", false)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			mockClient.EXPECT().RegisterPushKey(gomock.Any()).Return(&types.RegisterPushKeyResponse{}, nil)
+			m.AttachedClient = mockClient
+			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
+			assert.NotPanics(GinkgoT(), func() {
+				m.Register(params, "", false)
+			})
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -109,7 +125,6 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should return tx hash and push key address on success", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
@@ -133,7 +148,6 @@ var _ = Describe("PushKeyModule", func() {
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
 			payloadOnly := true
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			res := m.Update(params, key, payloadOnly)
 			Expect(res).To(HaveKey("id"))
@@ -154,8 +168,7 @@ var _ = Describe("PushKeyModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -165,7 +178,6 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should return tx hash on success", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
@@ -187,7 +199,6 @@ var _ = Describe("PushKeyModule", func() {
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
 			payloadOnly := true
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			res := m.Unregister(params, key, payloadOnly)
 			Expect(res).To(HaveKey("id"))
@@ -208,8 +219,7 @@ var _ = Describe("PushKeyModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -219,7 +229,6 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should return tx hash on success", func() {
-			pk := crypto2.NewKeyFromIntSeed(1)
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
@@ -281,13 +290,32 @@ var _ = Describe("PushKeyModule", func() {
 			pushKey := state.BarePushKey()
 			pushKey.PubKey = key.PubKey().ToPublicKey()
 			pushKey.Address = key.Addr()
-			mockPushKeyKeeper.EXPECT().Get(id, uint64(1)).Return(pushKey)
+			mockPushKeyKeeper.EXPECT().Get(id, uint64(1)).Return(pushKey).AnyTimes()
 		})
 
 		It("should panic when unable push key owner account", func() {
 			mockAccountKeeper.EXPECT().Get(key.Addr(), uint64(1)).Return(state.BareAccount())
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "pushKeyID"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetAccountOfOwner(key.PushAddr().String(), 1)
+			})
+		})
+
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			mockClient.EXPECT().GetPushKeyOwner(key.PushAddr().String(), uint64(1)).Return(nil, fmt.Errorf("error"))
+			m.AttachedClient = mockClient
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetAccountOfOwner(key.PushAddr().String(), 1)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			mockClient.EXPECT().GetPushKeyOwner(key.PushAddr().String(), uint64(1)).Return(&types.GetAccountResponse{}, nil)
+			m.AttachedClient = mockClient
+			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccountOfOwner(key.PushAddr().String(), 1)
 			})
 		})

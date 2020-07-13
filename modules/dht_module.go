@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/dht/server/types"
@@ -20,9 +21,14 @@ import (
 
 // DHTModule provides access to the DHT service
 type DHTModule struct {
-	modulestypes.ConsoleSuggestions
+	modulestypes.ModuleCommon
 	cfg *config.AppConfig
 	dht types.DHT
+}
+
+// NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
+func NewAttachableDHTModule(client client.Client) *DHTModule {
+	return &DHTModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
 // NewDHTModule creates an instance of DHTModule
@@ -30,14 +36,9 @@ func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
 	return &DHTModule{cfg: cfg, dht: dht}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *DHTModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *DHTModule) methods() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{
+func (m *DHTModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "store",
 			Value:       m.Store,
@@ -72,8 +73,8 @@ func (m *DHTModule) methods() []*modulestypes.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *DHTModule) globals() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{}
+func (m *DHTModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return

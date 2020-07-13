@@ -17,7 +17,6 @@ import (
 	"gitlab.com/makeos/mosdef/api/utils"
 	"gitlab.com/makeos/mosdef/commands/common"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/types/state"
 	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
 )
 
@@ -119,11 +118,8 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 		Nonce:      nonce,
 		Value:      args.Value,
 		Fee:        args.Fee,
+		Config:     repoCfg,
 		SigningKey: key.GetKey(),
-	}
-
-	if len(repoCfg) > 0 {
-		body.Config = state.NewDefaultRepoConfigFromMap(repoCfg)
 	}
 
 	// Create the repo creating transaction

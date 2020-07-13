@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -19,10 +20,15 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	service   services.Service
 	logic     core.Logic
 	ticketmgr tickettypes.TicketManager
+}
+
+// NewAttachableTicketModule creates an instance of TicketModule suitable in attach mode
+func NewAttachableTicketModule(client client.Client) *TicketModule {
+	return &TicketModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -35,18 +41,13 @@ func NewTicketModule(service services.Service, logic core.Logic, ticketmgr ticke
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *TicketModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{}
-}
-
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *TicketModule) ConsoleOnlyMode() bool {
-	return false
+func (m *TicketModule) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *TicketModule) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *TicketModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "buy",
 			Value:       m.BuyValidatorTicket,
@@ -86,8 +87,8 @@ func (m *TicketModule) methods() []*types.ModuleFunc {
 }
 
 // hostFuncs are `host` methods exposed by the module
-func (m *TicketModule) hostFuncs() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *TicketModule) hostFuncs() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "buy",
 			Value:       m.BuyHostTicket,
@@ -156,7 +157,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -198,13 +199,12 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 	key, _ := parseOptions(options...)
 
 	// Derive BLS public key
-	if key != "" {
-		pk, _ := crypto.PrivKeyFromBase58(key)
-		blsKey := pk.BLSKey()
+	if key != nil {
+		blsKey := key.BLSKey()
 		tx.BLSPubKey = blsKey.Public().Bytes()
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -438,7 +438,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options .
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 

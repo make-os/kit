@@ -5,6 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/extensions"
@@ -19,8 +20,9 @@ import (
 
 // Module implements ModulesHub. It is a hub for other modules.
 type Module struct {
-	cfg     *config.AppConfig
-	Modules *modulestypes.Modules
+	cfg        *config.AppConfig
+	attachMode bool
+	Modules    *modulestypes.Modules
 }
 
 // New creates an instance of Module
@@ -55,6 +57,27 @@ func New(
 	}
 }
 
+// NewAttachable creates an instance of Module configured for attach mode.
+func NewAttachable(cfg *config.AppConfig, client client.Client, ks *keystore.Keystore) *Module {
+	return &Module{
+		cfg:        cfg,
+		attachMode: cfg.IsAttachMode(),
+		Modules: &modulestypes.Modules{
+			Tx:      NewAttachableTxModule(client),
+			Chain:   NewAttachableChainModule(client),
+			User:    NewAttachableUserModule(client, ks),
+			PushKey: NewAttachablePushKeyModule(client),
+			Ticket:  NewAttachableTicketModule(client),
+			Repo:    NewAttachableRepoModule(client),
+			NS:      NewAttachableNamespaceModule(client),
+			DHT:     NewAttachableDHTModule(client),
+			Util:    NewConsoleUtilModule(os.Stdout),
+			RPC:     NewRPCModule(cfg, nil),
+			Pool:    NewAttachablePoolModule(client),
+		},
+	}
+}
+
 // GetModules returns all sub-modules
 func (m *Module) GetModules() *modulestypes.Modules {
 	return m.Modules
@@ -62,5 +85,5 @@ func (m *Module) GetModules() *modulestypes.Modules {
 
 // ConfigureVM instructs VM-accessible modules accessible to configure the VM
 func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Completer) {
-	return m.Modules.ConfigureVM(vm, m.cfg.IsAttachMode())
+	return m.Modules.ConfigureVM(vm)
 }

@@ -9,8 +9,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
+	types2 "gitlab.com/makeos/mosdef/api/types"
 	crypto2 "gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
+	mocks2 "gitlab.com/makeos/mosdef/mocks/rpc"
 	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -42,12 +44,6 @@ var _ = Describe("TxModule", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
-	})
-
 	Describe(".ConfigureVM", func() {
 		It("should configure namespace(s) into VM context", func() {
 			vm := otto.New()
@@ -59,6 +55,25 @@ var _ = Describe("TxModule", func() {
 	})
 
 	Describe(".Get", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetTransaction("0x123").Return(nil, fmt.Errorf("error"))
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Get("0x123")
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetTransaction("0x123").Return(map[string]interface{}{}, nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.Get("0x123")
+			})
+		})
+
 		It("should panic if transaction hash is not valid", func() {
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "invalid transaction hash", Field: "hash"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -96,6 +111,27 @@ var _ = Describe("TxModule", func() {
 	})
 
 	Describe(".SendPayload", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			payload := map[string]interface{}{"type": 1}
+			mockClient.EXPECT().SendTxPayload(payload).Return(nil, fmt.Errorf("error"))
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SendPayload(payload)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			payload := map[string]interface{}{"type": 1}
+			mockClient.EXPECT().SendTxPayload(payload).Return(&types2.HashResponse{}, nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.SendPayload(payload)
+			})
+		})
+
 		It("should panic if unable to decoded parameter", func() {
 			params := map[string]interface{}{"type": struct{}{}}
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}

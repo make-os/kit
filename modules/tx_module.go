@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -17,7 +18,7 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	modulestypes.ConsoleSuggestions
+	modulestypes.ModuleCommon
 	logic   core.Logic
 	service services.Service
 }
@@ -27,30 +28,22 @@ func NewTxModule(service services.Service, logic core.Logic) *TxModule {
 	return &TxModule{service: service, logic: logic}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *TxModule) ConsoleOnlyMode() bool {
-	return false
+// NewAttachableTxModule creates an instance of TxModule suitable in attach mode
+func NewAttachableTxModule(client client.Client) *TxModule {
+	return &TxModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *TxModule) methods() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{
-		{
-			Name:        "get",
-			Value:       m.Get,
-			Description: "Get a transactions by its hash",
-		},
-		{
-			Name:        "sendPayload",
-			Value:       m.SendPayload,
-			Description: "Send a signed transaction payload to the network",
-		},
+func (m *TxModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
+		{Name: "get", Value: m.Get, Description: "Get a transactions by its hash"},
+		{Name: "sendPayload", Value: m.SendPayload, Description: "Send a signed transaction payload to the network"},
 	}
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *TxModule) globals() []*modulestypes.ModuleFunc {
-	return []*modulestypes.ModuleFunc{}
+func (m *TxModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -77,8 +70,16 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// get returns a tx by hash
+// Get returns a tx by hash
 func (m *TxModule) Get(hash string) util.Map {
+
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.GetTransaction(hash)
+		if err != nil {
+			panic(err)
+		}
+		return tx
+	}
 
 	bz, err := util.FromHex(hash)
 	if err != nil {
@@ -104,6 +105,15 @@ func (m *TxModule) Get(hash string) util.Map {
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
+
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.SendTxPayload(params)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(tx)
+	}
+
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))

@@ -24,12 +24,6 @@ var _ = Describe("ConsoleUtilModule", func() {
 		m = modules.NewConsoleUtilModule(out)
 	})
 
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeTrue())
-		})
-	})
-
 	Describe(".ConfigureVM", func() {
 		It("should configure namespace(s) into VM context", func() {
 			m.ConfigureVM(vm)

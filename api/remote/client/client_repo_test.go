@@ -69,7 +69,7 @@ var _ = Describe("Repo", func() {
 				Nonce:      1,
 				Value:      100,
 				Fee:        1,
-				Config:     state.DefaultRepoConfig,
+				Config:     state.DefaultRepoConfig.ToBasicMap(),
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())

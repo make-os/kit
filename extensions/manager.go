@@ -22,7 +22,7 @@ import (
 
 // Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	cfg        *config.AppConfig
 	main       types.ModulesHub
 	runningExt map[string]*ExtensionControl
@@ -36,8 +36,8 @@ func NewManager(cfg *config.AppConfig) *Manager {
 	}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *Manager) ConsoleOnlyMode() bool {
+// Attachable indicates that a module can be loaded in attach mode
+func (m *Manager) Attachable() bool {
 	return false
 }
 
@@ -47,8 +47,8 @@ func (m *Manager) SetMainModule(main types.ModulesHub) {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *Manager) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *Manager) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{Name: "run", Value: m.Run, Description: "Load and run an extension"},
 		{Name: "load", Value: m.Load, Description: "Load an extension"},
 		{Name: "isInstalled", Value: m.Exist, Description: "Check whether an extension is installed"},
@@ -60,8 +60,8 @@ func (m *Manager) methods() []*types.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *Manager) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{}
+func (m *Manager) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
 // ConfigureVM implements types.ModulesHub. It configures the JS

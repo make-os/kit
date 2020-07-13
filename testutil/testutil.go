@@ -1,6 +1,8 @@
 package testutil
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	path "path/filepath"
 
@@ -26,7 +28,10 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	}
 
 	// Create test directory
-	dir := os.TempDir()
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(fmt.Errorf("failed to create test directory"))
+	}
 	dataDir := path.Join(dir, dataDirName)
 	os.MkdirAll(dataDir, 0700)
 

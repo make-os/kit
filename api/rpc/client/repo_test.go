@@ -60,7 +60,7 @@ var _ = Describe("Client", func() {
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
-				Config:     state.DefaultRepoConfig,
+				Config:     state.DefaultRepoConfig.ToBasicMap(),
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
@@ -82,7 +82,7 @@ var _ = Describe("Client", func() {
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
-				Config:     state.DefaultRepoConfig,
+				Config:     state.DefaultRepoConfig.ToBasicMap(),
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())

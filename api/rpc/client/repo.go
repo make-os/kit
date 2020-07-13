@@ -26,7 +26,7 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 	tx.Timestamp = time.Now().Unix()
 	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
 	if body.Config != nil {
-		tx.Config = body.Config.ToBasicMap()
+		tx.Config = body.Config
 	}
 
 	// Sign the tx

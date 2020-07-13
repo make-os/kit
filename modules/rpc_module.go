@@ -19,10 +19,10 @@ import (
 
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	cfg                *config.AppConfig
 	server             rpc.Server
-	modFuncs           []*types.ModuleFunc
+	modFuncs           []*types.VMMember
 	ClientContextMaker func(client client.Client) *ClientContext
 }
 
@@ -31,14 +31,9 @@ func NewRPCModule(cfg *config.AppConfig, server rpc.Server) *RPCModule {
 	return &RPCModule{cfg: cfg, server: server, ClientContextMaker: newClientContext}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *RPCModule) ConsoleOnlyMode() bool {
-	return true
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *RPCModule) methods() []*types.ModuleFunc {
-	m.modFuncs = []*types.ModuleFunc{
+func (m *RPCModule) methods() []*types.VMMember {
+	m.modFuncs = []*types.VMMember{
 		{
 			Name:        "isRunning",
 			Value:       m.IsRunning,
@@ -60,8 +55,8 @@ func (m *RPCModule) methods() []*types.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *RPCModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{}
+func (m *RPCModule) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return

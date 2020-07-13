@@ -8,7 +8,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
+	types2 "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/mocks"
+	mocks2 "gitlab.com/makeos/mosdef/mocks/rpc"
 	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -45,12 +47,6 @@ var _ = Describe("RepoModule", func() {
 
 	AfterEach(func() {
 		ctrl.Finish()
-	})
-
-	Describe(".ConsoleOnlyMode", func() {
-		It("should return false", func() {
-			Expect(m.ConsoleOnlyMode()).To(BeFalse())
-		})
 	})
 
 	Describe(".ConfigureVM", func() {
@@ -94,7 +90,28 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().CreateRepo(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			params := map[string]interface{}{"name": "repo1"}
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Create(params)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().CreateRepo(gomock.Any()).Return(&types2.CreateRepoResponse{}, nil)
+			params := map[string]interface{}{"name": "repo1"}
+			assert.NotPanics(GinkgoT(), func() {
+				m.Create(params)
+			})
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "repo1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -145,7 +162,7 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"addresses": []string{"addr1"}}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -193,7 +210,7 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "repo1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -244,6 +261,25 @@ var _ = Describe("RepoModule", func() {
 			Expect(res["balance"]).To(Equal(util.String("100")))
 		})
 
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetRepo("repo1", &types2.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Get("repo1", types.GetOptions{Height: 1})
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().GetRepo("repo1", &types2.GetRepoOpts{Height: 1}).Return(&types2.GetRepoResponse{}, nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.Get("repo1", types.GetOptions{Height: 1})
+			})
+		})
+
 		It("should request for repo without proposals (using GetNoPopulate) when noProposal=true", func() {
 			repo := state.BareRepository()
 			repo.Balance = "100"
@@ -292,7 +328,7 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
@@ -311,12 +347,12 @@ var _ = Describe("RepoModule", func() {
 		})
 	})
 
-	Describe(".DepositFee", func() {
+	Describe(".DepositProposalFee", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.DepositFee(params)
+				m.DepositProposalFee(params)
 			})
 		})
 
@@ -324,7 +360,7 @@ var _ = Describe("RepoModule", func() {
 			key := ""
 			payloadOnly := true
 			params := map[string]interface{}{"id": 1}
-			res := m.DepositFee(params, key, payloadOnly)
+			res := m.DepositProposalFee(params, key, payloadOnly)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalSendFee)))
@@ -339,12 +375,12 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.DepositFee(params, "", false)
+				m.DepositProposalFee(params, "", false)
 			})
 		})
 
@@ -352,13 +388,13 @@ var _ = Describe("RepoModule", func() {
 			params := map[string]interface{}{"id": 1}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
-			res := m.DepositFee(params, "", false)
+			res := m.DepositProposalFee(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
 		})
 	})
 
-	Describe(".Register", func() {
+	Describe(".AddContributor", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
@@ -390,7 +426,28 @@ var _ = Describe("RepoModule", func() {
 			))
 		})
 
-		It("should return panic if unable to add tx to mempool", func() {
+		It("should panic if in attach mode and RPC client method returns error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().AddRepoContributors(gomock.Any()).Return(&types2.HashResponse{}, fmt.Errorf("error"))
+			params := map[string]interface{}{"id": 1}
+			err := fmt.Errorf("error")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.AddContributor(params)
+			})
+		})
+
+		It("should not panic if in attach mode and RPC client method returns no error", func() {
+			mockClient := mocks2.NewMockClient(ctrl)
+			m.AttachedClient = mockClient
+			mockClient.EXPECT().AddRepoContributors(gomock.Any()).Return(&types2.HashResponse{}, nil)
+			params := map[string]interface{}{"id": 1}
+			assert.NotPanics(GinkgoT(), func() {
+				m.AddContributor(params)
+			})
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}

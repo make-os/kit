@@ -5,6 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -16,10 +17,15 @@ import (
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
+}
+
+// NewAttachableNamespaceModule creates an instance of NamespaceModule suitable in attach mode
+func NewAttachableNamespaceModule(client client.Client) *NamespaceModule {
+	return &NamespaceModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 
 // NewNamespaceModule creates an instance of NamespaceModule
@@ -27,14 +33,9 @@ func NewNamespaceModule(service services.Service, remoteSrv core.RemoteServer, l
 	return &NamespaceModule{service: service, logic: logic, repoMgr: remoteSrv}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *NamespaceModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *NamespaceModule) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *NamespaceModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "register",
 			Value:       m.Register,
@@ -59,8 +60,8 @@ func (m *NamespaceModule) methods() []*types.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *NamespaceModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{}
+func (m *NamespaceModule) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -180,7 +181,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -221,7 +222,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 

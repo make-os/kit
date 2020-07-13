@@ -1,6 +1,7 @@
 package keystore
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -14,13 +15,19 @@ import (
 
 var _ = Describe("Read", func() {
 
-	path := filepath.Join("./", "test_cfg")
-	accountPath := filepath.Join(path, "accounts")
+	var err error
+	var path string
+	var accountPath string
+	var ks *Keystore
 
 	BeforeEach(func() {
+		path, err = ioutil.TempDir("", "")
+		Expect(err).To(BeNil())
+		accountPath = filepath.Join(path, "accounts")
 		err := os.MkdirAll(accountPath, 0700)
 		Expect(err).To(BeNil())
 		Expect(err).To(BeNil())
+		ks = New(accountPath)
 	})
 
 	AfterEach(func() {
@@ -30,7 +37,6 @@ var _ = Describe("Read", func() {
 
 	Describe("Keystore", func() {
 		Describe(".Exist", func() {
-			ks := New(accountPath)
 			It("should return true and err = nil when key exists", func() {
 				seed := int64(1)
 				address, _ := crypto.NewKey(&seed)
@@ -54,99 +60,92 @@ var _ = Describe("Read", func() {
 		})
 
 		Describe(".GetByIndex", func() {
-
 			var address, address2 *crypto.Key
-			am := New(accountPath)
-
 			BeforeEach(func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
+				err := ks.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 				time.Sleep(1 * time.Second)
 
 				seed = int64(2)
 				address2, _ = crypto.NewKey(&seed)
 				passphrase = "edge123"
-				err = am.CreateKey(address2, keystoretypes.KeyTypeAccount, passphrase)
+				err = ks.CreateKey(address2, keystoretypes.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
 			It("should get accounts at index 0 and 1", func() {
-				act, err := am.GetByIndex(0)
+				act, err := ks.GetByIndex(0)
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
-				act, err = am.GetByIndex(1)
+				act, err = ks.GetByIndex(1)
 				Expect(act.GetAddress()).To(Equal(address2.Addr().String()))
 			})
 
 			It("should return err = 'key not found' when no key is found", func() {
-				_, err := am.GetByIndex(2)
+				_, err := ks.GetByIndex(2)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
 		})
 
 		Describe(".GetByAddress", func() {
-
 			var address *crypto.Key
-			am := New(accountPath)
 
 			BeforeEach(func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
+				err := ks.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
 			It("should successfully get key with address", func() {
-				act, err := am.GetByAddress(address.Addr().String())
+				act, err := ks.GetByAddress(address.Addr().String())
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
 			It("should return err = 'key not found' when address does not exist", func() {
-				_, err := am.GetByAddress("unknown_address")
+				_, err := ks.GetByAddress("unknown_address")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
 		})
 
 		Describe(".GetByIndexOrAddress", func() {
-
 			var address *crypto.Key
-			am := New(accountPath)
 
 			BeforeEach(func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
+				err := ks.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
 			It("should return error if empty argument is provided", func() {
-				_, err := am.GetByIndexOrAddress("")
+				_, err := ks.GetByIndexOrAddress("")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("index or address of key is required"))
 			})
 
 			It("should return error if key was not found", func() {
-				_, err := am.GetByIndexOrAddress("unknown")
+				_, err := ks.GetByIndexOrAddress("unknown")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
 
 			It("should successfully get key by its address", func() {
-				act, err := am.GetByIndexOrAddress(address.Addr().String())
+				act, err := ks.GetByIndexOrAddress(address.Addr().String())
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
 			It("should successfully get key by its index", func() {
-				act, err := am.GetByIndexOrAddress("0")
+				act, err := ks.GetByIndexOrAddress("0")
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
@@ -158,7 +157,6 @@ var _ = Describe("Read", func() {
 		Describe(".Unlock", func() {
 			var account keystoretypes.StoredKey
 			var passphrase string
-			am := New(accountPath)
 
 			BeforeEach(func() {
 				var err error
@@ -166,10 +164,10 @@ var _ = Describe("Read", func() {
 
 				address, _ := crypto.NewKey(&seed)
 				passphrase = "edge123"
-				err = am.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
+				err = ks.CreateKey(address, keystoretypes.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 
-				accounts, err := am.List()
+				accounts, err := ks.List()
 				Expect(err).To(BeNil())
 				Expect(accounts).To(HaveLen(1))
 				account = accounts[0]

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -37,8 +38,9 @@ var se = util.ReqErr
 // If more than 1 option = [0] is expected to be the key and [1] the payload only instruction.
 // Panics if types are not expected.
 // Panics if key is not a valid private key.
-func parseOptions(options ...interface{}) (key string, payloadOnly bool) {
+func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool) {
 
+	var key string
 	if len(options) == 1 {
 		if v, ok := options[0].(bool); ok {
 			payloadOnly = v
@@ -64,7 +66,8 @@ func parseOptions(options ...interface{}) (key string, payloadOnly bool) {
 	}
 
 	if key != "" {
-		if err := crypto.IsValidPrivKey(key); err != nil {
+		var err error
+		if pk, err = crypto.PrivKeyFromBase58(key); err != nil {
 			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
 		}
 	}
@@ -73,17 +76,18 @@ func parseOptions(options ...interface{}) (key string, payloadOnly bool) {
 }
 
 // finalizeTx sets the public key, timestamp, nonce and signs the transaction.
+// If nonce is not set, it will use the keepers to query the compute the next nonce.
+// If nonce and keepers are not set, it will use rpcClient to query and compute the next nonce.
 // It will not reset fields already set.
 // options[0]: <string|bool> 	- key or payloadOnly request
 // options[1]: [<bool>] 		- payload request
-func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) bool {
+func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient client.Client, options ...interface{}) (bool, *crypto.PrivKey) {
 
 	key, payloadOnly := parseOptions(options...)
 
 	// Set sender public key if unset and key was provided
-	if tx.GetSenderPubKey().IsEmpty() && key != "" {
-		pk, _ := crypto.PrivKeyFromBase58(key)
-		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+	if tx.GetSenderPubKey().IsEmpty() && key != nil {
+		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(key).PubKey().MustBytes())
 	}
 
 	// Set timestamp if not already set
@@ -91,8 +95,9 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) b
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// Set nonce if nonce was not set and key was provided
-	if tx.GetNonce() == 0 && key != "" {
+	// If nonce us unset, compute next nonce by using the account keeper to query
+	// the sender account only if keepers is set.
+	if tx.GetNonce() == 0 && key != nil && keepers != nil {
 		senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
 		if senderAcct.IsNil() {
 			panic(se(400, StatusCodeInvalidParam, "senderPubKey", "sender account was not found"))
@@ -100,16 +105,26 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) b
 		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
+	// If nonce us unset, compute next nonce by using the RPC client to query
+	// the sender account only if keepers is unset.
+	if tx.GetNonce() == 0 && key != nil && keepers == nil && rpcClient != nil {
+		senderAcct, err := rpcClient.GetAccount(tx.GetFrom().String())
+		if err != nil {
+			panic(err)
+		}
+		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
+	}
+
 	// Sign the tx only if unsigned
-	if len(tx.GetSignature()) == 0 && key != "" {
-		sig, err := tx.Sign(key)
+	if len(tx.GetSignature()) == 0 && key != nil {
+		sig, err := tx.Sign(key.Base58())
 		if err != nil {
 			panic(se(400, StatusCodeInvalidParam, "key", "failed to sign transaction"))
 		}
 		tx.SetSignature(sig)
 	}
 
-	return payloadOnly
+	return payloadOnly, key
 }
 
 // Normalize normalizes a map, struct or slice of struct/map.

@@ -3,6 +3,9 @@ package modules
 import (
 	"fmt"
 
+	"github.com/spf13/cast"
+	"gitlab.com/makeos/mosdef/api/rpc/client"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore"
@@ -23,11 +26,16 @@ import (
 // UserModule provides account management functionalities
 // that are accessed through the JavaScript console environment
 type UserModule struct {
-	types.ConsoleSuggestions
+	types.ModuleCommon
 	cfg      *config.AppConfig
 	keystore keystoretypes.Keystore
 	service  services.Service
 	logic    core.Logic
+}
+
+// NewAttachableUserModule creates an instance of UserModule suitable in attach mode
+func NewAttachableUserModule(client client.Client, ks *keystore.Keystore) *UserModule {
+	return &UserModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}, keystore: ks}
 }
 
 // NewUserModule creates an instance of UserModule
@@ -44,14 +52,9 @@ func NewUserModule(
 	}
 }
 
-// ConsoleOnlyMode indicates that this module can be used on console-only mode
-func (m *UserModule) ConsoleOnlyMode() bool {
-	return false
-}
-
 // methods are functions exposed in the special namespace of this module.
-func (m *UserModule) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *UserModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "listAccounts",
 			Value:       m.ListLocalAccounts,
@@ -106,8 +109,8 @@ func (m *UserModule) methods() []*types.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *UserModule) globals() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
+func (m *UserModule) globals() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "accounts",
 			Value:       m.ListLocalAccounts(),
@@ -140,7 +143,7 @@ func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// listAccounts lists all accounts on this node
+// ListLocalAccounts lists all accounts on this node
 func (m *UserModule) ListLocalAccounts() []string {
 	accounts, err := m.keystore.List()
 	if err != nil {
@@ -240,6 +243,15 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
+
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.GetAccount(address, height...)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(tx)
+	}
+
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
@@ -338,7 +350,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
 	}
 
@@ -376,8 +388,23 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if finalizeTx(tx, m.logic, options...) {
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	if printPayload {
 		return tx.ToMap()
+	}
+
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.SendCoin(&apitypes.SendCoinBody{
+			To:         tx.To,
+			Nonce:      tx.Nonce,
+			Value:      cast.ToFloat64(tx.Value.String()),
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
