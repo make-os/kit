@@ -40,7 +40,11 @@ var signCommitCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if targetRepo == nil {
+			log.Fatal("no repository found in current directory")
+		}
+
 		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
 			Message:               msg,
 			Fee:                   fee,
@@ -80,7 +84,10 @@ var signTagCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if targetRepo == nil {
+			log.Fatal("no repository found in current directory")
+		}
 
 		args = cmd.Flags().Args()
 		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
@@ -120,7 +127,11 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, false)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if targetRepo == nil {
+			log.Fatal("no repository found in current directory")
+		}
+
 		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
 			Name:                  args[0],
 			Fee:                   fee,

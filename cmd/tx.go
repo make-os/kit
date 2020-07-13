@@ -30,7 +30,7 @@ var txGetCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		_, client, remoteClients := getRepoAndClients(cmd, true)
+		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := txcmd.GetCmd(&txcmd.GetArgs{
 			Hash:           args[0],
 			RPCClient:      client,

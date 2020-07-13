@@ -38,7 +38,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client, remoteClients := getRepoAndClients(cmd, true)
+		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
 			Name:           args[0],
 			Fee:            fee,

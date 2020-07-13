@@ -53,7 +53,7 @@ var contribAddCmd = &cobra.Command{
 			log.Fatal("failed to decode policies", "Err", err)
 		}
 
-		_, client, remoteClients := getRepoAndClients(cmd, true)
+		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := contribcmd.AddCmd(cfg, &contribcmd.AddArgs{
 			Name:                name,
 			PushKeys:            args,

@@ -81,22 +81,18 @@ func getRemoteAPIClients(cmd *cobra.Command, repo types.LocalRepo) (clients []re
 }
 
 // getClients returns an RPC and Remote API clients.
-// If noRepo is false, the repository at the current working directory
-// is opened and its remote endpoints are collected and converted to remote clients.
+// If a repository is found on the current working directory,
+// its remote endpoints are collected and converted to remote clients.
 // If `api.address` is set, another remote client is created for it.
-func getRepoAndClients(cmd *cobra.Command, noRepo bool) (types.LocalRepo, client.Client, []remote.Client) {
+func getRepoAndClients(cmd *cobra.Command) (types.LocalRepo, client.Client, []remote.Client) {
 
 	var err error
 	var targetRepo types.LocalRepo
 	var remoteClients []remote.Client
 
-	if !noRepo {
-		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
-		if err != nil {
-			log.Fatal(err.Error())
-		} else {
-			remoteClients = getRemoteAPIClients(cmd, targetRepo)
-		}
+	targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
+	if targetRepo != nil {
+		remoteClients = getRemoteAPIClients(cmd, targetRepo)
 	}
 
 	// If remote API address flag was set, create a client with it
