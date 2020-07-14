@@ -135,6 +135,21 @@ func (mr *MockClientMockRecorder) CreateRepo(body interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepo", reflect.TypeOf((*MockClient)(nil).CreateRepo), body)
 }
 
+// VoteRepoProposal mocks base method
+func (m *MockClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VoteRepoProposal", body)
+	ret0, _ := ret[0].(*types.HashResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VoteRepoProposal indicates an expected call of VoteRepoProposal
+func (mr *MockClientMockRecorder) VoteRepoProposal(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteRepoProposal", reflect.TypeOf((*MockClient)(nil).VoteRepoProposal), body)
+}
+
 // GetRepo mocks base method
 func (m *MockClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 	m.ctrl.T.Helper()

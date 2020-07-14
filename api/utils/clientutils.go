@@ -223,6 +223,36 @@ func GetTransaction(
 	return
 }
 
+// RepoProposalVoter describes a function for voting on a repo's proposal
+type RepoProposalVoter func(
+	req *types.RepoVoteBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error)
+
+// VoteRepoProposal creates a transaction to vote for/on a repo's proposal
+func VoteRepoProposal(
+	req *types.RepoVoteBody,
+	rpcClient client.Client,
+	remoteClients []remote.Client) (hash string, err error) {
+	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+		resp, err := c.VoteRepoProposal(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+
+	}, func(c remote.Client) error {
+		resp, err := c.VoteRepoProposal(req)
+		if err != nil {
+			return err
+		}
+		hash = resp.Hash
+		return err
+	})
+	return
+}
+
 // CallClients allows the caller to perform calls on multiple remote clients
 // and an RPC client. Callers must provide rpcCaller callback function to perform
 // operation with the given rpc client.

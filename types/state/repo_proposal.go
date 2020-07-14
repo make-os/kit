@@ -83,10 +83,10 @@ func (pf ProposalFees) Total() decimal.Decimal {
 
 // Proposal vote choices
 const (
-	ProposalVoteYes        = 1
 	ProposalVoteNo         = 0
-	ProposalVoteNoWithVeto = -1
-	ProposalVoteAbstain    = -2
+	ProposalVoteYes        = 1
+	ProposalVoteNoWithVeto = 2
+	ProposalVoteAbstain    = 3
 )
 
 // Proposal describes a repository proposal

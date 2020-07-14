@@ -59,10 +59,44 @@ var repoCreateCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(repoCmd)
-	repoCmd.AddCommand(repoCreateCmd)
+// repoVoteCmd represents a sub-command for voting on a repository's proposal
+var repoVoteCmd = &cobra.Command{
+	Use:   "vote [flags] <choice>",
+	Short: "Vote for or against a proposal",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return fmt.Errorf("vote choice is required (0 - No, 1 - Yes, 2 - NoWithVeto, 3 - Abstain")
+		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		repoName, _ := cmd.Flags().GetString("repo")
+		fee, _ := cmd.Flags().GetFloat64("fee")
+		signingKey, _ := cmd.Flags().GetString("signing-key")
+		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
+		nonce, _ := cmd.Flags().GetUint64("nonce")
 
+		_, client, remoteClients := getRepoAndClients(cmd)
+		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
+			RepoName:       repoName,
+			ProposalID:     args[0],
+			Fee:            fee,
+			SigningKey:     signingKey,
+			SigningKeyPass: signingKeyPass,
+			Nonce:          nonce,
+			RPCClient:      client,
+			RemoteClients:  remoteClients,
+			KeyUnlocker:    common.UnlockKey,
+			GetNextNonce:   utils.GetNextNonceOfAccount,
+			VoteCreator:    utils.VoteRepoProposal,
+			Stdout:         os.Stdout,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+func initRepoCreate() {
 	sp := repoCreateCmd.Flags().StringP
 	fp := repoCreateCmd.Flags().Float64P
 
@@ -70,13 +104,37 @@ func init() {
 	fp("value", "v", 0, "The amount of coins to transfer to the repository")
 	sp("config", "c", "", "Path to a file containing a repository configuration")
 
+	// Common Tx flags
+	addCommonTxFlags(repoCreateCmd.Flags())
+
 	// Set required field
 	repoCreateCmd.MarkFlagRequired("fee")
 	repoCreateCmd.MarkFlagRequired("signing-key")
+}
+
+func initRepoVote() {
+	sp := repoVoteCmd.Flags().StringP
+
+	// Set flags
+	sp("repo", "r", "", "The name of the repository")
+	sp("id", "i", "", "The unique ID of the proposal")
+
+	// Common Tx flags
+	addCommonTxFlags(repoVoteCmd.Flags())
+
+	// Set required field
+	repoVoteCmd.MarkFlagRequired("fee")
+	repoVoteCmd.MarkFlagRequired("signing-key")
+}
+
+func init() {
+	rootCmd.AddCommand(repoCmd)
+	repoCmd.AddCommand(repoCreateCmd)
+	repoCmd.AddCommand(repoVoteCmd)
+
+	initRepoCreate()
+	initRepoVote()
 
 	// API connection config flags
 	addAPIConnectionFlags(repoCmd.PersistentFlags())
-
-	// Common Tx flags
-	addCommonTxFlags(repoCreateCmd.Flags())
 }
