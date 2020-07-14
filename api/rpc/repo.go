@@ -53,12 +53,22 @@ func (a *RepoAPI) addContributors(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(a.mods.Repo.AddContributor(p))
 }
 
+// vote creates a transaction to vote for/against a repo proposal
+func (a *RepoAPI) vote(params interface{}) (resp *rpc.Response) {
+	p, ok := params.(map[string]interface{})
+	if !ok {
+		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a map", "")
+	}
+	return rpc.Success(a.mods.Repo.Vote(p))
+}
+
 // APIs returns all API handlers
 func (a *RepoAPI) APIs() rpc.APISet {
+	ns := constants.NamespaceRepo
 	return []rpc.APIInfo{
-		{Name: "create", Namespace: constants.NamespaceRepo, Func: a.createRepo, Description: "Create a repository"},
-		{Name: "get", Namespace: constants.NamespaceRepo, Func: a.getRepo, Description: "Get a repository"},
-		{Name: "addContributors", Namespace: constants.NamespaceRepo, Func: a.addContributors,
-			Description: "Create a repository"},
+		{Name: "create", Namespace: ns, Func: a.createRepo, Description: "Create a repository"},
+		{Name: "get", Namespace: ns, Func: a.getRepo, Description: "Get a repository"},
+		{Name: "addContributors", Namespace: ns, Func: a.addContributors, Description: "Create a repository"},
+		{Name: "vote", Namespace: ns, Func: a.vote, Description: "Cast a vote on a repository's proposal"},
 	}
 }

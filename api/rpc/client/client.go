@@ -37,6 +37,7 @@ type Client interface {
 	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error)
 	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
+	VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
 	AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error)
 	SendCoin(body *types.SendCoinBody) (*types.HashResponse, error)

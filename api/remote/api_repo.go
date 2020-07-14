@@ -32,6 +32,16 @@ func (r *API) GetRepo(w http.ResponseWriter, req *http.Request) {
 	util.WriteJSON(w, 200, r.modules.Repo.Get(name, opts))
 }
 
+// RepoVote handles request to vote for/against a repository proposal
+func (r *API) RepoVote(w http.ResponseWriter, req *http.Request) {
+	var body = make(map[string]interface{})
+	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", "0"))
+		return
+	}
+	util.WriteJSON(w, 201, r.modules.Repo.Vote(body))
+}
+
 // AddRepoContributors handles request to add a repository contributor
 func (r *API) AddRepoContributors(w http.ResponseWriter, req *http.Request) {
 	var body = make(map[string]interface{})
@@ -39,5 +49,5 @@ func (r *API) AddRepoContributors(w http.ResponseWriter, req *http.Request) {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", "0"))
 		return
 	}
-	util.WriteJSON(w, 200, r.modules.Repo.AddContributor(body))
+	util.WriteJSON(w, 201, r.modules.Repo.AddContributor(body))
 }

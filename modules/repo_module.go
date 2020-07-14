@@ -69,7 +69,7 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 		},
 		{
 			Name:        "vote",
-			Value:       m.VoteOnProposal,
+			Value:       m.Vote,
 			Description: "Vote for or against a proposal",
 		},
 		{
@@ -232,7 +232,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareRepoProposalVote()

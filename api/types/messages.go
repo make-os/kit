@@ -54,6 +54,16 @@ type GetRepoOpts struct {
 	NoProposals bool   `json:"noProposals"`
 }
 
+// RepoVoteBody contains arguments for voting on a proposal
+type RepoVoteBody struct {
+	RepoName   string
+	ProposalID string
+	Vote       int
+	Fee        float64
+	Nonce      uint64
+	SigningKey *crypto.Key
+}
+
 // RegisterPushKeyBody contains arguments for registering a push key
 type RegisterPushKeyBody struct {
 	Nonce      uint64

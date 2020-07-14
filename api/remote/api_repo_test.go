@@ -73,7 +73,7 @@ var _ = Describe("PushKeyAPI", func() {
 			"should return call module's AddContributor method and return 200 on success": {
 				paramsRaw:  []byte("{}"),
 				resp:       `{"hash":"0x123"}`,
-				statusCode: 200,
+				statusCode: 201,
 				mocker: func(tc *TestCase) {
 					mockRepoModule := mocks.NewMockRepoModule(ctrl)
 					mockRepoModule.EXPECT().AddContributor(gomock.Any()).Return(util.Map{"hash": "0x123"})
@@ -81,5 +81,27 @@ var _ = Describe("PushKeyAPI", func() {
 				},
 			},
 		}, api.AddRepoContributors)
+	})
+
+	Describe(".RepoVote", func() {
+		modules := &types.Modules{}
+		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
+		testPostRequestCases(map[string]TestCase{
+			"should return error when params could not be json decoded": {
+				paramsRaw:  []byte("{"),
+				resp:       `{"error":{"code":"0","msg":"malformed body"}}`,
+				statusCode: 400,
+			},
+			"should return call module's Vote method and return 200 on success": {
+				paramsRaw:  []byte("{}"),
+				resp:       `{"hash":"0x123"}`,
+				statusCode: 201,
+				mocker: func(tc *TestCase) {
+					mockRepoModule := mocks.NewMockRepoModule(ctrl)
+					mockRepoModule.EXPECT().Vote(gomock.Any()).Return(util.Map{"hash": "0x123"})
+					modules.Repo = mockRepoModule
+				},
+			},
+		}, api.RepoVote)
 	})
 })

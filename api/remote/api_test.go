@@ -37,7 +37,7 @@ var _ = Describe("API", func() {
 		It("should register all handlers", func() {
 			api := &API{}
 			mockMux := mocks.NewMockServeMux(ctrl)
-			mockMux.EXPECT().HandleFunc(gomock.Any(), gomock.Any()).Times(11)
+			mockMux.EXPECT().HandleFunc(gomock.Any(), gomock.Any()).Times(12)
 			api.RegisterEndpoints(mockMux)
 		})
 	})

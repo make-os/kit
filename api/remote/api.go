@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	types2 "gitlab.com/makeos/mosdef/api/types"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -49,17 +49,18 @@ func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w 
 
 // RegisterEndpoints registers handlers to endpoints
 func (r *API) RegisterEndpoints(s ServeMux) {
-	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameNonce), r.get(r.GetAccountNonce))
-	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameAccount), r.get(r.GetAccount))
-	s.HandleFunc(V1Path(constants.NamespaceUser, types2.MethodNameSendCoin), r.post(r.SendCoin))
-	s.HandleFunc(V1Path(constants.NamespaceTx, types2.MethodNameSendPayload), r.post(r.SendTxPayload))
-	s.HandleFunc(V1Path(constants.NamespaceTx, types2.MethodNameGetTx), r.get(r.GetTransaction))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyFind), r.get(r.GetPushKey))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, types2.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameCreateRepo), r.post(r.CreateRepo))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameGetRepo), r.get(r.GetRepo))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, types2.MethodNameAddRepoContribs), r.post(r.AddRepoContributors))
+	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameNonce), r.get(r.GetAccountNonce))
+	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameAccount), r.get(r.GetAccount))
+	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameSendCoin), r.post(r.SendCoin))
+	s.HandleFunc(V1Path(constants.NamespaceTx, apitypes.MethodNameSendPayload), r.post(r.SendTxPayload))
+	s.HandleFunc(V1Path(constants.NamespaceTx, apitypes.MethodNameGetTx), r.get(r.GetTransaction))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyFind), r.get(r.GetPushKey))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
+	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameCreateRepo), r.post(r.CreateRepo))
+	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameGetRepo), r.get(r.GetRepo))
+	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameAddRepoContribs), r.post(r.AddRepoContributors))
+	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameRepoPropVote), r.post(r.RepoVote))
 }
 
 // V1Path creates a REST API v1 path

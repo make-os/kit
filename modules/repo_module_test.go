@@ -181,12 +181,12 @@ var _ = Describe("RepoModule", func() {
 		})
 	})
 
-	Describe(".VoteOnProposal", func() {
+	Describe(".Vote", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.VoteOnProposal(params)
+				m.Vote(params)
 			})
 		})
 
@@ -194,7 +194,7 @@ var _ = Describe("RepoModule", func() {
 			key := ""
 			payloadOnly := true
 			params := map[string]interface{}{"name": "repo1"}
-			res := m.VoteOnProposal(params, key, payloadOnly)
+			res := m.Vote(params, key, payloadOnly)
 			Expect(res["name"]).To(Equal("repo1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalVote)))
@@ -215,7 +215,7 @@ var _ = Describe("RepoModule", func() {
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.VoteOnProposal(params, "", false)
+				m.Vote(params, "", false)
 			})
 		})
 
@@ -223,7 +223,7 @@ var _ = Describe("RepoModule", func() {
 			params := map[string]interface{}{"name": "repo1"}
 			hash := util.StrToHexBytes("tx_hash")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
-			res := m.VoteOnProposal(params, "", false)
+			res := m.Vote(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
 		})

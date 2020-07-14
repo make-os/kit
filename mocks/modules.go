@@ -1134,23 +1134,23 @@ func (mr *MockRepoModuleMockRecorder) UpsertOwner(params interface{}, options ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertOwner", reflect.TypeOf((*MockRepoModule)(nil).UpsertOwner), varargs...)
 }
 
-// VoteOnProposal mocks base method
-func (m *MockRepoModule) VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
+// Vote mocks base method
+func (m *MockRepoModule) Vote(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "VoteOnProposal", varargs...)
+	ret := m.ctrl.Call(m, "Vote", varargs...)
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// VoteOnProposal indicates an expected call of VoteOnProposal
-func (mr *MockRepoModuleMockRecorder) VoteOnProposal(params interface{}, options ...interface{}) *gomock.Call {
+// Vote indicates an expected call of Vote
+func (mr *MockRepoModuleMockRecorder) Vote(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteOnProposal", reflect.TypeOf((*MockRepoModule)(nil).VoteOnProposal), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vote", reflect.TypeOf((*MockRepoModule)(nil).Vote), varargs...)
 }
 
 // Prune mocks base method

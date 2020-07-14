@@ -109,3 +109,36 @@ func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types
 
 	return &r, nil
 }
+
+// VoteRepoProposal creates transaction to vote for/against a repository's proposal
+func (c *RPCClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+
+	if body.SigningKey == nil {
+		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+	}
+
+	tx := txns.NewBareRepoProposalVote()
+	tx.RepoName = body.RepoName
+	tx.ProposalID = body.ProposalID
+	tx.Vote = body.Vote
+	tx.Nonce = body.Nonce
+	tx.Fee = util.String(cast.ToString(body.Fee))
+	tx.Timestamp = time.Now().Unix()
+	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
+
+	var err error
+	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
+	if err != nil {
+		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
+	}
+
+	resp, statusCode, err := c.call("repo_vote", tx.ToMap())
+	if err != nil {
+		return nil, makeStatusErrorFromCallErr(statusCode, err)
+	}
+
+	var r types.HashResponse
+	_ = util.DecodeMap(resp, &r)
+
+	return &r, nil
+}

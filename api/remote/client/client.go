@@ -23,6 +23,7 @@ type Client interface {
 	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
 	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
 	AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error)
+	VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error)
 	SendCoin(body *types.SendCoinBody) (*types.HashResponse, error)
 }
 

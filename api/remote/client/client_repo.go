@@ -47,6 +47,37 @@ func (c *ClientV1) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResp
 	return &result, resp.ToJSON(&result)
 }
 
+// VoteRepoProposal creates transaction to vote for/against a repository's proposal
+func (c *ClientV1) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+
+	if body.SigningKey == nil {
+		return nil, fmt.Errorf("signing key is required")
+	}
+
+	tx := txns.NewBareRepoProposalVote()
+	tx.RepoName = body.RepoName
+	tx.ProposalID = body.ProposalID
+	tx.Vote = body.Vote
+	tx.Nonce = body.Nonce
+	tx.Fee = util.String(cast.ToString(body.Fee))
+	tx.Timestamp = time.Now().Unix()
+	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
+
+	var err error
+	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.post(remote.V1Path(constants.NamespaceRepo, types.MethodNameRepoPropVote), tx.ToMap())
+	if err != nil {
+		return nil, err
+	}
+
+	var result types.HashResponse
+	return &result, resp.ToJSON(&result)
+}
+
 // GetRepo returns the repository corresponding to the given name
 func (c *ClientV1) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 

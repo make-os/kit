@@ -239,6 +239,21 @@ func (mr *MockClientMockRecorder) AddRepoContributors(body interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepoContributors", reflect.TypeOf((*MockClient)(nil).AddRepoContributors), body)
 }
 
+// VoteRepoProposal mocks base method
+func (m *MockClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VoteRepoProposal", body)
+	ret0, _ := ret[0].(*types.HashResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VoteRepoProposal indicates an expected call of VoteRepoProposal
+func (mr *MockClientMockRecorder) VoteRepoProposal(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteRepoProposal", reflect.TypeOf((*MockClient)(nil).VoteRepoProposal), body)
+}
+
 // SendCoin mocks base method
 func (m *MockClient) SendCoin(body *types.SendCoinBody) (*types.HashResponse, error) {
 	m.ctrl.T.Helper()

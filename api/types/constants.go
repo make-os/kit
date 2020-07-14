@@ -9,6 +9,7 @@ const (
 	MethodNamePushKeyFind     = "find"
 	MethodNamePushKeyRegister = "register"
 	MethodNameCreateRepo      = "create"
+	MethodNameRepoPropVote    = "vote"
 	MethodNameGetRepo         = "get"
 	MethodNameGetTx           = "get"
 	MethodNameAddRepoContribs = "addContributors"

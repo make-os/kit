@@ -202,4 +202,59 @@ var _ = Describe("Client", func() {
 			Expect(resp.Hash).To(Equal("0x123"))
 		})
 	})
+
+	Describe(".VoteRepoProposal", func() {
+		It("should return ReqError when signing key is not provided", func() {
+			_, err := client.VoteRepoProposal(&types.RepoVoteBody{
+				SigningKey: nil,
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.ReqError{
+				Code:     ErrCodeBadParam,
+				HttpCode: 400,
+				Msg:      "signing key is required",
+				Field:    "signingKey",
+			}))
+		})
+
+		It("should return ReqError when call failed", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				Expect(method).To(Equal("repo_vote"))
+				Expect(params).To(And(
+					HaveKey("sig"),
+					HaveKey("timestamp"),
+					HaveKey("senderPubKey"),
+					HaveKey("id"),
+					HaveKey("vote"),
+					HaveKey("nonce"),
+					HaveKey("fee"),
+					HaveKey("type"),
+				))
+				return nil, 0, fmt.Errorf("error")
+			}
+			_, err := client.VoteRepoProposal(&types.RepoVoteBody{
+				RepoName:   "repo1",
+				ProposalID: "1",
+				Nonce:      1,
+				Fee:        1.2,
+				SigningKey: key,
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(&util.ReqError{
+				Code:     ErrCodeUnexpected,
+				HttpCode: 0,
+				Msg:      "error",
+				Field:    "",
+			}))
+		})
+
+		It("should return expected repo object on success", func() {
+			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
+				return util.Map{"hash": "0x123"}, 0, nil
+			}
+			resp, err := client.VoteRepoProposal(&types.RepoVoteBody{SigningKey: key})
+			Expect(err).To(BeNil())
+			Expect(resp.Hash).To(Equal("0x123"))
+		})
+	})
 })

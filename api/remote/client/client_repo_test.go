@@ -189,4 +189,58 @@ var _ = Describe("Repo", func() {
 			Expect(err).To(MatchError("error"))
 		})
 	})
+
+	Describe(".VoteRepoProposal", func() {
+		It("should return error if signing key is not set", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				return nil, nil
+			}
+			_, err := client.VoteRepoProposal(&types.RepoVoteBody{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("signing key is required"))
+		})
+
+		It("should send payload and receive tx hash from server", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				Expect(endpoint).To(Equal("/v1/repo/vote"))
+				Expect(params).To(And(
+					HaveKey("sig"),
+					HaveKey("timestamp"),
+					HaveKey("senderPubKey"),
+					HaveKey("vote"),
+					HaveKey("id"),
+					HaveKey("name"),
+					HaveKey("nonce"),
+					HaveKey("fee"),
+					HaveKey("type"),
+				))
+				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
+					data, _ := json.Marshal(util.Map{"address": "repo1", "hash": "0x12345"})
+					w.WriteHeader(201)
+					w.Write(data)
+				}
+				ts := httptest.NewServer(http.HandlerFunc(mockReqHandler))
+				resp, _ = req.Get(ts.URL)
+				return resp, nil
+			}
+			resp, err := client.VoteRepoProposal(&types.RepoVoteBody{
+				RepoName:   "repo1",
+				ProposalID: "1",
+				Nonce:      1,
+				Fee:        1.2,
+				SigningKey: key,
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.Hash).To(Equal("0x12345"))
+		})
+
+		It("should return error if request failed", func() {
+			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
+				return nil, fmt.Errorf("error")
+			}
+			_, err := client.VoteRepoProposal(&types.RepoVoteBody{SigningKey: key})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+	})
 })
