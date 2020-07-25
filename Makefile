@@ -18,7 +18,7 @@ release:
 	
 # Create a tagged release 
 release-tagged:
-	env GOVERSION=$(GOVERSION) goreleaser release --skip-publish --rm-dist
+	env GOVERSION=$(GOVERSION) goreleaser release --rm-dist
 
 
 install:
