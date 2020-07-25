@@ -94,6 +94,8 @@ var rootCmd = &cobra.Command{
 			fmt.Println("Go:", GoVersion)
 			return
 		}
+
+		cmd.Help()
 	},
 }
 
