@@ -5,35 +5,37 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/node/services"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/node/services"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
-	vm      *otto.Otto
+	types.ModuleCommon
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
 }
 
-// NewNSModule creates an instance of NamespaceModule
-func NewNSModule(
-	vm *otto.Otto,
-	service services.Service,
-	repoMgr core.RemoteServer,
-	logic core.Logic) *NamespaceModule {
-	return &NamespaceModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
+// NewAttachableNamespaceModule creates an instance of NamespaceModule suitable in attach mode
+func NewAttachableNamespaceModule(client client.Client) *NamespaceModule {
+	return &NamespaceModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 
-// funcs are functions accessible using the `ns` namespace
-func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// NewNamespaceModule creates an instance of NamespaceModule
+func NewNamespaceModule(service services.Service, remoteSrv core.RemoteServer, logic core.Logic) *NamespaceModule {
+	return &NamespaceModule{service: service, logic: logic, repoMgr: remoteSrv}
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *NamespaceModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "register",
 			Value:       m.Register,
@@ -47,7 +49,7 @@ func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
 		{
 			Name:        "getTarget",
 			Value:       m.GetTarget,
-			Description: "Lookup the target of a full namespace URI",
+			Description: "Lookup the target of a full namespace path",
 		},
 		{
 			Name:        "updateDomain",
@@ -57,34 +59,32 @@ func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
-func (m *NamespaceModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+// globals are functions exposed in the VM's global namespace
+func (m *NamespaceModule) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *NamespaceModule) Configure() []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceNS, obj)
+	util.VMSet(vm, constants.NamespaceNS, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNS, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
 // lookup finds a namespace
@@ -96,8 +96,8 @@ func (m *NamespaceModule) Configure() []prompt.Suggest {
 // RETURNS: resp <map|nil>
 // resp.name <string>: The name of the namespace
 // resp.expired <bool>: Indicates whether the namespace is expired
-// resp.expiring <bool>: Indicates whether the namespace is currently expiring
-func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
+// resp.grace <bool>: Indicates whether the namespace is currently within the grace period
+func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 
 	var targetHeight uint64
 	if len(height) > 0 {
@@ -108,22 +108,22 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 	if ns.IsNil() {
 		return nil
 	}
-	nsMap := util.StructToMap(ns)
+
+	nsMap := util.ToMap(ns)
 	nsMap["name"] = name
 	nsMap["expired"] = false
-	nsMap["expiring"] = false
+	nsMap["grace"] = false
 
-	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	if ns.GraceEndAt <= uint64(curBlockInfo.Height) {
+	if ns.ExpiresAt.UInt64() <= uint64(bi.Height) {
 		nsMap["expired"] = true
-	}
-
-	if ns.ExpiresAt <= uint64(curBlockInfo.Height) {
-		nsMap["expiring"] = true
+		if ns.GraceEndAt.UInt64() > uint64(bi.Height) {
+			nsMap["grace"] = true
+		}
 	}
 
 	return nsMap
@@ -145,7 +145,7 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 
 	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return target
@@ -170,32 +170,29 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) Register(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *NamespaceModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = txns.NewBareTxNamespaceAcquire()
+	var tx = txns.NewBareTxNamespaceRegister()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // updateDomain updates one or more domains of a namespace
@@ -214,30 +211,27 @@ func (m *NamespaceModule) Register(
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) UpdateDomain(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }

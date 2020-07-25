@@ -3,10 +3,19 @@ package rpc
 import (
 	"sync"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/util"
 )
+
+type Server interface {
+	GetAddr() string
+	Serve()
+	IsRunning() bool
+	Stop()
+	AddAPI(apis ...APISet)
+	GetMethods() []MethodInfo
+}
 
 // WaitForResult represent a response to a service method call
 type Result struct {
@@ -16,8 +25,8 @@ type Result struct {
 	Data    map[string]interface{}
 }
 
-// Server represents a rpc server
-type Server struct {
+// RPCServer represents a rpc server
+type RPCServer struct {
 	sync.RWMutex
 
 	// addr is the address to bind the server to
@@ -40,8 +49,8 @@ type Server struct {
 
 // NewServer creates a newRPCServer RPC server
 func NewServer(cfg *config.AppConfig, log logger.Logger,
-	interrupt *util.Interrupt) *Server {
-	srv := &Server{
+	interrupt *util.Interrupt) *RPCServer {
+	srv := &RPCServer{
 		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
@@ -52,14 +61,14 @@ func NewServer(cfg *config.AppConfig, log logger.Logger,
 }
 
 // GetAddr gets the address
-func (s *Server) GetAddr() string {
+func (s *RPCServer) GetAddr() string {
 	s.RLock()
 	defer s.RUnlock()
 	return s.addr
 }
 
 // Serve starts the server
-func (s *Server) Serve() {
+func (s *RPCServer) Serve() {
 	go func() {
 		if s.interrupt != nil {
 			s.interrupt.Wait()
@@ -76,14 +85,14 @@ func (s *Server) Serve() {
 }
 
 // IsRunning returns the start state
-func (s *Server) IsRunning() bool {
+func (s *RPCServer) IsRunning() bool {
 	s.RLock()
 	defer s.RUnlock()
 	return s.started
 }
 
 // Stop stops the server and frees resources
-func (s *Server) Stop() {
+func (s *RPCServer) Stop() {
 	s.Lock()
 	defer s.Unlock()
 	if !s.started {
@@ -95,13 +104,13 @@ func (s *Server) Stop() {
 }
 
 // AddAPI adds one or more API sets
-func (s *Server) AddAPI(apis ...APISet) {
+func (s *RPCServer) AddAPI(apis ...APISet) {
 	s.Lock()
 	defer s.Unlock()
 	s.rpc.MergeAPISet(apis...)
 }
 
 // GetMethods returns all registered RPC methods
-func (s *Server) GetMethods() map[string]MethodInfo {
+func (s *RPCServer) GetMethods() []MethodInfo {
 	return s.rpc.Methods()
 }

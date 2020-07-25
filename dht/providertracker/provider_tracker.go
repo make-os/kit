@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	"gitlab.com/makeos/mosdef/pkgs/cache"
+	"gitlab.com/makeos/lobe/pkgs/cache"
 )
 
 var (

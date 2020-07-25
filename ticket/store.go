@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"sort"
 
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	types2 "gitlab.com/makeos/lobe/ticket/types"
 
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/util"
 )
 
 const (
@@ -40,10 +40,10 @@ type TicketStore interface {
 	Add(tickets ...*types2.Ticket) error
 
 	// GetByHash queries a ticket by its hash
-	GetByHash(hash util.Bytes32) *types2.Ticket
+	GetByHash(hash util.HexBytes) *types2.Ticket
 
 	// RemoveByHash deletes a ticket by its hash
-	RemoveByHash(hash util.Bytes32) error
+	RemoveByHash(hash util.HexBytes) error
 
 	// QueryOne iterates over the tickets and returns the first ticket
 	// for which the predicate returns true.
@@ -87,7 +87,7 @@ func getQueryOptions(queryOptions ...interface{}) types2.QueryOptions {
 // Register adds one or more tickets to the store
 func (s *Store) Add(tickets ...*types2.Ticket) error {
 	for _, ticket := range tickets {
-		key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
+		key := MakeKey(ticket.Hash, ticket.Height, ticket.Index)
 		rec := storage.NewRecord(key, util.ToBytes(ticket))
 		if err := s.db.Put(rec); err != nil {
 			return err
@@ -97,9 +97,9 @@ func (s *Store) Add(tickets ...*types2.Ticket) error {
 }
 
 // GetByHash queries a ticket by its hash
-func (s *Store) GetByHash(hash util.Bytes32) *types2.Ticket {
+func (s *Store) GetByHash(hash util.HexBytes) *types2.Ticket {
 	var t *types2.Ticket
-	s.db.Iterate(MakeHashKey(hash.Bytes()), false, func(r *storage.Record) bool {
+	s.db.Iterate(MakeHashKey(hash), false, func(r *storage.Record) bool {
 		r.Scan(&t)
 		return true
 	})
@@ -107,12 +107,12 @@ func (s *Store) GetByHash(hash util.Bytes32) *types2.Ticket {
 }
 
 // RemoveByHash deletes a ticket by its hash
-func (s *Store) RemoveByHash(hash util.Bytes32) error {
+func (s *Store) RemoveByHash(hash util.HexBytes) error {
 	t := s.GetByHash(hash)
 	if t == nil {
 		return nil
 	}
-	return s.db.Del(MakeKey(hash.Bytes(), t.Height, t.Index))
+	return s.db.Del(MakeKey(hash, t.Height, t.Index))
 }
 
 // QueryOne iterates over the tickets and returns the first ticket
@@ -208,7 +208,7 @@ func (s *Store) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket)
 		target.MatureBy = upd.MatureBy
 	}
 
-	key := MakeKey(target.Hash.Bytes(), target.Height, target.Index)
+	key := MakeKey(target.Hash, target.Height, target.Index)
 	s.db.Del(key)
 	s.Add(target)
 }

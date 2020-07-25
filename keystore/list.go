@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 // List returns the accounts stored on disk.
@@ -72,6 +73,9 @@ func (ks *Keystore) ListCmd(out io.Writer) error {
 	table.SetAutoFormatHeaders(false)
 	table.SetColumnSeparator("")
 	table.SetHeaderLine(false)
+	if config.NoColorFormatting {
+		table.SetHeaderColor(nil, nil, nil, nil)
+	}
 	hc := tablewriter.Colors{tablewriter.Normal, tablewriter.FgHiBlackColor}
 	table.SetHeaderColor(hc, hc, hc, hc)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
@@ -79,11 +83,11 @@ func (ks *Keystore) ListCmd(out io.Writer) error {
 	for i, a := range accts {
 		tagStr := ""
 		if a.IsUnprotected() {
-			tagStr = color.RedString("unprotected")
+			tagStr = fmt2.RedString("unprotected")
 		}
 		table.Append([]string{
 			fmt.Sprintf("[%d]", i),
-			color.CyanString(a.GetAddress()),
+			fmt2.CyanString(a.GetAddress()),
 			humanize.Time(a.GetCreatedAt()),
 			tagStr,
 		})

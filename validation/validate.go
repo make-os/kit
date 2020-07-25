@@ -3,12 +3,12 @@ package validation
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/lobe/crypto"
 )
 
 var feI = util.FieldErrorWithIndex
@@ -58,7 +58,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxUpDelPushKey(o, index)
 	case *txns.TxPush:
 		return CheckTxPush(o, index)
-	case *txns.TxNamespaceAcquire:
+	case *txns.TxNamespaceRegister:
 		return CheckTxNamespaceAcquire(o, index)
 	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
@@ -99,7 +99,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxUpDelPushKeyConsistency(o, index, logic)
 	case *txns.TxPush:
 		return CheckTxPushConsistency(o, index, logic)
-	case *txns.TxNamespaceAcquire:
+	case *txns.TxNamespaceRegister:
 		return CheckTxNSAcquireConsistency(o, index, logic)
 	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)

@@ -2,15 +2,15 @@ package upsertowner
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	common2 "gitlab.com/makeos/mosdef/logic/proposals"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	common2 "gitlab.com/makeos/lobe/logic/proposals"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // UpsertOwnerContract is a system contract that creates a proposal to update or
@@ -50,7 +50,7 @@ func (c *UpsertOwnerContract) Exec() error {
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := common2.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpsertOwner
-	proposal.ActionData = map[string][]byte{
+	proposal.ActionData = map[string]util.Bytes{
 		constants.ActionDataKeyAddrs: util.ToBytes(c.tx.Addresses),
 		constants.ActionDataKeyVeto:  util.ToBytes(c.tx.Veto),
 	}
@@ -75,7 +75,7 @@ func (c *UpsertOwnerContract) Exec() error {
 
 	// Index the proposal against its end height so it can be tracked
 	// and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 		return errors.Wrap(err, common.ErrFailedToIndexProposal)
 	}
 
@@ -105,7 +105,7 @@ func (c *UpsertOwnerContract) Apply(args *core.ProposalApplyArgs) error {
 
 		args.Repo.AddOwner(address, &state.RepoOwner{
 			Creator:  false,
-			JoinedAt: args.ChainHeight + 1,
+			JoinedAt: util.UInt64(args.ChainHeight) + 1,
 			Veto:     veto,
 		})
 	}

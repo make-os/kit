@@ -1,17 +1,3 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -21,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/remote/cmd/gitcmd"
-	"gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/gitcmd"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/util"
 
 	tmcfg "github.com/tendermint/tendermint/config"
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -80,11 +66,9 @@ func Execute() {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "mosdef",
-	Short: "The decentralized software development and collaboration network",
-	Long: `Mosdef is the official client for MakeOS network - A decentralized software
-development network that allows anyone, anywhere to create software products
-and organizations without a centralized authority.`,
+	Use:   "lob",
+	Short: "Lobe is the official client for the MakeOS network",
+	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
@@ -124,7 +108,7 @@ var fallbackCmd = &cobra.Command{
 			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
 				Args:            os.Args,
 				RepoGetter:      repo.Get,
-				PushKeyUnlocker: cmd2.UnlockPushKey,
+				PushKeyUnlocker: common.UnlockKey,
 				StdErr:          os.Stderr,
 				StdOut:          os.Stdout,
 			}); err != nil {
@@ -137,7 +121,7 @@ var fallbackCmd = &cobra.Command{
 			if err := gitcmd.GitVerifyCmd(cfg, &gitcmd.GitVerifyArgs{
 				Args:            args,
 				RepoGetter:      repo.Get,
-				PushKeyUnlocker: cmd2.UnlockPushKey,
+				PushKeyUnlocker: common.UnlockKey,
 				PemDecoder:      pem.Decode,
 				StdOut:          os.Stdout,
 				StdErr:          os.Stderr,
@@ -160,10 +144,11 @@ func init() {
 	// Register flags
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
-	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "GetPath to git executable")
+	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Set path to git executable")
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
-	rootCmd.PersistentFlags().Bool("nolog", false, "Disables loggers")
+	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
+	rootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
 
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")
@@ -179,5 +164,6 @@ func init() {
 	viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
 	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
 	viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
-	viper.BindPFlag("nolog", rootCmd.PersistentFlags().Lookup("nolog"))
+	viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
+	viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
 }

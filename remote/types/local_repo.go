@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/types/state"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"

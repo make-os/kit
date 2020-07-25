@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/olebedev/emitter"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -19,12 +19,12 @@ import (
 	"github.com/tendermint/tendermint/config"
 
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 )
 
 var (
 	// AppName is the name of the application
-	AppName = "mosdef"
+	AppName = "lobe"
 
 	// DefaultDataDir is the path to the data directory
 	DefaultDataDir = os.ExpandEnv("$HOME/." + AppName)
@@ -52,6 +52,9 @@ var (
 
 	// DefaultRemoteServerAddress is the default remote server listening address
 	DefaultRemoteServerAddress = "127.0.0.1:9004"
+
+	// NoColorFormatting indicates that stdout/stderr output should have no color
+	NoColorFormatting = false
 )
 
 // GenesisData returns the genesis data
@@ -97,10 +100,12 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 	return nil
 }
 
-// Configure sets up the application command structure, tendermint
-// and mosdef configuration. This is where all configuration and
+// ConfigureVM sets up the application command structure, tendermint
+// and lobe configuration. This is where all configuration and
 // settings are prepared
 func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
+
+	NoColorFormatting = viper.GetBool("no-colors")
 
 	// Populate viper from environment variables
 	viper.SetEnvPrefix(AppEnvPrefix)
@@ -186,8 +191,8 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 		tmcfg.P2P.AllowDuplicateIP = true
 	}
 
-	// If no logger is wanted, set mosdef and tendermint log level to `error`
-	noLog := viper.GetBool("nolog")
+	// If no logger is wanted, set lobe and tendermint log level to `error`
+	noLog := viper.GetBool("no-log")
 	if noLog {
 		tmcfg.LogLevel = fmt.Sprintf("*:error")
 		c.G().Log.SetToError()

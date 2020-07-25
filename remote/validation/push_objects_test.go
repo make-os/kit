@@ -9,19 +9,19 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/mocks"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/testutil"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/mocks"
+	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/testutil"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -267,8 +267,8 @@ var _ = Describe("Validation", func() {
 			It("should return err when repo requires a proposal fee and 'Value' is zero (0)", func() {
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
-				repository.Config.Governance.ProposalFee = 100
-				repository.Config.Governance.NoProposalFeeForMergeReq = false
+				repository.Config.Gov.PropFee = 100
+				repository.Config.Gov.NoPropFeeForMergeReq = false
 				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
@@ -278,8 +278,8 @@ var _ = Describe("Validation", func() {
 				It("should return nil when repo requires a proposal fee and 'Value' is zero (0)", func() {
 					refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 					repository := &state.Repository{Config: state.DefaultRepoConfig}
-					repository.Config.Governance.ProposalFee = 100
-					repository.Config.Governance.NoProposalFeeForMergeReq = true
+					repository.Config.Gov.PropFee = 100
+					repository.Config.Gov.NoPropFeeForMergeReq = true
 					err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 					Expect(err).To(BeNil())
 				})

@@ -1,23 +1,23 @@
 package types
 
 import (
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Ticket represents a validator ticket
 type Ticket struct {
-	Type           types.TxCode `json:"type"`           // The type of ticket
-	Hash           util.Bytes32 `json:"hash"`           // Hash of the ticket purchase transaction
-	DecayBy        uint64       `json:"decayBy"`        // Block height when the ticket becomes decayed
-	MatureBy       uint64       `json:"matureBy"`       // Block height when the ticket enters maturity.
-	ProposerPubKey util.Bytes32 `json:"proposerPubKey"` // The public key of the validator that owns the ticket.
-	BLSPubKey      []byte       `json:"blsPubKey"`      // The BLS public key derived from the same private key of proposer
-	Delegator      string       `json:"delegator"`      // Delegator is the address of the original creator of the ticket
-	Height         uint64       `json:"height"`         // The block height where this ticket was seen.
-	Index          int          `json:"index"`          // The index of the ticket in the transactions list.
-	Value          util.String  `json:"value"`          // The value paid for the ticket (as a child - then for the parent ticket)
-	CommissionRate float64      `json:"commissionRate"` // The percentage of reward paid to the validator
+	Type           types.TxCode  `json:"type"`           // The type of ticket
+	Hash           util.HexBytes `json:"hash"`           // Hash of the ticket purchase transaction
+	DecayBy        uint64        `json:"decayBy"`        // Block height when the ticket becomes decayed
+	MatureBy       uint64        `json:"matureBy"`       // Block height when the ticket enters maturity.
+	ProposerPubKey util.Bytes32  `json:"proposerPubKey"` // The public key of the validator that owns the ticket.
+	BLSPubKey      util.Bytes    `json:"blsPubKey"`      // The BLS public key derived from the same private key of proposer
+	Delegator      string        `json:"delegator"`      // Delegator is the address of the original creator of the ticket
+	Height         uint64        `json:"height"`         // The block height where this ticket was seen.
+	Index          int           `json:"index"`          // The index of the ticket in the transactions list.
+	Value          util.String   `json:"value"`          // The value paid for the ticket (as a child - then for the parent ticket)
+	CommissionRate float64       `json:"commissionRate"` // The percentage of reward paid to the validator
 }
 
 // QueryOptions describe how a query should be executed.
@@ -25,7 +25,7 @@ type QueryOptions struct {
 	Limit          int  `json:"limit" mapstructure:"limit"`
 	SortByHeight   int  `json:"sortByHeight" mapstructure:"sortByHeight"`
 	ImmatureOnly   bool `json:"immature" mapstructure:"immature"`
-	MatureOnly     bool `json:"mature" mapstructure:"mature"`
+	MaturedOnly    bool `json:"mature" mapstructure:"mature"`
 	DecayedOnly    bool `json:"decayed" mapstructure:"decayed"`
 	NonDecayedOnly bool `json:"nonDecayed" mapstructure:"nonDecayed"`
 }
@@ -38,7 +38,7 @@ type TicketManager interface {
 	Index(tx types.BaseTx, blockHeight uint64, txIndex int) error
 
 	// Remove deletes a ticket by its hash
-	Remove(hash util.Bytes32) error
+	Remove(hash util.HexBytes) error
 
 	// GetByProposer finds tickets belonging to the
 	// given proposer public key.
@@ -61,10 +61,10 @@ type TicketManager interface {
 	QueryOne(qf func(t *Ticket) bool) *Ticket
 
 	// GetByHash get a ticket by hash
-	GetByHash(hash util.Bytes32) *Ticket
+	GetByHash(hash util.HexBytes) *Ticket
 
 	// UpdateDecayBy updates the decay height of a ticket
-	UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error
+	UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error
 
 	// GetTopHosts gets host tickets with the most total delegated value.
 	GetTopHosts(limit int) (SelectedTickets, error)

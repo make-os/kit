@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/remote/types"
-	types2 "gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/lobe/remote/types"
+	types2 "gitlab.com/makeos/lobe/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )

@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/logic/proposals"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/logic/proposals"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // MakeMergeRequestProposalID returns the full proposal ID of a given merge request ID
@@ -34,7 +35,7 @@ type MergeRequestData struct {
 	Fee util.String
 
 	// CreatorAddress is the address of the proposal creator
-	CreatorAddress util.Address
+	CreatorAddress identifier.Address
 
 	// BaseBranch is the destination branch name
 	BaseBranch string
@@ -86,7 +87,7 @@ func (c *MergeRequestContract) Exec() error {
 	if proposal == nil {
 		proposal = proposals.MakeProposal(c.data.CreatorAddress.String(), c.data.Repo, id, c.data.ProposerFee, c.chainHeight)
 		proposal.Action = txns.MergeRequestProposalAction
-		proposal.ActionData = map[string][]byte{
+		proposal.ActionData = map[string]util.Bytes{
 			constants.ActionDataKeyBaseBranch:   []byte(c.data.BaseBranch),
 			constants.ActionDataKeyBaseHash:     []byte(c.data.BaseBranchHash),
 			constants.ActionDataKeyTargetBranch: []byte(c.data.TargetBranch),
@@ -109,7 +110,7 @@ func (c *MergeRequestContract) Exec() error {
 		// Index the proposal against its end height so it can be tracked and
 		// finalized at that height.
 		repoKeeper := c.RepoKeeper()
-		if err = repoKeeper.IndexProposalEnd(c.data.RepoName, proposal.ID, proposal.EndAt); err != nil {
+		if err = repoKeeper.IndexProposalEnd(c.data.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 			return errors.Wrap(err, common.ErrFailedToIndexProposal)
 		}
 

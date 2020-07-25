@@ -4,17 +4,17 @@ import (
 	"sort"
 
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/storage"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/storage"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/lobe/crypto"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/params"
 )
 
 // Manager implements types.TicketManager.
@@ -144,7 +144,7 @@ func (m *Manager) getTopTickets(ticketType types.TxCode, limit int) (tickettypes
 }
 
 // Remove deletes a ticket by its hash
-func (m *Manager) Remove(hash util.Bytes32) error {
+func (m *Manager) Remove(hash util.HexBytes) error {
 	return m.s.RemoveByHash(hash)
 }
 
@@ -169,7 +169,7 @@ func (m *Manager) GetByProposer(
 		if ok && qo.ImmatureOnly && t.MatureBy <= uint64(bi.Height) { // reject mature
 			ok = false
 		}
-		if ok && qo.MatureOnly && t.MatureBy > uint64(bi.Height) { // reject immature
+		if ok && qo.MaturedOnly && t.MatureBy > uint64(bi.Height) { // reject immature
 			ok = false
 		}
 		if ok && qo.DecayedOnly && t.DecayBy > uint64(bi.Height) {
@@ -393,8 +393,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
-			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero
@@ -417,15 +416,15 @@ func (m *Manager) QueryOne(qf func(t *tickettypes.Ticket) bool) *tickettypes.Tic
 }
 
 // UpdateDecayBy updates the decay height of a ticket
-func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
+func (m *Manager) UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error {
 	m.s.UpdateOne(tickettypes.Ticket{DecayBy: newDecayHeight},
-		func(t *tickettypes.Ticket) bool { return t.Hash == hash })
+		func(t *tickettypes.Ticket) bool { return t.Hash.Equal(hash) })
 	return nil
 }
 
 // GetByHash get a ticket by hash
-func (m *Manager) GetByHash(hash util.Bytes32) *tickettypes.Ticket {
-	return m.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash == hash })
+func (m *Manager) GetByHash(hash util.HexBytes) *tickettypes.Ticket {
+	return m.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash.Equal(hash) })
 }
 
 // Stop stores the manager

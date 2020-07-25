@@ -8,11 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var (

@@ -60,7 +60,7 @@ var _ = Describe("RepoProposals", func() {
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			rp.Add("2", &RepoProposal{Creator: "address1"})
 			var idsIterated = map[string]struct{}{}
-			expectedErr := fmt.Errorf("bad thing happened")
+			expectedErr := fmt.Errorf("error")
 			err := rp.ForEach(func(prop *RepoProposal, id string) error {
 				idsIterated[id] = struct{}{}
 				return expectedErr

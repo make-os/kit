@@ -1,36 +1,35 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // LocalAccountAPI provides RPC methods for
 // various local key management functionality.
 type LocalAccountAPI struct {
-	mods *modules.Modules
+	mods *types.Modules
 }
 
 // NewLocalAccountAPI creates an instance of LocalAccountAPI
-func NewLocalAccountAPI(mods *modules.Modules) *LocalAccountAPI {
+func NewLocalAccountAPI(mods *types.Modules) *LocalAccountAPI {
 	return &LocalAccountAPI{mods: mods}
 }
 
-// getAccount returns the account corresponding to the given address
-// Response <map>:
-// - accounts <[]string>: list of addresses
+// listAccount list all wallet accounts on the node
 func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
 	return rpc.Success(util.Map{
-		"accounts": l.mods.Account.ListLocalAccounts(),
+		"accounts": l.mods.User.ListLocalAccounts(),
 	})
 }
 
 // APIs returns all API handlers
 func (l *LocalAccountAPI) APIs() rpc.APISet {
-	return map[string]rpc.APIInfo{
-		"listAccounts": {
+	return []rpc.APIInfo{
+		{
+			Name:        "listAccounts",
 			Namespace:   constants.NamespaceUser,
 			Private:     true,
 			Description: "List all accounts that exist on the node",

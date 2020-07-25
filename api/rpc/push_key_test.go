@@ -2,24 +2,21 @@ package rpc
 
 import (
 	"github.com/golang/mock/gomock"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/util"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 var _ = Describe("PushKey", func() {
 	var ctrl *gomock.Controller
-	var pushApi *PushKeyAPI
-	var mods *modules.Modules
+	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &modules.Modules{}
-		pushApi = &PushKeyAPI{mods}
 	})
 
 	AfterEach(func() {
@@ -27,68 +24,35 @@ var _ = Describe("PushKey", func() {
 	})
 
 	Describe(".find", func() {
-		testCases := map[string]testCase{
-			"when id is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
-			},
-			"when id type is not string": {
-				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
-			},
-			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
-			},
+		mods := &types.Modules{}
+		api := &PushKeyAPI{mods}
+		testCases(map[string]*TestCase{
 			"when push key is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{
-					"pubKey":  "---BEGIN PUBLIC KEY...",
+					"pubKey":  key.PubKey().ToPublicKey(),
 					"address": "addr1",
 				},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyMod.EXPECT().Get("push1_abc", uint64(0)).Return(util.Map{
-						"pubKey":  "---BEGIN PUBLIC KEY...",
+						"pubKey":  key.PubKey().ToPublicKey(),
 						"address": "addr1",
 					})
 					mods.PushKey = mockPushKeyMod
 				},
 			},
-		}
-
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := pushApi.find(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+		}, api.find)
 	})
 
-	Describe(".getAccountOfOwner", func() {
-		testCases := map[string]testCase{
-			"when id is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
-			},
-			"when id type is not string": {
-				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
-			},
-			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
-			},
+	Describe(".getOwner", func() {
+		mods := &types.Modules{}
+		api := &PushKeyAPI{mods}
+		testCases(map[string]*TestCase{
 			"when account is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{"balance": "100", "nonce": 10, "delegatorCommission": 23},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyMod.EXPECT().GetAccountOfOwner("push1_abc", uint64(0)).Return(util.Map{
 						"balance":             "100",
@@ -98,19 +62,28 @@ var _ = Describe("PushKey", func() {
 					mods.PushKey = mockPushKeyMod
 				},
 			},
-		}
+		}, api.getOwner)
+	})
 
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := pushApi.getAccountOfOwner(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+	Describe(".registerPushKey", func() {
+		mods := &types.Modules{}
+		api := &PushKeyAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a map": {
+				params:     "{}",
+				statusCode: 400,
+				err:        &rpc.Err{Code: "60000", Message: "param must be a map", Data: ""},
+			},
+			"should return code=200 on success": {
+				params:     map[string]interface{}{"key": "value"},
+				result:     util.Map{"address": "push1abc", "hash": "0x123"},
+				statusCode: 200,
+				mocker: func(tc *TestCase) {
+					mockPushKeyModule := mocks.NewMockPushKeyModule(ctrl)
+					mockPushKeyModule.EXPECT().Register(tc.params).Return(util.Map{"address": "push1abc", "hash": "0x123"})
+					mods.PushKey = mockPushKeyModule
+				},
+			},
+		}, api.registerPushKey)
 	})
 })

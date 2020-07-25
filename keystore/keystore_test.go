@@ -1,12 +1,13 @@
 package keystore
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 )
 
 // testPrompt2 will return response with index equal to count
@@ -69,6 +70,7 @@ var _ = Describe("AccountMgr", func() {
 
 	Describe(".askForPasswordOnce", func() {
 		am := New(accountPath)
+		am.SetOutput(ioutil.Discard)
 
 		It("should return the first input received", func() {
 			count := 0

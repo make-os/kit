@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // ErrBlockInfoNotFound means the block info was not found
@@ -31,7 +31,7 @@ func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 // that GetLastBlockInfo will not refetch
 func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
 	data := util.ToBytes(info)
-	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height), data)
+	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
 
 	s.gmx.Lock()
 	s.lastSaved = info

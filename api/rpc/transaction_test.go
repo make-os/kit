@@ -3,38 +3,35 @@ package rpc
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("Transaction", func() {
 	var ctrl *gomock.Controller
-	var txApi *TransactionAPI
-	var mods *modules.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &modules.Modules{}
-		txApi = &TransactionAPI{mods}
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
 	})
 
-	Describe(".sendPayload()", func() {
-		testCases := map[string]testCase{
-			"when params is not a map[string]interface{}": {
+	Describe(".sendPayload", func() {
+		mods := &types.Modules{}
+		api := &TransactionAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a map": {
 				params: "{}",
-				err:    &rpc.Err{Code: "60000", Message: "field:params, msg:wrong value type, want 'map', got string"},
+				err:    &rpc.Err{Code: "60001", Message: "field:params, msg:wrong value type, want 'map', got string"},
 			},
-			"when tx is successfully sent": {
+			"should return when tx is successfully sent": {
 				params: map[string]interface{}{},
 				result: util.Map{"hash": "0x0000"},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockTxMod := mocks.NewMockTxModule(ctrl)
 					mockTxMod.EXPECT().SendPayload(tp.params).Return(util.Map{
 						"hash": "0x0000",
@@ -42,19 +39,28 @@ var _ = Describe("Transaction", func() {
 					mods.Tx = mockTxMod
 				},
 			},
-		}
+		}, api.sendPayload)
+	})
 
-		for _tc, _tp := range testCases {
-			tc, tp := _tc, _tp
-			It(tc, func() {
-				if tp.mocker != nil {
-					tp.mocker(tp)
-				}
-				resp := txApi.sendPayload(tp.params)
-				Expect(resp).To(Equal(&rpc.Response{
-					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
-				}))
-			})
-		}
+	Describe(".getTransaction", func() {
+		mods := &types.Modules{}
+		api := &TransactionAPI{mods}
+		testCases(map[string]*TestCase{
+			"should return error when params is not a string": {
+				params:     map[string]interface{}{},
+				statusCode: 400,
+				err:        &rpc.Err{Code: "60000", Message: "param must be a string", Data: ""},
+			},
+			"should return result on success": {
+				params:     "0x123",
+				statusCode: 200,
+				result:     util.Map{"value": "10.2"},
+				mocker: func(tc *TestCase) {
+					mockTxModule := mocks.NewMockTxModule(ctrl)
+					mockTxModule.EXPECT().Get("0x123").Return(util.Map{"value": "10.2"})
+					mods.Tx = mockTxModule
+				},
+			},
+		}, api.getTransaction)
 	})
 })

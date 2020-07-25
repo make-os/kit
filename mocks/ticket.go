@@ -6,9 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "gitlab.com/makeos/mosdef/ticket/types"
-	types0 "gitlab.com/makeos/mosdef/types"
-	util "gitlab.com/makeos/mosdef/util"
+	types "gitlab.com/makeos/lobe/ticket/types"
+	types0 "gitlab.com/makeos/lobe/types"
+	util "gitlab.com/makeos/lobe/util"
 	reflect "reflect"
 )
 
@@ -50,7 +50,7 @@ func (mr *MockTicketManagerMockRecorder) Index(tx, blockHeight, txIndex interfac
 }
 
 // Remove mocks base method
-func (m *MockTicketManager) Remove(hash util.Bytes32) error {
+func (m *MockTicketManager) Remove(hash util.HexBytes) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remove", hash)
 	ret0, _ := ret[0].(error)
@@ -147,7 +147,7 @@ func (mr *MockTicketManagerMockRecorder) QueryOne(qf interface{}) *gomock.Call {
 }
 
 // GetByHash mocks base method
-func (m *MockTicketManager) GetByHash(hash util.Bytes32) *types.Ticket {
+func (m *MockTicketManager) GetByHash(hash util.HexBytes) *types.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHash", hash)
 	ret0, _ := ret[0].(*types.Ticket)
@@ -161,7 +161,7 @@ func (mr *MockTicketManagerMockRecorder) GetByHash(hash interface{}) *gomock.Cal
 }
 
 // UpdateDecayBy mocks base method
-func (m *MockTicketManager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
+func (m *MockTicketManager) UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDecayBy", hash, newDecayHeight)
 	ret0, _ := ret[0].(error)

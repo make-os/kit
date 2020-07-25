@@ -10,7 +10,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cast"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // ToReferenceTxDetails converts a slice of TxDetail to a map of TxDetail key by their reference

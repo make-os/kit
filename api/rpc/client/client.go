@@ -1,7 +1,5 @@
 package client
 
-//go:generate mockgen -destination=../mocks/mock_client.go -package=mocks github.com/ellcrys/partnertracker/rpcclient Client
-
 import (
 	"bytes"
 	encJson "encoding/json"
@@ -13,25 +11,36 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/rpc/v2/json"
-	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	"github.com/k0kubun/pp"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Timeout is the max duration for connection and read attempt
 const (
-	Timeout       = 15 * time.Second
-	ErrCodeClient = "client_error"
+	Timeout             = 15 * time.Second
+	ErrCodeClient       = "client_error"
+	ErrCodeDecodeFailed = "decode_error"
+	ErrCodeUnexpected   = "unexpected_error"
+	ErrCodeConnect      = "connect_error"
+	ErrCodeBadParam     = "bad_param_error"
 )
 
 // Client represents a JSON-RPC client
 type Client interface {
-	TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, *util.StatusError)
-	AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError)
-	PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
+	SendTxPayload(data map[string]interface{}) (*types.HashResponse, error)
+	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
+	GetTransaction(hash string) (map[string]interface{}, error)
+	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error)
+	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
+	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
+	VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error)
+	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
+	AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error)
+	SendCoin(body *types.SendCoinBody) (*types.HashResponse, error)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }
@@ -89,6 +98,11 @@ func NewClient(opts *Options) *RPCClient {
 	return client
 }
 
+// SetCallFunc sets the RPC call function
+func (c *RPCClient) SetCallFunc(f callerFunc) {
+	c.call = f
+}
+
 // GetOptions returns the client's option
 func (c *RPCClient) GetOptions() *Options {
 	return c.opts
@@ -97,7 +111,7 @@ func (c *RPCClient) GetOptions() *Options {
 // Call calls a method on the RPCClient service.
 // Returns:
 // res: JSON-RPC 2.0 success response
-// statusCode: Server response code
+// statusCode: RPCServer response code
 // err: Client error or JSON-RPC 2.0 error response.
 //      0 = Client error
 func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statusCode int, err error) {
@@ -131,7 +145,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, 0, err
+		return nil, 500, util.ReqErr(500, ErrCodeConnect, "", err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -146,39 +160,42 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	var m map[string]interface{}
 	err = json.DecodeClientResponse(resp.Body, &m)
 	if err != nil {
+		pp.Println(err)
 		return nil, resp.StatusCode, err
 	}
 
 	return m, resp.StatusCode, nil
 }
 
-// makeClientStatusErr creates a StatusError representing a client error
-func makeClientStatusErr(msg string, args ...interface{}) *util.StatusError {
-	return util.NewStatusError(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
+// makeClientStatusErr creates a ReqError representing a client error
+func makeClientStatusErr(msg string, args ...interface{}) *util.ReqError {
+	return util.ReqErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
-// makeStatusErrorFromCallErr converts error from a RPC call to a StatusError.
-// Expects callStatusCode of 0 to indicate a client error which is expected to be non-json.
-// Expects non-zero callStatusCode to be in json format and conforms to JSONRPC 2.0 error standard,
-// it will panic if otherwise.
-// Returns nil if err is nil
-func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError {
+// makeStatusErrorFromCallErr converts error containing a JSON marshalled
+// status error to ReqError. If error does not contain a JSON object,
+// an ErrCodeUnexpected status error including the error message is returned.
+func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.ReqError {
 	if err == nil {
 		return nil
 	}
 
-	if callStatusCode == 0 {
-		return makeClientStatusErr(err.Error())
+	// For non-json error, return an ErrCodeUnexpected status error
+	if !govalidator.IsJSON(err.Error()) {
+		se := util.ReqErrorFromStr(err.Error())
+		if se.IsSet() {
+			return se
+		}
+		return util.ReqErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 
 	var errResp rpc.Response
-	if err := encJson.Unmarshal([]byte(err.Error()), &errResp); err != nil {
-		panic(errors.Wrap(err, "unable to decode call response"))
+	encJson.Unmarshal([]byte(err.Error()), &errResp)
+
+	data := ""
+	if errResp.Err.Data != nil {
+		data = errResp.Err.Data.(string)
 	}
 
-	return util.NewStatusError(
-		callStatusCode,
-		errResp.Err.Code,
-		errResp.Err.Data.(string),
-		errResp.Err.Message)
+	return util.ReqErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
 }

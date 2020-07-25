@@ -1,26 +1,30 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
 )
 
 // APIs returns all API handlers
-func APIs(modulesAgg modules.ModuleHub, rpcServer *rpc.Server) rpc.APISet {
+func APIs(modulesHub types.ModulesHub, rpcServer *rpc.RPCServer) rpc.APISet {
 
-	mods := modulesAgg.GetModules()
+	// Create a new module instances for RPC environment.
+	modules := modulesHub.GetModules()
+
+	// Collect APIs
 	var apiSets = []rpc.APISet{
-		NewAccountAPI(mods).APIs(),
-		NewPushKeyAPI(mods).APIs(),
-		NewLocalAccountAPI(mods).APIs(),
-		NewTransactionAPI(mods).APIs(),
+		NewAccountAPI(modules).APIs(),
+		NewPushKeyAPI(modules).APIs(),
+		NewLocalAccountAPI(modules).APIs(),
+		NewTransactionAPI(modules).APIs(),
 		NewRPCManagerAPI(rpcServer).APIs(),
+		NewRepoAPI(modules).APIs(),
 	}
 
-	var mainSet = make(map[string]rpc.APIInfo)
+	var mainSet = []rpc.APIInfo{}
 	for _, set := range apiSets {
-		for k, v := range set {
-			mainSet[k] = v
+		for _, v := range set {
+			mainSet = append(mainSet, v)
 		}
 	}
 

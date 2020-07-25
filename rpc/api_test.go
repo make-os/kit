@@ -29,7 +29,7 @@ var _ = Describe("API", func() {
 
 	Describe("APISet", func() {
 		It("should return nil if api is not in the set", func() {
-			apiSet := APISet(map[string]APIInfo{})
+			apiSet := APISet([]APIInfo{})
 			expected := apiSet.Get("unknown")
 			Expect(expected).To(BeNil())
 		})

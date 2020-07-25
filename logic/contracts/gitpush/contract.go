@@ -2,15 +2,15 @@ package gitpush
 
 import (
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // GitPush is a system contract to process a push transaction.

@@ -19,13 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/cbroglie/mustache"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
-
 	"github.com/vmihailenco/msgpack"
 
 	"github.com/fatih/structs"
@@ -38,7 +36,6 @@ const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
-
 )
 
 type Map map[string]interface{}
@@ -48,68 +45,6 @@ var Big0 = new(big.Int).SetInt64(0)
 
 func init() {
 	r.Seed(time.Now().UnixNano())
-}
-
-// String represents a custom string
-type String string
-
-// Bytes returns the bytes equivalent of the string
-func (s String) Bytes() []byte {
-	return []byte(s)
-}
-
-// Address converts the String to an Address
-func (s String) Address() Address {
-	return Address(s)
-}
-
-// Equal check whether s and o are the same
-func (s String) Equal(o String) bool {
-	return s.String() == o.String()
-}
-
-func (s String) String() string {
-	return string(s)
-}
-
-// IsNumeric checks whether s is numeric
-func (s String) IsNumeric() bool {
-	return govalidator.IsFloat(s.String())
-}
-
-// Empty returns true if the string is empty
-func (s String) Empty() bool {
-	return len(s) == 0
-}
-
-// SS returns a short version of String() with the middle
-// characters truncated when length is at least 32
-func (s String) SS() string {
-	if len(s) >= 32 {
-		return fmt.Sprintf("%s...%s", string(s)[0:10], string(s)[len(s)-10:])
-	}
-	return string(s)
-}
-
-// Decimal returns the decimal representation of the string.
-// Panics if string failed to be converted to decimal.
-func (s String) Decimal() decimal.Decimal {
-	return StrToDec(s.String())
-}
-
-// Float returns the float equivalent of the numeric value.
-// Panics if not convertible to float64
-func (s String) Float() float64 {
-	f, err := strconv.ParseFloat(string(s), 64)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
-// IsDecimal checks whether the string can be converted to Decimal
-func (s String) IsDecimal() bool {
-	return govalidator.IsFloat(string(s))
 }
 
 // ToBytes returns msgpack encoded representation of s.
@@ -260,9 +195,38 @@ func MustFromHex(hexValue string) []byte {
 	return v
 }
 
-// StructToMap converts s to a map.
+// StructSliceToMap converts struct slice s to a map slice.
 // If tagName is not provided, 'json' tag is used as a default.
-func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
+func StructSliceToMap(s interface{}, tagName ...string) []Map {
+	val := reflect.ValueOf(s)
+	switch val.Kind() {
+	case reflect.Slice:
+		var res = []Map{}
+		for i := 0; i < val.Len(); i++ {
+			res = append(res, ToMap(val.Index(i).Interface(), tagName...))
+		}
+		return res
+	default:
+		panic("slice of struct was expected")
+	}
+}
+
+// ToBasicMap converts s to a map stripping out custom types.
+// Panics if s cannot be (un)marshalled by encoding/json package.
+func ToBasicMap(s interface{}) (m map[string]interface{}) {
+	bz, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	if err = json.Unmarshal(bz, &m); err != nil {
+		panic(err)
+	}
+	return
+}
+
+// ToBasicMap converts s to a map.
+// If tagName is not provided, 'json' tag is used as a default.
+func ToMap(s interface{}, tagName ...string) map[string]interface{} {
 	st := structs.New(s)
 	st.TagName = "json"
 	if len(tagName) > 0 {
@@ -280,14 +244,37 @@ func GetPtrAddr(ptrAddr interface{}) *big.Int {
 	return ptrAddrInt
 }
 
-// DecodeMap decodes a map to a struct.
-// It uses mapstructure.Decode internally but
-// with 'json' TagName.
-func DecodeMap(srcMap interface{}, dest interface{}) error {
+// DecodeMapStrict decodes a map to a struct with strict type check.
+// Default tagname is 'json'
+func DecodeMapStrict(srcMap interface{}, dest interface{}, tagName ...string) error {
+	tn := "json"
+	if len(tagName) > 0 {
+		tn = tagName[0]
+	}
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Metadata: nil,
 		Result:   dest,
-		TagName:  "json",
+		TagName:  tn,
+	})
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(srcMap)
+}
+
+// DecodeMap decodes a map to a struct with weak conversion.
+// Default tagname is 'json'
+func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
+	tn := "json"
+	if len(tagName) > 0 {
+		tn = tagName[0]
+	}
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           dest,
+		TagName:          tn,
+		WeaklyTypedInput: true,
 	})
 	if err != nil {
 		return err
@@ -318,23 +305,6 @@ func MayDecodeNumber(encNum []byte) (r uint64, err error) {
 	}()
 	r = DecodeNumber(encNum)
 	return
-}
-
-// BlockNonce is a 64-bit hash which proves (combined with the
-// mix-hash) that a sufficient amount of computation has been carried
-// out on a block.
-type BlockNonce [8]byte
-
-// EncodeNonce converts the given integer to a block nonce.
-func EncodeNonce(i uint64) BlockNonce {
-	var n BlockNonce
-	binary.BigEndian.PutUint64(n[:], i)
-	return n
-}
-
-// Uint64 returns the integer value of a block nonce.
-func (n BlockNonce) Uint64() uint64 {
-	return binary.BigEndian.Uint64(n[:])
 }
 
 // IsBoolChanClosed checks whether a boolean channel is closed
@@ -509,15 +479,6 @@ func RESTApiErrorMsg(msg, field string, code string) map[string]interface{} {
 	}
 }
 
-// GetIndexFromUInt64Slice gets an index from a uint64 variadic param.
-// Returns 0 if opts is empty
-func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
-	if len(opts) == 0 {
-		return 0
-	}
-	return opts[index]
-}
-
 // ToStringMapInter converts a map to map[string]interface{}.
 // If structToMap is true, struct element is converted to map.
 // Panics if m is not a map with string key.
@@ -538,7 +499,7 @@ func ToStringMapInter(m interface{}, structToMap ...bool) map[string]interface{}
 		if len(structToMap) > 0 && structToMap[0] &&
 			(mapVal.Kind() == reflect.Struct ||
 				(mapVal.Kind() == reflect.Ptr && mapVal.Elem().Kind() == reflect.Struct)) {
-			res[k.String()] = StructToMap(mapVal.Interface())
+			res[k.String()] = ToMap(mapVal.Interface())
 			continue
 		}
 		res[k.String()] = v.MapIndex(k).Interface()
@@ -550,37 +511,6 @@ func ToStringMapInter(m interface{}, structToMap ...bool) map[string]interface{}
 // IsZeroString returns true if str is empty or equal "0"
 func IsZeroString(str string) bool {
 	return str == "" || str == "0"
-}
-
-// IsValidName checks whether a user-defined identifier/name is valid
-func IsValidName(name string) error {
-	if len(name) <= 2 {
-		return fmt.Errorf("name is too short. Must be at least 3 characters long")
-	}
-	if !govalidator.Matches(name, "^[a-z0-9][a-zA-Z0-9_-]+$") {
-		if name != "" && (name[0] == '_' || name[0] == '-') {
-			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
-		}
-		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
-	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
-	}
-	return nil
-}
-
-// IsValidNameNoLen checks whether a user-defined identifier/name is valid but it does not enforce a length requirement
-func IsValidNameNoLen(name string) error {
-	if !govalidator.Matches(name, "^[a-z0-9]([a-zA-Z0-9_-]+)?$") {
-		if name != "" && (name[0] == '_' || name[0] == '-') {
-			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
-		}
-		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
-	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
-	}
-	return nil
 }
 
 // EditorReaderFunc describes a function that collects input from an editor program
@@ -659,4 +589,25 @@ func ParseContentFrontMatter(rdr io.Reader) (pageparser.ContentFrontMatter, erro
 	}
 
 	return pageparser.ParseFrontMatterAndContent(buf)
+}
+
+// IsMapOrStruct checks whether o is a map or a struct (pointer to struct)
+func IsMapOrStruct(o interface{}) bool {
+	typ := reflect.TypeOf(o)
+	if typ.Kind() == reflect.Struct || typ.Kind() == reflect.Map {
+		return true
+	}
+	if typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct {
+		return true
+	}
+	return false
+}
+
+// ParseUint is like strconv.ParseUint but returns util.UIInt64
+func ParseUint(s string, base int, bitSize int) (UInt64, error) {
+	v, err := strconv.ParseUint(s, base, bitSize)
+	if err != nil {
+		return 0, err
+	}
+	return UInt64(v), err
 }

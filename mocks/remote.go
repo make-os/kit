@@ -7,15 +7,15 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	config "gitlab.com/makeos/mosdef/config"
-	crypto "gitlab.com/makeos/mosdef/crypto"
-	types "gitlab.com/makeos/mosdef/dht/server/types"
-	logger "gitlab.com/makeos/mosdef/pkgs/logger"
-	fetcher "gitlab.com/makeos/mosdef/remote/fetcher"
-	types0 "gitlab.com/makeos/mosdef/remote/push/types"
-	types1 "gitlab.com/makeos/mosdef/remote/types"
-	core "gitlab.com/makeos/mosdef/types/core"
-	modules "gitlab.com/makeos/mosdef/types/modules"
+	config "gitlab.com/makeos/lobe/config"
+	crypto "gitlab.com/makeos/lobe/crypto"
+	types "gitlab.com/makeos/lobe/dht/server/types"
+	types0 "gitlab.com/makeos/lobe/modules/types"
+	logger "gitlab.com/makeos/lobe/pkgs/logger"
+	fetcher "gitlab.com/makeos/lobe/remote/fetcher"
+	types1 "gitlab.com/makeos/lobe/remote/push/types"
+	types2 "gitlab.com/makeos/lobe/remote/types"
+	core "gitlab.com/makeos/lobe/types/core"
 	reflect "reflect"
 )
 
@@ -43,10 +43,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types0.PushPool {
+func (m *MockPoolGetter) GetPushPool() types1.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types1.PushPool)
 	return ret0
 }
 
@@ -94,10 +94,10 @@ func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRemoteServer) GetPushPool() types0.PushPool {
+func (m *MockRemoteServer) GetPushPool() types1.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types1.PushPool)
 	return ret0
 }
 
@@ -150,14 +150,14 @@ func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...types1.KVOption) (types1.BareRepoRefsState, error) {
+func (m *MockRemoteServer) GetRepoState(target types2.LocalRepo, options ...types2.KVOption) (types2.BareRepoRefsState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoState", varargs...)
-	ret0, _ := ret[0].(types1.BareRepoRefsState)
+	ret0, _ := ret[0].(types2.BareRepoRefsState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -264,7 +264,7 @@ func (mr *MockRemoteServerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomoc
 }
 
 // BroadcastNoteAndEndorsement mocks base method
-func (m *MockRemoteServer) BroadcastNoteAndEndorsement(note types0.PushNote) error {
+func (m *MockRemoteServer) BroadcastNoteAndEndorsement(note types1.PushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastNoteAndEndorsement", note)
 	ret0, _ := ret[0].(error)
@@ -278,7 +278,7 @@ func (mr *MockRemoteServerMockRecorder) BroadcastNoteAndEndorsement(note interfa
 }
 
 // RegisterAPIHandlers mocks base method
-func (m *MockRemoteServer) RegisterAPIHandlers(agg modules.ModuleHub) {
+func (m *MockRemoteServer) RegisterAPIHandlers(agg types0.ModulesHub) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterAPIHandlers", agg)
 }
@@ -330,10 +330,10 @@ func (mr *MockRemoteServerMockRecorder) GetFetcher() *gomock.Call {
 }
 
 // GetPruner mocks base method
-func (m *MockRemoteServer) GetPruner() types1.RepoPruner {
+func (m *MockRemoteServer) GetPruner() types2.RepoPruner {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPruner")
-	ret0, _ := ret[0].(types1.RepoPruner)
+	ret0, _ := ret[0].(types2.RepoPruner)
 	return ret0
 }
 
@@ -341,6 +341,18 @@ func (m *MockRemoteServer) GetPruner() types1.RepoPruner {
 func (mr *MockRemoteServerMockRecorder) GetPruner() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPruner", reflect.TypeOf((*MockRemoteServer)(nil).GetPruner))
+}
+
+// SetPruner mocks base method
+func (m *MockRemoteServer) SetPruner(pruner types2.RepoPruner) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPruner", pruner)
+}
+
+// SetPruner indicates an expected call of SetPruner
+func (mr *MockRemoteServerMockRecorder) SetPruner(pruner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPruner", reflect.TypeOf((*MockRemoteServer)(nil).SetPruner), pruner)
 }
 
 // GetDHT mocks base method

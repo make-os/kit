@@ -7,33 +7,32 @@ import (
 	"net/url"
 	"os"
 
-	server2 "gitlab.com/makeos/mosdef/dht/server"
-	"gitlab.com/makeos/mosdef/dht/server/types"
-	"gitlab.com/makeos/mosdef/remote/server"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	modules2 "gitlab.com/makeos/mosdef/types/modules"
-
-	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
-	"gitlab.com/makeos/mosdef/rpc"
+	rpcApi "gitlab.com/makeos/lobe/api/rpc"
+	dhtserver "gitlab.com/makeos/lobe/dht/server"
+	"gitlab.com/makeos/lobe/dht/server/types"
+	types2 "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/remote/server"
+	"gitlab.com/makeos/lobe/rpc"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/modules"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/extensions"
-	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/lobe/extensions"
+	"gitlab.com/makeos/lobe/keystore"
 
-	"gitlab.com/makeos/mosdef/ticket"
+	"gitlab.com/makeos/lobe/ticket"
 
-	"gitlab.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/lobe/mempool"
 
-	"gitlab.com/makeos/mosdef/logic"
+	"gitlab.com/makeos/lobe/logic"
 
-	"gitlab.com/makeos/mosdef/node/services"
+	"gitlab.com/makeos/lobe/node/services"
 
 	"github.com/pkg/errors"
 
@@ -43,16 +42,16 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/storage"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 )
 
-// Server represents the client
+// RPCServer represents the client
 type Node struct {
 	app            *App
 	cfg            *config.AppConfig
@@ -68,12 +67,12 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHT
-	modules        modules2.ModuleHub
-	rpcServer      *rpc.Server
+	modules        types2.ModulesHub
+	rpcServer      *rpc.RPCServer
 	remoteServer   core.RemoteServer
 }
 
-// NewNode creates an instance of Server
+// NewNode creates an instance of RPCServer
 func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 
 	// Parse tendermint RPC address
@@ -130,7 +129,7 @@ func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMem
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
-	if n.cfg.ConsoleOnly() {
+	if n.cfg.IsAttachMode() {
 		return n.startConsoleOnly()
 	}
 
@@ -161,19 +160,13 @@ func (n *Node) Start() error {
 
 	// Create DHT reactor and add it to the switch
 	key, _ := n.cfg.G().PrivVal.GetKey()
-	n.dht, err = server2.New(
-		context.Background(),
-		n.cfg, key.PrivKey().Key(),
-		n.cfg.DHT.Address)
+	n.dht, err = dhtserver.New(context.Background(), n.cfg, key.PrivKey().Key(), n.cfg.DHT.Address)
 	if err != nil {
 		return err
 	}
 	if err = n.dht.Start(); err != nil {
 		return err
 	}
-
-	// Register custom reactor channels
-	// node.AddChannels([]byte{server.PushNoteReactorChannel, server.PushEndReactorChannel})
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
@@ -191,13 +184,12 @@ func (n *Node) Start() error {
 	remoteServer := server.NewRemoteServer(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
 	n.remoteServer = remoteServer
 	n.logic.SetRemoteServer(remoteServer)
-
 	for _, ch := range remoteServer.GetChannels() {
 		node.AddChannels([]byte{ch.ID})
 	}
 
 	// Create node
-	tmNode, err := nm.NewNodeWithCustomMempool(
+	n.tm, err = nm.NewNodeWithCustomMempool(
 		n.tmcfg,
 		pv,
 		n.nodeKey,
@@ -212,16 +204,15 @@ func (n *Node) Start() error {
 	}
 
 	// Register the custom reactors
-	tmNode.Switch().AddReactor("PushReactor", remoteServer)
+	n.tm.Switch().AddReactor("PushReactor", remoteServer)
 
 	// Pass the proxy app to the mempool
-	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
+	memp.SetProxyApp(n.tm.ProxyApp().Mempool())
 
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
-	n.log.Info("Server is now listening for connections", "Address", fullAddr)
+	n.log.Info("Now listening for connections", "Address", fullAddr)
 
 	// Set references of various instances on the node
-	n.tm = tmNode
 	n.mempoolReactor = mempR
 
 	// Pass repo manager to logic manager
@@ -274,9 +265,10 @@ func (n *Node) startConsoleOnly() error {
 // - Initializes JS virtual machine context
 func (n *Node) configureInterfaces() {
 
-	// Create extension manager
 	vm := otto.New()
-	extMgr := extensions.NewManager(n.cfg, vm)
+
+	// Create extension manager
+	extMgr := extensions.NewManager(n.cfg)
 
 	// Create module hub
 	n.modules = modules.New(
@@ -300,7 +292,7 @@ func (n *Node) configureInterfaces() {
 	// Set the js module to be the main module of the extension manager
 	extMgr.SetMainModule(n.modules)
 
-	// Configure the js module if we are not in console-only mode
+	// ConfigureVM the js module if we are not in console-only mode
 	if !n.ConsoleOn() {
 		n.modules.ConfigureVM(vm)
 	}
@@ -342,8 +334,8 @@ func (n *Node) ConsoleOn() bool {
 	return os.Args[1] == "console"
 }
 
-// GetModulesAggregator returns the javascript module instance
-func (n *Node) GetModulesAggregator() modules2.ModuleHub {
+// GetModulesHub returns the modules hub
+func (n *Node) GetModulesHub() types2.ModulesHub {
 	return n.modules
 }
 
@@ -380,7 +372,7 @@ func (n *Node) GetService() services.Service {
 
 // Stop the node
 func (n *Node) Stop() {
-	n.log.Info("mosdef is stopping...")
+	n.log.Info("lobe is stopping...")
 
 	if n.dht != nil {
 		n.dht.Stop()
@@ -398,9 +390,9 @@ func (n *Node) Stop() {
 		n.stateTreeDB.Close()
 	}
 
-	if !n.cfg.ConsoleOnly() {
+	if !n.cfg.IsAttachMode() {
 		n.log.Info("Databases have been closed")
 	}
 
-	n.log.Info("mosdef has stopped")
+	n.log.Info("lobe has stopped")
 }

@@ -1,38 +1,31 @@
 package modules
 
 import (
+	"os"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/dht/server/types"
-	"gitlab.com/makeos/mosdef/extensions"
-	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/mempool"
-	"gitlab.com/makeos/mosdef/node/services"
-	"gitlab.com/makeos/mosdef/rpc"
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/dht/server/types"
+	"gitlab.com/makeos/lobe/extensions"
+	"gitlab.com/makeos/lobe/keystore"
+	"gitlab.com/makeos/lobe/mempool"
+	modulestypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/node/services"
+	"gitlab.com/makeos/lobe/rpc"
+	types2 "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
 )
 
-// Module consists of submodules optimized for accessing through Javascript
-// environment and suitable for reuse in JSON-RPC and REST APIs.
+// Module implements ModulesHub. It is a hub for other modules.
 type Module struct {
-	cfg            *config.AppConfig
-	service        services.Service
-	logic          core.Logic
-	mempoolReactor *mempool.Reactor
-	acctmgr        *keystore.Keystore
-	ticketmgr      types2.TicketManager
-	dht            types.DHT
-	extMgr         modules.ExtManager
-	rpcServer      *rpc.Server
-	repoMgr        core.RemoteServer
-	Modules        *modules.Modules
+	cfg        *config.AppConfig
+	attachMode bool
+	Modules    *modulestypes.Modules
 }
 
-// new creates an instance of Module which aggregates and
-// provides functionality of configuring supported modules
+// New creates an instance of Module
 func New(
 	cfg *config.AppConfig,
 	acctmgr *keystore.Keystore,
@@ -42,72 +35,55 @@ func New(
 	ticketmgr types2.TicketManager,
 	dht types.DHT,
 	extMgr *extensions.Manager,
-	rpcServer *rpc.Server,
+	rpcServer *rpc.RPCServer,
 	repoMgr core.RemoteServer) *Module {
 
-	agg := &Module{
-		cfg:            cfg,
-		acctmgr:        acctmgr,
-		service:        service,
-		logic:          logic,
-		mempoolReactor: mempoolReactor,
-		ticketmgr:      ticketmgr,
-		dht:            dht,
-		extMgr:         extMgr,
-		rpcServer:      rpcServer,
-		repoMgr:        repoMgr,
-		Modules:        &modules.Modules{},
+	return &Module{
+		cfg: cfg,
+		Modules: &modulestypes.Modules{
+			Tx:      NewTxModule(service, logic),
+			Chain:   NewChainModule(service, logic),
+			User:    NewUserModule(cfg, acctmgr, service, logic),
+			PushKey: NewPushKeyModule(cfg, service, logic),
+			Ticket:  NewTicketModule(service, logic, ticketmgr),
+			Repo:    NewRepoModule(service, repoMgr, logic),
+			NS:      NewNamespaceModule(service, repoMgr, logic),
+			DHT:     NewDHTModule(cfg, dht),
+			ExtMgr:  extMgr,
+			Util:    NewConsoleUtilModule(os.Stdout),
+			RPC:     NewRPCModule(cfg, rpcServer),
+			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
+		},
 	}
+}
 
-	return agg
+// NewAttachable creates an instance of Module configured for attach mode.
+func NewAttachable(cfg *config.AppConfig, client client.Client, ks *keystore.Keystore) *Module {
+	return &Module{
+		cfg:        cfg,
+		attachMode: cfg.IsAttachMode(),
+		Modules: &modulestypes.Modules{
+			Tx:      NewAttachableTxModule(client),
+			Chain:   NewAttachableChainModule(client),
+			User:    NewAttachableUserModule(client, ks),
+			PushKey: NewAttachablePushKeyModule(client),
+			Ticket:  NewAttachableTicketModule(client),
+			Repo:    NewAttachableRepoModule(client),
+			NS:      NewAttachableNamespaceModule(client),
+			DHT:     NewAttachableDHTModule(client),
+			Util:    NewConsoleUtilModule(os.Stdout),
+			RPC:     NewRPCModule(cfg, nil),
+			Pool:    NewAttachablePoolModule(client),
+		},
+	}
 }
 
 // GetModules returns all sub-modules
-func (m *Module) GetModules() *modules.Modules {
+func (m *Module) GetModules() *modulestypes.Modules {
 	return m.Modules
 }
 
-func (m *Module) registerModules(vm *otto.Otto) {
-	m.Modules.Tx = NewTxModule(vm, m.service, m.logic)
-	m.Modules.Chain = NewChainModule(vm, m.service, m.logic)
-	m.Modules.Account = NewUserModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
-	m.Modules.PushKey = NewPushKeyModule(m.cfg, vm, m.service, m.logic)
-	m.Modules.Ticket = NewTicketModule(vm, m.service, m.logic, m.ticketmgr)
-	m.Modules.Repo = NewRepoModule(vm, m.service, m.repoMgr, m.logic)
-	m.Modules.NS = NewNSModule(vm, m.service, m.repoMgr, m.logic)
-	m.Modules.DHT = NewDHTModule(m.cfg, vm, m.dht)
-	m.Modules.ExtMgr = m.extMgr
-	m.Modules.Util = NewUtilModule(vm)
-	m.Modules.RPC = NewRPCModule(m.cfg, vm, m.rpcServer)
-
-	if !m.cfg.ConsoleOnly() {
-		m.Modules.Pool = NewPoolModule(vm, m.mempoolReactor, m.repoMgr.GetPushPool())
-	}
-}
-
-// ConfigureVM initialized the module and all sub-modules
-func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Suggest) {
-
-	m.registerModules(vm)
-
-	if m.cfg.ConsoleOnly() {
-		goto console_only
-	}
-
-	sugs = append(sugs, m.Modules.Tx.Configure()...)
-	sugs = append(sugs, m.Modules.Chain.Configure()...)
-	sugs = append(sugs, m.Modules.Pool.Configure()...)
-	sugs = append(sugs, m.Modules.Account.Configure()...)
-	sugs = append(sugs, m.Modules.PushKey.Configure()...)
-	sugs = append(sugs, m.Modules.Ticket.Configure()...)
-	sugs = append(sugs, m.Modules.Repo.Configure()...)
-	sugs = append(sugs, m.Modules.NS.Configure()...)
-	sugs = append(sugs, m.Modules.DHT.Configure()...)
-	sugs = append(sugs, m.Modules.ExtMgr.SetVM(vm).Configure()...)
-
-console_only:
-	sugs = append(sugs, m.Modules.Util.Configure()...)
-	sugs = append(sugs, m.Modules.RPC.Configure()...)
-
-	return sugs
+// ConfigureVM instructs VM-accessible modules accessible to configure the VM
+func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Completer) {
+	return m.Modules.ConfigureVM(vm)
 }

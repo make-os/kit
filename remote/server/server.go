@@ -11,32 +11,32 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/api/rest"
-	types2 "gitlab.com/makeos/mosdef/dht/server/types"
-	"gitlab.com/makeos/mosdef/node/types"
-	"gitlab.com/makeos/mosdef/pkgs/cache"
-	"gitlab.com/makeos/mosdef/remote/fetcher"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/pruner"
-	"gitlab.com/makeos/mosdef/remote/push"
-	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/remote/refsync"
-	rr "gitlab.com/makeos/mosdef/remote/repo"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/types/state"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/api/remote"
+	types2 "gitlab.com/makeos/lobe/dht/server/types"
+	types3 "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/node/types"
+	"gitlab.com/makeos/lobe/pkgs/cache"
+	"gitlab.com/makeos/lobe/remote/fetcher"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/policy"
+	"gitlab.com/makeos/lobe/remote/pruner"
+	"gitlab.com/makeos/lobe/remote/push"
+	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/remote/refsync"
+	rr "gitlab.com/makeos/lobe/remote/repo"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/tendermint/tendermint/p2p"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -84,7 +84,7 @@ type Server struct {
 	noteSenders                *cache.Cache                         // Store senders of push notes
 	endorsementSenders         *cache.Cache                         // Stores senders of Endorsement messages
 	endorsementsReceived       *cache.Cache                         // Store PushEnds
-	modulesAgg                 modules.ModuleHub                    // Modules aggregator
+	modulesAgg                 types3.ModulesHub                    // Modules aggregator
 	refSyncer                  refsync.RefSyncer                    // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                    // Function for performing authentication
 	checkPushNote              validation.NoteChecker               // Function for performing PushNote validation
@@ -175,7 +175,7 @@ func (sv *Server) SetRootDir(dir string) {
 }
 
 // RegisterAPIHandlers registers server API handlers
-func (sv *Server) RegisterAPIHandlers(agg modules.ModuleHub) {
+func (sv *Server) RegisterAPIHandlers(agg types3.ModulesHub) {
 	sv.modulesAgg = agg
 	sv.registerAPIHandlers(sv.srv.Handler.(*http.ServeMux))
 }
@@ -253,7 +253,7 @@ func (sv *Server) Start() error {
 }
 
 func (sv *Server) registerAPIHandlers(s *http.ServeMux) {
-	api := rest.NewAPI(sv.modulesAgg, sv.log)
+	api := remote.NewAPI(sv.modulesAgg, sv.log)
 	api.RegisterEndpoints(s)
 }
 
@@ -270,6 +270,11 @@ func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
 // GetPruner returns the repo pruner
 func (sv *Server) GetPruner() remotetypes.RepoPruner {
 	return sv.pruner
+}
+
+// SetPruner sets the pruner
+func (sv *Server) SetPruner(pruner remotetypes.RepoPruner) {
+	sv.pruner = pruner
 }
 
 // GetPushPool returns the push pool

@@ -3,8 +3,8 @@ package state
 import (
 	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // VoterType represents a type of repository voter type
@@ -24,11 +24,11 @@ const (
 	ProposalCreatorOwner
 )
 
-// ProposalFeeRefundType describes the typeof refund scheme supported
-type ProposalFeeRefundType int
+// PropFeeRefundType describes the typeof refund scheme supported
+type PropFeeRefundType int
 
 const (
-	ProposalFeeRefundNo ProposalFeeRefundType = iota + 1
+	ProposalFeeRefundNo PropFeeRefundType = iota + 1
 	ProposalFeeRefundOnAccept
 	ProposalFeeRefundOnAcceptReject
 	ProposalFeeRefundOnAcceptAllReject
@@ -83,10 +83,10 @@ func (pf ProposalFees) Total() decimal.Decimal {
 
 // Proposal vote choices
 const (
-	ProposalVoteYes        = 1
 	ProposalVoteNo         = 0
-	ProposalVoteNoWithVeto = -1
-	ProposalVoteAbstain    = -2
+	ProposalVoteYes        = 1
+	ProposalVoteNoWithVeto = 2
+	ProposalVoteAbstain    = 3
 )
 
 // Proposal describes a repository proposal
@@ -98,7 +98,7 @@ type Proposal interface {
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
 	GetAction() types.TxCode
-	GetActionData() map[string][]byte
+	GetActionData() map[string]util.Bytes
 	GetThreshold() float64
 	GetVetoQuorum() float64
 	GetVetoOwnersQuorum() float64
@@ -107,7 +107,7 @@ type Proposal interface {
 	GetRejectedWithVeto() float64
 	GetRejectedWithVetoByOwners() float64
 	GetFees() ProposalFees
-	GetRefundType() ProposalFeeRefundType
+	GetRefundType() PropFeeRefundType
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 	IncrAccept()
@@ -135,13 +135,13 @@ type RepoProposal struct {
 	util.CodecUtil        `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
-	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
+	ActionData            map[string]util.Bytes `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
-	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
+	Height                util.UInt64           `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
 	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
-	EndAt                 uint64                `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
-	FeeDepositEndAt       uint64                `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
-	ProposerMaxJoinHeight uint64                `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
+	EndAt                 util.UInt64           `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
+	FeeDepositEndAt       util.UInt64           `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
+	ProposerMaxJoinHeight util.UInt64           `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
 	Yes                   float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
@@ -166,15 +166,15 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 // BareRepoProposal returns RepoProposal object with empty values
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
-		Config:     BareRepoConfig().Governance,
-		ActionData: make(map[string][]byte),
+		Config:     BareRepoConfig().Gov,
+		ActionData: make(map[string]util.Bytes),
 		Fees:       make(map[string]string),
 	}
 }
 
 // IsDepositPeriod checks whether the proposal is in the deposit period
 func (p *RepoProposal) IsDepositPeriod(chainHeight uint64) bool {
-	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= chainHeight
+	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= util.UInt64(chainHeight)
 }
 
 // IsFeeDepositEnabled checks whether fee deposit is enabled on the proposal
@@ -185,7 +185,7 @@ func (p *RepoProposal) IsFeeDepositEnabled() bool {
 // IsDepositedFeeOK checks whether the fees deposited to the proposal
 // meets the minimum required deposit
 func (p *RepoProposal) IsDepositedFeeOK() bool {
-	propFee := decimal.NewFromFloat(p.Config.ProposalFee)
+	propFee := decimal.NewFromFloat(p.Config.PropFee)
 	return p.Fees.Total().GreaterThanOrEqual(propFee)
 }
 
@@ -263,12 +263,12 @@ func (p *RepoProposal) GetVoterType() VoterType {
 
 // GetVoterMaxJoinHeight implements Proposal
 func (p *RepoProposal) GetVoterMaxJoinHeight() uint64 {
-	return p.ProposerMaxJoinHeight
+	return uint64(p.ProposerMaxJoinHeight)
 }
 
 // GetEndAt implements Proposal
 func (p *RepoProposal) GetEndAt() uint64 {
-	return p.EndAt
+	return p.EndAt.UInt64()
 }
 
 // GetFees implements Proposal
@@ -277,18 +277,18 @@ func (p *RepoProposal) GetFees() ProposalFees {
 }
 
 // GetRefundType implements Proposal
-func (p *RepoProposal) GetRefundType() ProposalFeeRefundType {
-	return p.Config.ProposalFeeRefundType
+func (p *RepoProposal) GetRefundType() PropFeeRefundType {
+	return p.Config.PropFeeRefundType
 }
 
 // GetQuorum implements Proposal
 func (p *RepoProposal) GetQuorum() float64 {
-	return p.Config.ProposalQuorum
+	return p.Config.PropQuorum
 }
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.Config.ProposalTallyMethod
+	return p.Config.PropTallyMethod
 }
 
 // GetAction implements Proposal
@@ -297,23 +297,23 @@ func (p *RepoProposal) GetAction() types.TxCode {
 }
 
 // GetActionData implements Proposal
-func (p *RepoProposal) GetActionData() map[string][]byte {
+func (p *RepoProposal) GetActionData() map[string]util.Bytes {
 	return p.ActionData
 }
 
 // GetThreshold implements Proposal
 func (p *RepoProposal) GetThreshold() float64 {
-	return p.Config.ProposalThreshold
+	return p.Config.PropThreshold
 }
 
 // GetVetoQuorum implements Proposal
 func (p *RepoProposal) GetVetoQuorum() float64 {
-	return p.Config.ProposalVetoQuorum
+	return p.Config.PropVetoQuorum
 }
 
 // GetVetoOwnersQuorum implements Proposal
 func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
-	return p.Config.ProposalVetoOwnersQuorum
+	return p.Config.PropVetoOwnersQuorum
 }
 
 // GetAccepted implements Proposal

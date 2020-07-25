@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var _ = Describe("Key", func() {
@@ -112,7 +112,7 @@ var _ = Describe("Key", func() {
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.Addr()
-			Expect(addr).To(Equal(util.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
+			Expect(addr).To(Equal(identifier.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
 		})
 	})
 
@@ -122,7 +122,7 @@ var _ = Describe("Key", func() {
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.PushAddr()
-			Expect(addr).To(Equal(util.Address("push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm")))
+			Expect(addr).To(Equal(identifier.Address("push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm")))
 		})
 	})
 
@@ -268,39 +268,39 @@ var _ = Describe("Key", func() {
 		})
 	})
 
-	Describe(".IsValidAccountAddr", func() {
+	Describe(".IsValidUserAddr", func() {
 		It("should return err when address is unset", func() {
-			err := IsValidAccountAddr("")
+			err := IsValidUserAddr("")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("empty address"))
 		})
 
 		It("should return checksum error if address could not be decoded", func() {
-			err := IsValidAccountAddr("hh23887dhhw88su")
+			err := IsValidUserAddr("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("decoding bech32 failed"))
 		})
 
 		It("should return err when address could not be bech32 decoded", func() {
-			err := IsValidAccountAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
+			err := IsValidUserAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
 			Expect(err).ToNot(BeNil())
 		})
 
 		It("should return nil when address is ok", func() {
-			err := IsValidAccountAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
+			err := IsValidUserAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
 			Expect(err).To(BeNil())
 		})
 
 		It("should return err when address has invalid hrp", func() {
 			addr, _ := bech32.ConvertAndEncode("xyz", []byte("address"))
-			err := IsValidAccountAddr(addr)
+			err := IsValidUserAddr(addr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid hrp"))
 		})
 
 		It("should return err when address raw data is not 20 bytes", func() {
 			addr, _ := bech32.ConvertAndEncode(constants.AddrHRP, []byte("address"))
-			err := IsValidAccountAddr(addr)
+			err := IsValidUserAddr(addr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid raw address length"))
 		})

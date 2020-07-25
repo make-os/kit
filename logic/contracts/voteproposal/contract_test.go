@@ -6,17 +6,17 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/voteproposal"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/voteproposal"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 var _ = Describe("ProposalVoteContract", func() {
@@ -74,10 +74,10 @@ var _ = Describe("ProposalVoteContract", func() {
 
 		When("proposal tally method is ProposalTallyMethodIdentity", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Governance.Voter = state.VoterOwner
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+				repoUpd.Config.Gov.Voter = state.VoterOwner
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodIdentity
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
-				proposal := &state.RepoProposal{Config: repoUpd.Config.Governance, Yes: 1}
+				proposal := &state.RepoProposal{Config: repoUpd.Config.Gov, Yes: 1}
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -99,10 +99,10 @@ var _ = Describe("ProposalVoteContract", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+					repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodIdentity
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
-					proposal := &state.RepoProposal{Config: repoUpd.Config.Governance}
+					proposal := &state.RepoProposal{Config: repoUpd.Config.Gov}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -135,11 +135,11 @@ var _ = Describe("ProposalVoteContract", func() {
 
 		When("proposal tally method is ProposalTallyMethodCoinWeighted", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Governance.Voter = state.VoterOwner
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodCoinWeighted
+				repoUpd.Config.Gov.Voter = state.VoterOwner
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodCoinWeighted
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -162,10 +162,10 @@ var _ = Describe("ProposalVoteContract", func() {
 
 		When("proposal tally method is ProposalTallyMethodNetStakeOfProposer and the voter's non-delegated ticket value=100", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -191,10 +191,10 @@ var _ = Describe("ProposalVoteContract", func() {
 
 		When("proposal tally method is ProposalTallyMethodNetStakeOfDelegators and the voter's non-delegated ticket value=100", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -223,10 +223,10 @@ var _ = Describe("ProposalVoteContract", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governance,
+						Config: repoUpd.Config.Gov,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -301,10 +301,10 @@ var _ = Describe("ProposalVoteContract", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -343,10 +343,10 @@ var _ = Describe("ProposalVoteContract", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -385,10 +385,10 @@ var _ = Describe("ProposalVoteContract", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -430,10 +430,10 @@ var _ = Describe("ProposalVoteContract", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -472,7 +472,7 @@ var _ = Describe("ProposalVoteContract", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
 					Yes: 100,
@@ -519,11 +519,11 @@ var _ = Describe("ProposalVoteContract", func() {
 			"proposer type is ProposerNetStakeholdersAndVetoOwner and "+
 			"voter is a veto owner", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
-				repoUpd.Config.Governance.Voter = state.VoterNetStakersAndVetoOwner
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Gov.Voter = state.VoterNetStakersAndVetoOwner
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{Veto: true})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governance,
+					Config: repoUpd.Config.Gov,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)

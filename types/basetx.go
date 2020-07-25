@@ -2,8 +2,9 @@ package types
 
 import (
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 type TxCode int
@@ -47,10 +48,10 @@ type BaseTx interface {
 	GetFee() util.String
 
 	// GetFrom returns the address of the transaction sender
-	GetFrom() util.Address
+	GetFrom() identifier.Address
 
 	// GetHash returns the hash of the transaction
-	GetHash() util.Bytes32
+	GetHash() util.HexBytes
 
 	// GetBytesNoSig returns the serialized the tx excluding the signature
 	GetBytesNoSig() []byte
@@ -74,7 +75,7 @@ type BaseTx interface {
 	// GetSize returns the size of the tx object (excluding nothing)
 	GetSize() int64
 
-	// ToMap returns a map equivalent of the transaction
+	// ToBasicMap returns a map equivalent of the transaction
 	ToMap() map[string]interface{}
 
 	// FromMap populate the fields from a map
@@ -85,4 +86,11 @@ type BaseTx interface {
 
 	// Id checks if the tx is a given type
 	Is(txType TxCode) bool
+}
+
+// ProposalTx describes a proposal creating transaction
+type ProposalTx interface {
+	GetProposalID() string
+	GetProposalRepoName() string
+	GetProposalValue() util.String
 }

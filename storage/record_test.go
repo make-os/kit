@@ -3,7 +3,7 @@ package storage_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/storage"
 )
 
 var _ = Describe("Types", func() {

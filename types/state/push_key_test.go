@@ -3,7 +3,7 @@ package state
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/lobe/crypto"
 )
 
 var _ = Describe("PushKey", func() {

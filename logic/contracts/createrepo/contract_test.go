@@ -6,17 +6,17 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/createrepo"
-	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/createrepo"
+	"gitlab.com/makeos/lobe/remote/policy"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("CreateRepoContract", func() {
@@ -29,8 +29,8 @@ var _ = Describe("CreateRepoContract", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
+		cfg, err = testutil.SetTestCfg()
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
@@ -56,17 +56,22 @@ var _ = Describe("CreateRepoContract", func() {
 	Describe(".Exec", func() {
 		var err error
 		var repoCfg *state.RepoConfig
+		var tx *txns.TxRepoCreate
 
 		BeforeEach(func() {
 			repoCfg = state.MakeDefaultRepoConfig()
+			tx = &txns.TxRepoCreate{
+				Name:     "repo",
+				Config:   repoCfg.ToBasicMap(),
+				TxValue:  &txns.TxValue{Value: "4"},
+				TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+			}
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Stakes: state.BareAccountStakes(), DelegatorCommission: 10})
 		})
 
-		When("successful", func() {
+		Context("on successful", func() {
 			BeforeEach(func() {
-				createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
-					TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
-				}, 0).Exec()
+				createrepo.NewContract().Init(logic, tx, 0).Exec()
 				Expect(err).To(BeNil())
 			})
 
@@ -77,20 +82,27 @@ var _ = Describe("CreateRepoContract", func() {
 				Expect(repo.Config).To(Equal(defCfg))
 			})
 
-			Specify("that fee is deducted from sender account", func() {
+			Specify("that fee + value is deducted from sender account", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.GetBalance()).To(Equal(util.String("8.5")))
+				Expect(acct.GetBalance()).To(Equal(util.String("4.5")))
+			})
+
+			Specify("that the tx value is added to the repo's balance", func() {
+				repo := logic.RepoKeeper().Get("repo")
+				Expect(repo.Balance).To(Equal(util.String("4")))
 			})
 
 			Specify("that sender account nonce increased", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(1)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})
 
 			When("voter type is VoteByOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governance.Voter = state.VoterOwner
-					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
+					repoCfg.Gov.Voter = state.VoterOwner
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo",
+						Config:   repoCfg.ToBasicMap(),
+						TxValue:  &txns.TxValue{Value: "0"},
 						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
@@ -105,10 +117,11 @@ var _ = Describe("CreateRepoContract", func() {
 
 			When("voter type is not VoteByOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governance.Voter = state.VoterNetStakers
-					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
-						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
-					}, 0).Exec()
+					repoCfg.Gov.Voter = state.VoterNetStakers
+					tx.TxValue = &txns.TxValue{Value: "0"}
+					tx.TxCommon = &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}
+					tx.Config = repoCfg.ToBasicMap()
+					createrepo.NewContract().Init(logic, tx, 0).Exec()
 					Expect(err).To(BeNil())
 				})
 
@@ -119,19 +132,52 @@ var _ = Describe("CreateRepoContract", func() {
 			})
 
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalDuration: 1000}}
+				repoCfg2 := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropDuration: 1000}}
 				BeforeEach(func() {
-					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg2.ToMap(),
-						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
-					}, 0).Exec()
+					tx.TxValue = &txns.TxValue{Value: "0"}
+					tx.TxCommon = &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}
+					tx.Config = repoCfg2.ToBasicMap()
+					createrepo.NewContract().Init(logic, tx, 0).Exec()
 					Expect(err).To(BeNil())
 				})
 
 				Specify("that repo config is not the default", func() {
 					repo := logic.RepoKeeper().Get("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
-					Expect(repo.Config.Governance.ProposalDuration).To(Equal(uint64(1000)))
+					Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(1000)))
 				})
+			})
+		})
+
+		When("governance.CreatorAsContributor is true", func() {
+			BeforeEach(func() {
+				repoCfg.Gov.CreatorAsContributor = true
+				createrepo.NewContract().Init(logic, tx, 0).Exec()
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that sender was added as a contributor", func() {
+				repo := logic.RepoKeeper().Get("repo")
+				Expect(repo.Contributors).To(HaveLen(1))
+				Expect(repo.Contributors.Has(sender.PushAddr().String())).To(BeTrue())
+				contrib := repo.Contributors[sender.PushAddr().String()]
+				Expect(contrib.FeeUsed).To(Equal(util.String("0")))
+				Expect(contrib.FeeCap).To(Equal(util.String("0")))
+				Expect(contrib.FeeMode).To(Equal(state.FeeModePusherPays))
+			})
+		})
+
+		When("governance.CreatorAsContributor is false", func() {
+			BeforeEach(func() {
+				repoCfg.Gov.CreatorAsContributor = false
+				tx.Config = repoCfg.ToBasicMap()
+				createrepo.NewContract().Init(logic, tx, 0).Exec()
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that sender was added as a contributor", func() {
+				repo := logic.RepoKeeper().Get("repo")
+				Expect(repo.Contributors).To(HaveLen(0))
 			})
 		})
 	})

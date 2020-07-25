@@ -1,10 +1,10 @@
 package types
 
 import (
+	"io"
 	"time"
 
-	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/lobe/crypto"
 )
 
 type KeyType int
@@ -28,25 +28,6 @@ type StoredKey interface {
 	GetCreatedAt() time.Time
 }
 
-type AccountManager interface {
-	Configure() []prompt.Suggest
-	UpdateCmd(addressOrIndex, passphrase string) error
-	RevealCmd(addrOrIdx, pass string) error
-	ListAccounts() (accounts []StoredKey, err error)
-	ListCmd() error
-	CreateAccount(defaultAccount bool, address *crypto.Key, passphrase string) error
-	CreateCmd(defaultAccount bool, seed int64, pass string) (*crypto.Key, error)
-	ImportCmd(keyFile, pass string) error
-	AskForPassword() (string, error)
-	AskForPasswordOnce() string
-	AccountExist(address string) (bool, error)
-	GetDefault() (StoredKey, error)
-	GetByIndex(i int) (StoredKey, error)
-	GetByIndexOrAddress(idxOrAddr string) (StoredKey, error)
-	GetByAddress(addr string) (StoredKey, error)
-	UIUnlockAccount(addressOrIndex, passphrase string) (StoredKey, error)
-}
-
 // StoredKeyMeta represents additional meta data of an account
 type StoredKeyMeta map[string]interface{}
 
@@ -66,4 +47,23 @@ type KeyPayload struct {
 	SecretKey     string `json:"secretKey" msgpack:"secretKey"`
 	Type          int    `json:"type" msgpack:"type"`
 	FormatVersion string `json:"version" msgpack:"version"`
+}
+
+// Keystore describes a module for managing keys
+type Keystore interface {
+	SetOutput(out io.Writer)
+	AskForPassword(prompt ...string) (string, error)
+	AskForPasswordOnce(prompt ...string) string
+	UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (StoredKey, error)
+	UpdateCmd(addressOrIndex, passphrase string) error
+	GetCmd(addrOrIdx, pass string, showPrivKey bool) error
+	ImportCmd(keyfile string, keyType KeyType, pass string) error
+	Exist(address string) (bool, error)
+	GetByIndex(i int) (StoredKey, error)
+	GetByIndexOrAddress(idxOrAddr string) (StoredKey, error)
+	GetByAddress(addr string) (StoredKey, error)
+	CreateKey(key *crypto.Key, keyType KeyType, passphrase string) error
+	CreateCmd(keyType KeyType, seed int64, passphrase string, nopass bool) (*crypto.Key, error)
+	List() (accounts []StoredKey, err error)
+	ListCmd(out io.Writer) error
 }

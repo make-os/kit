@@ -2,10 +2,9 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/types/state"
-
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // AccountKeeper manages account state.
@@ -25,7 +24,7 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (a *AccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Account {
+func (a *AccountKeeper) Get(address identifier.Address, blockNum ...uint64) *state.Account {
 
 	// Get version is provided
 	var version uint64
@@ -62,6 +61,6 @@ func (a *AccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Acc
 // ARGS:
 // address: The address of the account to update
 // udp: The updated account object to replace the existing object.
-func (a *AccountKeeper) Update(address util.Address, upd *state.Account) {
+func (a *AccountKeeper) Update(address identifier.Address, upd *state.Account) {
 	a.state.Set(MakeAccountKey(address.String()), upd.Bytes())
 }

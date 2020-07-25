@@ -8,51 +8,47 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
 
-// Manager provides extension management capabilities
+// Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
+	types.ModuleCommon
 	cfg        *config.AppConfig
-	vm         *otto.Otto
-	main       modules.ModuleHub
+	main       types.ModulesHub
 	runningExt map[string]*ExtensionControl
 }
 
 // NewManager creates an instance of Manager
-func NewManager(
-	cfg *config.AppConfig,
-	vm *otto.Otto) *Manager {
+func NewManager(cfg *config.AppConfig) *Manager {
 	return &Manager{
 		cfg:        cfg,
-		vm:         vm,
 		runningExt: make(map[string]*ExtensionControl),
 	}
 }
 
-// SetVM sets the main vm where module JS functions are written to
-func (m *Manager) SetVM(vm *otto.Otto) modules.ExtManager {
-	m.vm = vm
-	return m
+// Attachable indicates that a module can be loaded in attach mode
+func (m *Manager) Attachable() bool {
+	return false
 }
 
 // SetMainModule configures the main JS module
-func (m *Manager) SetMainModule(main modules.ModuleHub) {
+func (m *Manager) SetMainModule(main types.ModulesHub) {
 	m.main = main
 }
 
-func (m *Manager) namespacedFuncs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// methods are functions exposed in the special namespace of this module.
+func (m *Manager) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{Name: "run", Value: m.Run, Description: "Load and run an extension"},
 		{Name: "load", Value: m.Load, Description: "Load an extension"},
 		{Name: "isInstalled", Value: m.Exist, Description: "Check whether an extension is installed"},
@@ -63,57 +59,62 @@ func (m *Manager) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
-func (m *Manager) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+// globals are functions exposed in the VM's global namespace
+func (m *Manager) globals() []*types.VMMember {
+	return []*types.VMMember{}
 }
 
-// Configure implements types.ModuleHub. It configures the JS
+// ConfigureVM implements types.ModulesHub. It configures the JS
 // context and return any number of console prompt suggestions
-func (m *Manager) Configure() []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *Manager) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceExtension, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceExtension, nsMap)
 
 	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
-		fMap[f.Name] = f.Value
+	for _, f := range m.methods() {
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceExtension, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
+// prepare creates a new context for an extension under the given name.
 func (m *Manager) prepare(name string, args ...map[string]string) *ExtensionControl {
 
+	// Get path to extension directory
 	var extPath = filepath.Join(m.cfg.GetExtensionDir(), name)
 	if filepath.Ext(name) == "" {
 		extPath = filepath.Join(m.cfg.GetExtensionDir(), name+".js")
 	}
 
+	// Read the extension file
 	extBz, err := ioutil.ReadFile(extPath)
 	if err != nil {
 		panic(fmt.Errorf("failed to read extension ('%s'), ensure the extension exists", name))
 	}
 
+	// Get arguments, if provided
 	var argsMap map[string]string
 	if len(args) > 0 {
 		argsMap = args[0]
 	}
 
+	// Create and configure a new JS context for the extension
 	vm := otto.New()
 	m.main.ConfigureVM(vm)
-	vm.Set("args", argsMap)
+
+	// Pass argument to the extension by setting `args` global variable in the context
+	_ = vm.Set("args", argsMap)
 
 	return &ExtensionControl{
 		vm:             vm,
@@ -137,7 +138,7 @@ func (m *Manager) Exist(name string) bool {
 
 // Installed returns all installed extensions
 func (m *Manager) Installed() (extensions []string) {
-	filepath.Walk(m.cfg.GetExtensionDir(), func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(m.cfg.GetExtensionDir(), func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
@@ -147,7 +148,11 @@ func (m *Manager) Installed() (extensions []string) {
 	return
 }
 
-// Load loads an extension
+// Load loads an extension.
+// Returns control functions:
+// - run: for running the extension.
+// - isRunning: for checking run status
+// - stop: for stopping the extension
 func (m *Manager) Load(name string, args ...map[string]string) map[string]interface{} {
 	ec := m.prepare(name, args...)
 	return map[string]interface{}{
@@ -171,16 +176,22 @@ func (m *Manager) Load(name string, args ...map[string]string) map[string]interf
 	}
 }
 
-// Run loads and starts an extension
+// Run loads and starts an extension.
+// It returns controls for checking run status and for stopping it.
 func (m *Manager) Run(name string, args ...map[string]string) map[string]interface{} {
+
+	// Prepare the extension
 	ec := m.prepare(name, args...)
 
+	// Check if it is already running. Panic if there is a running instance.
 	if m.IsRunning(name) {
 		panic(fmt.Errorf("an instance of the extension is currently running"))
 	}
 
+	// Run and register the extension
 	ec.run()
 	m.runningExt[name] = ec
+
 	return map[string]interface{}{
 		"isRunning": ec.hasStopped,
 		"stop": func() {
@@ -318,7 +329,7 @@ func runExtension(ec *ExtensionControl) error {
 		defer func() {
 			r := recover()
 			if r != nil {
-				fmt.Println(color.RedString(r.(*otto.Error).String()))
+				fmt.Println(fmt2.RedString(r.(*otto.Error).String()))
 				ec.stop()
 			}
 		}()

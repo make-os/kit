@@ -3,7 +3,7 @@ package state_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/types/state"
 )
 
 var _ = Describe("Namespace", func() {

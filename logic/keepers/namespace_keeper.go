@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // NamespaceKeeper manages namespaces.

@@ -3,12 +3,12 @@ package voteproposal
 import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 // ProposalVoteContract is a system contract for adding a vote on a proposal.
@@ -53,7 +53,7 @@ func (c *ProposalVoteContract) Exec() error {
 	// When proposers are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposer will have 1 voting power.
 	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodIdentity {
+		prop.Config.PropTallyMethod == state.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 
@@ -61,16 +61,16 @@ func (c *ProposalVoteContract) Exec() error {
 	// each proposer will use the value of the voter's spendable account balance
 	// as their voting power.
 	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
+		prop.Config.PropTallyMethod == state.ProposalTallyMethodCoinWeighted {
 		senderAcct := c.AccountKeeper().Get(spk.Addr())
-		increments = senderAcct.GetSpendableBalance(c.chainHeight).Float()
+		increments = senderAcct.GetAvailableBalance(c.chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
 		increments, err = c.GetTicketManager().
-			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight)
+			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of non-delegated tickets of sender")
 		}
@@ -78,9 +78,9 @@ func (c *ProposalVoteContract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = c.GetTicketManager().
-			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight)
+			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of delegated tickets of sender")
 		}
@@ -88,10 +88,10 @@ func (c *ProposalVoteContract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStake {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStake {
 
 		tickets, err := c.GetTicketManager().GetNonDecayedTickets(c.tx.SenderPubKey.ToBytes32(),
-			prop.ProposerMaxJoinHeight)
+			prop.ProposerMaxJoinHeight.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
 		}

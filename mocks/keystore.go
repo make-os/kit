@@ -5,10 +5,10 @@
 package mocks
 
 import (
-	prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
-	crypto "gitlab.com/makeos/mosdef/crypto"
-	types "gitlab.com/makeos/mosdef/keystore/types"
+	crypto "gitlab.com/makeos/lobe/crypto"
+	types "gitlab.com/makeos/lobe/keystore/types"
+	io "io"
 	reflect "reflect"
 	time "time"
 )
@@ -176,45 +176,95 @@ func (mr *MockStoredKeyMockRecorder) GetCreatedAt() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatedAt", reflect.TypeOf((*MockStoredKey)(nil).GetCreatedAt))
 }
 
-// MockAccountManager is a mock of AccountManager interface
-type MockAccountManager struct {
+// MockKeystore is a mock of Keystore interface
+type MockKeystore struct {
 	ctrl     *gomock.Controller
-	recorder *MockAccountManagerMockRecorder
+	recorder *MockKeystoreMockRecorder
 }
 
-// MockAccountManagerMockRecorder is the mock recorder for MockAccountManager
-type MockAccountManagerMockRecorder struct {
-	mock *MockAccountManager
+// MockKeystoreMockRecorder is the mock recorder for MockKeystore
+type MockKeystoreMockRecorder struct {
+	mock *MockKeystore
 }
 
-// NewMockAccountManager creates a new mock instance
-func NewMockAccountManager(ctrl *gomock.Controller) *MockAccountManager {
-	mock := &MockAccountManager{ctrl: ctrl}
-	mock.recorder = &MockAccountManagerMockRecorder{mock}
+// NewMockKeystore creates a new mock instance
+func NewMockKeystore(ctrl *gomock.Controller) *MockKeystore {
+	mock := &MockKeystore{ctrl: ctrl}
+	mock.recorder = &MockKeystoreMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockAccountManager) EXPECT() *MockAccountManagerMockRecorder {
+func (m *MockKeystore) EXPECT() *MockKeystoreMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockAccountManager) Configure() []prompt.Suggest {
+// SetOutput mocks base method
+func (m *MockKeystore) SetOutput(out io.Writer) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]prompt.Suggest)
+	m.ctrl.Call(m, "SetOutput", out)
+}
+
+// SetOutput indicates an expected call of SetOutput
+func (mr *MockKeystoreMockRecorder) SetOutput(out interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOutput", reflect.TypeOf((*MockKeystore)(nil).SetOutput), out)
+}
+
+// AskForPassword mocks base method
+func (m *MockKeystore) AskForPassword(prompt ...string) (string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range prompt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AskForPassword", varargs...)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AskForPassword indicates an expected call of AskForPassword
+func (mr *MockKeystoreMockRecorder) AskForPassword(prompt ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPassword", reflect.TypeOf((*MockKeystore)(nil).AskForPassword), prompt...)
+}
+
+// AskForPasswordOnce mocks base method
+func (m *MockKeystore) AskForPasswordOnce(prompt ...string) string {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range prompt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AskForPasswordOnce", varargs...)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockAccountManagerMockRecorder) Configure() *gomock.Call {
+// AskForPasswordOnce indicates an expected call of AskForPasswordOnce
+func (mr *MockKeystoreMockRecorder) AskForPasswordOnce(prompt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockAccountManager)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPasswordOnce", reflect.TypeOf((*MockKeystore)(nil).AskForPasswordOnce), prompt...)
+}
+
+// UIUnlockKey mocks base method
+func (m *MockKeystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UIUnlockKey", addressOrIndex, passphrase, promptMsg)
+	ret0, _ := ret[0].(types.StoredKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UIUnlockKey indicates an expected call of UIUnlockKey
+func (mr *MockKeystoreMockRecorder) UIUnlockKey(addressOrIndex, passphrase, promptMsg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UIUnlockKey", reflect.TypeOf((*MockKeystore)(nil).UIUnlockKey), addressOrIndex, passphrase, promptMsg)
 }
 
 // UpdateCmd mocks base method
-func (m *MockAccountManager) UpdateCmd(addressOrIndex, passphrase string) error {
+func (m *MockKeystore) UpdateCmd(addressOrIndex, passphrase string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCmd", addressOrIndex, passphrase)
 	ret0, _ := ret[0].(error)
@@ -222,158 +272,56 @@ func (m *MockAccountManager) UpdateCmd(addressOrIndex, passphrase string) error 
 }
 
 // UpdateCmd indicates an expected call of UpdateCmd
-func (mr *MockAccountManagerMockRecorder) UpdateCmd(addressOrIndex, passphrase interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) UpdateCmd(addressOrIndex, passphrase interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCmd", reflect.TypeOf((*MockAccountManager)(nil).UpdateCmd), addressOrIndex, passphrase)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCmd", reflect.TypeOf((*MockKeystore)(nil).UpdateCmd), addressOrIndex, passphrase)
 }
 
-// RevealCmd mocks base method
-func (m *MockAccountManager) RevealCmd(addrOrIdx, pass string) error {
+// GetCmd mocks base method
+func (m *MockKeystore) GetCmd(addrOrIdx, pass string, showPrivKey bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevealCmd", addrOrIdx, pass)
+	ret := m.ctrl.Call(m, "GetCmd", addrOrIdx, pass, showPrivKey)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RevealCmd indicates an expected call of RevealCmd
-func (mr *MockAccountManagerMockRecorder) RevealCmd(addrOrIdx, pass interface{}) *gomock.Call {
+// GetCmd indicates an expected call of GetCmd
+func (mr *MockKeystoreMockRecorder) GetCmd(addrOrIdx, pass, showPrivKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevealCmd", reflect.TypeOf((*MockAccountManager)(nil).RevealCmd), addrOrIdx, pass)
-}
-
-// ListAccounts mocks base method
-func (m *MockAccountManager) ListAccounts() ([]types.StoredKey, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAccounts")
-	ret0, _ := ret[0].([]types.StoredKey)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListAccounts indicates an expected call of ListAccounts
-func (mr *MockAccountManagerMockRecorder) ListAccounts() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccounts", reflect.TypeOf((*MockAccountManager)(nil).ListAccounts))
-}
-
-// ListCmd mocks base method
-func (m *MockAccountManager) ListCmd() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListCmd")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ListCmd indicates an expected call of ListCmd
-func (mr *MockAccountManagerMockRecorder) ListCmd() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCmd", reflect.TypeOf((*MockAccountManager)(nil).ListCmd))
-}
-
-// CreateAccount mocks base method
-func (m *MockAccountManager) CreateAccount(defaultAccount bool, address *crypto.Key, passphrase string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAccount", defaultAccount, address, passphrase)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateAccount indicates an expected call of CreateAccount
-func (mr *MockAccountManagerMockRecorder) CreateAccount(defaultAccount, address, passphrase interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccount", reflect.TypeOf((*MockAccountManager)(nil).CreateAccount), defaultAccount, address, passphrase)
-}
-
-// CreateCmd mocks base method
-func (m *MockAccountManager) CreateCmd(defaultAccount bool, seed int64, pass string) (*crypto.Key, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateCmd", defaultAccount, seed, pass)
-	ret0, _ := ret[0].(*crypto.Key)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateCmd indicates an expected call of CreateCmd
-func (mr *MockAccountManagerMockRecorder) CreateCmd(defaultAccount, seed, pass interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCmd", reflect.TypeOf((*MockAccountManager)(nil).CreateCmd), defaultAccount, seed, pass)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCmd", reflect.TypeOf((*MockKeystore)(nil).GetCmd), addrOrIdx, pass, showPrivKey)
 }
 
 // ImportCmd mocks base method
-func (m *MockAccountManager) ImportCmd(keyFile, pass string) error {
+func (m *MockKeystore) ImportCmd(keyfile string, keyType types.KeyType, pass string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ImportCmd", keyFile, pass)
+	ret := m.ctrl.Call(m, "ImportCmd", keyfile, keyType, pass)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ImportCmd indicates an expected call of ImportCmd
-func (mr *MockAccountManagerMockRecorder) ImportCmd(keyFile, pass interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) ImportCmd(keyfile, keyType, pass interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportCmd", reflect.TypeOf((*MockAccountManager)(nil).ImportCmd), keyFile, pass)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportCmd", reflect.TypeOf((*MockKeystore)(nil).ImportCmd), keyfile, keyType, pass)
 }
 
-// AskForPassword mocks base method
-func (m *MockAccountManager) AskForPassword() (string, error) {
+// Exist mocks base method
+func (m *MockKeystore) Exist(address string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AskForPassword")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AskForPassword indicates an expected call of AskForPassword
-func (mr *MockAccountManagerMockRecorder) AskForPassword() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPassword", reflect.TypeOf((*MockAccountManager)(nil).AskForPassword))
-}
-
-// AskForPasswordOnce mocks base method
-func (m *MockAccountManager) AskForPasswordOnce() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AskForPasswordOnce")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// AskForPasswordOnce indicates an expected call of AskForPasswordOnce
-func (mr *MockAccountManagerMockRecorder) AskForPasswordOnce() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPasswordOnce", reflect.TypeOf((*MockAccountManager)(nil).AskForPasswordOnce))
-}
-
-// AccountExist mocks base method
-func (m *MockAccountManager) AccountExist(address string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AccountExist", address)
+	ret := m.ctrl.Call(m, "Exist", address)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AccountExist indicates an expected call of AccountExist
-func (mr *MockAccountManagerMockRecorder) AccountExist(address interface{}) *gomock.Call {
+// Exist indicates an expected call of Exist
+func (mr *MockKeystoreMockRecorder) Exist(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountExist", reflect.TypeOf((*MockAccountManager)(nil).AccountExist), address)
-}
-
-// GetDefault mocks base method
-func (m *MockAccountManager) GetDefault() (types.StoredKey, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDefault")
-	ret0, _ := ret[0].(types.StoredKey)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDefault indicates an expected call of GetDefault
-func (mr *MockAccountManagerMockRecorder) GetDefault() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefault", reflect.TypeOf((*MockAccountManager)(nil).GetDefault))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exist", reflect.TypeOf((*MockKeystore)(nil).Exist), address)
 }
 
 // GetByIndex mocks base method
-func (m *MockAccountManager) GetByIndex(i int) (types.StoredKey, error) {
+func (m *MockKeystore) GetByIndex(i int) (types.StoredKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByIndex", i)
 	ret0, _ := ret[0].(types.StoredKey)
@@ -382,13 +330,13 @@ func (m *MockAccountManager) GetByIndex(i int) (types.StoredKey, error) {
 }
 
 // GetByIndex indicates an expected call of GetByIndex
-func (mr *MockAccountManagerMockRecorder) GetByIndex(i interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) GetByIndex(i interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIndex", reflect.TypeOf((*MockAccountManager)(nil).GetByIndex), i)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIndex", reflect.TypeOf((*MockKeystore)(nil).GetByIndex), i)
 }
 
 // GetByIndexOrAddress mocks base method
-func (m *MockAccountManager) GetByIndexOrAddress(idxOrAddr string) (types.StoredKey, error) {
+func (m *MockKeystore) GetByIndexOrAddress(idxOrAddr string) (types.StoredKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByIndexOrAddress", idxOrAddr)
 	ret0, _ := ret[0].(types.StoredKey)
@@ -397,13 +345,13 @@ func (m *MockAccountManager) GetByIndexOrAddress(idxOrAddr string) (types.Stored
 }
 
 // GetByIndexOrAddress indicates an expected call of GetByIndexOrAddress
-func (mr *MockAccountManagerMockRecorder) GetByIndexOrAddress(idxOrAddr interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) GetByIndexOrAddress(idxOrAddr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIndexOrAddress", reflect.TypeOf((*MockAccountManager)(nil).GetByIndexOrAddress), idxOrAddr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIndexOrAddress", reflect.TypeOf((*MockKeystore)(nil).GetByIndexOrAddress), idxOrAddr)
 }
 
 // GetByAddress mocks base method
-func (m *MockAccountManager) GetByAddress(addr string) (types.StoredKey, error) {
+func (m *MockKeystore) GetByAddress(addr string) (types.StoredKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByAddress", addr)
 	ret0, _ := ret[0].(types.StoredKey)
@@ -412,22 +360,65 @@ func (m *MockAccountManager) GetByAddress(addr string) (types.StoredKey, error) 
 }
 
 // GetByAddress indicates an expected call of GetByAddress
-func (mr *MockAccountManagerMockRecorder) GetByAddress(addr interface{}) *gomock.Call {
+func (mr *MockKeystoreMockRecorder) GetByAddress(addr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockAccountManager)(nil).GetByAddress), addr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockKeystore)(nil).GetByAddress), addr)
 }
 
-// UIUnlockAccount mocks base method
-func (m *MockAccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (types.StoredKey, error) {
+// CreateKey mocks base method
+func (m *MockKeystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UIUnlockAccount", addressOrIndex, passphrase)
-	ret0, _ := ret[0].(types.StoredKey)
+	ret := m.ctrl.Call(m, "CreateKey", key, keyType, passphrase)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateKey indicates an expected call of CreateKey
+func (mr *MockKeystoreMockRecorder) CreateKey(key, keyType, passphrase interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKey", reflect.TypeOf((*MockKeystore)(nil).CreateKey), key, keyType, passphrase)
+}
+
+// CreateCmd mocks base method
+func (m *MockKeystore) CreateCmd(keyType types.KeyType, seed int64, passphrase string, nopass bool) (*crypto.Key, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCmd", keyType, seed, passphrase, nopass)
+	ret0, _ := ret[0].(*crypto.Key)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UIUnlockAccount indicates an expected call of UIUnlockAccount
-func (mr *MockAccountManagerMockRecorder) UIUnlockAccount(addressOrIndex, passphrase interface{}) *gomock.Call {
+// CreateCmd indicates an expected call of CreateCmd
+func (mr *MockKeystoreMockRecorder) CreateCmd(keyType, seed, passphrase, nopass interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UIUnlockAccount", reflect.TypeOf((*MockAccountManager)(nil).UIUnlockAccount), addressOrIndex, passphrase)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCmd", reflect.TypeOf((*MockKeystore)(nil).CreateCmd), keyType, seed, passphrase, nopass)
+}
+
+// List mocks base method
+func (m *MockKeystore) List() ([]types.StoredKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List")
+	ret0, _ := ret[0].([]types.StoredKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List
+func (mr *MockKeystoreMockRecorder) List() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockKeystore)(nil).List))
+}
+
+// ListCmd mocks base method
+func (m *MockKeystore) ListCmd(out io.Writer) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCmd", out)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListCmd indicates an expected call of ListCmd
+func (mr *MockKeystoreMockRecorder) ListCmd(out interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCmd", reflect.TypeOf((*MockKeystore)(nil).ListCmd), out)
 }

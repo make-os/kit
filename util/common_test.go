@@ -13,6 +13,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type CustomInt int
+
+func (a CustomInt) MarshalJSON() ([]byte, error) {
+	var result string
+	if a == 0 {
+		result = `0`
+	} else {
+		result = fmt.Sprintf("%d", a)
+	}
+	return []byte(result), nil
+}
+
 var _ = Describe("Common", func() {
 
 	Describe(".ObjectsToBytes", func() {
@@ -190,114 +202,13 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe("String", func() {
-		Describe(".Address", func() {
-			It("should return Address type", func() {
-				Expect(String("addr1").Address()).To(Equal(Address("addr1")))
-			})
-		})
-
-		Describe(".Empty", func() {
-			It("should return true when empty and false when not", func() {
-				Expect(String("").Empty()).To(BeTrue())
-				Expect(String("xyz").Empty()).To(BeFalse())
-			})
-		})
-
-		Describe(".Bytes", func() {
-			It("should return expected bytes value", func() {
-				s := String("abc")
-				Expect(s.Bytes()).To(Equal([]uint8{0x61, 0x62, 0x63}))
-			})
-		})
-
-		Describe(".Equal", func() {
-			It("should equal b", func() {
-				a := String("abc")
-				b := String("abc")
-				Expect(a.Equal(b)).To(BeTrue())
-			})
-
-			It("should not equal b", func() {
-				a := String("abc")
-				b := String("xyz")
-				Expect(a.Equal(b)).ToNot(BeTrue())
-			})
-		})
-
-		Describe(".SS", func() {
-			Context("when string is greater than 32 characters", func() {
-				It("should return short form", func() {
-					s := String("abcdefghijklmnopqrstuvwxyz12345678")
-					Expect(s.SS()).To(Equal("abcdefghij...yz12345678"))
-				})
-			})
-
-			Context("when string is less than 32 characters", func() {
-				It("should return unchanged", func() {
-					s := String("abcdef")
-					Expect(s.SS()).To(Equal("abcdef"))
-				})
-			})
-		})
-
-		Describe(".Decimal", func() {
-			It("should return decimal", func() {
-				d := String("12.50").Decimal()
-				Expect(d.String()).To(Equal("12.5"))
-			})
-
-			It("should panic if string is not convertible to decimal", func() {
-				Expect(func() {
-					String("12a50").Decimal()
-				}).To(Panic())
-			})
-		})
-
-		Describe(".IsDecimal", func() {
-			It("should return true if convertible to decimal", func() {
-				actual := String("12.50").IsDecimal()
-				Expect(actual).To(BeTrue())
-			})
-
-			It("should return false if not convertible to decimal", func() {
-				actual := String("12a50").IsDecimal()
-				Expect(actual).To(BeFalse())
-			})
-		})
-
-		Describe(".Float", func() {
-			It("should panic if unable to convert to float64", func() {
-				Expect(func() {
-					String("1.0a").Float()
-				}).To(Panic())
-			})
-
-			It("should return float64 if string is numeric", func() {
-				Expect(String("1.3").Float()).To(Equal(1.3))
-			})
-		})
-
-		Describe(".IsDecimal", func() {
-			It("should return true if string contains integer", func() {
-				Expect(String("23").IsDecimal()).To(BeTrue())
-			})
-			It("should return true if string contains float", func() {
-				Expect(String("23.726").IsDecimal()).To(BeTrue())
-			})
-			It("should return false if string is not numerical", func() {
-				Expect(String("23a").IsDecimal()).To(BeFalse())
-			})
-		})
-	})
-
 	Describe(".RandString", func() {
 		It("should produce string output of the specified length", func() {
 			Expect(RandString(10)).To(HaveLen(10))
 		})
 	})
 
-	Describe(".StructToMap", func() {
+	Describe(".ToBasicMap", func() {
 
 		type testStruct struct {
 			Name string
@@ -306,24 +217,38 @@ var _ = Describe("Common", func() {
 		It("should return correct map equivalent", func() {
 			s := testStruct{Name: "odion"}
 			expected := map[string]interface{}{"Name": "odion"}
-			Expect(StructToMap(s)).To(Equal(expected))
+			Expect(ToMap(s)).To(Equal(expected))
 		})
 
 	})
 
-	Describe("BlockNonce", func() {
-		Describe(".EncodeNonce", func() {
-			It("should encode to BlockNonce", func() {
-				bn := EncodeNonce(1000)
-				Expect(bn).To(BeAssignableToTypeOf(BlockNonce{}))
-			})
-		})
+	Describe(".ToBasicMap", func() {
 
-		Describe(".Uint64", func() {
-			It("should return uint64 value", func() {
-				bn := EncodeNonce(1000)
-				Expect(bn.Uint64()).To(Equal(uint64(1000)))
-			})
+		type testStruct struct {
+			Name string
+			Age  CustomInt
+		}
+
+		It("should return correct map equivalent", func() {
+			s := testStruct{Name: "odion", Age: 100}
+			expected := map[string]interface{}{"Name": "odion", "Age": float64(100)}
+			Expect(ToBasicMap(s)).To(Equal(expected))
+
+			nonBasicExpected := map[string]interface{}{"Name": "odion", "Age": CustomInt(100)}
+			Expect(ToMap(s)).To(Equal(nonBasicExpected))
+		})
+	})
+
+	Describe(".StructSliceToMap", func() {
+
+		type testStruct struct {
+			Name string
+		}
+
+		It("should return correct map equivalent", func() {
+			s := []testStruct{{Name: "odion"}, {Name: "Ken"}}
+			expected := []Map{{"Name": "odion"}, {"Name": "Ken"}}
+			Expect(StructSliceToMap(s)).To(Equal(expected))
 		})
 	})
 
@@ -506,18 +431,6 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".GetIndexFromUInt64Slice", func() {
-		It("should return 0 when slice is empty", func() {
-			retval := GetIndexFromUInt64Slice(1)
-			Expect(retval).To(BeZero())
-		})
-
-		It("should return value at target index", func() {
-			retval := GetIndexFromUInt64Slice(1, 3, 4, 5)
-			Expect(retval).To(Equal(uint64(4)))
-		})
-	})
-
 	Describe(".ToStringMapInter", func() {
 		It("should convert map with non-interface value to map[string]interface{} type", func() {
 			src := map[string]int{"jin": 20}
@@ -549,44 +462,6 @@ var _ = Describe("Common", func() {
 			Expect(IsZeroString("")).To(BeTrue())
 			Expect(IsZeroString("0")).To(BeTrue())
 			Expect(IsZeroString("1")).To(BeFalse())
-		})
-	})
-
-	Describe(".IsValidName", func() {
-		Specify("cases", func() {
-			err := IsValidName("abc&*")
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid identifier; only alphanumeric, _, and - characters are allowed"))
-
-			err = IsValidName(strings.Repeat("a", 129))
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("name is too long. Maximum character length is 128"))
-
-			err = IsValidName("a")
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("name is too short. Must be at least 3 characters long"))
-
-			err = IsValidName("abcdef_-")
-			Expect(err).To(BeNil())
-
-			err = IsValidName("-abc")
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid identifier; identifier cannot start with _ or - character"))
-
-			err = IsValidName("_abc")
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid identifier; identifier cannot start with _ or - character"))
-		})
-	})
-
-	Describe(".IsValidNameNoLen", func() {
-		It("cases", func() {
-			Expect(IsValidNameNoLen("myname")).To(BeNil())
-			Expect(IsValidNameNoLen("_myname")).ToNot(BeNil())
-			Expect(IsValidNameNoLen("a")).To(BeNil())
-			Expect(IsValidNameNoLen("a_b_c")).To(BeNil())
-			Expect(IsValidNameNoLen("_")).ToNot(BeNil())
-			Expect(IsValidNameNoLen("")).ToNot(BeNil())
 		})
 	})
 
@@ -739,6 +614,15 @@ var _ = Describe("Common", func() {
 			Expect(cfm.FrontMatter).To(Equal(map[string]interface{}{
 				"age": 1000,
 			}))
+		})
+	})
+
+	Describe(".IsMapOrStruct", func() {
+		It("should check for true/false", func() {
+			Expect(IsMapOrStruct(map[string]int{})).To(BeTrue())
+			Expect(IsMapOrStruct(map[string]interface{}{})).To(BeTrue())
+			Expect(IsMapOrStruct(struct{}{})).To(BeTrue())
+			Expect(IsMapOrStruct(&struct{}{})).To(BeTrue())
 		})
 	})
 })

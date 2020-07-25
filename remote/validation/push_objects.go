@@ -8,18 +8,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/crypto/bls"
-	"gitlab.com/makeos/mosdef/params"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/crypto/bls"
+	"gitlab.com/makeos/lobe/params"
+	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -58,7 +59,7 @@ func CheckPushedReferenceConsistency(
 	refInfo := repoState.References.Get(name)
 	nextNonce := refInfo.Nonce + 1
 	refPropFee := ref.Value
-	if nextNonce != ref.Nonce {
+	if nextNonce.UInt64() != ref.Nonce {
 		msg := fmt.Sprintf("reference '%s' has nonce '%d', expecting '%d'", name, nonce, nextNonce)
 		return fe(-1, "references", msg)
 	}
@@ -67,11 +68,11 @@ func CheckPushedReferenceConsistency(
 	isNewRef := !repoState.References.Has(ref.Name)
 	if plumbing2.IsMergeRequestReference(ref.Name) && isNewRef {
 
-		govCfg := repoState.Config.Governance
+		govCfg := repoState.Config.Gov
 
 		// When repo does not require a proposal fee, it must not be provided.
 		// Skip to end when repo does not require proposal fee
-		repoPropFee := govCfg.ProposalFee
+		repoPropFee := govCfg.PropFee
 		if repoPropFee == 0 {
 			if !refPropFee.Empty() {
 				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
@@ -80,7 +81,7 @@ func CheckPushedReferenceConsistency(
 		}
 
 		// When merge request proposal is exempted from paying proposal fee, skip to end
-		if govCfg.NoProposalFeeForMergeReq {
+		if govCfg.NoPropFeeForMergeReq {
 			goto end
 		}
 
@@ -90,7 +91,7 @@ func CheckPushedReferenceConsistency(
 
 		// When repo requires a proposal fee and a deposit period is not allowed,
 		// the full proposal fee must be provided.
-		hasDepositPeriod := govCfg.ProposalFeeDepositDur > 0
+		hasDepositPeriod := govCfg.PropFeeDepositDur > 0
 		if !hasDepositPeriod && refPropFee.Decimal().LessThan(decimal.NewFromFloat(repoPropFee)) {
 			return fe(-1, "value", constants.ErrFullProposalFeeRequired.Error())
 		}
@@ -132,11 +133,11 @@ func CheckPushNoteSanity(note types.PushNote) error {
 	if note.GetRepoName() == "" {
 		return util.FieldError("repo", "repo name is required")
 	}
-	if util.IsValidName(note.GetRepoName()) != nil {
+	if identifier.IsValidResourceName(note.GetRepoName()) != nil {
 		return util.FieldError("repo", "repo name is not valid")
 	}
 
-	if note.GetNamespace() != "" && util.IsValidName(note.GetNamespace()) != nil {
+	if note.GetNamespace() != "" && identifier.IsValidResourceName(note.GetNamespace()) != nil {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
@@ -239,7 +240,7 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 		if ns.IsNil() {
 			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}
-		if !funk.ContainsString(funk.Values(ns.Domains).([]string), util.RepoIDPrefix+note.GetRepoName()) {
+		if !funk.ContainsString(funk.Values(ns.Domains).([]string), identifier.NativeNamespaceRepo+note.GetRepoName()) {
 			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.GetNamespace()))
 		}
 	}
@@ -260,7 +261,7 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 	pusherAcct := logic.AccountKeeper().Get(note.GetPusherAddress())
 	if pusherAcct.IsNil() {
 		return util.FieldError("pusherAddr", "pusher account not found")
-	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce+1 {
+	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce.UInt64()+1 {
 		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'",
 			note.GetPusherAccountNonce(), pusherAcct.Nonce+1)
 		return util.FieldError("accountNonce", msg)

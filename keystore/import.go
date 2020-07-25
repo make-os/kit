@@ -8,8 +8,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore/types"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 // ImportCmd creates a new key from a private key stored in a file.
@@ -45,7 +46,7 @@ func (ks *Keystore) ImportCmd(keyfile string, keyType types.KeyType, pass string
 	// If no passphrase or passphrase file is provided, ask for passphrase
 	passphrase := ""
 	if len(pass) == 0 {
-		fmt.Fprintln(ks.out, "Your new account needs to be locked with a passphrase. Please enter a passphrase.")
+		fmt.Fprintln(ks.out, "Your new account needs to be locked. Please enter a passphrase.")
 		passphrase, err = ks.AskForPassword()
 		if err != nil {
 			return err
@@ -71,11 +72,11 @@ create:
 		return err
 	}
 
-	fmt.Fprintln(ks.out, "Import successful. New key created, encrypted and stored")
+	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key imported successfully!"))
 	if keyType == types.KeyTypeAccount {
-		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
+		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {
-		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
+		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.PushAddr().String()))
 	}
 
 	return nil

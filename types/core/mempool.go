@@ -4,8 +4,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/mempool"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Mempool describes a transaction pool for ordering transactions that will be
@@ -83,11 +83,11 @@ type Mempool interface {
 type MempoolReactor interface {
 	GetPoolSize() *PoolSizeInfo
 	GetTop(n int) []types.BaseTx
-	AddTx(tx types.BaseTx) (hash util.Bytes32, err error)
+	AddTx(tx types.BaseTx) (hash util.HexBytes, err error)
 }
 
 // PoolSizeInfo describes the transaction byte size an count of the tx pool
 type PoolSizeInfo struct {
-	TotalTxSize int64 `json:"totalTxSize"`
-	TxCount     int   `json:"txCount"`
+	TotalTxSize int64 `json:"size"`
+	TxCount     int   `json:"count"`
 }

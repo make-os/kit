@@ -3,12 +3,13 @@ package transfercoin
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var (
@@ -53,34 +54,37 @@ func (c *CoinTransferContract) Exec() error {
 	value := c.tx.Value
 	fee := c.tx.Fee
 
-	// Check if the recipient address is a namespace URI. If so,
-	// we need to resolve it to the target address which is expected
-	// to be a prefixed address.
-	if recvAddr.IsNamespaceURI() {
+	// If the recipient address is a user namespace, we need to resolve it
+	// to the target address which is expected to be a native namespace.
+	if recvAddr.IsUserNamespace() {
 		target, err := c.NamespaceKeeper().GetTarget(recvAddr.String())
 		if err != nil {
 			return err
 		}
-		recvAddr = util.Address(target)
+		recvAddr = identifier.Address(target)
 	}
 
-	// Check if the recipient address is a prefixed address (e.g r/repo or a/repo).
-	// If so, we need to get the balance account object corresponding
-	// to the actual resource name.
-	if recvAddr.IsPrefixed() {
-		resourceName := util.GetPrefixedAddressValue(recvAddr.String())
-		recipientAddr = util.Address(resourceName)
-		if util.IsPrefixedAddressRepo(recvAddr.String()) {
-			recvAcct = repoKeeper.Get(resourceName)
+	// If the recipient address is a full native namespace (e.g r/repo or a/repo),
+	// we need to get the balance account corresponding to the namespace target.
+	if recvAddr.IsFullNativeNamespace() {
+		addrVal := identifier.GetNativeNamespaceTarget(recvAddr.String())
+		recipientAddr = identifier.Address(addrVal)
+		if identifier.IsFullNativeNamespaceRepo(recvAddr.String()) {
+			recvAcct = repoKeeper.Get(addrVal)
 		} else {
-			recvAcct = acctKeeper.Get(util.Address(resourceName))
+			recvAcct = acctKeeper.Get(identifier.Address(addrVal))
 		}
 	}
 
-	// Check if the recipient address is a bech32 address.
-	// If so, get the account object corresponding to the address.
-	if recvAddr.IsBech32MakerAddress() {
+	// If the recipient address is a bech32 user address, get the account object
+	// corresponding to the address.
+	if recvAddr.IsUserAddress() {
 		recvAcct = acctKeeper.Get(recipientAddr)
+	}
+
+	// Return error if at this point we don't have a recipient account object,
+	if recvAcct == nil {
+		return fmt.Errorf("recipient account not found")
 	}
 
 	// Get the sender's account and balance
@@ -131,7 +135,7 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 		senderAddr = o.Addr().String()
 	case string:
 		senderAddr = o
-	case util.Address:
+	case identifier.Address:
 		senderAddr = o.String()
 	default:
 		return fmt.Errorf("unexpected address type")
@@ -139,18 +143,18 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 
 	// Get sender and recipient accounts
 	acctKeeper := c.AccountKeeper()
-	senderAcct := acctKeeper.Get(util.Address(senderAddr))
+	senderAcct := acctKeeper.Get(identifier.Address(senderAddr))
 
 	// Ensure the transaction nonce is the next expected nonce
-	field := "value+fee"
 	expectedNonce := senderAcct.Nonce + 1
-	if expectedNonce != c.tx.Nonce {
-		return fe(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
+	if expectedNonce.UInt64() != c.tx.Nonce {
+		return fe("nonce", fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
 	}
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee
+	field := "value+fee"
 	spendAmt := c.tx.Value.Decimal().Add(c.tx.Fee.Decimal())
-	senderBal := senderAcct.GetSpendableBalance(c.chainHeight).Decimal()
+	senderBal := senderAcct.GetAvailableBalance(c.chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
 		return fe(field, fmt.Sprintf("sender's spendable account balance is insufficient"))
 	}

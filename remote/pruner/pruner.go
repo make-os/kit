@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/params"
-	repo3 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/lobe/params"
+	repo3 "gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/types/core"
 )
 
 // Pruner runs a scheduler that prunes repositories to remove unreachable or dangling

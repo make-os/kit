@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/push"
-	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/lobe/remote/policy"
+	"gitlab.com/makeos/lobe/remote/push"
+	"gitlab.com/makeos/lobe/remote/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
@@ -157,11 +157,11 @@ func getIdxFile(s *RequestContext) error {
 }
 
 func sidebandErr(msg string) []byte {
-	return sideband.ErrorMessage.WithPayload([]byte(color.RedString(msg)))
+	return sideband.ErrorMessage.WithPayload([]byte(fmt2.RedString(msg)))
 }
 
 func sidebandProgress(msg string) []byte {
-	return sideband.ProgressMessage.WithPayload([]byte(color.GreenString(msg)))
+	return sideband.ProgressMessage.WithPayload([]byte(fmt2.GreenString(msg)))
 }
 
 // service describes a git service and its handler
@@ -190,7 +190,7 @@ func getInfoRefs(s *RequestContext) error {
 		return err
 	}
 
-	// Configure response headers. Disable cache and set code to 200
+	// ConfigureVM response headers. Disable cache and set code to 200
 	hdrNoCache(s.W)
 	s.W.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", s.ServiceName))
 	s.W.WriteHeader(http.StatusOK)

@@ -6,16 +6,16 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/registerpushkey"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/registerpushkey"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("RegisterPushKeyContract", func() {
@@ -54,16 +54,15 @@ var _ = Describe("RegisterPushKeyContract", func() {
 
 	Describe(".Exec", func() {
 		var err error
+		var pushKey *crypto.PubKey
+		var scopes = []string{"repo1", "repo2"}
+		var feeCap = util.String("10")
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10"})
 		})
 
 		When("successful", func() {
-			var pushKey *crypto.PubKey
-			var scopes = []string{"repo1", "repo2"}
-			var feeCap = util.String("10")
-
 			BeforeEach(func() {
 				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
 				err = registerpushkey.NewContract().Init(logic, &txns.TxRegisterPushKey{
@@ -88,6 +87,29 @@ var _ = Describe("RegisterPushKeyContract", func() {
 			Specify("that fee is deducted from sender account", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.GetBalance()).To(Equal(util.String("8.5")))
+			})
+		})
+
+		When("sender account update is disabled", func() {
+			BeforeEach(func() {
+				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
+				err = registerpushkey.NewContractWithNoSenderUpdate().Init(logic, &txns.TxRegisterPushKey{
+					TxCommon:  &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					Scopes:    scopes,
+					FeeCap:    feeCap,
+					PublicKey: pushKey.ToPublicKey(),
+				}, 0).Exec()
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that fee is not deducted from sender account", func() {
+				acct := logic.AccountKeeper().Get(sender.Addr())
+				Expect(acct.GetBalance()).To(Equal(util.String("10")))
+			})
+
+			Specify("that sender account nonce is changed", func() {
+				acct := logic.AccountKeeper().Get(sender.Addr())
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(0)))
 			})
 		})
 	})

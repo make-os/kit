@@ -2,9 +2,9 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 // TxKeeper manages transaction data
@@ -20,7 +20,7 @@ func NewTxKeeper(db storage.Tx) *TxKeeper {
 // Index takes a transaction and stores it.
 // It uses the tx hash as the index key
 func (tk *TxKeeper) Index(tx types.BaseTx) error {
-	rec := storage.NewFromKeyValue(MakeTxKey(tx.GetHash().Bytes()), tx.Bytes())
+	rec := storage.NewFromKeyValue(MakeTxKey(tx.GetHash()), tx.Bytes())
 	if err := tk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index tx")
 	}

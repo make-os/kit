@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -108,11 +108,12 @@ var _ = Describe("RPC", func() {
 		})
 
 		It("should return 'Method not found' error", func() {
-			rpc.apiSet["add"] = APIInfo{
+			rpc.apiSet.Add(APIInfo{
+				Name: "add",
 				Func: func(params interface{}) *Response {
 					return Success(nil)
 				},
-			}
+			})
 
 			data, _ := json.Marshal(Request{
 				JSONRPCVersion: "2.0",
@@ -142,17 +143,18 @@ var _ = Describe("RPC", func() {
 		Context("Successfully call method", func() {
 			When("ID is added to the request body", func() {
 				It("should return result", func() {
-					rpc.apiSet["add"] = APIInfo{
+					rpc.apiSet.Add(APIInfo{
+						Name:      "add",
 						Namespace: "math",
 						Func: func(params interface{}) *Response {
 							m := params.(map[string]interface{})
 							return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
 						},
-					}
+					})
 
 					data, _ := json.Marshal(Request{
 						JSONRPCVersion: "2.0",
-						Method:         "add",
+						Method:         "math_add",
 						Params: map[string]interface{}{
 							"x": 2, "y": 2,
 						},
@@ -178,17 +180,18 @@ var _ = Describe("RPC", func() {
 
 			When("ID is not added to the request body", func() {
 				It("should not return result", func() {
-					rpc.apiSet["add"] = APIInfo{
+					rpc.apiSet.Add(APIInfo{
+						Name:      "add",
 						Namespace: "math",
 						Func: func(params interface{}) *Response {
 							m := params.(map[string]interface{})
 							return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
 						},
-					}
+					})
 
 					data, _ := json.Marshal(Request{
 						JSONRPCVersion: "2.0",
-						Method:         "add",
+						Method:         "math_add",
 						Params: map[string]interface{}{
 							"x": 2, "y": 2,
 						},
@@ -220,17 +223,18 @@ var _ = Describe("RPC", func() {
 			BeforeEach(func() {
 				cfg.RPC.DisableAuth = false
 
-				rpc.apiSet["echo"] = APIInfo{
+				rpc.apiSet.Add(APIInfo{
+					Name:      "echo",
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(util.Map{"result": params})
 					},
-				}
+				})
 
 				data, _ := json.Marshal(Request{
 					JSONRPCVersion: "2.0",
-					Method:         "echo",
+					Method:         "test_echo",
 					Params:         map[string]interface{}{},
 				})
 
@@ -259,17 +263,18 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = APIInfo{
+				rpc.apiSet.Add(APIInfo{
+					Name:      "echo",
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(util.Map{"result": params})
 					},
-				}
+				})
 
 				data, _ := json.Marshal(Request{
 					JSONRPCVersion: "2.0",
-					Method:         "echo",
+					Method:         "test_echo",
 					Params:         map[string]interface{}{},
 				})
 
@@ -299,17 +304,18 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = APIInfo{
+				rpc.apiSet.Add(APIInfo{
+					Name:      "echo",
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(util.Map{"result": params})
 					},
-				}
+				})
 
 				data, _ := json.Marshal(Request{
 					JSONRPCVersion: "2.0",
-					Method:         "echo",
+					Method:         "test_echo",
 					Params:         map[string]interface{}{},
 				})
 
@@ -338,17 +344,18 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = APIInfo{
+				rpc.apiSet.Add(APIInfo{
+					Name:      "echo",
 					Private:   false,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(util.Map{"result": params})
 					},
-				}
+				})
 
 				data, _ := json.Marshal(Request{
 					JSONRPCVersion: "2.0",
-					Method:         "echo",
+					Method:         "test_echo",
 					Params:         map[string]interface{}{},
 				})
 
@@ -379,17 +386,18 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = APIInfo{
+				rpc.apiSet.Add(APIInfo{
+					Name:      "echo",
 					Private:   false,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(util.Map{"result": params})
 					},
-				}
+				})
 
 				data, _ := json.Marshal(Request{
 					JSONRPCVersion: "2.0",
-					Method:         "echo",
+					Method:         "test_echo",
 					Params:         map[string]interface{}{},
 				})
 
@@ -411,57 +419,21 @@ var _ = Describe("RPC", func() {
 	})
 
 	Describe(".AddAPI", func() {
-		Context("with no namespace provided", func() {
-			It("should add API", func() {
-				rpc.AddAPI("add", APIInfo{
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				})
-				Expect(rpc.apiSet).To(HaveLen(2))
-				Expect(rpc.apiSet).To(HaveKey("_add"))
-			})
-		})
-
-		Context("with a namespace provided", func() {
-			It("should add API", func() {
-				rpc.AddAPI("add", APIInfo{
-					Namespace: "math",
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				})
-				Expect(rpc.apiSet).To(HaveLen(2))
-				Expect(rpc.apiSet).To(HaveKey("math_add"))
-			})
+		It("should add API", func() {
+			rpc.AddAPI(APIInfo{Name: "add", Namespace: "ns", Func: func(params interface{}) *Response { return Success(util.Map{}) }})
+			Expect(rpc.apiSet).To(HaveLen(2))
+			Expect(rpc.apiSet.Get("ns_add")).ToNot(BeNil())
 		})
 	})
 
-	Describe(".AddAPI", func() {
+	Describe(".MergeAPISet", func() {
 		It("should add API", func() {
-			apiSet1 := APISet(map[string]APIInfo{
-				"add": {
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				},
+			apiSet1 := APISet([]APIInfo{
+				{Name: "add", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
 			})
-			apiSet2 := APISet(map[string]APIInfo{
-				"add": {
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				},
-				"div": {
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) / m["y"].(float64)})
-					},
-				},
+			apiSet2 := APISet([]APIInfo{
+				{Name: "add", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
+				{Name: "div", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
 			})
 			rpc.MergeAPISet(apiSet1, apiSet2)
 			Expect(rpc.apiSet).To(HaveLen(3))
@@ -470,38 +442,16 @@ var _ = Describe("RPC", func() {
 
 	Describe(".Methods", func() {
 		It("should return all methods name", func() {
-			apiSet1 := APISet(map[string]APIInfo{
-				"add": {
-					Namespace: "math",
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				},
+			apiSet1 := APISet([]APIInfo{
+				{Name: "add", Namespace: "math", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
 			})
-			apiSet2 := APISet(map[string]APIInfo{
-				"add": {
-					Namespace: "math",
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) + m["y"].(float64)})
-					},
-				},
-				"div": {
-					Namespace: "math",
-					Func: func(params interface{}) *Response {
-						m := params.(map[string]interface{})
-						return Success(util.Map{"result": m["x"].(float64) / m["y"].(float64)})
-					},
-				},
+			apiSet2 := APISet([]APIInfo{
+				{Name: "add", Namespace: "math", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
+				{Name: "div", Namespace: "math", Func: func(params interface{}) *Response { return Success(util.Map{}) }},
 			})
 			rpc.MergeAPISet(apiSet1, apiSet2)
 			m := rpc.Methods()
 			Expect(m).To(HaveLen(3))
-			// expectedMethods := []string{"rpc_methods", "math_add", "math_div"}
-			// Expect(expectedMethods).To(ContainElement(m[0].Name))
-			// Expect(expectedMethods).To(ContainElement(m[1].Name))
-			// Expect(expectedMethods).To(ContainElement(m[2].Name))
 		})
 	})
 })

@@ -6,11 +6,12 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/params"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/params"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 func MakeProposal(
@@ -22,12 +23,12 @@ func MakeProposal(
 
 	proposal := &state.RepoProposal{
 		ID:         id,
-		Config:     repo.Config.Clone().Governance,
+		Config:     repo.Config.Clone().Gov,
 		Creator:    creatorAddress,
-		Height:     chainHeight,
-		EndAt:      repo.Config.Governance.ProposalDuration + chainHeight + 1,
+		Height:     util.UInt64(chainHeight),
+		EndAt:      repo.Config.Gov.PropDuration + util.UInt64(chainHeight) + 1,
 		Fees:       map[string]string{},
-		ActionData: map[string][]byte{},
+		ActionData: map[string]util.Bytes{},
 	}
 
 	// Register proposal fee if set
@@ -36,15 +37,15 @@ func MakeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Governance.VoterAgeAsCurHeight {
-		proposal.ProposerMaxJoinHeight = chainHeight + 1
+	if repo.Config.Gov.ReqVoterJoinHeight {
+		proposal.ProposerMaxJoinHeight = util.UInt64(chainHeight) + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Governance.ProposalFeeDepositDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.ProposalFeeDepositDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDuration
+	if repo.Config.Gov.PropFeeDepositDur > 0 {
+		proposal.FeeDepositEndAt = 1 + util.UInt64(chainHeight) + repo.Config.Gov.PropFeeDepositDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Gov.PropDuration
 	}
 
 	// Register the proposal to the repo
@@ -70,7 +71,7 @@ func GetProposalOutcome(tickmgr tickettypes.TicketManager, prop state.Proposal,
 	if prop.GetVoterType() == state.VoterOwner {
 		maxJoinHeight := prop.GetVoterMaxJoinHeight()
 		repo.Owners.ForEach(func(o *state.RepoOwner, addr string) {
-			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
+			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt.UInt64() {
 				return
 			}
 			totalPower++
@@ -145,7 +146,7 @@ func DetermineProposalOutcome(
 // refundProposalFees refunds all fees back to their senders
 func refundProposalFees(keepers core.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
-		sender := util.Address(senderAddr)
+		sender := identifier.Address(senderAddr)
 		acct := keepers.AccountKeeper().Get(sender)
 		acct.Balance = util.String(acct.Balance.Decimal().Add(util.String(fee).Decimal()).String())
 		keepers.AccountKeeper().Update(sender, acct)

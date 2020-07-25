@@ -2,13 +2,14 @@ package core
 
 import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/storage"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/storage"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // BlockValidators contains validators of a block
@@ -16,18 +17,18 @@ type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash         []byte `json:"appHash"`
-	LastAppHash     []byte `json:"lastAppHash"`
-	Hash            []byte `json:"hash"`
-	Height          int64  `json:"height"`
-	ProposerAddress []byte `json:"proposerAddress"`
-	Time            int64
+	AppHash         []byte     `json:"appHash"`
+	LastAppHash     []byte     `json:"lastAppHash"`
+	Hash            []byte     `json:"hash"`
+	Height          util.Int64 `json:"height"`
+	ProposerAddress []byte     `json:"proposerAddress"`
+	Time            util.Int64 `json:"time"`
 }
 
 // Validator represents a validator
 type Validator struct {
-	PubKey   util.Bytes32 `json:"publicKey,omitempty" mapstructure:"publicKey"`
-	TicketID util.Bytes32 `json:"ticketID,omitempty" mapstructure:"ticketID"`
+	PubKey   util.Bytes32  `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	TicketID util.HexBytes `json:"ticketID,omitempty" mapstructure:"ticketID"`
 }
 
 // SystemKeeper describes an interface for accessing system data
@@ -84,14 +85,14 @@ type AccountKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	Get(address util.Address, blockNum ...uint64) *state.Account
+	Get(address identifier.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
 	// address: The address of the account to update
 	// udp: The updated account object to replace the existing object.
-	Update(address util.Address, upd *state.Account)
+	Update(address identifier.Address, upd *state.Account)
 }
 
 // RepoKeeper describes an interface for accessing repository data
@@ -209,14 +210,14 @@ type PushKeyKeeper interface {
 	// Update sets a new value for the given public key id
 	//
 	// ARGS:
-	// gpgID: The public key unique ID
+	// pushKeyID: The public key unique ID
 	// udp: The updated object to replace the existing object.
-	Update(gpgID string, upd *state.PushKey) error
+	Update(pushKeyID string, upd *state.PushKey) error
 
-	// Get returns a GPG public key
+	// Get finds and returns a push key
 	//
 	// ARGS:
-	// gpgID: The unique ID of the public key
+	// pushKeyID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
@@ -226,13 +227,13 @@ type PushKeyKeeper interface {
 	//
 	// ARGS:
 	// address: The target address
-	GetByAddress(address string) (gpgIDs []string)
+	GetByAddress(address string) (pushKeys []string)
 
-	// Remove removes a gpg key by id
+	// Remove removes a push key by id
 	//
 	// ARGS:
-	// gpgID: The public key unique ID
-	Remove(gpgID string) bool
+	// pushKeyID: The public key unique ID
+	Remove(pushKeyID string) bool
 }
 
 // AtomicLogic is like Logic but allows all operations

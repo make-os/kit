@@ -7,9 +7,10 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	msgpack "github.com/vmihailenco/msgpack"
-	types "gitlab.com/makeos/mosdef/remote/push/types"
-	types0 "gitlab.com/makeos/mosdef/remote/types"
-	util "gitlab.com/makeos/mosdef/util"
+	types "gitlab.com/makeos/lobe/remote/push/types"
+	types0 "gitlab.com/makeos/lobe/remote/types"
+	util "gitlab.com/makeos/lobe/util"
+	identifier "gitlab.com/makeos/lobe/util/identifier"
 	reflect "reflect"
 )
 
@@ -253,10 +254,10 @@ func (mr *MockPushNoteMockRecorder) GetPusherKeyID() *gomock.Call {
 }
 
 // GetPusherAddress mocks base method
-func (m *MockPushNote) GetPusherAddress() util.Address {
+func (m *MockPushNote) GetPusherAddress() identifier.Address {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPusherAddress")
-	ret0, _ := ret[0].(util.Address)
+	ret0, _ := ret[0].(identifier.Address)
 	return ret0
 }
 
@@ -610,7 +611,7 @@ func (m *MockPushNote) IsFromRemotePeer() bool {
 }
 
 // IsFromRemotePeer indicates an expected call of IsFromRemotePeer
-func (mr *MockPushNoteMockRecorder) IsFromPeer() *gomock.Call {
+func (mr *MockPushNoteMockRecorder) IsFromRemotePeer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromRemotePeer", reflect.TypeOf((*MockPushNote)(nil).IsFromRemotePeer))
 }

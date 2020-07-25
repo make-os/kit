@@ -4,10 +4,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	state2 "gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	state2 "gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util/identifier"
 
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("Account", func() {
@@ -48,16 +49,16 @@ var _ = Describe("Account", func() {
 
 	Describe(".Update", func() {
 		It("should update balance", func() {
-			key := util.Address("addr1")
+			key := identifier.Address("addr1")
 			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
-			Expect(acct.Nonce).To(Equal(uint64(0)))
+			Expect(acct.Nonce.UInt64()).To(Equal(uint64(0)))
 			acct.Balance = "10000"
 			acct.Nonce = 2
 			ak.Update(key, acct)
 			acct = ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("10000")))
-			Expect(acct.Nonce).To(Equal(uint64(2)))
+			Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 		})
 	})
 })

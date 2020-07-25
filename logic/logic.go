@@ -4,18 +4,19 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/logic/contracts"
-	"gitlab.com/makeos/mosdef/logic/contracts/transfercoin"
-	"gitlab.com/makeos/mosdef/logic/keepers"
-	"gitlab.com/makeos/mosdef/logic/proposals"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/storage"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/logic/contracts"
+	"gitlab.com/makeos/lobe/logic/contracts/transfercoin"
+	"gitlab.com/makeos/lobe/logic/keepers"
+	"gitlab.com/makeos/lobe/logic/proposals"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/storage"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // Logic is the central point for defining and accessing
@@ -261,7 +262,7 @@ func (l *Logic) WriteGenesisState() error {
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
-			l.accountKeeper.Update(util.Address(ga.Address), newAcct)
+			l.accountKeeper.Update(identifier.Address(ga.Address), newAcct)
 		}
 
 		// Create repository
@@ -270,7 +271,7 @@ func (l *Logic) WriteGenesisState() error {
 			for address, owner := range ga.Owners {
 				newRepo.AddOwner(address, &state.RepoOwner{
 					Creator:  owner.Creator,
-					JoinedAt: owner.JoinedAt,
+					JoinedAt: util.UInt64(owner.JoinedAt),
 					Veto:     owner.Veto,
 				})
 			}

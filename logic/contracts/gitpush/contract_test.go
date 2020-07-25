@@ -7,22 +7,22 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/gitpush"
-	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/gitpush"
+	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 )
 
 var _ = Describe("GitPush", func() {
@@ -136,7 +136,7 @@ var _ = Describe("GitPush", func() {
 
 			Specify("that the reference's nonce was incremented", func() {
 				repo := logic.RepoKeeper().Get(repo)
-				Expect(repo.References.Get("refs/heads/master").Nonce).To(Equal(uint64(2)))
+				Expect(repo.References.Get("refs/heads/master").Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 
 			Specify("that (total pushed reference fee + total pushed reference secondary fees) were deducted from pusher account", func() {
@@ -146,7 +146,7 @@ var _ = Describe("GitPush", func() {
 
 			Specify("that sender account nonce was incremented", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(2)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})
 
@@ -242,10 +242,10 @@ var _ = Describe("GitPush", func() {
 				Expect(rep.Proposals).To(HaveLen(1))
 				Expect(rep.Proposals.Has(mergerequest.MakeMergeRequestProposalID(1))).To(BeTrue())
 				prop := rep.Proposals.Get(mergerequest.MakeMergeRequestProposalID(1))
-				Expect(prop.ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte(mr.BaseBranch)))
-				Expect(prop.ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte(mr.BaseBranchHash)))
-				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte(mr.TargetBranch)))
-				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte(mr.TargetBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes(mr.BaseBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes(mr.BaseBranchHash)))
+				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes(mr.TargetBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes(mr.TargetBranch)))
 			})
 
 			When("reference is not new", func() {

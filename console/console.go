@@ -1,4 +1,4 @@
-// Package console provides javascript-enabled console
+// Package console provides JavaScript-enabled console
 // environment for interacting with the client. It includes
 // pre-loaded methods that access the node's RPC interface
 // allowing access to the state and condition of the client.
@@ -7,26 +7,27 @@ package console
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
+	"path/filepath"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/types/modules"
-
+	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	apitypes "gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/modules/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/makeos/mosdef/util"
-
-	"github.com/fatih/color"
-
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/c-bata/go-prompt"
+	"gitlab.com/makeos/lobe/config"
 )
 
 // Console defines functionalities for create and using
-// an interactive Javascript console to perform and query
+// an interactive JavaScript console to perform and query
 // the system.
 type Console struct {
 	sync.RWMutex
@@ -35,15 +36,11 @@ type Console struct {
 	// we are building the console on
 	prompt *prompt.Prompt
 
-	// executor is the javascript executor
+	// executor is the JavaScript executor
 	executor *Executor
 
 	// suggestMgr managers prompt suggestions
-	suggestMgr *SuggestionManager
-
-	// attached indicates whether the console
-	// is in attach mode.
-	attached bool
+	completerMgr *CompleterManager
 
 	// historyFile is the path to the file
 	// where the file is stored.
@@ -63,31 +60,25 @@ type Console struct {
 	// use this to perform clean up etc
 	onStopFunc func()
 
-	// jsModules to integrate with the console
-	jsModules []modules.ModuleHub
-
-	// Versions
-	protocol uint64
-	client   string
-	runtime  string
-	commit   string
+	// modules provides access to the system's module APIs
+	modules types.ModulesHub
 }
 
 // New creates a new Console instance.
 // signatory is the address
-func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console {
+func New(cfg *config.AppConfig) *Console {
 	c := new(Console)
-	c.historyFile = historyPath
-	c.executor = newExecutor(log)
-	c.suggestMgr = newSuggestionManager(initialSuggestions)
+	c.historyFile = cfg.GetConsoleHistoryPath()
+	c.executor = newExecutor(cfg.G().Log.Module("console"))
+	c.completerMgr = newCompleterManager()
 	c.executor.console = c
 	c.cfg = cfg
 
 	// retrieve the history
 	var history []string
-	data, _ := ioutil.ReadFile(historyPath)
+	data, _ := ioutil.ReadFile(c.historyFile)
 	if len(data) > 0 {
-		util.ToObject(data, &history)
+		_ = util.ToObject(data, &history)
 	}
 
 	c.history = append(c.history, history...)
@@ -95,10 +86,7 @@ func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console 
 	return c
 }
 
-// NewAttached is like New but enables attach mode
-
-// Prepare sets up the console's prompt
-// colors, suggestions etc.
+// Prepare prepares the console and VM
 func (c *Console) Prepare() error {
 
 	// Set some options
@@ -117,21 +105,12 @@ func (c *Console) Prepare() error {
 		prompt.OptionHistory(c.history),
 	}
 
-	// Prepare the vm context
-	suggestions, err := c.executor.PrepareContext()
-	if err != nil {
-		return err
+	// Pass the VM to the system modules for context configuration
+	if c.modules != nil {
+		c.completerMgr.add(c.modules.ConfigureVM(c.executor.vm)...)
 	}
 
-	// Apply JS module
-	for _, jm := range c.jsModules {
-		c.suggestMgr.add(jm.ConfigureVM(c.executor.vm)...)
-	}
-
-	c.suggestMgr.add(suggestions...)
-
-	// create new prompt and configure it
-	// with the options create above
+	// Create new prompt
 	p := prompt.New(func(in string) {
 		c.history = append(c.history, in)
 		switch in {
@@ -140,13 +119,12 @@ func (c *Console) Prepare() error {
 		case ".exit":
 			c.Stop(true)
 
-		// pass other expressions
-		// to the JS executor
+		// pass other expressions to the JS executor
 		default:
 			c.confirmedStop = false
 			c.executor.OnInput(in)
 		}
-	}, c.suggestMgr.completer, options...)
+	}, c.completerMgr.completer, options...)
 
 	c.Lock()
 	c.prompt = p
@@ -155,9 +133,9 @@ func (c *Console) Prepare() error {
 	return nil
 }
 
-// AddModulesAggregator adds javascript modules
-func (c *Console) AddModulesAggregator(modules ...modules.ModuleHub) {
-	c.jsModules = append(c.jsModules, modules...)
+// SetModulesHub sets the system modules hub
+func (c *Console) SetModulesHub(hub types.ModulesHub) {
+	c.modules = hub
 }
 
 // OnStop sets a function that is called
@@ -168,16 +146,60 @@ func (c *Console) OnStop(f func()) {
 	c.onStopFunc = f
 }
 
-// Run the console
-func (c *Console) Run() error {
+// connectToNode creates an RPC client to configured remote server.
+// It will test the connection by getting the RPC methods supported
+// by the server. Returns both client and RPC methods on success.
+func (c *Console) connectToNote() (client.Client, *apitypes.GetMethodResponse, error) {
+	host, port, err := net.SplitHostPort(c.cfg.RPC.Address)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	if err := c.Prepare(); err != nil {
+	cl := client.NewClient(&client.Options{
+		Host:     host,
+		Port:     cast.ToInt(port),
+		HTTPS:    c.cfg.RPC.HTTPS,
+		User:     c.cfg.RPC.User,
+		Password: c.cfg.RPC.Password,
+	})
+
+	methods, err := cl.GetMethods()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cl, methods, nil
+}
+
+// Run the console.
+// If execCode is set, it is executed after context is prepared.
+func (c *Console) Run(code ...string) error {
+
+	var err error
+	if err = c.Prepare(); err != nil {
 		return errors.Wrap(err, "failed to prepare console")
 	}
 
-	if !c.cfg.ConsoleOnly() {
+	if !c.cfg.IsAttachMode() {
 		fmt.Println("")
 	}
+
+	// Execute 'code' if set and stop the console when finished.
+	// If code is a file path, read and execute the file content.
+	if len(code) > 0 && code[0] != "" {
+		var src interface{} = code[0]
+		if util.IsPathOk(code[0]) {
+			fullPath, _ := filepath.Abs(code[0])
+			src, err = ioutil.ReadFile(fullPath)
+			if err != nil {
+				return errors.Wrap(err, "exec failed; failed to read file")
+			}
+		}
+		c.executor.exec(src)
+		c.Stop(true)
+		return nil
+	}
+
 	c.about()
 	c.prompt.Run()
 
@@ -194,21 +216,12 @@ func (c *Console) Stop(immediately bool) {
 		c.saveHistory()
 		if c.onStopFunc != nil {
 			c.onStopFunc()
+			return
 		}
 	}
 
 	fmt.Println("(To exit, press ^C again or type .exit)")
 	c.confirmedStop = true
-}
-
-// SetVersions sets the versions of components
-func (c *Console) SetVersions(protocol uint64, client, runtime, commit string) {
-	c.Lock()
-	defer c.Unlock()
-	c.protocol = protocol
-	c.client = client
-	c.runtime = runtime
-	c.commit = commit
 }
 
 // about prints some information about
@@ -217,8 +230,12 @@ func (c *Console) SetVersions(protocol uint64, client, runtime, commit string) {
 func (c *Console) about() {
 	c.RLock()
 	defer c.RUnlock()
-	fmt.Println(color.CyanString("Welcome to the Javascript Console!"))
-	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s", c.client, c.protocol, util.String(c.commit).SS(), c.runtime))
+	fmt.Println(fmt2.CyanString("Welcome to the JavaScript Console!"))
+	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s",
+		c.cfg.VersionInfo.BuildVersion,
+		config.GetNetVersion(),
+		util.String(c.cfg.VersionInfo.BuildCommit).SS(),
+		c.cfg.VersionInfo.GoVersion))
 	fmt.Println(" type '.exit' to exit console")
 	fmt.Println("")
 }

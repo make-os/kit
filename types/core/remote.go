@@ -3,14 +3,14 @@ package core
 import (
 	"context"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/dht/server/types"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/remote/fetcher"
-	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/dht/server/types"
+	types2 "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/remote/fetcher"
+	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
 )
 
 // PushKeyGetter represents a function used for fetching a push key
@@ -65,7 +65,7 @@ type RemoteServer interface {
 	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
 
 	// RegisterAPIHandlers registers server API handlers
-	RegisterAPIHandlers(agg modules.ModuleHub)
+	RegisterAPIHandlers(agg types2.ModulesHub)
 
 	// AnnounceObject announces a git object to the DHT network
 	AnnounceObject(hash []byte, doneCB func(error))
@@ -78,6 +78,9 @@ type RemoteServer interface {
 
 	// GetPruner returns the repo pruner
 	GetPruner() remotetypes.RepoPruner
+
+	// SetPruner sets the pruner
+	SetPruner(pruner remotetypes.RepoPruner)
 
 	// GetDHT returns the dht service
 	GetDHT() types.DHT

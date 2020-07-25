@@ -6,17 +6,17 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("MergeRequestContract", func() {
@@ -67,7 +67,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 			repo = state.BareRepository()
 			repo.Config = state.DefaultRepoConfig
-			repo.Config.Governance.Voter = state.VoterOwner
+			repo.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -166,7 +166,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.ProposalDuration + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Gov.PropDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -180,7 +180,7 @@ var _ = Describe("MergeRequestContract", func() {
 			BeforeEach(func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
-					ActionData: map[string][]byte{
+					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
 						constants.ActionDataKeyBaseHash:     []byte("baseHash"),
 						constants.ActionDataKeyTargetBranch: []byte("target"),
@@ -210,10 +210,10 @@ var _ = Describe("MergeRequestContract", func() {
 			It("should update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				id := mergerequest.MakeMergeRequestProposalID(id)
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal([]byte("targetHash2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes("base2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes("baseHash2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes("target2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal(util.Bytes("targetHash2")))
 			})
 		})
 
@@ -227,7 +227,7 @@ var _ = Describe("MergeRequestContract", func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
 					Outcome: state.ProposalOutcomeAccepted,
-					ActionData: map[string][]byte{
+					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
 						constants.ActionDataKeyBaseHash:     []byte("baseHash"),
 						constants.ActionDataKeyTargetBranch: []byte("target"),
@@ -257,10 +257,10 @@ var _ = Describe("MergeRequestContract", func() {
 			It("should not update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				id := mergerequest.MakeMergeRequestProposalID(id)
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal([]byte("targetHash")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes("base")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes("baseHash")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes("target")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal(util.Bytes("targetHash")))
 			})
 		})
 	})

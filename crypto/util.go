@@ -3,10 +3,13 @@ package crypto
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
+	"strings"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // PublicKey represents a 32-byte ED25519 public key
@@ -28,6 +31,16 @@ func (pk PublicKey) ToBytes32() util.Bytes32 {
 	return util.BytesToBytes32(pk.Bytes())
 }
 
+func (pk PublicKey) MarshalJSON() ([]byte, error) {
+	var result string
+	if pk.IsEmpty() {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", pk)), ",")
+	}
+	return []byte(result), nil
+}
+
 // Equal checks equality between h and o
 func (pk PublicKey) Equal(o PublicKey) bool { return bytes.Equal(pk.Bytes(), o.Bytes()) }
 
@@ -47,8 +60,14 @@ func (pk PublicKey) Hex() []byte {
 
 // MustAddress derives an address from the key.
 // Panics on failure.
-func (pk PublicKey) MustAddress() util.Address {
+func (pk PublicKey) MustAddress() identifier.Address {
 	return MustPubKeyFromBytes(pk.Bytes()).Addr()
+}
+
+// MustPushKeyAddress derives a push key address from the key.
+// Panics on failure.
+func (pk PublicKey) MustPushKeyAddress() identifier.Address {
+	return MustPubKeyFromBytes(pk.Bytes()).PushAddr()
 }
 
 // IsEmpty checks whether the object is empty (having zero values)
@@ -90,4 +109,14 @@ type PushKey []byte
 // String returns the push key ID as a string
 func (p PushKey) String() string {
 	return BytesToPushKeyID(p)
+}
+
+func (p PushKey) MarshalJSON() ([]byte, error) {
+	var result string
+	if p == nil {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", p)), ",")
+	}
+	return []byte(result), nil
 }

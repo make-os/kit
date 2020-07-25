@@ -3,35 +3,41 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/mempool"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	modulestypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	vm       *otto.Otto
-	reactor  *mempool.Reactor
+	modulestypes.ModuleCommon
+	reactor  core.MempoolReactor
 	pushPool types.PushPool
 }
 
+// NewAttachablePoolModule creates an instance of PoolModule suitable in attach mode
+func NewAttachablePoolModule(client client.Client) *PoolModule {
+	return &PoolModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+}
+
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
-	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
+func NewPoolModule(reactor core.MempoolReactor, pushPool types.PushPool) *PoolModule {
+	return &PoolModule{reactor: reactor, pushPool: pushPool}
 }
 
-func (m *PoolModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+// globals are functions exposed in the VM's global namespace
+func (m *PoolModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
-// funcs exposed by the module
-func (m *PoolModule) funcs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// methods are functions exposed in the special namespace of this module.
+func (m *PoolModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "getSize",
 			Value:       m.GetSize,
@@ -50,42 +56,39 @@ func (m *PoolModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *PoolModule) Configure() []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespacePool, obj)
+	util.VMSet(vm, constants.NamespacePool, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePool, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
-	return EncodeForJS(m.reactor.GetPoolSize())
+	return util.ToMap(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) GetTop(n int) []util.Map {
-	var res []util.Map
+	var res = []util.Map{}
 	for _, tx := range m.reactor.GetTop(n) {
-		res = append(res, EncodeForJS(tx.ToMap()))
+		res = append(res, tx.ToMap())
 	}
 	return res
 }

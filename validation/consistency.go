@@ -6,17 +6,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/crypto/bls"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/crypto/bls"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer
@@ -24,38 +23,30 @@ func CheckTxCoinTransferConsistency(
 	tx *txns.TxCoinTransfer,
 	index int,
 	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
 	recipient := tx.To
-
 check:
-	// If recipient address is a prefixed repo address, ensure repo exist
-	if recipient.IsPrefixedRepoAddress() {
-		targetRepo := logic.RepoKeeper().Get(recipient.String()[2:], uint64(bi.Height))
+
+	// If recipient address is a native namespace repo address, ensure repo exist
+	if recipient.IsNativeRepoAddress() {
+		targetRepo := logic.RepoKeeper().Get(recipient.String()[2:])
 		if targetRepo.IsNil() {
 			return feI(index, "to", "recipient repo not found")
 		}
 	}
 
-	// If the recipient address is a namespace uri, get the target and if the
+	// If the recipient address is a user namespace address, get the target and if the
 	// target is a repository address, check that the repo exist.
-	if recipient.IsNamespaceURI() {
-		prefixedTarget, err := logic.NamespaceKeeper().
-			GetTarget(recipient.String(), uint64(bi.Height))
+	if recipient.IsUserNamespace() {
+		prefixedTarget, err := logic.NamespaceKeeper().GetTarget(recipient.String())
 		if err != nil {
 			return feI(index, "to", err.Error())
 		}
-		recipient = util.Address(prefixedTarget)
+		recipient = identifier.Address(prefixedTarget)
 		goto check
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -67,11 +58,6 @@ func CheckTxTicketPurchaseConsistency(
 	tx *txns.TxTicketPurchase,
 	index int,
 	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
 
 	// When delegate is set, the delegate must have an active,
 	// non-delegated ticket
@@ -95,8 +81,7 @@ func CheckTxTicketPurchaseConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -140,8 +125,7 @@ func CheckTxUnbondTicketConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -149,25 +133,15 @@ func CheckTxUnbondTicketConsistency(
 }
 
 // CheckTxRepoCreateConsistency performs consistency checks on TxRepoCreate
-func CheckTxRepoCreateConsistency(
-	tx *txns.TxRepoCreate,
-	index int,
-	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
+func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.Logic) error {
 
 	repoState := logic.RepoKeeper().Get(tx.Name)
 	if !repoState.IsNil() {
-		msg := "name is not available. choose another"
-		return feI(index, "name", msg)
+		return feI(index, "name", "name is not available. choose another")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -175,22 +149,11 @@ func CheckTxRepoCreateConsistency(
 }
 
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
-func CheckTxSetDelegateCommissionConsistency(
-	tx *txns.TxSetDelegateCommission,
-	index int,
-	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
+func CheckTxSetDelegateCommissionConsistency(tx *txns.TxSetDelegateCommission, index int, logic core.Logic) error {
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -200,11 +163,6 @@ func CheckTxRegisterPushKeyConsistency(
 	index int,
 	logic core.Logic) error {
 
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
 	// Check whether there is a matching push key already existing
 	pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
 	pushKey := logic.PushKeyKeeper().Get(pushKeyID)
@@ -213,8 +171,7 @@ func CheckTxRegisterPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -226,11 +183,6 @@ func CheckTxUpDelPushKeyConsistency(
 	tx *txns.TxUpDelPushKey,
 	index int,
 	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
 
 	key := logic.PushKeyKeeper().Get(tx.ID)
 	if key.IsNil() {
@@ -252,8 +204,7 @@ func CheckTxUpDelPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -334,11 +285,8 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 	return nil
 }
 
-// CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceAcquire
-func CheckTxNSAcquireConsistency(
-	tx *txns.TxNamespaceAcquire,
-	index int,
-	logic core.Logic) error {
+// CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceRegister
+func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -346,29 +294,28 @@ func CheckTxNSAcquireConsistency(
 	}
 
 	ns := logic.NamespaceKeeper().Get(tx.Name)
-	if !ns.IsNil() && ns.GraceEndAt > uint64(bi.Height) {
+	if !ns.IsNil() && ns.GraceEndAt.UInt64() > uint64(bi.Height) {
 		return feI(index, "name", "chosen name is not currently available")
 	}
 
 	// If transfer recipient is a repo name
 	if tx.TransferTo != "" &&
-		util.IsValidName(tx.TransferTo) == nil &&
-		crypto.IsValidAccountAddr(tx.TransferTo) != nil {
+		identifier.IsValidResourceName(tx.TransferTo) == nil &&
+		crypto.IsValidUserAddr(tx.TransferTo) != nil {
 		if logic.RepoKeeper().Get(tx.TransferTo).IsNil() {
 			return feI(index, "to", "repo does not exist")
 		}
 	}
 
 	// If transfer recipient is an address of an account
-	if tx.TransferTo != "" && util.IsValidAddr(tx.TransferTo) == nil {
-		if logic.AccountKeeper().Get(util.Address(tx.TransferTo)).IsNil() {
+	if tx.TransferTo != "" && identifier.IsValidUserAddr(tx.TransferTo) == nil {
+		if logic.AccountKeeper().Get(identifier.Address(tx.TransferTo)).IsNil() {
 			return feI(index, "to", "account does not exist")
 		}
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -377,15 +324,7 @@ func CheckTxNSAcquireConsistency(
 
 // CheckTxNamespaceDomainUpdateConsistency performs consistency
 // checks on TxNamespaceDomainUpdate
-func CheckTxNamespaceDomainUpdateConsistency(
-	tx *txns.TxNamespaceDomainUpdate,
-	index int,
-	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
+func CheckTxNamespaceDomainUpdateConsistency(tx *txns.TxNamespaceDomainUpdate, index int, logic core.Logic) error {
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 
@@ -399,8 +338,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 		return feI(index, "senderPubKey", "sender not permitted to perform this operation")
 	}
 
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
 		return err
 	}
 
@@ -410,15 +348,13 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // CheckProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func CheckProposalCommonConsistency(
-	proposalType types.TxCode,
 	prop *txns.TxProposalCommon,
 	txCommon *txns.TxCommon,
 	index int,
-	logic core.Logic,
-	currentHeight int64) (*state.Repository, error) {
+	logic core.Logic) (*state.Repository, error) {
 
 	// Find the repository
-	repo := logic.RepoKeeper().Get(prop.RepoName, uint64(currentHeight))
+	repo := logic.RepoKeeper().Get(prop.RepoName)
 	if repo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
@@ -428,7 +364,7 @@ func CheckProposalCommonConsistency(
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
 
-	repoPropFee := repo.Config.Governance.ProposalFee
+	repoPropFee := repo.Config.Gov.PropFee
 	propFeeDec := decimal.NewFromFloat(repoPropFee)
 
 	// When the repo does not require a proposal deposit,
@@ -440,7 +376,7 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if repo.Config.Governance.ProposalFeeDepositDur == 0 {
+	if repo.Config.Gov.PropFeeDepositDur == 0 {
 		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
 			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%f)", repoPropFee)
 			return nil, feI(index, "value", msg)
@@ -450,14 +386,13 @@ func CheckProposalCommonConsistency(
 	// Check if the sender is permitted to create the proposal.
 	// When proposal creator parameter is ProposalCreatorOwner, the sender is permitted only if they are an owner...
 	owner := repo.Owners.Get(txCommon.GetFrom().String())
-	propCreator := repo.Config.Governance.ProposalCreator
+	propCreator := repo.Config.Gov.PropCreator
 	if propCreator == state.ProposalCreatorOwner && owner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, prop.Value, txCommon.Fee,
-		txCommon.GetNonce(), uint64(currentHeight)); err != nil {
+	if err := logic.DrySend(pubKey, prop.Value, txCommon.Fee, txCommon.GetNonce(), 0); err != nil {
 		return nil, err
 	}
 
@@ -471,12 +406,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 	index int,
 	logic core.Logic) error {
 
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err := CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic)
 	if err != nil {
 		return err
 	}
@@ -569,7 +499,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	// The proposal must exist
-	proposal := repoState.Proposals.Get(tx.ProposalID)
+	proposal := repoState.Proposals.Get(tx.ID)
 	if proposal == nil {
 		return feI(index, "id", "proposal not found")
 	}
@@ -604,21 +534,11 @@ func CheckTxRepoProposalSendFeeConsistency(
 }
 
 // CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
-func CheckTxRepoProposalUpdateConsistency(
-	tx *txns.TxRepoProposalUpdate,
-	index int,
-	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+func CheckTxRepoProposalUpdateConsistency(tx *txns.TxRepoProposalUpdate, index int, logic core.Logic) error {
+	_, err := CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -628,11 +548,6 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 	index int,
 	logic core.Logic) error {
 
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
 	// Check whether the namespace provided in both Namespace or NamespaceOnly
 	// fields exist and are owned by the target repository.
 	ns, nsField := tx.Namespace, "namespace"
@@ -640,9 +555,10 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		ns = tx.NamespaceOnly
 		nsField = "namespaceOnly"
 	}
+
 	if ns != "" {
 		ns = crypto2.HashNamespace(ns)
-		found := logic.NamespaceKeeper().Get(ns, uint64(bi.Height))
+		found := logic.NamespaceKeeper().Get(ns)
 		if found.IsNil() {
 			return feI(index, nsField, "namespace not found")
 		}
@@ -651,7 +567,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		}
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err := CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic)
 	if err != nil {
 		return err
 	}

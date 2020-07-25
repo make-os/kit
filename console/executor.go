@@ -3,16 +3,14 @@ package console
 import (
 	"fmt"
 
-	"github.com/c-bata/go-prompt"
-
-	"github.com/fatih/color"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 // Executor is responsible for executing operations inside a
-// javascript VM.
+// JavaScript VM.
 type Executor struct {
 
 	// vm is an Otto instance for JS evaluation
@@ -33,13 +31,6 @@ func newExecutor(l logger.Logger) *Executor {
 	return e
 }
 
-// PrepareContext adds objects and functions into the VM's global
-// contexts allowing users to have access to pre-defined values and objects
-func (e *Executor) PrepareContext() ([]prompt.Suggest, error) {
-	var suggestions []prompt.Suggest
-	return suggestions, nil
-}
-
 // OnInput receives inputs and executes
 func (e *Executor) OnInput(in string) {
 	switch in {
@@ -50,29 +41,31 @@ func (e *Executor) OnInput(in string) {
 	}
 }
 
-func (e *Executor) exec(in string) {
+func (e *Executor) exec(in interface{}) {
 
 	// RecoverFunc recovers from panics.
 	defer func() {
 		if r := recover(); r != nil {
-			color.Red("Panic: %s", r)
+			fmt2.Red("Panic: %s\n", r)
 		}
 	}()
 
 	v, err := e.vm.Run(in)
 	if err != nil {
-		color.Red("%s", err.Error())
+		fmt2.Red("%s\n", err.Error())
 		return
 	}
 
 	if v.IsNull() || v.IsUndefined() {
-		color.Magenta("%s", v)
+		fmt2.Magenta("%s\n", v)
 		return
 	}
 
 	vExp, _ := v.Export()
 	if vExp != nil {
-		bs, _ := prettyjson.Marshal(vExp)
+		format := prettyjson.NewFormatter()
+		format.NewlineArray = ""
+		bs, _ := format.Marshal(vExp)
 		fmt.Println(string(bs))
 	}
 }

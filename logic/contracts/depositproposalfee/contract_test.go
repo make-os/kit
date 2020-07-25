@@ -6,16 +6,16 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/depositproposalfee"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/depositproposalfee"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("DepositProposalFeeContract", func() {
@@ -62,7 +62,7 @@ var _ = Describe("DepositProposalFeeContract", func() {
 			logic.AccountKeeper().Update(key2.Addr(), &state.Account{Balance: "20", DelegatorCommission: 0})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governance.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender has not previously deposited", func() {
@@ -75,10 +75,8 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -100,10 +98,8 @@ var _ = Describe("DepositProposalFeeContract", func() {
 
 				BeforeEach(func() {
 					err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-						TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-						TxValue:    &txns.TxValue{Value: proposalFee},
-						RepoName:   repoName,
-						ProposalID: propID,
+						TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -132,18 +128,14 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 
 				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
-					TxCommon:   &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &txns.TxValue{Value: proposalFee},
-					RepoName:   repoName,
-					ProposalID: propID,
+					TxCommon:         &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{Value: proposalFee, RepoName: repoName, ID: propID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})

@@ -6,17 +6,17 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/updatenamespacedomains"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/updatenamespacedomains"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("NamespaceDomainUpdateContract", func() {
@@ -48,7 +48,7 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := updatenamespacedomains.NewContract()
-			Expect(ct.CanExec(txns.TxTypeNSDomainUpdate)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeNamespaceDomainUpdate)).To(BeTrue())
 			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
@@ -88,7 +88,7 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 
 			Specify("that sender account nonce is incremented", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(2)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})
 

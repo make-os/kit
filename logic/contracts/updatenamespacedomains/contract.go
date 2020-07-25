@@ -1,11 +1,11 @@
 package updatenamespacedomains
 
 import (
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // NamespaceDomainUpdateContract is a system contract to update the domains of a namespace.
@@ -22,7 +22,7 @@ func NewContract() *NamespaceDomainUpdateContract {
 }
 
 func (c *NamespaceDomainUpdateContract) CanExec(typ types.TxCode) bool {
-	return typ == txns.TxTypeNSDomainUpdate
+	return typ == txns.TxTypeNamespaceDomainUpdate
 }
 
 // Init initialize the contract

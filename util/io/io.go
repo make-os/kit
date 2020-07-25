@@ -28,7 +28,10 @@ func ReadInput(title string, args *InputReaderArgs) string {
 		args.Before()
 	}
 
+	survey.InputQuestionTemplate = title
+
 	if args.Password {
+		fmt.Print(survey.InputQuestionTemplate)
 		inp := readPasswordInput()
 		if args.After != nil {
 			args.After(inp)
@@ -37,7 +40,6 @@ func ReadInput(title string, args *InputReaderArgs) string {
 	}
 
 	var inp string
-	survey.InputQuestionTemplate = title
 	survey.AskOne(&survey.Input{Message: title}, &inp)
 
 	if args.After != nil {

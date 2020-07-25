@@ -157,7 +157,7 @@ func NewTMDBIteratorAdapter(db Tx, start, end []byte, reverse bool) *TMDBIterato
 	iOpts.Reverse = reverse
 	it := db.RawIterator(iOpts).(*badger.Iterator)
 
-	// Configure the iterator based on the provide
+	// ConfigureVM the iterator based on the provide
 	// start, end and reverse mode parameters.
 	if !reverse {
 		// move cursor to the beginning

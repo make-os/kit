@@ -3,23 +3,23 @@ package validation
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
 
 	v "github.com/go-ozzo/ozzo-validation"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/lobe/params"
 )
 
 // CheckRecipient validates the recipient address
@@ -27,29 +27,26 @@ func CheckRecipient(tx *txns.TxRecipient, index int) error {
 
 	recipient := tx.To
 
+	// If unset, return error
 	if tx.To.IsEmpty() {
 		return feI(index, "to", "recipient address is required")
 	}
 
-	if strings.Index(recipient.String(), "/") == -1 {
-		if crypto.IsValidAccountAddr(recipient.String()) != nil {
-			goto bad
-		}
+	// Ok if it is a valid full native namespace for a repo
+	if tx.To.IsNativeRepoAddress() || tx.To.IsNativeUserAddress() && tx.To.IsValidNativeAddress() {
 		return nil
 	}
 
-	if recipient.IsPrefixed() {
-		if recipient.IsPrefixedUserAddress() {
-			goto bad
-		}
+	// Ok if it is a full namespace but not a native namespace of users (a/...)
+	if tx.To.IsFullNamespace() && !tx.To.IsNativeUserAddress() {
 		return nil
 	}
 
-	if recipient.IsNamespaceURI() {
+	// Ok if it is a regular user address
+	if recipient.IsUserAddress() {
 		return nil
 	}
 
-bad:
 	return feI(index, "to", "recipient address is not valid")
 }
 
@@ -224,7 +221,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		return errors.Wrap(err, "dry merge failed")
 	}
 
-	govCfg := base.Governance
+	govCfg := base.Gov
 	sf := fmt.Sprintf
 
 	// Ensure the voter type is known
@@ -240,7 +237,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	allowedPropCreator := []state.ProposalCreatorType{
 		state.ProposalCreatorAny,
 		state.ProposalCreatorOwner}
-	if !funk.Contains(allowedPropCreator, govCfg.ProposalCreator) {
+	if !funk.Contains(allowedPropCreator, govCfg.PropCreator) {
 		return feI(index, "governance.propCreator", sf("unknown value"))
 	}
 
@@ -252,32 +249,32 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
 	}
-	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
+	if !funk.Contains(allowedTallyMethod, govCfg.PropTallyMethod) {
 		return feI(index, "governance.propTallyMethod", sf("unknown value"))
 	}
 
-	if govCfg.ProposalQuorum < 0 {
+	if govCfg.PropQuorum < 0 {
 		return feI(index, "governance.propQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalThreshold < 0 {
+	if govCfg.PropThreshold < 0 {
 		return feI(index, "governance.propThreshold", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalVetoQuorum < 0 {
+	if govCfg.PropVetoQuorum < 0 {
 		return feI(index, "governance.propVetoQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalVetoOwnersQuorum < 0 {
+	if govCfg.PropVetoOwnersQuorum < 0 {
 		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.ProposalFee < params.MinProposalFee {
+	if govCfg.PropFee < params.MinProposalFee {
 		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	tallyMethod := govCfg.ProposalTallyMethod
+	tallyMethod := govCfg.PropTallyMethod
 	isNotOwnerProposer := govCfg.Voter != state.VoterOwner
 	if isNotOwnerProposer {
 		if tallyMethod == state.ProposalTallyMethodCoinWeighted || tallyMethod == state.ProposalTallyMethodIdentity {
@@ -334,7 +331,7 @@ func CheckTxRegisterPushKey(tx *txns.TxRegisterPushKey, index int) error {
 
 	// If there are scope entries, ensure only namespaces URI,
 	// repo names and non-address entries are contained in the list
-	if err := checkScopes(tx.Scopes, index); err != nil {
+	if err := CheckScopes(tx.Scopes, index); err != nil {
 		return err
 	}
 
@@ -352,11 +349,12 @@ func CheckTxRegisterPushKey(tx *txns.TxRegisterPushKey, index int) error {
 	return nil
 }
 
-func checkScopes(scopes []string, index int) error {
+// CheckScopes checks a list of strings intended to be used as push key scopes.
+func CheckScopes(scopes []string, index int) error {
 	for i, s := range scopes {
-		if (!util.IsNamespaceURI(s) && util.IsValidName(s) != nil) || util.IsValidAddr(s) == nil {
-			return feI(index, fmt.Sprintf("scopes[%d]", i), "not an acceptable scope. "+
-				"Expects a namespace URI or repository name")
+		if !identifier.IsValidScope(s) {
+			msg := "scope is invalid. Expected a namespace path or repository name"
+			return feI(index, fmt.Sprintf("scopes[%d]", i), msg)
 		}
 	}
 	return nil
@@ -377,7 +375,7 @@ func CheckTxUpDelPushKey(tx *txns.TxUpDelPushKey, index int) error {
 
 	// If there are scope entries, ensure only namespaces URI,
 	// repo names and non-address entries are contained in the list
-	if err := checkScopes(tx.AddScopes, index); err != nil {
+	if err := CheckScopes(tx.AddScopes, index); err != nil {
 		return err
 	}
 
@@ -472,13 +470,13 @@ func CheckTxPush(tx *txns.TxPush, index int) error {
 // CheckNamespaceDomains checks namespace domains and targets
 func CheckNamespaceDomains(domains map[string]string, index int) error {
 	for domain, target := range domains {
-		if !regexp.MustCompile(util.AddressNamespaceDomainNameRegexp).MatchString(domain) {
+		if !regexp.MustCompile(identifier.IdentifierRegexp).MatchString(domain) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
 		}
-		if !util.IsPrefixedAddr(target) {
+		if !identifier.IsFullNativeNamespace(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
-		if target[:2] == "a/" && crypto.IsValidAccountAddr(target[2:]) != nil {
+		if target[:2] == "a/" && crypto.IsValidUserAddr(target[2:]) != nil {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is not a valid address",
 				domain))
 		}
@@ -486,10 +484,10 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 	return nil
 }
 
-// CheckTxNamespaceAcquire performs sanity checks on TxNamespaceAcquire
-func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
+// CheckTxNamespaceAcquire performs sanity checks on TxNamespaceRegister
+func CheckTxNamespaceAcquire(tx *txns.TxNamespaceRegister, index int) error {
 
-	if err := checkType(tx.TxType, txns.TxTypeNSAcquire, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNamespaceRegister, index); err != nil {
 		return err
 	}
 
@@ -505,7 +503,7 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
 	}
 
 	if tx.TransferTo != "" {
-		if crypto.IsValidAccountAddr(tx.TransferTo) != nil && util.IsValidName(tx.TransferTo) != nil {
+		if crypto.IsValidUserAddr(tx.TransferTo) != nil && identifier.IsValidResourceName(tx.TransferTo) != nil {
 			return feI(index, "to", "invalid value. Expected an address or a repository name")
 		}
 	}
@@ -531,7 +529,7 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
 // CheckTxNamespaceDomainUpdate performs sanity checks on TxNamespaceDomainUpdate
 func CheckTxNamespaceDomainUpdate(tx *txns.TxNamespaceDomainUpdate, index int) error {
 
-	if err := checkType(tx.TxType, txns.TxTypeNSDomainUpdate, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNamespaceDomainUpdate, index); err != nil {
 		return err
 	}
 
@@ -637,7 +635,7 @@ func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := checkProposalID(tx.ID, index); err != nil {
 		return err
 	}
 
@@ -658,8 +656,8 @@ func checkProposalID(id string, index int) error {
 		return feI(index, "id", "proposal id is required")
 	} else if !govalidator.IsNumeric(id) {
 		return feI(index, "id", "proposal id is not valid")
-	} else if len(id) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	} else if len(id) > 16 {
+		return feI(index, "id", "proposal ID exceeded 16 characters limit")
 	}
 	return nil
 }
@@ -747,21 +745,25 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 		return err
 	}
 
+	if len(tx.PushKeys) == 0 {
+		return feI(index, "keys", "push key is required")
+	}
+
 	// Ensure all push key ids are unique and valid
 	found := map[string]struct{}{}
-	for _, pkID := range tx.KeyIDs {
+	for _, pkID := range tx.PushKeys {
 		if !crypto2.IsValidPushAddr(pkID) {
-			return feI(index, "ids", fmt.Sprintf("push key id (%s) is not valid", pkID))
+			return feI(index, "keys", fmt.Sprintf("push key id (%s) is not valid", pkID))
 		}
 		if _, ok := found[pkID]; ok {
-			return feI(index, "ids", fmt.Sprintf("push key id (%s) is a duplicate", pkID))
+			return feI(index, "keys", fmt.Sprintf("push key id (%s) is a duplicate", pkID))
 		}
 		found[pkID] = struct{}{}
 	}
 
 	// Ensure fee mode is valid
-	validFeeModes := []int{state.FeeModePusherPays, state.FeeModeRepoPays, state.FeeModeRepoPaysCapped}
-	if !funk.ContainsInt(validFeeModes, int(tx.FeeMode)) {
+	validFeeModes := []state.FeeMode{state.FeeModePusherPays, state.FeeModeRepoPays, state.FeeModeRepoPaysCapped}
+	if !funk.Contains(validFeeModes, tx.FeeMode) {
 		return feI(index, "feeMode", "fee mode is unknown")
 	}
 
@@ -771,7 +773,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 			return err
 		}
 	} else {
-		if tx.FeeCap != "" {
+		if !tx.FeeCap.IsZero() {
 			return feI(index, "feeCap", "value not expected for the chosen fee mode")
 		}
 	}
@@ -779,7 +781,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 	// When namespace target is set, ensure a valid namespace name is provided.
 	// If valid and NamespaceOnly is set, return an error
 	if tx.Namespace != "" {
-		if util.IsValidName(tx.Namespace) != nil {
+		if identifier.IsValidResourceName(tx.Namespace) != nil {
 			return feI(index, "namespace", "value format is not valid")
 		}
 		if tx.NamespaceOnly != "" {
@@ -789,7 +791,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 
 	// When namespaceOnly target is set, ensure a valid namespace name is provided.
 	if tx.NamespaceOnly != "" {
-		if util.IsValidName(tx.NamespaceOnly) != nil {
+		if identifier.IsValidResourceName(tx.NamespaceOnly) != nil {
 			return feI(index, "namespaceOnly", "value format is not valid")
 		}
 	}

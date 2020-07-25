@@ -2,8 +2,8 @@ package logic
 
 import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Validator implements types.ValidatorLogic.

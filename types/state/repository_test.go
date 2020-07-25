@@ -34,7 +34,7 @@ var _ = Describe("Repository", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
 				Expect(res.References).To(HaveKey("refs/heads/master"))
-				Expect(res.References.Get("refs/heads/master").Nonce).To(Equal(uint64(20)))
+				Expect(res.References.Get("refs/heads/master").Nonce.UInt64()).To(Equal(uint64(20)))
 			})
 		})
 
@@ -81,7 +81,7 @@ var _ = Describe("Repository", func() {
 				r = BareRepository()
 				r.Balance = "100"
 				config := BareRepoConfig()
-				config.Governance = &RepoConfigGovernance{ProposalDuration: 100}
+				config.Gov = &RepoConfigGovernance{PropDuration: 100}
 				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
@@ -201,10 +201,10 @@ var _ = Describe("Repository", func() {
 	Describe("RepoConfig.MergeMap", func() {
 		Context("Governance Merging", func() {
 			base := &RepoConfig{
-				Governance: &RepoConfigGovernance{
-					Voter:               1,
-					VoterAgeAsCurHeight: true,
-					ProposalQuorum:      1,
+				Gov: &RepoConfigGovernance{
+					Voter:              1,
+					ReqVoterJoinHeight: true,
+					PropQuorum:         1,
 				},
 				Policies: []*Policy{
 					{Subject: "user1", Object: "dev", Action: "deny"},
@@ -214,14 +214,14 @@ var _ = Describe("Repository", func() {
 			It("should update base object", func() {
 				base.MergeMap(map[string]interface{}{
 					"governance": map[string]interface{}{
-						"propVoter":           13,
-						"voterAgeAsCurHeight": false,
-						"propQuorum":          0,
+						"propVoter":              13,
+						"requireVoterJoinHeight": false,
+						"propQuorum":             0,
 					},
 				})
-				Expect(int(base.Governance.Voter)).To(Equal(13))
-				Expect(base.Governance.VoterAgeAsCurHeight).To(BeFalse())
-				Expect(base.Governance.ProposalQuorum).To(BeZero())
+				Expect(int(base.Gov.Voter)).To(Equal(13))
+				Expect(base.Gov.ReqVoterJoinHeight).To(BeFalse())
+				Expect(base.Gov.PropQuorum).To(BeZero())
 			})
 		})
 
@@ -230,7 +230,7 @@ var _ = Describe("Repository", func() {
 
 			BeforeEach(func() {
 				base = &RepoConfig{
-					Governance: &RepoConfigGovernance{Voter: 1, ProposalDuration: 100, ProposalFee: 12},
+					Gov: &RepoConfigGovernance{Voter: 1, PropDuration: 100, PropFee: 12},
 					Policies: []*Policy{
 						{Subject: "user1", Object: "dev", Action: "deny"},
 					},
@@ -251,27 +251,57 @@ var _ = Describe("Repository", func() {
 				Expect(base.Policies[1].Subject).To(Equal("sub2"))
 				Expect(base.Policies[1].Object).To(Equal("branch_dev"))
 				Expect(base.Policies[1].Action).To(Equal("delete"))
-				Expect(base.Governance.Voter).To(Equal(VoterType(1)))
-				Expect(base.Governance.ProposalDuration).To(Equal(uint64(100)))
-				Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
+				Expect(base.Gov.Voter).To(Equal(VoterType(1)))
+				Expect(base.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
+				Expect(base.Gov.PropFee).To(Equal(float64(12)))
 			})
 		})
+	})
 
-		Describe("RepoConfig.Clone", func() {
-			base := &RepoConfig{
-				Governance: &RepoConfigGovernance{
-					Voter:               1,
-					VoterAgeAsCurHeight: true,
-				},
-				Policies: []*Policy{},
-			}
+	Describe("RepoConfig.Clone", func() {
+		base := &RepoConfig{
+			Gov: &RepoConfigGovernance{
+				Voter:              1,
+				ReqVoterJoinHeight: true,
+			},
+			Policies: []*Policy{},
+		}
 
-			It("should clone into a different RepoConfig object", func() {
-				clone := base.Clone()
-				Expect(base).To(Equal(clone))
-				Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
-				Expect(fmt.Sprintf("%p", base.Governance)).ToNot(Equal(fmt.Sprintf("%p", clone.Governance)))
-			})
+		It("should clone into a different RepoConfig object", func() {
+			clone := base.Clone()
+			Expect(base).To(Equal(clone))
+			Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
+			Expect(fmt.Sprintf("%p", base.Gov)).ToNot(Equal(fmt.Sprintf("%p", clone.Gov)))
+		})
+	})
+
+	Describe("RepoConfig.FromMap", func() {
+		var cfg1 = &RepoConfig{
+			Gov: &RepoConfigGovernance{
+				Voter:                1,
+				PropCreator:          1,
+				ReqVoterJoinHeight:   true,
+				PropDuration:         12,
+				PropFeeDepositDur:    122,
+				PropTallyMethod:      1,
+				PropQuorum:           25,
+				PropThreshold:        40,
+				PropVetoQuorum:       50,
+				PropVetoOwnersQuorum: 30,
+				PropFee:              10,
+				PropFeeRefundType:    1,
+				NoPropFeeForMergeReq: true,
+			},
+			Policies: []*Policy{
+				{Subject: "sub", Object: "obj", Action: "act"},
+			},
+		}
+
+		It("should populate from a map stripped of custom types", func() {
+			m := cfg1.ToBasicMap()
+			cfg2 := &RepoConfig{Gov: &RepoConfigGovernance{}, Policies: []*Policy{}}
+			cfg2.FromMap(m)
+			Expect(cfg1).To(Equal(cfg2))
 		})
 	})
 })

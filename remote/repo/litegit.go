@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
 )
 
 // execGitCmd executes git commands and returns the output

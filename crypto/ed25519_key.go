@@ -8,7 +8,8 @@ import (
 	mrand "math/rand"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util/identifier"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -18,10 +19,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gogo/protobuf/proto"
-	"gitlab.com/makeos/mosdef/crypto/bls"
-	"gitlab.com/makeos/mosdef/crypto/vrf"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto/bls"
+	"gitlab.com/makeos/lobe/crypto/vrf"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -83,12 +84,12 @@ func (k *Key) PeerID() string {
 }
 
 // Addr returns the network account address corresponding the key
-func (k *Key) Addr() util.Address {
+func (k *Key) Addr() identifier.Address {
 	return k.PubKey().Addr()
 }
 
 // PushAddr returns the network pusher address corresponding the key
-func (k *Key) PushAddr() util.Address {
+func (k *Key) PushAddr() identifier.Address {
 	return k.PubKey().PushAddr()
 }
 
@@ -261,25 +262,25 @@ func (p *PubKey) AddrRaw() []byte {
 }
 
 // Addr returns the bech32 account address
-func (p *PubKey) Addr() util.Address {
+func (p *PubKey) Addr() identifier.Address {
 	encoded, err := bech32.ConvertAndEncode(constants.AddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
-	return util.Address(encoded)
+	return identifier.Address(encoded)
 }
 
 // PushAddr returns a bech32 pusher address
-func (p *PubKey) PushAddr() util.Address {
+func (p *PubKey) PushAddr() identifier.Address {
 	encoded, err := bech32.ConvertAndEncode(constants.PushAddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
-	return util.Address(encoded)
+	return identifier.Address(encoded)
 }
 
-// IsValidAccountAddr checks whether addr is a valid network account address
-func IsValidAccountAddr(addr string) error {
+// IsValidUserAddr checks whether addr is a valid user account address
+func IsValidUserAddr(addr string) error {
 	if addr == "" {
 		return fmt.Errorf("empty address")
 	}
@@ -333,7 +334,7 @@ func DecodeAddr(addr string) ([20]byte, error) {
 
 	var b [20]byte
 
-	if err := IsValidAccountAddr(addr); err != nil {
+	if err := IsValidUserAddr(addr); err != nil {
 		return b, err
 	}
 

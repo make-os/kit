@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/dht"
-	"gitlab.com/makeos/mosdef/dht/server/types"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
-	"gitlab.com/makeos/mosdef/util"
+	"github.com/asaskevich/govalidator"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/dht"
+	"gitlab.com/makeos/lobe/dht/server/types"
+	modulestypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -20,26 +21,28 @@ import (
 
 // DHTModule provides access to the DHT service
 type DHTModule struct {
+	modulestypes.ModuleCommon
 	cfg *config.AppConfig
-	vm  *otto.Otto
 	dht types.DHT
 }
 
-// NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types.DHT) *DHTModule {
-	return &DHTModule{
-		cfg: cfg,
-		vm:  vm,
-		dht: dht,
-	}
+// NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
+func NewAttachableDHTModule(client client.Client) *DHTModule {
+	return &DHTModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
-func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// NewDHTModule creates an instance of DHTModule
+func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
+	return &DHTModule{cfg: cfg, dht: dht}
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *DHTModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
 		{
 			Name:        "store",
 			Value:       m.Store,
-			Description: "Register a value that correspond to a given key",
+			Description: "Store a value for a given key",
 		},
 		{
 			Name:        "lookup",
@@ -49,7 +52,7 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 		{
 			Name:        "announce",
 			Value:       m.Announce,
-			Description: "Inform the network that this node can provide value for a key",
+			Description: "Announce ability to provide a key to the network",
 		},
 		{
 			Name:        "getRepoObjectProviders",
@@ -69,35 +72,33 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
-func (m *DHTModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+// globals are functions exposed in the VM's global namespace
+func (m *DHTModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *DHTModule) Configure() []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceDHT, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceDHT, nsMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
-		fMap[f.Name] = f.Value
+	// add methods functions
+	for _, f := range m.methods() {
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceDHT, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
 // store stores a value corresponding to the given key
@@ -106,10 +107,10 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 // key: The data query key
 // val: The data to be stored
 func (m *DHTModule) Store(key string, val string) {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	if err := m.dht.Store(ctx, key, []byte(val)); err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
 
@@ -120,11 +121,11 @@ func (m *DHTModule) Store(key string, val string) {
 //
 // RETURNS: <[]bytes> - The data stored on the key
 func (m *DHTModule) Lookup(key string) interface{} {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	bz, err := m.dht.Lookup(ctx, key)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	return bz
 }
@@ -140,7 +141,7 @@ func (m *DHTModule) Announce(key string) {
 // GetRepoObjectProviders returns the providers for a given repo object
 //
 // ARGS:
-// hash: The object's hash
+// hash: The repo object's hash or DHT object hex-encoded key
 //
 // RETURNS: resp <[]map[string]interface{}>
 // resp.id <string>: The peer ID of the provider
@@ -150,14 +151,13 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	var err error
 	var key []byte
 
-	// If hash is 40-chars long, it's a git SHA1.
-	// Otherwise, its expected to be DHT object key
-	if len(hash) == 40 {
+	// A key is valid if it is a git SHA1 or a DHT hex-encoded object key
+	if govalidator.IsSHA1(hash) {
 		key = dht.MakeObjectKey(plumbing.HashToBytes(hash))
 	} else {
 		key, err = util.FromHex(hash)
 		if err != nil {
-			panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", err.Error()))
+			panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
 		}
 	}
 
@@ -165,7 +165,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, key)
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 
 	for _, p := range peers {
@@ -190,11 +190,11 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 // resp.id <string>: The peer ID of the provider
 // resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, []byte(key))
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	for _, p := range peers {
 		var address []string
@@ -210,10 +210,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 }
 
 // getPeers returns a list of all connected peers
-func (m *DHTModule) GetPeers() []string {
-	peers := m.dht.Peers()
-	if len(peers) == 0 {
-		return []string{}
-	}
-	return peers
+func (m *DHTModule) GetPeers() (peers []string) {
+	peers = m.dht.Peers()
+	return
 }

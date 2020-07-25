@@ -3,8 +3,8 @@ package txns
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("Common", func() {
@@ -97,7 +97,7 @@ var _ = Describe("Common", func() {
 				"senderPubKey": key.PubKey().Base58(),
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:sig, msg:unable to decode from hex"))
+			Expect(err.Error()).To(Equal("field:sig, msg:unable to decode hex value"))
 		})
 
 		It("case 5 - malformed sender public key", func() {

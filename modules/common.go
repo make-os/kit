@@ -8,128 +8,166 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 const (
-	StatusCodeAppErr                = "app_err"
+	StatusCodeServerErr             = "server_err"
 	StatusCodeInvalidPass           = "invalid_passphrase"
 	StatusCodeAddressRequire        = "addr_required"
 	StatusCodeAccountNotFound       = "account_not_found"
 	StatusCodeInvalidParam          = "invalid_param"
 	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
-	StatusCodeMempoolAddFail        = "mempool_add_fail"
+	StatusCodeMempoolAddFail        = "err_mempool"
 	StatusCodePushKeyNotFound       = "push_key_not_found"
 	StatusCodeRepoNotFound          = "repo_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 
-// finalizeTx sets the public key, timestamp and signs the transaction.
-//
-// options[0] is expected to be a base58 private key
-//
-// If options[1] is set to true, true is returned; meaning the user only wants
-// the finalized payload and does not want to send the transaction to the network
-func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) (payloadOnly bool) {
+var se = util.ReqErr
+
+// parseOptions parse module options
+// If only 1 option, and it is a boolean = payload only instruction.
+// If more than 1 options, and it is a string = that's the key
+// If more than 1 option = [0] is expected to be the key and [1] the payload only instruction.
+// Panics if types are not expected.
+// Panics if key is not a valid private key.
+func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool) {
+
+	var key string
+	if len(options) == 1 {
+		if v, ok := options[0].(bool); ok {
+			payloadOnly = v
+		}
+
+		if v, ok := options[0].(string); ok {
+			key = v
+		}
+	}
+
+	if len(options) > 1 {
+		var ok bool
+		key, ok = options[0].(string)
+		if !ok {
+			panic(types.ErrIntSliceArgDecode("string", 0, -1))
+		}
+
+		payloadOnly, ok = options[1].(bool)
+		if !ok {
+			panic(types.ErrIntSliceArgDecode("bool", 1, -1))
+		}
+
+	}
+
+	if key != "" {
+		var err error
+		if pk, err = crypto.PrivKeyFromBase58(key); err != nil {
+			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
+		}
+	}
+
+	return
+}
+
+// finalizeTx sets the public key, timestamp, nonce and signs the transaction.
+// If nonce is not set, it will use the keepers to query the compute the next nonce.
+// If nonce and keepers are not set, it will use rpcClient to query and compute the next nonce.
+// It will not reset fields already set.
+// options[0]: <string|bool> 	- key or payloadOnly request
+// options[1]: [<bool>] 		- payload request
+func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient client.Client, options ...interface{}) (bool, *crypto.PrivKey) {
+
+	key, payloadOnly := parseOptions(options...)
+
+	// Set sender public key if unset and key was provided
+	if tx.GetSenderPubKey().IsEmpty() && key != nil {
+		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(key).PubKey().MustBytes())
+	}
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	if len(options) > 1 {
-		payloadOnly, _ = options[1].(bool)
+	// If nonce us unset, compute next nonce by using the account keeper to query
+	// the sender account only if keepers is set.
+	if tx.GetNonce() == 0 && key != nil && keepers != nil {
+		senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
+		if senderAcct.IsNil() {
+			panic(se(400, StatusCodeInvalidParam, "senderPubKey", "sender account was not found"))
+		}
+		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
-	// Set public key and sign the transaction only when a key is provided.
-	if len(options) > 0 {
-
-		key := checkAndGetKey(options...)
-
-		// Set tx public key only if unset
-		if tx.GetSenderPubKey().IsEmpty() {
-			pk, _ := crypto.PrivKeyFromBase58(key)
-			tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+	// If nonce us unset, compute next nonce by using the RPC client to query
+	// the sender account only if keepers is unset.
+	if tx.GetNonce() == 0 && key != nil && keepers == nil && rpcClient != nil {
+		senderAcct, err := rpcClient.GetAccount(tx.GetFrom().String())
+		if err != nil {
+			panic(err)
 		}
-
-		// Set nonce if nonce is not provided
-		if tx.GetNonce() == 0 {
-			senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
-			if senderAcct.IsNil() {
-				panic(fmt.Errorf("sender account not found"))
-			}
-			tx.SetNonce(senderAcct.Nonce + 1)
-		}
-
-		// Sign the tx only if unsigned
-		if len(tx.GetSignature()) == 0 {
-			sig, err := tx.Sign(key)
-			if err != nil {
-				panic(errors.Wrap(err, "failed to sign transaction"))
-			}
-			tx.SetSignature(sig)
-		}
+		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
-	return payloadOnly
+	// Sign the tx only if unsigned
+	if len(tx.GetSignature()) == 0 && key != nil {
+		sig, err := tx.Sign(key.Base58())
+		if err != nil {
+			panic(se(400, StatusCodeInvalidParam, "key", "failed to sign transaction"))
+		}
+		tx.SetSignature(sig)
+	}
+
+	return payloadOnly, key
 }
 
-func checkAndGetKey(options ...interface{}) string {
-	// - Expect options[0] to be the private key (base58 encoded)
-	// - options[0] must be a string
-	// - options[0] must be a valid key
-	var key string
-	var ok bool
-	if len(options) > 0 {
-		key, ok = options[0].(string)
-		if !ok {
-			panic(types.ErrArgDecode("string", 1))
-		} else if err := crypto.IsValidPrivKey(key); err != nil {
-			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
+// Normalize normalizes a map, struct or slice of struct/map.
+func Normalize(res interface{}, ignoreFields ...string) interface{} {
+
+	// Return nil result is nil
+	if res == nil {
+		panic("nil result not allowed")
+	}
+
+	// Convert input object to map
+	m := make(map[string]interface{})
+	val := reflect.ValueOf(res)
+	switch val.Kind() {
+
+	case reflect.Ptr:
+		return Normalize(val.Elem().Interface(), ignoreFields...)
+
+	// Convert struct to map
+	case reflect.Struct:
+		m = util.ToMap(res, "json")
+
+	// Convert map to map[string]interface{}
+	case reflect.Map:
+		for _, k := range val.MapKeys() {
+			m[k.String()] = val.MapIndex(k).Interface()
 		}
-	} else {
-		panic(fmt.Errorf("key is required"))
-	}
 
-	return key
-}
+	// Normalize each elements in the slice.
+	// Panics if element is not a struct, slice of map/struct and map type
+	case reflect.Slice:
+		var res []util.Map
+		for i := 0; i < val.Len(); i++ {
+			res = append(res, Normalize(val.Index(i).Interface(), ignoreFields...).(util.Map))
+		}
+		return res
 
-func isMapOrStruct(o interface{}) bool {
-	if structs.IsStruct(o) {
-		return true
+	default:
+		panic("only struct, map or map slice are allowed")
 	}
-	if reflect.TypeOf(o).Kind() == reflect.Map {
-		return true
-	}
-	return false
-}
-
-// EncodeForJS takes a struct and converts
-// selected types to values that are compatible in the
-// JS environment. It returns a map and will panic
-// if obj is not a map/struct.
-// Set fieldToIgnore to ignore matching fields
-func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
-	if obj == nil {
-		return nil
-	}
-
-	if structs.IsStruct(obj) {
-		return EncodeForJS(util.StructToMap(obj, "json"))
-	}
-
-	vObj := reflect.ValueOf(obj)
-	if vObj.Kind() != reflect.Map {
-		panic("only struct or map are allowed")
-	}
-	m := util.ToStringMapInter(obj)
 
 	for k, v := range m {
-		if funk.InStrings(fieldToIgnore, k) {
+		if funk.InStrings(ignoreFields, k) {
 			continue
 		}
 
@@ -139,19 +177,19 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 		case *big.Int, uint32, int64, uint64:
 			m[k] = fmt.Sprintf("%d", o)
 		case float64:
-			m[k] = fmt.Sprintf("%f", o)
+			m[k] = fmt.Sprintf("%s", decimal.NewFromFloat(o).String())
 		case map[string][]byte:
-			m[k] = EncodeForJS(v)
+			m[k] = Normalize(v, ignoreFields...)
 		case map[string]interface{}:
 			if len(o) > 0 { // no need adding empty maps
-				if isMapOrStruct(o) {
-					m[k] = EncodeForJS(o)
+				if util.IsMapOrStruct(o) {
+					m[k] = Normalize(o, ignoreFields...)
 				}
 			}
 		case []interface{}:
 			for i, item := range o {
-				if isMapOrStruct(item) {
-					o[i] = EncodeForJS(item)
+				if util.IsMapOrStruct(item) {
+					o[i] = Normalize(item, ignoreFields...)
 				}
 			}
 
@@ -159,6 +197,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 		case util.BlockNonce:
 			m[k] = util.ToHex(o[:])
 		case util.Bytes32:
+			m[k] = o.HexStr()
+		case util.Bytes:
 			m[k] = o.HexStr()
 		case util.Bytes64:
 			m[k] = o.HexStr()
@@ -182,29 +222,12 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 						newMap[key.String()] = mapValStr
 					}
 				}
-				m[k] = EncodeForJS(newMap)
+				m[k] = Normalize(newMap, ignoreFields...)
 			} else if kind == reflect.Struct {
-				m[k] = EncodeForJS(structs.Map(o))
+				m[k] = Normalize(structs.Map(o), ignoreFields...)
 			}
 		}
 	}
 
-	return m
-}
-
-// EncodeManyForJS is like EncodeForJS but accepts a slice of objects
-func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []util.Map {
-	var many []util.Map
-
-	t := reflect.TypeOf(objs)
-	if t.Kind() != reflect.Slice {
-		panic("not a slice")
-	}
-
-	s := reflect.ValueOf(objs)
-	for i := 0; i < s.Len(); i++ {
-		many = append(many, EncodeForJS(s.Index(i).Interface()))
-	}
-
-	return many
+	return util.Map(m)
 }

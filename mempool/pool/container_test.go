@@ -3,10 +3,11 @@ package pool
 import (
 	"time"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,43 +18,42 @@ var _ = Describe("TxContainer", func() {
 	var sender = crypto.NewKeyFromIntSeed(1)
 	var sender2 = crypto.NewKeyFromIntSeed(2)
 
-	Describe(".Register", func() {
+	Describe(".Add", func() {
 		It("should return ErrContainerFull when capacity is reached", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			q := newTxContainer(0)
-			Expect(q.add(tx)).To(Equal(ErrContainerFull))
+			q := NewTxContainer(0)
+			Expect(q.Add(tx)).To(Equal(ErrContainerFull))
 		})
 
 		It("should return nil when transaction is successfully added", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			q := newTxContainer(1)
-			Expect(q.add(tx)).To(BeNil())
-			Expect(q.container).To(HaveLen(1))
+			q := NewTxContainer(1)
+			Expect(q.Add(tx)).To(BeNil())
+			Expect(q.Size()).To(Equal(1))
 		})
 
 		When("sorting is disabled", func() {
 			It("should return transactions in the following order tx2, tx1", func() {
 				tx1 := txns.NewCoinTransferTx(1, "something", sender, "0", "0.10", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(1, "something", sender2, "0", "1", time.Now().Unix())
-				q := NewQueueNoSort(2)
-				q.add(tx1)
-				q.add(tx2)
-				Expect(q.Size()).To(Equal(int64(2)))
-				Expect(q.container[0].Tx).To(Equal(tx1))
-				Expect(q.container[1].Tx).To(Equal(tx2))
+				q := NewTxContainerNoSort(2)
+				q.Add(tx1)
+				q.Add(tx2)
+				Expect(q.Size()).To(Equal(2))
+				Expect(q.Get(0).Tx).To(Equal(tx1))
+				Expect(q.Get(1).Tx).To(Equal(tx2))
 			})
 		})
 
 		When("sender has two transactions with same nonce and same fee rate", func() {
-			Specify("that error is returned when attempting to add the second transaction", func() {
-				q := newTxContainer(2)
+			Specify("that error is returned when attempting to Add the second transaction", func() {
+				q := NewTxContainer(2)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "1", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(1, "something", sender, "0", "1", time.Now().Unix())
-				err := q.add(tx)
+				err := q.Add(tx)
 				Expect(err).To(BeNil())
-				Expect(q.container).To(HaveLen(1))
-
-				err = q.add(tx2)
+				Expect(q.Size()).To(Equal(1))
+				err = q.Add(tx2)
 				Expect(err).To(Equal(ErrFailedReplaceByFee))
 			})
 		})
@@ -62,45 +62,44 @@ var _ = Describe("TxContainer", func() {
 	Describe(".Size", func() {
 		It("should return size = 1", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			q := newTxContainer(2)
-			Expect(q.add(tx)).To(BeNil())
-			Expect(q.Size()).To(Equal(int64(1)))
+			q := NewTxContainer(2)
+			Expect(q.Add(tx)).To(BeNil())
+			Expect(q.Size()).To(Equal(1))
 		})
 	})
 
 	Describe(".First", func() {
 
 		It("should return nil when queue is empty", func() {
-			q := newTxContainer(2)
+			q := NewTxContainer(2)
 			Expect(q.First()).To(BeNil())
 		})
 
 		Context("with sorting disabled", func() {
 			It("should return first transaction in the queue and reduce queue size to 1", func() {
-				q := NewQueueNoSort(2)
+				q := NewTxContainerNoSort(2)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "0", time.Now().Unix())
-				q.add(tx)
-				q.add(tx2)
-				Expect(q.First()).To(Equal(tx))
-				Expect(q.Size()).To(Equal(int64(1)))
-				Expect(q.container[0].Tx).To(Equal(tx2))
-				Expect(q.Size()).To(Equal(int64(1)))
+				q.Add(tx2)
+				q.Add(tx)
+				Expect(q.First()).To(Equal(tx2))
+				Expect(q.Size()).To(Equal(1))
+				Expect(q.Get(0).Tx).To(Equal(tx))
+				Expect(q.Size()).To(Equal(1))
 			})
 		})
 
 		Context("with sorting enabled", func() {
-
 			When("sender has two transactions with same nonce and different fee rate", func() {
 				Specify("that only one transaction exist in the pool and the transaction has the higher fee rate", func() {
-					q := newTxContainer(2)
+					q := NewTxContainer(2)
 					tx := txns.NewCoinTransferTx(1, "something", sender, "0", "1", time.Now().Unix())
 					tx2 := txns.NewCoinTransferTx(1, "something", sender, "0", "1.2", time.Now().Unix())
-					err := q.add(tx)
+					err := q.Add(tx)
 					Expect(err).To(BeNil())
-					Expect(q.container).To(HaveLen(1))
-					err = q.add(tx2)
-					Expect(q.container).To(HaveLen(1))
+					Expect(q.Size()).To(Equal(1))
+					err = q.Add(tx2)
+					Expect(q.Size()).To(Equal(1))
 					Expect(err).To(BeNil())
 					Expect(q.First()).To(Equal(tx2))
 				})
@@ -108,32 +107,32 @@ var _ = Describe("TxContainer", func() {
 
 			When("sender has two transaction with different nonce", func() {
 				It("after sorting, the first transaction must be the one with the lowest nonce", func() {
-					q := newTxContainer(2)
+					q := NewTxContainer(2)
 					tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 					tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
-					q.add(tx)
-					q.add(tx2)
-					Expect(q.container).To(HaveLen(2))
+					q.Add(tx)
+					q.Add(tx2)
+					Expect(q.Size()).To(Equal(2))
 					Expect(q.First()).To(Equal(tx))
-					Expect(q.Size()).To(Equal(int64(1)))
+					Expect(q.Size()).To(Equal(1))
 				})
 			})
 
 			When("container has 2 transactions from a sender and one from a different sender", func() {
 				It("after sorting, the first transaction must be the one with the highest fee rate", func() {
 					sender2 := crypto.NewKeyFromIntSeed(2)
-					q := newTxContainer(3)
+					q := NewTxContainer(3)
 					tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 					tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
 					tx3 := txns.NewCoinTransferTx(2, "something", sender2, "0", "2", time.Now().Unix())
-					q.add(tx)
-					q.add(tx2)
-					q.add(tx3)
-					Expect(q.container).To(HaveLen(3))
+					q.Add(tx)
+					q.Add(tx2)
+					q.Add(tx3)
+					Expect(q.Size()).To(Equal(3))
 					Expect(q.First()).To(Equal(tx3))
-					Expect(q.Size()).To(Equal(int64(2)))
-					Expect(q.container[0].Tx).To(Equal(tx))
-					Expect(q.container[1].Tx).To(Equal(tx2))
+					Expect(q.Size()).To(Equal(2))
+					Expect(q.Get(0).Tx).To(Equal(tx))
+					Expect(q.Get(1).Tx).To(Equal(tx2))
 				})
 			})
 		})
@@ -141,111 +140,111 @@ var _ = Describe("TxContainer", func() {
 
 	Describe(".Last", func() {
 		It("should return nil when queue is empty", func() {
-			q := newTxContainer(2)
+			q := NewTxContainer(2)
 			Expect(q.Last()).To(BeNil())
 		})
 
 		Context("with sorting disabled", func() {
 			It("should return last transaction in the queue and reduce queue size to 1", func() {
-				q := newTxContainer(2)
+				q := NewTxContainer(2)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "0", time.Now().Unix())
-				q.add(tx)
-				q.add(tx2)
+				q.Add(tx)
+				q.Add(tx2)
 				Expect(q.Last()).To(Equal(tx2))
-				Expect(q.Size()).To(Equal(int64(1)))
+				Expect(q.Size()).To(Equal(1))
 			})
 		})
 
 		When("sender has two transaction with different nonce", func() {
 			It("after sorting, the last transaction must be the one with the highest nonce", func() {
-				q := newTxContainer(2)
+				q := NewTxContainer(2)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
-				q.add(tx)
-				q.add(tx2)
-				Expect(q.container).To(HaveLen(2))
+				q.Add(tx)
+				q.Add(tx2)
+				Expect(q.Size()).To(Equal(2))
 				Expect(q.Last()).To(Equal(tx2))
-				Expect(q.Size()).To(Equal(int64(1)))
+				Expect(q.Size()).To(Equal(1))
 			})
 		})
 
 		When("container has 2 transactions from a sender (A) and one from a different sender (B)", func() {
 			It("after sorting, the last transaction must be sender (A) transaction with the highest nonce", func() {
 				sender2 := crypto.NewKeyFromIntSeed(2)
-				q := newTxContainer(3)
+				q := NewTxContainer(3)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
 				tx3 := txns.NewCoinTransferTx(2, "something", sender2, "0", "2", time.Now().Unix())
-				q.add(tx)
-				q.add(tx2)
-				q.add(tx3)
-				Expect(q.container).To(HaveLen(3))
+				q.Add(tx)
+				q.Add(tx2)
+				q.Add(tx3)
+				Expect(q.Size()).To(Equal(3))
 				Expect(q.Last()).To(Equal(tx2))
-				Expect(q.Size()).To(Equal(int64(2)))
-				Expect(q.container[0].Tx).To(Equal(tx3))
-				Expect(q.container[1].Tx).To(Equal(tx))
+				Expect(q.Size()).To(Equal(2))
+				Expect(q.Get(0).Tx).To(Equal(tx3))
+				Expect(q.Get(1).Tx).To(Equal(tx))
 			})
 		})
 	})
 
 	Describe(".Sort", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
-		var sender2 = crypto.NewKeyFromIntSeed(2)
+		// var sender2 = crypto.NewKeyFromIntSeed(2)
 
 		It("with 2 transactions by same sender; sort by nonce in ascending order", func() {
-			q := newTxContainer(2)
-			items := []*containerItem{
-				{Tx: txns.NewCoinTransferTx(2, "", sender, "10", "0", 0)},
-				{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0)},
+			q := NewTxContainer(2)
+			items := []interface{}{
+				&containerItem{Tx: txns.NewCoinTransferTx(2, "", sender, "10", "0", 0)},
+				&containerItem{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0)},
 			}
-			q.container = append(q.container, items...)
+			q.container.Append(items...)
 			q.Sort()
-			Expect(q.container[0]).To(Equal(items[1]))
+			Expect(q.Get(0)).To(Equal(items[1]))
 		})
 
-		It("with 2 transactions by same sender; same nonce; sort by fee rate in descending order", func() {
-			q := newTxContainer(2)
-			items := []*containerItem{
-				{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.1"},
-				{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.2"},
+		It("with 2 transactions by same sender; same nonce; no fee rate sorting", func() {
+			q := NewTxContainer(2)
+			items := []interface{}{
+				&containerItem{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.0001"},
+				&containerItem{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.02"},
 			}
-			q.container = append(q.container, items...)
+			q.container.Append(items...)
 			q.Sort()
-			Expect(q.container[0]).To(Equal(items[1]))
+			Expect(q.Get(0)).To(Equal(items[0]))
 		})
 
-		Specify(`3 transactions; 
-				2 by same sender and different nonce; 
-				1 with highest fee rate; 
+		Specify(`3 transactions;
+				2 by same sender and different nonce;
+				1 with highest fee rate;
 				sort by nonce (ascending) for the same sender txs;
 				sort by fee rate (descending) for others`, func() {
-			q := newTxContainer(2)
-			items := []*containerItem{
-				{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.1"},
-				{Tx: txns.NewCoinTransferTx(2, "", sender, "10", "0", 0), FeeRate: "0.2"},
-				{Tx: txns.NewCoinTransferTx(4, "", sender2, "10", "0", 0), FeeRate: "1.2"},
+			q := NewTxContainer(2)
+			items := []interface{}{
+				&containerItem{Tx: txns.NewCoinTransferTx(1, "", sender, "10", "0", 0), FeeRate: "0.1"},
+				&containerItem{Tx: txns.NewCoinTransferTx(2, "", sender, "10", "0", 0), FeeRate: "0.2"},
+				&containerItem{Tx: txns.NewCoinTransferTx(4, "", sender2, "10", "0", 0), FeeRate: "1.2"},
 			}
-			q.container = append(q.container, items...)
+			q.container.Append(items...)
 			q.Sort()
-			Expect(q.container[0]).To(Equal(items[2]))
-			Expect(q.container[1]).To(Equal(items[0]))
-			Expect(q.container[2]).To(Equal(items[1]))
+			Expect(q.Get(0)).To(Equal(items[2]))
+			Expect(q.Get(1)).To(Equal(items[0]))
+			Expect(q.Get(2)).To(Equal(items[1]))
 		})
 	})
 
 	Describe(".Has", func() {
 		It("should return true when tx exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			err := q.add(tx)
+			err := q.Add(tx)
 			Expect(err).To(BeNil())
 			has := q.Has(tx)
 			Expect(has).To(BeTrue())
 		})
 
 		It("should return false when tx does not exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 			has := q.Has(tx)
 			Expect(has).To(BeFalse())
@@ -254,18 +253,18 @@ var _ = Describe("TxContainer", func() {
 
 	Describe(".HasByHash", func() {
 		It("should return true when tx exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			err := q.add(tx)
+			err := q.Add(tx)
 			Expect(err).To(BeNil())
-			has := q.HasByHash(tx.GetHash().HexStr())
+			has := q.HasByHash(tx.GetHash().String())
 			Expect(has).To(BeTrue())
 		})
 
 		It("should return false when tx does not exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			has := q.HasByHash(tx.GetHash().HexStr())
+			has := q.HasByHash(tx.GetHash().String())
 			Expect(has).To(BeFalse())
 		})
 	})
@@ -276,30 +275,30 @@ var _ = Describe("TxContainer", func() {
 		var tx, tx2, tx3, tx4 types.BaseTx
 
 		BeforeEach(func() {
-			q = newTxContainer(4)
+			q = NewTxContainer(4)
 			tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			q.add(tx)
+			q.Add(tx)
 			tx2 = txns.NewCoinTransferTx(2, "something2", sender, "0", "0.2", time.Now().Unix())
-			q.add(tx2)
+			q.Add(tx2)
 			tx3 = txns.NewCoinTransferTx(3, "something2", sender, "0", "0.2", time.Now().Unix())
-			q.add(tx3)
+			q.Add(tx3)
 			tx4 = txns.NewCoinTransferTx(4, "something2", sender, "0", "0.4", time.Now().Unix())
-			q.add(tx4)
-			Expect(q.Size()).To(Equal(int64(4)))
+			q.Add(tx4)
+			Expect(q.Size()).To(Equal(4))
 		})
 
 		It("should do nothing when transaction does not exist in the container", func() {
 			unknownTx := txns.NewCoinTransferTx(1, "unknown", sender, "0", "0.2", time.Now().Unix())
 			q.Remove(unknownTx)
-			Expect(q.Size()).To(Equal(int64(4)))
+			Expect(q.Size()).To(Equal(4))
 		})
 
 		It("should remove transactions", func() {
 			q.Remove(tx2, tx3)
-			Expect(q.Size()).To(Equal(int64(2)))
-			Expect(q.container[0].Tx).To(Equal(tx))
-			Expect(q.container[1].Tx).To(Equal(tx4))
-			Expect(q.len).To(Equal(int64(2)))
+			Expect(q.Size()).To(Equal(2))
+			Expect(q.Get(0).Tx).To(Equal(tx))
+			Expect(q.Get(1).Tx).To(Equal(tx4))
+			Expect(q.Size()).To(Equal(2))
 			Expect(q.byteSize).To(Equal(tx.GetEcoSize() + tx4.GetEcoSize()))
 		})
 	})
@@ -310,18 +309,18 @@ var _ = Describe("TxContainer", func() {
 		var tx1, tx2, tx3 types.BaseTx
 
 		BeforeEach(func() {
-			q = newTxContainer(3)
+			q = NewTxContainer(3)
 			tx1 = txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 			tx2 = txns.NewCoinTransferTx(2, "something", sender, "0", "0.2", time.Now().Unix())
 			tx3 = txns.NewCoinTransferTx(3, "something", sender, "0", "0.2", time.Now().Unix())
-			q.add(tx1)
-			q.add(tx2)
-			q.add(tx3)
+			q.Add(tx1)
+			q.Add(tx2)
+			q.Add(tx3)
 		})
 
 		It("should stop iterating when predicate returns true", func() {
 			var iterated []types.BaseTx
-			result := q.Find(func(tx types.BaseTx) bool {
+			result := q.Find(func(tx types.BaseTx, feeRate util.String) bool {
 				iterated = append(iterated, tx)
 				return tx.GetNonce() == 2
 			})
@@ -338,7 +337,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should return nil when predicate did not return true", func() {
 			var iterated []types.BaseTx
-			result := q.Find(func(tx types.BaseTx) bool {
+			result := q.Find(func(tx types.BaseTx, feeRate util.String) bool {
 				iterated = append(iterated, tx)
 				return false
 			})
@@ -350,25 +349,56 @@ var _ = Describe("TxContainer", func() {
 		})
 	})
 
-	Describe(".Get", func() {
+	Describe(".GetByHash", func() {
 		It("should return Not nil when tx exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			err := q.add(tx)
+			err := q.Add(tx)
 			Expect(err).To(BeNil())
-			txData := q.GetByHash(tx.GetHash().HexStr())
+			txData := q.GetByHash(tx.GetHash().String())
 			Expect(txData).ToNot(BeNil())
 		})
 
 		It("should return nil when tx does not exist in queue", func() {
-			q := newTxContainer(1)
+			q := NewTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			txData := q.GetByHash(tx.GetHash().HexStr())
+			txData := q.GetByHash(tx.GetHash().String())
 			Expect(txData).To(BeNil())
 		})
-
 	})
 
+	Describe(".GetFeeRateByHash", func() {
+		It("should return non-empty result when transaction exist in the container", func() {
+			q := NewTxContainer(1)
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
+			err := q.Add(tx)
+			Expect(err).To(BeNil())
+			feeRate := q.GetFeeRateByHash(tx.GetHash().String())
+			Expect(feeRate).To(Equal(calcFeeRate(tx)))
+		})
+
+		It("should return empty result when transaction does not exist in the container", func() {
+			q := NewTxContainer(1)
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
+			feeRate := q.GetFeeRateByHash(tx.GetHash().String())
+			Expect(feeRate).To(BeEmpty())
+		})
+	})
+
+	Describe(".Flush", func() {
+		It("should clear container, caches and counters", func() {
+			q := NewTxContainer(1)
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
+			q.Add(tx)
+			Expect(q.Size()).To(Equal(1))
+			q.Flush()
+			Expect(q.Size()).To(BeZero())
+			Expect(q.actualSize).To(BeZero())
+			Expect(q.byteSize).To(BeZero())
+			Expect(q.hashIndex).To(BeEmpty())
+			Expect(q.senderNonceIndex).To(BeEmpty())
+		})
+	})
 })
 
 var _ = Describe("senderNonces", func() {
@@ -380,7 +410,7 @@ var _ = Describe("senderNonces", func() {
 
 	BeforeEach(func() {
 		nc = defaultNonceCollection()
-		sn = map[util.Address]*nonceCollection{}
+		sn = map[identifier.Address]*nonceCollection{}
 	})
 
 	Describe(".remove", func() {
@@ -431,7 +461,7 @@ var _ = Describe("NonceCollection", func() {
 		Context("when nonce is part of the collection", func() {
 			nc := nonceCollection{
 				nonces: map[uint64]*nonceInfo{
-					1: {TxHash: util.StrToBytes32("")},
+					1: {TxHash: util.HexBytes{1, 2}},
 				},
 			}
 
@@ -441,19 +471,19 @@ var _ = Describe("NonceCollection", func() {
 		})
 	})
 
-	Describe(".add", func() {
+	Describe(".Add", func() {
 		BeforeEach(func() {
 			nc.add(1, &nonceInfo{})
 			Expect(nc.nonces).To(HaveLen(1))
 		})
 
-		It("should add nonce", func() {
+		It("should Add nonce", func() {
 			Expect(nc.has(1)).To(BeTrue())
 		})
 	})
 
 	Describe(".get", func() {
-		nonce := &nonceInfo{TxHash: util.StrToBytes32("abc")}
+		nonce := &nonceInfo{TxHash: util.HexBytes{1, 2}}
 		BeforeEach(func() {
 			nc.add(1, nonce)
 			Expect(nc.nonces).To(HaveLen(1))
@@ -478,7 +508,7 @@ var _ = Describe("NonceCollection", func() {
 			Expect(nc.nonces).To(HaveLen(1))
 		})
 
-		It("should add nonce", func() {
+		It("should Add nonce", func() {
 			nc.remove(1)
 			Expect(nc.has(1)).To(BeFalse())
 			Expect(nc.nonces).To(HaveLen(0))

@@ -2,9 +2,9 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types/state"
 )
 
 // PushKeyKeeper manages push public keys.

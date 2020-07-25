@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util/mocks"
+	"gitlab.com/makeos/lobe/util/mocks"
 )
 
 type testStruct struct {

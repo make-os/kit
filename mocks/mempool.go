@@ -9,9 +9,9 @@ import (
 	types "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types0 "github.com/tendermint/tendermint/types"
-	types1 "gitlab.com/makeos/mosdef/types"
-	core "gitlab.com/makeos/mosdef/types/core"
-	util "gitlab.com/makeos/mosdef/util"
+	types1 "gitlab.com/makeos/lobe/types"
+	core "gitlab.com/makeos/lobe/types/core"
+	util "gitlab.com/makeos/lobe/util"
 	reflect "reflect"
 )
 
@@ -302,10 +302,10 @@ func (mr *MockMempoolReactorMockRecorder) GetTop(n interface{}) *gomock.Call {
 }
 
 // AddTx mocks base method
-func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.Bytes32, error) {
+func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.HexBytes, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTx", tx)
-	ret0, _ := ret[0].(util.Bytes32)
+	ret0, _ := ret[0].(util.HexBytes)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

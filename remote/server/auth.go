@@ -7,18 +7,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/remote/policy"
-	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/remote/policy"
+	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 var (
@@ -117,7 +117,7 @@ func (sv *Server) handleAuth(
 		txDetail, err := DecodePushToken(token)
 		if err != nil {
 			err = fmt.Errorf("malformed push token at index %d. Unable to decode", i)
-			w.Header().Set("Err", color.RedString(err.Error()))
+			w.Header().Set("Err", fmt2.RedString(err.Error()))
 			return nil, nil, err
 		}
 		txDetails = append(txDetails, txDetail)
@@ -126,7 +126,7 @@ func (sv *Server) handleAuth(
 	// Perform authorization checks
 	polEnforcer, err = sv.authenticate(txDetails, repo, namespace, sv.logic, validation.CheckTxDetail)
 	if err != nil {
-		w.Header().Set("Err", color.RedString(err.Error()))
+		w.Header().Set("Err", fmt2.RedString(err.Error()))
 		return nil, nil, err
 	}
 

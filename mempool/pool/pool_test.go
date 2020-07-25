@@ -5,10 +5,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 var _ = Describe("pool", func() {
@@ -39,7 +39,7 @@ var _ = Describe("pool", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			err := tp.Put(tx)
 			Expect(err).To(BeNil())
-			Expect(tp.container.Size()).To(Equal(int64(1)))
+			Expect(tp.container.Size()).To(Equal(1))
 		})
 	})
 
@@ -64,32 +64,6 @@ var _ = Describe("pool", func() {
 		})
 	})
 
-	Describe(".GetByFrom", func() {
-
-		var tp *Pool
-		var key1 = crypto.NewKeyFromIntSeed(1)
-		var key2 = crypto.NewKeyFromIntSeed(2)
-		var tx, tx2, tx3 types.BaseTx
-
-		BeforeEach(func() {
-			tp = New(3)
-			tx = txns.NewCoinTransferTx(1, "a", key1, "12.2", "0.2", time.Now().Unix())
-			tx2 = txns.NewCoinTransferTx(2, "a", key1, "12.3", "0.2", time.Now().Unix())
-			tx3 = txns.NewCoinTransferTx(2, "a", key2, "12.3", "0.2", time.Now().Unix())
-			_ = tp.addTx(tx)
-			_ = tp.addTx(tx2)
-			_ = tp.addTx(tx3)
-			Expect(tp.Size()).To(Equal(int64(3)))
-		})
-
-		It("should return two transactions matching key1", func() {
-			txs := tp.GetByFrom(key1.Addr())
-			Expect(txs).To(HaveLen(2))
-			Expect(txs[0]).To(Equal(tx))
-			Expect(txs[1]).To(Equal(tx2))
-		})
-	})
-
 	Describe(".Size", func() {
 
 		var tp *Pool
@@ -97,13 +71,13 @@ var _ = Describe("pool", func() {
 
 		BeforeEach(func() {
 			tp = New(1)
-			Expect(tp.Size()).To(Equal(int64(0)))
+			Expect(tp.Size()).To(Equal(0))
 		})
 
 		It("should return 1", func() {
 			tx := txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
-			Expect(tp.Size()).To(Equal(int64(1)))
+			Expect(tp.Size()).To(Equal(1))
 		})
 	})
 
@@ -217,14 +191,14 @@ var _ = Describe("pool", func() {
 				tx2 = txns.NewCoinTransferTx(101, "something2", sender, "0", "0", time.Now().Unix())
 				tx2.SetTimestamp(time.Now().Unix())
 
-				tp.container.add(tx)
-				tp.container.add(tx2)
-				Expect(tp.Size()).To(Equal(int64(2)))
+				tp.container.Add(tx)
+				tp.container.Add(tx2)
+				Expect(tp.Size()).To(Equal(2))
 			})
 
 			It("should remove expired transaction", func() {
 				tp.clean()
-				Expect(tp.Size()).To(Equal(int64(1)))
+				Expect(tp.Size()).To(Equal(1))
 				Expect(tp.Has(tx2)).To(BeTrue())
 				Expect(tp.Has(tx)).To(BeFalse())
 			})
@@ -255,8 +229,8 @@ var _ = Describe("pool", func() {
 		It("should remove the transactions included in the block", func() {
 			txs := []types.BaseTx{tx2, tx3}
 			tp.Remove(txs...)
-			Expect(tp.Size()).To(Equal(int64(1)))
-			Expect(tp.container.container[0].Tx).To(Equal(tx))
+			Expect(tp.Size()).To(Equal(1))
+			Expect(tp.container.Get(0).Tx).To(Equal(tx))
 		})
 	})
 
@@ -281,13 +255,13 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should get transaction from pool", func() {
-			txData := tp.GetByHash(tx.GetHash().HexStr())
+			txData := tp.GetByHash(tx.GetHash().String())
 			Expect(txData).ToNot(BeNil())
 			Expect(txData).To(Equal(tx))
 		})
 
 		It("should return nil from  GetTransaction in pool", func() {
-			txData := tp.GetByHash(tx2.GetHash().HexStr())
+			txData := tp.GetByHash(tx2.GetHash().String())
 			Expect(txData).To(BeNil())
 		})
 

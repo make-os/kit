@@ -6,16 +6,16 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/purchaseticket"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/purchaseticket"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("TicketPurchaseContract", func() {
@@ -65,7 +65,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 				acct := &state.Account{Balance: util.String("100"), Stakes: stakes}
 				logic.AccountKeeper().Update(sender.Addr(), acct)
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("100")))
 
 				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
 					TxType:   &txns.TxType{Type: txns.TxTypeValidatorTicket},
@@ -77,7 +77,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 
 			Specify("that spendable balance is 89", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("89")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("89")))
 			})
 
 			Specify("that balance is 99", func() {
@@ -97,7 +97,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 				acct := &state.Account{Balance: util.String("100"), Stakes: stakes}
 				logic.AccountKeeper().Update(sender.Addr(), acct)
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("50")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("50")))
 
 				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
 					TxType:   &txns.TxType{Type: txns.TxTypeValidatorTicket},
@@ -109,7 +109,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 
 			Specify("that spendable balance is 39", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("39")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("39")))
 			})
 
 			Specify("that balance is 99", func() {
@@ -125,7 +125,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 				acct := &state.Account{Balance: util.String("100"), Stakes: state.BareAccountStakes()}
 				logic.AccountKeeper().Update(sender.Addr(), acct)
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("100")))
 
 				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
 					TxType:   &txns.TxType{Type: txns.TxTypeHostTicket},
@@ -138,7 +138,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 			It("should add a stake entry with unbond height set to 0", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Stakes).To(HaveLen(1))
-				Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight).To(Equal(uint64(0)))
+				Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight.UInt64()).To(Equal(uint64(0)))
 			})
 
 			Specify("that total staked is 10", func() {
@@ -153,12 +153,12 @@ var _ = Describe("TicketPurchaseContract", func() {
 
 			Specify("that total spendable balance is 89 at chainHeight=1", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("89")))
+				Expect(acct.GetAvailableBalance(1)).To(Equal(util.String("89")))
 			})
 
 			Specify("that total spendable balance is 89 at chainHeight=1000", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.GetSpendableBalance(1000)).To(Equal(util.String("89")))
+				Expect(acct.GetAvailableBalance(1000)).To(Equal(util.String("89")))
 			})
 		})
 	})

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/storage"
 )
 
 // RepoKeeper manages repository state.
@@ -41,15 +41,15 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 	// repo where they first appeared.
 	stateVersion := a.state.Version()
 	err := repo.Proposals.ForEach(func(prop *state.RepoProposal, id string) error {
-		if prop.Height == uint64(stateVersion) {
-			prop.Config = repo.Config.Governance
+		if prop.Height.UInt64() == uint64(stateVersion) {
+			prop.Config = repo.Config.Gov
 			return nil
 		}
-		propParent := a.GetNoPopulate(name, prop.Height)
+		propParent := a.GetNoPopulate(name, prop.Height.UInt64())
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
-		prop.Config = propParent.Config.Governance
+		prop.Config = propParent.Config.Gov
 		return nil
 	})
 	if err != nil {

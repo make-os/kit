@@ -4,19 +4,20 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var validAddrRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
 		switch v := val.(type) {
 		case util.String:
-			if _err := crypto.IsValidAccountAddr(v.String()); _err != nil {
+			if _err := crypto.IsValidUserAddr(v.String()); _err != nil {
 				return err
 			}
 		case string:
-			if _err := crypto.IsValidAccountAddr(v); _err != nil {
+			if _err := crypto.IsValidUserAddr(v); _err != nil {
 				return err
 			}
 		default:
@@ -71,7 +72,7 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 var validObjectNameRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		name := val.(string)
-		err := util.IsValidName(name)
+		err := identifier.IsValidResourceName(name)
 		if err != nil {
 			return util.FieldErrorWithIndex(index, field, err.Error())
 		}

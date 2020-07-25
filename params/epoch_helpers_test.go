@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "gitlab.com/makeos/mosdef/params"
+	. "gitlab.com/makeos/lobe/params"
 )
 
 var _ = Describe("EpochHelpers", func() {

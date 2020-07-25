@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // UpdateCmd fetches and lists all accounts
@@ -17,7 +17,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 	}
 
 	// Unlock the key
-	account, err := ks.UIUnlockKey(addressOrIndex, passphrase)
+	account, err := ks.UIUnlockKey(addressOrIndex, passphrase, "")
 	if err != nil {
 		return err
 	}

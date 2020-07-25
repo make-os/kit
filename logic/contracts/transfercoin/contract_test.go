@@ -6,17 +6,18 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts/transfercoin"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts/transfercoin"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var _ = Describe("CoinTransferContract", func() {
@@ -85,7 +86,7 @@ var _ = Describe("CoinTransferContract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey())
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value+fee, msg:tx has invalid nonce (3); expected (1)"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:tx has invalid nonce (3); expected (1)"))
 			})
 		})
 
@@ -128,13 +129,13 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that recipient balance is equal to 20 and nonce=0", func() {
 					recipientAcct := logic.AccountKeeper().Get(recipientKey.Addr())
 					Expect(recipientAcct.Balance).To(Equal(util.String("20")))
-					Expect(recipientAcct.Nonce).To(Equal(uint64(0)))
+					Expect(recipientAcct.Nonce.UInt64()).To(Equal(uint64(0)))
 				})
 			})
 		})
@@ -157,14 +158,14 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
 
-		When("recipient address is a namespaced URI with a user account target", func() {
+		When("recipient address is a user namespace path with a user account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.Address(ns + "/domain")
+			var senderNamespaceURI = identifier.Address(ns + "/domain")
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
@@ -185,7 +186,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
@@ -209,14 +210,14 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
 
-		When("recipient address is a namespace URI with a repo account target", func() {
+		When("recipient address is a user namespace path with a repo account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.Address(ns + "/domain")
+			var senderNamespaceURI = identifier.Address(ns + "/domain")
 			var repoName = "repo1"
 
 			BeforeEach(func() {
@@ -238,7 +239,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {
@@ -257,7 +258,7 @@ var _ = Describe("CoinTransferContract", func() {
 				var repoName = "repo1"
 
 				BeforeEach(func() {
-					recipient := util.Address("r/" + repoName)
+					recipient := identifier.Address("r/" + repoName)
 					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
 						TxRecipient: &txns.TxRecipient{To: recipient},
 						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
@@ -269,13 +270,49 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {
 					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.GetBalance()).To(Equal(util.String("10")))
 				})
+			})
+		})
+
+		When("recipient address is a partial user namespace", func() {
+			var recipient = identifier.Address("ns1/")
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+					TxRecipient: &txns.TxRecipient{To: recipient},
+					TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+				ct := transfercoin.NewContract().Init(logic, tx, 0)
+				err = ct.Exec()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace not found"))
+			})
+		})
+
+		When("recipient address is a partial native namespace", func() {
+			var recipient = identifier.Address("r/")
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+					TxRecipient: &txns.TxRecipient{To: recipient},
+					TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+				ct := transfercoin.NewContract().Init(logic, tx, 0)
+				err = ct.Exec()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("recipient account not found"))
 			})
 		})
 	})

@@ -2,14 +2,14 @@ package updaterepo
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/logic/proposals"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/logic/proposals"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // UpdateRepoContract is a system contract that creates a proposal to
@@ -71,7 +71,7 @@ func (c *UpdateRepoContract) Exec() error {
 
 	// Index the proposal against its end height so it
 	// can be tracked and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 		return errors.Wrap(err, common.ErrFailedToIndexProposal)
 	}
 
@@ -86,6 +86,5 @@ func (c *UpdateRepoContract) Apply(args *core.ProposalApplyArgs) error {
 	if err := util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd); err != nil {
 		return err
 	}
-	args.Repo.Config.MergeMap(cfgUpd)
-	return nil
+	return args.Repo.Config.MergeMap(cfgUpd)
 }

@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/fatih/color"
-	io2 "gitlab.com/makeos/mosdef/util/io"
+	"gitlab.com/makeos/lobe/util/colorfmt"
+	io2 "gitlab.com/makeos/lobe/util/io"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -19,7 +19,8 @@ var (
 // promptFunc represents a function that can collect user input
 type promptFunc func(string, ...interface{}) string
 
-// Keystore defines functionalities to create, update, fetch and import accounts.
+// Keystore implements Keystore. It provides the ability to
+// create, update, fetch and import keys and accounts.
 type Keystore struct {
 	dir         string
 	getPassword promptFunc
@@ -34,7 +35,7 @@ func New(dir string) *Keystore {
 	am := new(Keystore)
 	am.dir = dir
 	am.getPassword = func(s string, args ...interface{}) string {
-		s = fmt.Sprintf("\033[33m%s:\033[0m ", s)
+		s = fmt.Sprintf("\033[33m%s>\033[0m ", s)
 		return io2.ReadInput(fmt.Sprintf(s, args...), &io2.InputReaderArgs{Password: true})
 	}
 	am.out = os.Stdout
@@ -48,7 +49,16 @@ func (ks *Keystore) SetOutput(out io.Writer) {
 
 // AskForPassword starts an interactive prompt to collect passphrase.
 // Returns error if passphrase and repeated passphrases do not match
-func (ks *Keystore) AskForPassword() (string, error) {
+func (ks *Keystore) AskForPassword(prompt ...string) (string, error) {
+
+	// Set and print prompt.
+	// If prompt is passed in, use it instead of the default
+	promptStr := ""
+	if len(prompt) > 0 {
+		promptStr = prompt[0]
+	}
+	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
+
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {
@@ -66,8 +76,16 @@ func (ks *Keystore) AskForPassword() (string, error) {
 
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
-func (ks *Keystore) AskForPasswordOnce() string {
-	fmt.Fprint(ks.out, color.CyanString("Enter your passphrase to unlock the key\n"))
+func (ks *Keystore) AskForPasswordOnce(prompt ...string) string {
+
+	// Set and print prompt.
+	// If prompt is passed in, use it instead of the default
+	promptStr := "Enter your passphrase to unlock the key\n"
+	if len(prompt) > 0 {
+		promptStr = prompt[0]
+	}
+	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
+
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {

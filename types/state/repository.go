@@ -3,16 +3,18 @@ package state
 import (
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cast"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/util"
 )
 
 type FeeMode int
 
 const (
-	FeeModePusherPays = iota
+	FeeModePusherPays FeeMode = iota
 	FeeModeRepoPays
 	FeeModeRepoPaysCapped
 )
@@ -51,13 +53,13 @@ type Reference struct {
 
 	// Nonce is the current count of commits on the reference.
 	// It is used to enforce order of operation to the reference.
-	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
+	Nonce util.UInt64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
 
 	// ReferenceData contains extra data
 	Data *ReferenceData `json:"data" mapstructure:"data" msgpack:"data,omitempty"`
 
 	// Hash is the current hash of the reference
-	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
+	Hash util.Bytes `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
 }
 
 // IsNil checks whether the reference fields are all empty
@@ -92,9 +94,9 @@ func (r *References) Has(name string) bool {
 
 // RepoOwner describes an owner of a repository
 type RepoOwner struct {
-	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
-	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt,omitempty"`
-	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto,omitempty"`
+	Creator  bool        `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+	JoinedAt util.UInt64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt,omitempty"`
+	Veto     bool        `json:"veto" mapstructure:"veto" msgpack:"veto,omitempty"`
 }
 
 // RepoOwners represents an index of owners of a repository.
@@ -120,19 +122,20 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
-	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
-	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight,omitempty"`
-	ProposalDuration         uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
-	ProposalFeeDepositDur    uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
-	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
-	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
-	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
-	ProposalVetoQuorum       float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
-	ProposalVetoOwnersQuorum float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
-	ProposalFee              float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
-	ProposalFeeRefundType    ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType,omitempty"`
-	NoProposalFeeForMergeReq bool                  `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq,omitempty"`
+	CreatorAsContributor bool                `json:"creatorAsContrib" mapstructure:"creatorAsContrib" msgpack:"creatorAsContrib,omitempty"`
+	Voter                VoterType           `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
+	PropCreator          ProposalCreatorType `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
+	ReqVoterJoinHeight   bool                `json:"requireVoterJoinHeight" mapstructure:"requireVoterJoinHeight" msgpack:"requireVoterJoinHeight,omitempty"`
+	PropDuration         util.UInt64         `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
+	PropFeeDepositDur    util.UInt64         `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
+	PropTallyMethod      ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
+	PropQuorum           float64             `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
+	PropThreshold        float64             `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
+	PropVetoQuorum       float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
+	PropVetoOwnersQuorum float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
+	PropFee              float64             `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
+	PropFeeRefundType    PropFeeRefundType   `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType,omitempty"`
+	NoPropFeeForMergeReq bool                `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq,omitempty"`
 }
 
 // Policy describes a repository access policy
@@ -156,26 +159,68 @@ type RepoPolicies []*Policy
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	util.CodecUtil `json:"-" mapstructure:"-" msgpack:"-"`
-	Governance     *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance,omitempty"`
+	Gov            *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance,omitempty"`
 	Policies       RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
+}
+
+// FromMap populates c using m.
+// Expects m to only include key and values with basic go primitive types.
+func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
+
+	toBool := cast.ToBool
+	toFlo := cast.ToFloat64
+	toUint64 := cast.ToUint64
+	toInt := cast.ToInt
+
+	cfg := objx.New(m)
+	o := cfg.Get("governance").ObjxMap()
+	gov := c.Gov
+
+	// Populate Governance config
+	gov.CreatorAsContributor = toBool(o.Get("creatorAsContrib").Inter(gov.CreatorAsContributor))
+	gov.Voter = VoterType(toInt(o.Get("propVoter").Inter(gov.Voter)))
+	gov.PropCreator = ProposalCreatorType(toInt(o.Get("propCreator").Inter(gov.PropCreator)))
+	gov.ReqVoterJoinHeight = toBool(o.Get("requireVoterJoinHeight").Inter(gov.ReqVoterJoinHeight))
+	gov.PropDuration = util.UInt64(toUint64(o.Get("propDur").Inter(gov.PropDuration)))
+	gov.PropFeeDepositDur = util.UInt64(toUint64(o.Get("propFeeDepDur").Inter(gov.PropFeeDepositDur)))
+	gov.PropTallyMethod = ProposalTallyMethod(toInt(o.Get("propTallyMethod").Inter(gov.PropTallyMethod)))
+	gov.PropQuorum = toFlo(o.Get("propQuorum").Inter(gov.PropQuorum))
+	gov.PropThreshold = toFlo(o.Get("propThreshold").Inter(gov.PropThreshold))
+	gov.PropVetoQuorum = toFlo(o.Get("propVetoQuorum").Inter(gov.PropVetoQuorum))
+	gov.PropVetoOwnersQuorum = toFlo(o.Get("propVetoOwnersQuorum").Inter(gov.PropVetoOwnersQuorum))
+	gov.PropFee = toFlo(o.Get("propFee").Inter(gov.PropFee))
+	gov.PropFeeRefundType = PropFeeRefundType(toInt(o.Get("propFeeRefundType").Inter(gov.PropFeeRefundType)))
+	gov.NoPropFeeForMergeReq = toBool(o.Get("noPropFeeForMergeReq").Inter(gov.NoPropFeeForMergeReq))
+
+	// Populate Policies
+	policies := cfg.Get("policies").ObjxMapSlice()
+	for _, pol := range policies {
+		c.Policies = append(c.Policies, &Policy{
+			Object:  pol.Get("obj").String(),
+			Subject: pol.Get("sub").String(),
+			Action:  pol.Get("act").String(),
+		})
+	}
+
+	return c
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return c.EncodeMulti(enc,
-		c.Governance,
+		c.Gov,
 		c.Policies)
 }
 
 func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return c.DecodeMulti(dec,
-		&c.Governance,
+		&c.Gov,
 		&c.Policies)
 }
 
 // Clone clones c
 func (c *RepoConfig) Clone() *RepoConfig {
 	var clone = BareRepoConfig()
-	m := util.StructToMap(c)
+	m := util.ToBasicMap(c)
 	_ = mapstructure.Decode(m, &clone)
 	return clone
 }
@@ -185,25 +230,29 @@ func (c *RepoConfig) Clone() *RepoConfig {
 // Empty field in upd will override non-empty fields in c.
 // Slice from upd will be merged into slice field in c.
 func (c *RepoConfig) MergeMap(upd map[string]interface{}) error {
-	var dst = c.ToMap()
+	var dst = c.ToBasicMap()
 	if err := mergo.Map(&dst, upd,
 		mergo.WithOverride,
 		mergo.WithOverwriteWithEmptyValue,
 		mergo.WithAppendSlice); err != nil {
 		return err
 	}
-	return mapstructure.Decode(dst, c)
+	return util.DecodeMap(dst, c)
 }
 
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
-	return (c.Governance == nil || *c.Governance == RepoConfigGovernance{}) &&
-		len(c.Policies) == 0
+	return (c.Gov == nil || *c.Gov == RepoConfigGovernance{}) && len(c.Policies) == 0
 }
 
-// ToMap converts the object to map
+// ToBasicMap converts the object to a basic map with all custom types stripped.
+func (c *RepoConfig) ToBasicMap() map[string]interface{} {
+	return util.ToBasicMap(c)
+}
+
+// ToMap converts the object to a map
 func (c *RepoConfig) ToMap() map[string]interface{} {
-	return util.StructToMap(c, "mapstructure")
+	return util.ToMap(c)
 }
 
 var (
@@ -211,23 +260,30 @@ var (
 	DefaultRepoConfig = MakeDefaultRepoConfig()
 )
 
+// NewDefaultRepoConfigFromMap creates a repo config composed of default values + m
+func NewDefaultRepoConfigFromMap(m map[string]interface{}) *RepoConfig {
+	r := MakeDefaultRepoConfig()
+	return r.FromMap(m)
+}
+
 // MakeDefaultRepoConfig returns sane defaults for repository configurations
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
-		Governance: &RepoConfigGovernance{
-			Voter:                    VoterOwner,
-			ProposalCreator:          ProposalCreatorAny,
-			VoterAgeAsCurHeight:      false,
-			ProposalDuration:         params.RepoProposalDur,
-			ProposalTallyMethod:      ProposalTallyMethodIdentity,
-			ProposalQuorum:           params.RepoProposalQuorum,
-			ProposalThreshold:        params.RepoProposalThreshold,
-			ProposalVetoQuorum:       params.RepoProposalVetoQuorum,
-			ProposalVetoOwnersQuorum: params.RepoProposalVetoOwnersQuorum,
-			ProposalFee:              params.MinProposalFee,
-			ProposalFeeRefundType:    ProposalFeeRefundNo,
-			ProposalFeeDepositDur:    0,
-			NoProposalFeeForMergeReq: true,
+		Gov: &RepoConfigGovernance{
+			CreatorAsContributor: true,
+			Voter:                VoterOwner,
+			PropCreator:          ProposalCreatorAny,
+			ReqVoterJoinHeight:   false,
+			PropDuration:         util.UInt64(params.RepoProposalDur),
+			PropTallyMethod:      ProposalTallyMethodIdentity,
+			PropQuorum:           params.RepoProposalQuorum,
+			PropThreshold:        params.RepoProposalThreshold,
+			PropVetoQuorum:       params.RepoProposalVetoQuorum,
+			PropVetoOwnersQuorum: params.RepoProposalVetoOwnersQuorum,
+			PropFee:              params.MinProposalFee,
+			PropFeeRefundType:    ProposalFeeRefundNo,
+			PropFeeDepositDur:    0,
+			NoPropFeeForMergeReq: true,
 		},
 		Policies: []*Policy{},
 	}
@@ -236,8 +292,8 @@ func MakeDefaultRepoConfig() *RepoConfig {
 // BareRepoConfig returns empty repository configurations
 func BareRepoConfig() *RepoConfig {
 	return &RepoConfig{
-		Governance: &RepoConfigGovernance{},
-		Policies:   RepoPolicies{},
+		Gov:      &RepoConfigGovernance{},
+		Policies: RepoPolicies{},
 	}
 }
 

@@ -9,12 +9,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phayes/freeport"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/dht/announcer"
-	"gitlab.com/makeos/mosdef/dht/server"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/dht/announcer"
+	"gitlab.com/makeos/lobe/dht/server"
+	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("Announcer", func() {

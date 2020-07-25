@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "gitlab.com/makeos/mosdef/remote/push/types"
+	types "gitlab.com/makeos/lobe/remote/push/types"
 	io "io"
 	reflect "reflect"
 )
@@ -44,6 +44,20 @@ func (m *MockObjectFetcher) Fetch(note types.PushNote, cb func(error)) {
 func (mr *MockObjectFetcherMockRecorder) Fetch(note, cb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockObjectFetcher)(nil).Fetch), note, cb)
+}
+
+// QueueSize mocks base method
+func (m *MockObjectFetcher) QueueSize() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueueSize")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// QueueSize indicates an expected call of QueueSize
+func (mr *MockObjectFetcherMockRecorder) QueueSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueSize", reflect.TypeOf((*MockObjectFetcher)(nil).QueueSize))
 }
 
 // OnPackReceived mocks base method

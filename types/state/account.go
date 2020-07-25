@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/objx"
 
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Various names for staking categories
@@ -31,7 +31,7 @@ func BareAccount() *Account {
 type Account struct {
 	util.CodecUtil      `json:"-" msgpack:"-"`
 	Balance             util.String   `json:"balance" msgpack:"balance"`
-	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
+	Nonce               util.UInt64   `json:"nonce" msgpack:"nonce"`
 	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
@@ -54,14 +54,14 @@ func (a *Account) FromMap(m map[string]interface{}) error {
 	// Nonce: expects string
 	if nonce := o.Get("nonce"); !nonce.IsNil() {
 		if nonce.IsStr() {
-			a.Nonce, err = strconv.ParseUint(nonce.Str(), 10, 64)
+			a.Nonce, err = util.ParseUint(nonce.Str(), 10, 64)
 			if err != nil {
 				return util.FieldError("nonce", "failed to convert to uint64")
 			}
 		} else if nonce.IsFloat64() {
-			a.Nonce = uint64(nonce.Float64())
+			a.Nonce = util.UInt64(nonce.Float64())
 		} else if nonce.IsInt64() {
-			a.Nonce = uint64(nonce.Int64())
+			a.Nonce = util.UInt64(nonce.Int64())
 		} else {
 			return util.FieldError("nonce",
 				fmt.Sprintf("invalid value type: has %T, wants string", nonce.Inter()))
@@ -98,18 +98,15 @@ func (a *Account) SetBalance(bal string) {
 
 // IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
-	return a.Balance.Empty() || a.Balance.Equal("0") &&
-		a.Nonce == uint64(0) &&
-		len(a.Stakes) == 0 &&
+	return util.IsZeroString(a.Balance.String()) && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
 		a.DelegatorCommission == float64(0)
 }
 
-// GetSpendableBalance returns the spendable balance of the account.
+// GetAvailableBalance returns the spendable balance of the account.
 // Formula: balance - total staked.
 // curHeight: The current blockchain height; Used to determine which stakes are unbonded.
-func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
-	return util.String(a.Balance.Decimal().
-		Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
+func (a *Account) GetAvailableBalance(curHeight uint64) util.String {
+	return util.String(a.Balance.Decimal().Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -137,7 +134,7 @@ func (a *Account) Bytes() []byte {
 // curHeight: The current blockchain height
 func (a *Account) Clean(curHeight uint64) {
 	for name, stake := range a.Stakes {
-		if stake.UnbondHeight != 0 && stake.UnbondHeight <= curHeight {
+		if stake.UnbondHeight != 0 && stake.UnbondHeight <= util.UInt64(curHeight) {
 			delete(a.Stakes, name)
 		}
 	}
@@ -160,7 +157,7 @@ type StakeInfo struct {
 
 	// UnbondHeight is the height at which the stake is unbonded.
 	// A value of 0 means the stake is bonded forever
-	UnbondHeight uint64 `json:"unbondHeight" mapstructure:"unbondHeight"`
+	UnbondHeight util.UInt64 `json:"unbondHeight" mapstructure:"unbondHeight"`
 }
 
 // AccountStakes holds staked balances
@@ -182,7 +179,7 @@ func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight ui
 		}
 		(*s)[key] = &StakeInfo{
 			Value:        value,
-			UnbondHeight: unbondHeight,
+			UnbondHeight: util.UInt64(unbondHeight),
 		}
 		break
 	}
@@ -193,9 +190,7 @@ func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight ui
 // unbond height. Returns the key of the stake entry removed
 func (s *AccountStakes) Remove(stakeType string, value util.String, unbondHeight uint64) string {
 	for k, si := range *s {
-		if strings.HasPrefix(k, stakeType) &&
-			si.Value.Equal(value) &&
-			unbondHeight == si.UnbondHeight {
+		if strings.HasPrefix(k, stakeType) && si.Value.Equal(value) && util.UInt64(unbondHeight) == si.UnbondHeight {
 			delete(*s, k)
 			return k
 		}
@@ -211,10 +206,8 @@ func (s *AccountStakes) UpdateUnbondHeight(
 	unbondHeight,
 	newUnbondHeight uint64) string {
 	for k, si := range *s {
-		if strings.HasPrefix(k, stakeType) &&
-			si.Value.Equal(value) &&
-			unbondHeight == si.UnbondHeight {
-			si.UnbondHeight = newUnbondHeight
+		if strings.HasPrefix(k, stakeType) && si.Value.Equal(value) && util.UInt64(unbondHeight) == si.UnbondHeight {
+			si.UnbondHeight = util.UInt64(newUnbondHeight)
 			return k
 		}
 	}
@@ -242,7 +235,7 @@ func (s *AccountStakes) Get(name string) *StakeInfo {
 func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 	total := util.String("0").Decimal()
 	for _, si := range *s {
-		if si.UnbondHeight == 0 || si.UnbondHeight > curHeight {
+		if si.UnbondHeight == 0 || si.UnbondHeight > util.UInt64(curHeight) {
 			total = total.Add(si.Value.Decimal())
 		}
 	}

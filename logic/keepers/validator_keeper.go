@@ -2,10 +2,10 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // ValidatorKeeper manages information about validators

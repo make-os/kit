@@ -3,48 +3,58 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/node/services"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"github.com/spf13/cast"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	apitypes "gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore"
+	keystoretypes "gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/node/services"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
+	address2 "gitlab.com/makeos/lobe/util/identifier"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	apptypes "gitlab.com/makeos/mosdef/types"
+	at "gitlab.com/makeos/lobe/types"
 )
 
 // UserModule provides account management functionalities
-// that are accessed through the javascript console environment
+// that are accessed through the JavaScript console environment
 type UserModule struct {
-	cfg     *config.AppConfig
-	acctMgr *keystore.Keystore
-	vm      *otto.Otto
-	service services.Service
-	logic   core.Logic
+	types.ModuleCommon
+	cfg      *config.AppConfig
+	keystore keystoretypes.Keystore
+	service  services.Service
+	logic    core.Logic
+}
+
+// NewAttachableUserModule creates an instance of UserModule suitable in attach mode
+func NewAttachableUserModule(client client.Client, ks *keystore.Keystore) *UserModule {
+	return &UserModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}, keystore: ks}
 }
 
 // NewUserModule creates an instance of UserModule
 func NewUserModule(
 	cfg *config.AppConfig,
-	vm *otto.Otto,
-	acctmgr *keystore.Keystore,
+	keystore keystoretypes.Keystore,
 	service services.Service,
 	logic core.Logic) *UserModule {
 	return &UserModule{
-		cfg:     cfg,
-		acctMgr: acctmgr,
-		vm:      vm,
-		service: service,
-		logic:   logic,
+		cfg:      cfg,
+		keystore: keystore,
+		service:  service,
+		logic:    logic,
 	}
 }
 
-func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// methods are functions exposed in the special namespace of this module.
+func (m *UserModule) methods() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "listAccounts",
 			Value:       m.ListLocalAccounts,
@@ -72,7 +82,7 @@ func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
 		},
 		{
 			Name:        "getBalance",
-			Value:       m.GetSpendableBalance,
+			Value:       m.GetAvailableBalance,
 			Description: "Get the spendable coin balance of an account",
 		},
 		{
@@ -81,20 +91,26 @@ func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
 			Description: "Get the total staked coins of an account",
 		},
 		{
-			Name:        "getPV",
-			Value:       m.GetPrivateValidator,
-			Description: "Get the private validator information",
+			Name:        "getValidatorInfo",
+			Value:       m.GetValidatorInfo,
+			Description: "Get the validator information",
 		},
 		{
 			Name:        "setCommission",
 			Value:       m.SetCommission,
 			Description: "Set the percentage of reward to share with a delegator",
 		},
+		{
+			Name:        "send",
+			Value:       m.SendCoin,
+			Description: "Send coins to another user account or a repository",
+		},
 	}
 }
 
-func (m *UserModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+// globals are functions exposed in the VM's global namespace
+func (m *UserModule) globals() []*types.VMMember {
+	return []*types.VMMember{
 		{
 			Name:        "accounts",
 			Value:       m.ListLocalAccounts(),
@@ -103,38 +119,35 @@ func (m *UserModule) globals() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UserModule) Configure() []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceUser, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceUser, nsMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
-		fMap[f.Name] = f.Value
+	// add methods functions
+	for _, f := range m.methods() {
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUser, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		_ = m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		_ = vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
-// listAccounts lists all accounts on this node
+// ListLocalAccounts lists all accounts on this node
 func (m *UserModule) ListLocalAccounts() []string {
-	accounts, err := m.acctMgr.List()
+	accounts, err := m.keystore.List()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	var resp []string
@@ -152,20 +165,20 @@ func (m *UserModule) ListLocalAccounts() []string {
 //
 // address: The address corresponding the the local key
 // [passphrase]: The passphrase of the local key
-func (m *UserModule) GetKey(address string, passphrase ...string) string {
-	var pass string
+func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
 
+	var pass string
 	if address == "" {
-		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
+		panic(util.ReqErr(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
 	// Get the address
-	acct, err := m.acctMgr.GetByAddress(address)
+	acct, err := m.keystore.GetByAddress(address)
 	if err != nil {
-		if err != apptypes.ErrAccountUnknown {
-			panic(util.NewStatusError(500, StatusCodeAppErr, "address", err.Error()))
+		if err != at.ErrAccountUnknown {
+			panic(util.ReqErr(500, StatusCodeServerErr, "address", err.Error()))
 		}
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "address", err.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", err.Error()))
 	}
 
 	if acct.IsUnprotected() {
@@ -175,7 +188,7 @@ func (m *UserModule) GetKey(address string, passphrase ...string) string {
 
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
-		pass = m.acctMgr.AskForPasswordOnce()
+		pass = m.keystore.AskForPasswordOnce()
 	} else {
 		pass = passphrase[0]
 	}
@@ -183,13 +196,24 @@ func (m *UserModule) GetKey(address string, passphrase ...string) string {
 unlock:
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		if err == apptypes.ErrInvalidPassphrase {
-			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
+		if err == at.ErrInvalidPassphrase {
+			panic(util.ReqErr(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "passphrase", err.Error()))
 	}
 
-	return acct.GetKey().PrivKey().Base58()
+	return acct.GetKey()
+}
+
+// GetKey returns the private key of an account.
+// The passphrase argument is used to unlock the account.
+// If passphrase is not set, an interactive prompt will be started
+// to collect the passphrase without revealing it in the terminal.
+//
+// address: The address corresponding the the local key
+// [passphrase]: The passphrase of the local key
+func (m *UserModule) GetKey(address string, passphrase ...string) string {
+	return m.getKey(address, passphrase...).PrivKey().Base58()
 }
 
 // getPublicKey returns the public key of a key.
@@ -200,43 +224,7 @@ unlock:
 // address: The address corresponding the the local key
 // [passphrase]: The passphrase of the local key
 func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
-	var pass string
-
-	if address == "" {
-		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
-	}
-
-	// Get the address
-	acct, err := m.acctMgr.GetByAddress(address)
-	if err != nil {
-		if err == apptypes.ErrAccountUnknown {
-			panic(util.NewStatusError(404, StatusCodeAccountNotFound, "address", err.Error()))
-		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
-	}
-
-	if acct.IsUnprotected() {
-		pass = keystore.DefaultPassphrase
-		goto unlock
-	}
-
-	// If passphrase is not set, start interactive mode
-	if len(passphrase) == 0 {
-		pass = m.acctMgr.AskForPasswordOnce()
-	} else {
-		pass = passphrase[0]
-	}
-
-unlock:
-	// Unlock the key using the passphrase
-	if err := acct.Unlock(pass); err != nil {
-		if err == apptypes.ErrInvalidPassphrase {
-			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
-		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
-	}
-
-	return acct.GetKey().PubKey().Base58()
+	return m.getKey(address, passphrase...).PubKey().Base58()
 }
 
 // GetNonce returns the current nonce of a network account
@@ -244,10 +232,9 @@ unlock:
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
-			"address", apptypes.ErrAccountUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 	return fmt.Sprintf("%d", acct.Nonce)
 }
@@ -256,33 +243,42 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
-	if acct.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
-			"address", apptypes.ErrAccountUnknown.Error()))
+
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.GetAccount(address, height...)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(tx)
 	}
+
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
+	if acct.IsNil() {
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+	}
+
 	if len(acct.Stakes) == 0 {
 		acct.Stakes = nil
 	}
-	return EncodeForJS(acct)
+
+	return util.ToMap(acct)
 }
 
-// GetSpendableBalance returns the spendable balance of an account
+// GetAvailableBalance returns the spendable balance of an account.
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
-func (m *UserModule) GetSpendableBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
-			"address", apptypes.ErrAccountUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return acct.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
+	return acct.GetAvailableBalance(uint64(curBlockInfo.Height)).String()
 }
 
 // getStakedBalance returns the total staked coins of an account
@@ -293,15 +289,14 @@ func (m *UserModule) GetSpendableBalance(address string, height ...uint64) strin
 //
 // RETURNS <string>: numeric value
 func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
-			"address", apptypes.ErrAccountUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return acct.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
@@ -316,7 +311,7 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 // publicKey <string>:	The validator base58 public key
 // address 	<string>:	The validator's bech32 address.
 // tmAddress <string>:	The tendermint address
-func (m *UserModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
+func (m *UserModule) GetValidatorInfo(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]interface{}{
@@ -324,6 +319,7 @@ func (m *UserModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 		"address":   key.Addr().String(),
 		"tmAddress": m.cfg.G().PrivVal.Key.Address.String(),
 	}
+
 	if len(includePrivKey) > 0 && includePrivKey[0] {
 		info["privateKey"] = key.PrivKey().Base58()
 	}
@@ -351,20 +347,72 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 
 	var tx = txns.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
+}
+
+// sendCoin sends the native coin from a source account to a destination account.
+//
+// ARGS:
+// params <map>
+// params.value 		<string>: 			The amount of coin to send
+// params.to 			<string>: 			The address of the recipient
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *UserModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
+	var err error
+
+	var tx = txns.NewBareTxCoinTransfer()
+	if err = tx.FromMap(params); err != nil {
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+	}
+
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	if printPayload {
+		return tx.ToMap()
+	}
+
+	if m.InAttachMode() {
+		resp, err := m.AttachedClient.SendCoin(&apitypes.SendCoinBody{
+			To:         tx.To,
+			Nonce:      tx.Nonce,
+			Value:      cast.ToFloat64(tx.Value.String()),
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
+	}
+
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+	}
+
+	return map[string]interface{}{
+		"hash": hash,
+	}
 }

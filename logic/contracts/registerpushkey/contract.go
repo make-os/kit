@@ -1,25 +1,34 @@
 package registerpushkey
 
 import (
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 // RegisterPushKeyContract is a system contract for creating a repository.
 // RegisterPushKeyContract implements SystemContract.
 type RegisterPushKeyContract struct {
 	core.Logic
-	tx          *txns.TxRegisterPushKey
-	chainHeight uint64
+	tx                 *txns.TxRegisterPushKey
+	chainHeight        uint64
+	disableSenderDebit bool
 }
 
 // NewContract creates a new instance of RegisterPushKeyContract
 func NewContract() *RegisterPushKeyContract {
 	return &RegisterPushKeyContract{}
+}
+
+// NewContractWithNoSenderUpdate is like NewContract but disables fee debit and nonce
+// update on the sender's account. This is meant to be used when calling the
+// contract from other contract that intend to handle sender account update
+// them self.
+func NewContractWithNoSenderUpdate() *RegisterPushKeyContract {
+	return &RegisterPushKeyContract{disableSenderDebit: true}
 }
 
 func (c *RegisterPushKeyContract) CanExec(typ types.TxCode) bool {
@@ -51,7 +60,9 @@ func (c *RegisterPushKeyContract) Exec() error {
 	c.PushKeyKeeper().Update(pushKeyID, key)
 
 	// Deduct fee and update account
-	common.DebitAccount(c, spk, c.tx.Fee.Decimal(), c.chainHeight)
+	if !c.disableSenderDebit {
+		common.DebitAccount(c, spk, c.tx.Fee.Decimal(), c.chainHeight)
+	}
 
 	return nil
 }

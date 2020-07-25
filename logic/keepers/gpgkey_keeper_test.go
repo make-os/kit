@@ -3,16 +3,16 @@ package keepers
 import (
 	"os"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	state2 "gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/crypto"
+	state2 "gitlab.com/makeos/lobe/types/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("PushKeyKeeper", func() {

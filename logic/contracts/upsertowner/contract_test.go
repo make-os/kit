@@ -6,18 +6,18 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	logic2 "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/logic/contracts"
-	"gitlab.com/makeos/mosdef/logic/contracts/upsertowner"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	logic2 "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/logic/contracts"
+	"gitlab.com/makeos/lobe/logic/contracts/upsertowner"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("UpsertOwnerContract", func() {
@@ -67,7 +67,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governance.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = state.VoterOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -222,7 +222,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Gov.PropDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -235,8 +235,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Governance.ProposalDuration = 1000
-				repoUpd.Config.Governance.ProposalFeeDepositDur = 100
+				repoUpd.Config.Gov.PropDuration = 1000
+				repoUpd.Config.Gov.PropFeeDepositDur = 100
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -252,8 +252,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
 				repo := logic.RepoKeeper().GetNoPopulate(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
-				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
+				Expect(repo.Proposals.Get("1").FeeDepositEndAt.UInt64()).To(Equal(uint64(301)))
+				Expect(repo.Proposals.Get("1").EndAt.UInt64()).To(Equal(uint64(1301)))
 			})
 		})
 	})
@@ -268,7 +268,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 		When("proposal includes 2 addresses", func() {
 			BeforeEach(func() {
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
 				}}
 				err = upsertowner.NewContract(nil).Apply(&core.ProposalApplyArgs{
@@ -291,7 +291,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			var existing = &state.RepoOwner{Veto: false, JoinedAt: 100}
 			BeforeEach(func() {
 				repoUpd.AddOwner("addr1", existing)
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
 					constants.ActionDataKeyVeto:  util.ToBytes(true),
 				}}

@@ -3,10 +3,11 @@ package types
 import (
 	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -30,7 +31,7 @@ type Note struct {
 	PushKeyID []byte `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`
 
 	// PusherAddress is the Address of the pusher
-	PusherAddress util.Address `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`
+	PusherAddress identifier.Address `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`
 
 	// Size is the size of all objects pushed
 	Size uint64 `json:"size,omitempty" msgpack:"size,omitempty"`
@@ -85,7 +86,7 @@ func (pt *Note) GetPusherKeyID() []byte {
 }
 
 // GetPusherAddress returns the pusher's address
-func (pt *Note) GetPusherAddress() util.Address {
+func (pt *Note) GetPusherAddress() identifier.Address {
 	return pt.PusherAddress
 }
 
@@ -397,7 +398,7 @@ type PushNote interface {
 	GetTargetRepo() types.LocalRepo
 	SetTargetRepo(repo types.LocalRepo)
 	GetPusherKeyID() []byte
-	GetPusherAddress() util.Address
+	GetPusherAddress() identifier.Address
 	GetPusherAccountNonce() uint64
 	GetPusherKeyIDString() string
 	EncodeMsgpack(enc *msgpack.Encoder) error

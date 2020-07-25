@@ -7,14 +7,15 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
-	config "gitlab.com/makeos/mosdef/config"
-	tree "gitlab.com/makeos/mosdef/pkgs/tree"
-	storage "gitlab.com/makeos/mosdef/storage"
-	types0 "gitlab.com/makeos/mosdef/ticket/types"
-	types1 "gitlab.com/makeos/mosdef/types"
-	core "gitlab.com/makeos/mosdef/types/core"
-	state "gitlab.com/makeos/mosdef/types/state"
-	util "gitlab.com/makeos/mosdef/util"
+	config "gitlab.com/makeos/lobe/config"
+	tree "gitlab.com/makeos/lobe/pkgs/tree"
+	storage "gitlab.com/makeos/lobe/storage"
+	types0 "gitlab.com/makeos/lobe/ticket/types"
+	types1 "gitlab.com/makeos/lobe/types"
+	core "gitlab.com/makeos/lobe/types/core"
+	state "gitlab.com/makeos/lobe/types/state"
+	util "gitlab.com/makeos/lobe/util"
+	identifier "gitlab.com/makeos/lobe/util/identifier"
 	reflect "reflect"
 )
 
@@ -280,7 +281,7 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockAccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Account {
+func (m *MockAccountKeeper) Get(address identifier.Address, blockNum ...uint64) *state.Account {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockNum {
@@ -299,7 +300,7 @@ func (mr *MockAccountKeeperMockRecorder) Get(address interface{}, blockNum ...in
 }
 
 // Update mocks base method
-func (m *MockAccountKeeper) Update(address util.Address, upd *state.Account) {
+func (m *MockAccountKeeper) Update(address identifier.Address, upd *state.Account) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Update", address, upd)
 }
@@ -568,17 +569,17 @@ func (m *MockPushKeyKeeper) EXPECT() *MockPushKeyKeeperMockRecorder {
 }
 
 // Update mocks base method
-func (m *MockPushKeyKeeper) Update(gpgID string, upd *state.PushKey) error {
+func (m *MockPushKeyKeeper) Update(pushKeyID string, upd *state.PushKey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", gpgID, upd)
+	ret := m.ctrl.Call(m, "Update", pushKeyID, upd)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update
-func (mr *MockPushKeyKeeperMockRecorder) Update(gpgID, upd interface{}) *gomock.Call {
+func (mr *MockPushKeyKeeperMockRecorder) Update(pushKeyID, upd interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPushKeyKeeper)(nil).Update), gpgID, upd)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPushKeyKeeper)(nil).Update), pushKeyID, upd)
 }
 
 // Get mocks base method
@@ -615,17 +616,17 @@ func (mr *MockPushKeyKeeperMockRecorder) GetByAddress(address interface{}) *gomo
 }
 
 // Remove mocks base method
-func (m *MockPushKeyKeeper) Remove(gpgID string) bool {
+func (m *MockPushKeyKeeper) Remove(pushKeyID string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", gpgID)
+	ret := m.ctrl.Call(m, "Remove", pushKeyID)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove
-func (mr *MockPushKeyKeeperMockRecorder) Remove(gpgID interface{}) *gomock.Call {
+func (mr *MockPushKeyKeeperMockRecorder) Remove(pushKeyID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushKeyKeeper)(nil).Remove), gpgID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushKeyKeeper)(nil).Remove), pushKeyID)
 }
 
 // MockAtomicLogic is a mock of AtomicLogic interface

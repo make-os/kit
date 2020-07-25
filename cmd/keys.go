@@ -1,17 +1,3 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -21,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/keystore/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore"
+	"gitlab.com/makeos/lobe/keystore/types"
 )
 
 // keysCmd represents the parent command for all key related commands
@@ -156,16 +142,17 @@ key.
 	},
 }
 
-var keyRevealCmd = &cobra.Command{
-	Use:   "reveal [flags] <address>",
-	Short: "Reveal the private key of a key.",
-	Long: `This command reveals the private key of a key. You will be prompted to 
-provide your password. 
+var keyGetCmd = &cobra.Command{
+	Use:   "get [flags] <address>",
+	Short: "Get a key",
+	Long: `This command gets a key and prints out its information. You will be prompted to 
+provide the passphrase to unlock the key.
 	
 You can skip the interactive mode by providing your password via the '--pass' flag. 
 Also, the flag accepts a path to a file containing a password.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		showKey, _ := cmd.Flags().GetBool("showKey")
 
 		var address string
 		if len(args) >= 1 {
@@ -176,7 +163,7 @@ Also, the flag accepts a path to a file containing a password.
 		pass := viper.GetString("node.passphrase")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.RevealCmd(address, pass); err != nil {
+		if err := ks.GetCmd(address, pass, showKey); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -214,7 +201,7 @@ func init() {
 	keysCmd.AddCommand(keyListCmd)
 	keysCmd.AddCommand(keyUpdateCmd)
 	keysCmd.AddCommand(keyImportCmd)
-	keysCmd.AddCommand(keyRevealCmd)
+	keysCmd.AddCommand(keyGetCmd)
 	keysCmd.AddCommand(keyGenCmd)
 	keysCmd.PersistentFlags().String("pass", "", "Password to unlock the target key and skip interactive mode")
 	keyCreateCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
@@ -222,4 +209,5 @@ func init() {
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
 	keyCreateCmd.Flags().Bool("push", false, "Create a push key")
 	keyImportCmd.Flags().Bool("push", false, "Create a push key")
+	keyGetCmd.Flags().Bool("showKey", false, "Show the private key")
 }

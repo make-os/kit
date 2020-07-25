@@ -1,163 +1,100 @@
 package modules
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 
-	"gitlab.com/makeos/mosdef/node/services"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	modulestypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/node/services"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	vm      *otto.Otto
+	modulestypes.ModuleCommon
 	logic   core.Logic
 	service services.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service services.Service, logic core.Logic) *TxModule {
-	return &TxModule{vm: vm, service: service, logic: logic}
+func NewTxModule(service services.Service, logic core.Logic) *TxModule {
+	return &TxModule{service: service, logic: logic}
 }
 
-// txCoinFuncs are functions accessible using the `tx.coin` namespace
-func (m *TxModule) txCoinFuncs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
-		{
-			Name:        "send",
-			Value:       m.SendCoin,
-			Description: "Send coins to another account",
-		},
+// NewAttachableTxModule creates an instance of TxModule suitable in attach mode
+func NewAttachableTxModule(client client.Client) *TxModule {
+	return &TxModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *TxModule) methods() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{
+		{Name: "get", Value: m.Get, Description: "Get a transactions by its hash"},
+		{Name: "sendPayload", Value: m.SendPayload, Description: "Send a signed transaction payload to the network"},
 	}
 }
 
-// funcs are functions accessible using the `tx` namespace
-func (m *TxModule) funcs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
-		{
-			Name:        "get",
-			Value:       m.Get,
-			Description: "Get a transactions by its hash",
-		},
-		{
-			Name:        "sendPayload",
-			Value:       m.SendPayload,
-			Description: "Send a signed transaction payload to the network",
-		},
-	}
+// globals are functions exposed in the VM's global namespace
+func (m *TxModule) globals() []*modulestypes.VMMember {
+	return []*modulestypes.VMMember{}
 }
 
-func (m *TxModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
-}
-
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *TxModule) Configure() []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main tx namespace
 	txMap := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceTx, txMap)
+	util.VMSet(vm, constants.NamespaceTx, txMap)
 
-	// Register 'coin' namespaced functions
-	coinMap := map[string]interface{}{}
-	txMap[constants.NamespaceCoin] = coinMap
-	for _, f := range m.txCoinFuncs() {
-		coinMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s.%s", constants.NamespaceTx, constants.NamespaceCoin, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
-	}
-
-	// Register other funcs to `tx` namespace
-	for _, f := range m.funcs() {
+	// Register other methods to `tx` namespace
+	for _, f := range m.methods() {
 		txMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTx, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.Completer
 }
 
-// sendCoin sends the native coin from a source account to a destination account.
-//
-// ARGS:
-// params <map>
-// params.value 		<string>: 			The amount of coin to send
-// params.to 			<string>: 			The address of the recipient
-// params.nonce 		<number|string>: 	The senders next account nonce
-// params.fee 			<number|string>: 	The transaction fee to pay
-// params.timestamp 	<number>: 			The unix timestamp
-//
-// options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
-//
-// RETURNS object <map>
-// object.hash <string>: 				The transaction hash
-func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
-	var err error
-
-	var tx = txns.NewBareTxCoinTransfer()
-	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
-	}
-
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
-	}
-
-	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
-	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
-	}
-
-	return EncodeForJS(map[string]interface{}{
-		"hash": hash,
-	})
-}
-
-// get returns a tx by hash
+// Get returns a tx by hash
 func (m *TxModule) Get(hash string) util.Map {
 
-	if strings.ToLower(hash[:2]) == "0x" {
-		hash = hash[2:]
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.GetTransaction(hash)
+		if err != nil {
+			panic(err)
+		}
+		return tx
 	}
 
-	// decode the hash from hex to byte
-	bz, err := hex.DecodeString(hash)
+	bz, err := util.FromHex(hash)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
 	tx, err := m.logic.TxKeeper().GetTx(bz)
 	if err != nil {
 		if err == types.ErrTxNotFound {
-			panic(util.NewStatusError(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
+			panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return EncodeForJS(tx)
+	return util.ToMap(tx)
 }
 
 // sendPayload sends an already signed transaction object to the network
@@ -168,14 +105,23 @@ func (m *TxModule) Get(hash string) util.Map {
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
+
+	if m.InAttachMode() {
+		tx, err := m.AttachedClient.SendTxPayload(params)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(tx)
+	}
+
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		se := util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error())
+		se := util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error())
 		if bfe := util.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
 			se.Msg = bfe.Msg
 			se.Field = bfe.Field
@@ -183,7 +129,7 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 		panic(se)
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
