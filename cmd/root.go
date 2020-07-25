@@ -67,9 +67,10 @@ func Execute() {
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lob",
-	Short: "Lobe is the official client for the themakeos network",
+	Short: "Lobe is the official client for the MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
 
@@ -84,6 +85,15 @@ var rootCmd = &cobra.Command{
 		cfg.VersionInfo.BuildDate = BuildDate
 		cfg.VersionInfo.GoVersion = GoVersion
 		cfg.VersionInfo.BuildVersion = BuildVersion
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		version, _ := cmd.Flags().GetBool("version")
+		if version {
+			fmt.Println("Client:", BuildVersion)
+			fmt.Println("Build:", BuildCommit)
+			fmt.Println("Go:", GoVersion)
+			return
+		}
 	},
 }
 
@@ -149,6 +159,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
 	rootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
+	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
 
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")

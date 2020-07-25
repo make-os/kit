@@ -17,12 +17,32 @@ builds:
       pre: packr
       post: packr clean
 archives:
-  - replacements:
+  -
+    replacements:
       darwin: Darwin
       linux: Linux
       windows: Windows
       386: i386
       amd64: x86_64
+brews:
+  -
+    name: lobe
+    tap:
+      owner: themakeos
+      name: homebrew-makeos
+    commit_author:
+      name: Kennedy Idialu
+      email: hello@makeos.org
+    folder: Formula
+    homepage: "https://makeos.org/"
+    description: ""
+    dependencies:
+      - name: git
+    test: |
+      system "#{bin}/lob --version"
+
+
+
 checksum:
   name_template: "checksums.txt"
 snapshot:
