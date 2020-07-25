@@ -492,35 +492,28 @@ func PrivKeyFromTMPrivateKey(tmSk ed25519.PrivKeyEd25519) (*PrivKey, error) {
 	return PrivKeyFromBytes(tmSk)
 }
 
-// TMPubKeyFromBase58PubKey encodes a base58 encoded ed25519 public key to
-// tendermint's ed25519.PubKeyEd25519
-func TMPubKeyFromBase58PubKey(b58PubKey string) (ed25519.PubKeyEd25519, error) {
-
-	var pubKeySized = [ed25519.PubKeyEd25519Size]byte{}
-
+// ConvertBase58PubKeyToTMPubKey converts base58 public key to tendermint's ed25519.PubKeyEd25519
+func ConvertBase58PubKeyToTMPubKey(b58PubKey string) (ed25519.PubKeyEd25519, error) {
+	var res = [ed25519.PubKeyEd25519Size]byte{}
 	pubKey, err := PubKeyFromBase58(b58PubKey)
 	if err != nil {
-		return pubKeySized, err
+		return res, err
 	}
 	rawPubKey, _ := pubKey.Bytes()
-	copy(pubKeySized[:], rawPubKey)
-
-	return pubKeySized, nil
+	copy(res[:], rawPubKey)
+	return res, nil
 }
 
-// TMPubKeyFromBytesPubKey is like TMPubKeyFromBase58PubKey but takes a byte slice
-func TMPubKeyFromBytesPubKey(bzPubKey []byte) (ed25519.PubKeyEd25519, error) {
-
-	var pubKeySized = [ed25519.PubKeyEd25519Size]byte{}
-
-	pubKey, err := PubKeyFromBytes(bzPubKey)
+// ConvertBase58PrivKeyToTMPrivKey converts base58 private key to tendermint's ed25519.PrivKeyEd25519
+func ConvertBase58PrivKeyToTMPrivKey(b58PrivKey string) (ed25519.PrivKeyEd25519, error) {
+	var res ed25519.PrivKeyEd25519
+	privKey, err := PrivKeyFromBase58(b58PrivKey)
 	if err != nil {
-		return pubKeySized, err
+		return res, err
 	}
-	rawPubKey, _ := pubKey.Bytes()
-	copy(pubKeySized[:], rawPubKey)
-
-	return pubKeySized, nil
+	rawPubKey, _ := privKey.Bytes()
+	copy(res[:], rawPubKey)
+	return res, nil
 }
 
 // GenerateWrappedPV generate a wrapped tendermint private validator key

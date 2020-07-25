@@ -489,17 +489,31 @@ var _ = Describe("Key", func() {
 		})
 	})
 
-	Describe(".TMPubKeyFromBase58PubKey", func() {
+	Describe(".ConvertBase58PubKeyToTMPubKey", func() {
 		It("should decode base58 public key to tendermint's ed25519.PubKey", func() {
 			sk := ed25519.GenPrivKey()
 			nativeSk, err := PrivKeyFromTMPrivateKey(sk)
 			Expect(err).To(BeNil())
 
 			pubBase58 := NewKeyFromPrivKey(nativeSk).PubKey().Base58()
-			tmPubKey, err := TMPubKeyFromBase58PubKey(pubBase58)
+			tmPubKey, err := ConvertBase58PubKeyToTMPubKey(pubBase58)
 			Expect(err).To(BeNil())
 
 			Expect(tmPubKey).To(Equal(sk.PubKey()))
+		})
+	})
+
+	Describe(".ConvertBase58PrivKeyToTMPrivKey", func() {
+		It("should decode base58 private key to tendermint's ed25519.PrivKey", func() {
+			sk := ed25519.GenPrivKey()
+			nativeSk, err := PrivKeyFromTMPrivateKey(sk)
+			Expect(err).To(BeNil())
+
+			privKeyBase58 := NewKeyFromPrivKey(nativeSk).PrivKey().Base58()
+			tmPrivKey, err := ConvertBase58PrivKeyToTMPrivKey(privKeyBase58)
+			Expect(err).To(BeNil())
+
+			Expect(tmPrivKey).To(Equal(sk))
 		})
 	})
 })

@@ -5,7 +5,7 @@ import (
 	"github.com/tendermint/tendermint/privval"
 )
 
-// WrappedPV extends tendermints privval.FilePV to
+// WrappedPV extends tendermint's privval.FilePV to
 // to support conversion of tendermint keys and address
 // to the applications preferred format and conventions.
 type WrappedPV struct {
