@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -248,11 +249,12 @@ func (l *Logic) Validator() core.ValidatorLogic {
 }
 
 // WriteGenesisState creates initial state objects from the genesis file
-func (l *Logic) WriteGenesisState() error {
+func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 
+	// Get genesis state from config. If not set, then use the state passed in.
 	genesisData := l.cfg.GenesisFileEntries
 	if len(genesisData) == 0 {
-		genesisData = config.GenesisData()
+		genesisData = config.RawStateToGenesisData(genState)
 	}
 
 	// Register all genesis data entries to the state

@@ -6,7 +6,7 @@
     },
     {
         "type": "repo",
-        "name": "themakeos",
+        "name": "makeos",
         "helm": true,
         "owners": {
             "maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w": {

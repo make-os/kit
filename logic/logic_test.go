@@ -1,6 +1,7 @@
 package logic_test
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/themakeos/lobe/util"
@@ -35,7 +36,7 @@ var _ = Describe("Logic", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".WriteGenesisState", func() {
+	Describe(".ApplyGenesisState", func() {
 		var testGenData = []*config.GenDataEntry{
 			{Type: config.GenDataTypeAccount, Address: "addr1", Balance: "100"},
 			{Type: config.GenDataTypeAccount, Address: "addr2", Balance: "200"},
@@ -48,32 +49,64 @@ var _ = Describe("Logic", func() {
 			},
 		}
 
-		BeforeEach(func() {
-			cfg.GenesisFileEntries = testGenData
-			for _, a := range testGenData {
-				if a.Type == config.GenDataTypeAccount {
-					res := logic.AccountKeeper().Get(identifier.Address(a.Address))
-					Expect(res.Balance).To(Equal(util.String("0")))
-					Expect(res.Nonce.UInt64()).To(Equal(uint64(0)))
+		When("genesis state is provided via config", func() {
+			BeforeEach(func() {
+				cfg.GenesisFileEntries = testGenData
+				for _, a := range testGenData {
+					if a.Type == config.GenDataTypeAccount {
+						res := logic.AccountKeeper().Get(identifier.Address(a.Address))
+						Expect(res.Balance).To(Equal(util.String("0")))
+						Expect(res.Nonce.UInt64()).To(Equal(uint64(0)))
+					}
 				}
-			}
-			err = logic.WriteGenesisState()
-			Expect(err).To(BeNil())
+				err = logic.ApplyGenesisState(nil)
+				Expect(err).To(BeNil())
+			})
+
+			It("should successfully add all accounts with expected balance", func() {
+				addr1Res := logic.AccountKeeper().Get(identifier.Address(testGenData[0].Address))
+				Expect(addr1Res.Balance).To(Equal(util.String("100")))
+				addr2Res := logic.AccountKeeper().Get(identifier.Address(testGenData[1].Address))
+				Expect(addr2Res.Balance).To(Equal(util.String("200")))
+			})
+
+			It("should successfully add all repos", func() {
+				repo := logic.RepoKeeper().Get("my-repo")
+				Expect(repo.IsNil()).To(BeFalse())
+				helmRepo, err := logic.SysKeeper().GetHelmRepo()
+				Expect(err).To(BeNil())
+				Expect(helmRepo).NotTo(Equal("my-repo"))
+			})
 		})
 
-		It("should successfully add all accounts with expected balance", func() {
-			addr1Res := logic.AccountKeeper().Get(identifier.Address(testGenData[0].Address))
-			Expect(addr1Res.Balance).To(Equal(util.String("100")))
-			addr2Res := logic.AccountKeeper().Get(identifier.Address(testGenData[1].Address))
-			Expect(addr2Res.Balance).To(Equal(util.String("200")))
-		})
+		When("genesis state is provided as argument", func() {
+			BeforeEach(func() {
+				for _, a := range testGenData {
+					if a.Type == config.GenDataTypeAccount {
+						res := logic.AccountKeeper().Get(identifier.Address(a.Address))
+						Expect(res.Balance).To(Equal(util.String("0")))
+						Expect(res.Nonce.UInt64()).To(Equal(uint64(0)))
+					}
+				}
+				rawState, _ := json.Marshal(testGenData)
+				err = logic.ApplyGenesisState(rawState)
+				Expect(err).To(BeNil())
+			})
 
-		It("should successfully add all repos", func() {
-			repo := logic.RepoKeeper().Get("my-repo")
-			Expect(repo.IsNil()).To(BeFalse())
-			helmRepo, err := logic.SysKeeper().GetHelmRepo()
-			Expect(err).To(BeNil())
-			Expect(helmRepo).NotTo(Equal("my-repo"))
+			It("should successfully add all accounts with expected balance", func() {
+				addr1Res := logic.AccountKeeper().Get(identifier.Address(testGenData[0].Address))
+				Expect(addr1Res.Balance).To(Equal(util.String("100")))
+				addr2Res := logic.AccountKeeper().Get(identifier.Address(testGenData[1].Address))
+				Expect(addr2Res.Balance).To(Equal(util.String("200")))
+			})
+
+			It("should successfully add all repos", func() {
+				repo := logic.RepoKeeper().Get("my-repo")
+				Expect(repo.IsNil()).To(BeFalse())
+				helmRepo, err := logic.SysKeeper().GetHelmRepo()
+				Expect(err).To(BeNil())
+				Expect(helmRepo).NotTo(Equal("my-repo"))
+			})
 		})
 	})
 })

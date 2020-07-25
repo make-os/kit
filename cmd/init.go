@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	golog "log"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/crypto"
 	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
@@ -27,7 +32,7 @@ import (
 // If non is provided, the node will be the sole initial validator.
 //
 // genesisTime: sets the genesis file time. If zero, current UTC time is used.
-func tendermintInit(validatorKey string, genesisValidators []string, genesisTime uint64) error {
+func tendermintInit(validatorKey string, genesisValidators []string, genesisState string, genesisTime uint64) error {
 
 	// Do nothing if already initialized
 	if common.FileExists(tmconfig.PrivValidatorKeyFile()) {
@@ -68,9 +73,26 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisTime
 		genDoc.GenesisTime = time.Unix(int64(genesisTime), 0)
 	}
 
+	// Set default genesis app state if not provided.
+	// If provided and it is a file path, read the file and use it.
+	if genesisState == "" {
+		genDoc.AppState = config.GenesisDataJSON()
+	} else {
+		if ok, _ := govalidator.IsFilePath(genesisState); ok || strings.HasPrefix(genesisState, "./") {
+			path, _ := filepath.Abs(genesisState)
+			state, err := ioutil.ReadFile(path)
+			if err != nil {
+				golog.Fatalf("Failed to read genesis state file (%s)", genesisState)
+			}
+			genDoc.AppState = state
+		} else {
+			genDoc.AppState = []byte(genesisState)
+		}
+	}
+
 	// Save the updated genesis file
 	if err = genDoc.SaveAs(tmconfig.GenesisFile()); err != nil {
-		golog.Fatalf("Failed set chain id: %s", err)
+		golog.Fatalf("Genesis config file initialization failed: %s", err)
 	}
 
 	// Set validator key if provided
@@ -98,7 +120,8 @@ var initCmd = &cobra.Command{
 		validators, _ := cmd.Flags().GetStringSlice("validators")
 		validatorKey, _ := cmd.Flags().GetString("validator-key")
 		genesisTime, _ := cmd.Flags().GetUint64("genesis-time")
-		tendermintInit(validatorKey, validators, genesisTime)
+		genState, _ := cmd.Flags().GetString("gen-state")
+		tendermintInit(validatorKey, validators, genState, genesisTime)
 		fmt.Fprintln(os.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Node initialized!"))
 	},
 }
@@ -108,4 +131,5 @@ func init() {
 	initCmd.Flags().StringSliceP("validators", "v", nil, "Public key of initial validators")
 	initCmd.Flags().StringP("validator-key", "k", "", "Private key to use for validator role")
 	initCmd.Flags().Uint64P("genesis-time", "t", 0, "Specify genesis time (default: current UTC time)")
+	initCmd.Flags().StringP("gen-state", "s", "", "Specify raw or path to genesis state")
 }

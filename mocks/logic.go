@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	"encoding/json"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
 	config "github.com/themakeos/lobe/config"
@@ -821,7 +822,7 @@ func (mr *MockAtomicLogicMockRecorder) StateTree() *gomock.Call {
 }
 
 // WriteGenesisState mocks base method
-func (m *MockAtomicLogic) WriteGenesisState() error {
+func (m *MockAtomicLogic) ApplyGenesisState(json.RawMessage) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteGenesisState")
 	ret0, _ := ret[0].(error)
@@ -831,7 +832,7 @@ func (m *MockAtomicLogic) WriteGenesisState() error {
 // WriteGenesisState indicates an expected call of WriteGenesisState
 func (mr *MockAtomicLogicMockRecorder) WriteGenesisState() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockAtomicLogic)(nil).WriteGenesisState))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockAtomicLogic)(nil).ApplyGenesisState))
 }
 
 // SetTicketManager mocks base method
@@ -1186,7 +1187,7 @@ func (mr *MockLogicMockRecorder) StateTree() *gomock.Call {
 }
 
 // WriteGenesisState mocks base method
-func (m *MockLogic) WriteGenesisState() error {
+func (m *MockLogic) ApplyGenesisState(json.RawMessage) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteGenesisState")
 	ret0, _ := ret[0].(error)
@@ -1196,7 +1197,7 @@ func (m *MockLogic) WriteGenesisState() error {
 // WriteGenesisState indicates an expected call of WriteGenesisState
 func (mr *MockLogicMockRecorder) WriteGenesisState() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockLogic)(nil).WriteGenesisState))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockLogic)(nil).ApplyGenesisState))
 }
 
 // SetTicketManager mocks base method

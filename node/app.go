@@ -80,13 +80,14 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 	a.log.Info("Initializing for the first time")
 	a.log.Info("Creating the chain and generating initial state")
 
-	// Write genesis state as long as the state tree is empty
-	if stateTree.WorkingHash() == nil {
-		if err := a.logic.WriteGenesisState(); err != nil {
-			panic(errors.Wrap(err, "failed to write genesis state"))
-		}
-	} else {
-		panic(fmt.Errorf("at init, state must be empty...It is not empty"))
+	// State must be empty at initialization
+	if stateTree.WorkingHash() != nil {
+		panic(fmt.Errorf("at initialization, state must be empty...It was not empty"))
+	}
+
+	// Apply genesis state
+	if err := a.logic.ApplyGenesisState(req.AppStateBytes); err != nil {
+		panic(errors.Wrap(err, "failed to write genesis state"))
 	}
 
 	// Store genesis validators

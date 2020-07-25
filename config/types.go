@@ -65,8 +65,10 @@ type RepoOwner struct {
 // GenDataEntry describes a genesis file data entry
 type GenDataEntry struct {
 	Type    string `json:"type" mapstructure:"type"`
-	Address string `json:"address" mapstructure:"address"`
 	Balance string `json:"balance" mapstructure:"balance"`
+
+	// Type: Account
+	Address string `json:"address" mapstructure:"address"`
 
 	// Type: Repo
 	Name   string                 `json:"name" mapstructure:"name"`

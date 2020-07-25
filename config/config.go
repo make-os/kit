@@ -57,20 +57,23 @@ var (
 	NoColorFormatting = false
 )
 
-// GenesisData returns the genesis data
-func GenesisData() []*GenDataEntry {
+// RawStateToGenesisData returns the genesis data
+func RawStateToGenesisData(state json.RawMessage) []*GenDataEntry {
+	var data []*GenDataEntry
+	if err := json.Unmarshal(state, &data); err != nil {
+		panic(errors.Wrap(err, "failed to decoded genesis file"))
+	}
+	return data
+}
+
+// GenesisData returns the genesis data in raw JSON format
+func GenesisDataJSON() json.RawMessage {
 	box := packr.NewBox("../data")
 	genesisData, err := box.FindString("genesis.json")
 	if err != nil {
 		panic(errors.Wrap(err, "failed to read genesis file"))
 	}
-
-	var data []*GenDataEntry
-	if err = json.Unmarshal([]byte(genesisData), &data); err != nil {
-		panic(errors.Wrap(err, "failed to decoded genesis file"))
-	}
-
-	return data
+	return []byte(genesisData)
 }
 
 // setDefaultViperConfig sets default viper config values.

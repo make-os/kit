@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/pkgs/tree"
@@ -282,7 +284,7 @@ type Logic interface {
 	StateTree() tree.Tree
 
 	// WriteGenesisState initializes the app state with initial data
-	WriteGenesisState() error
+	ApplyGenesisState(state json.RawMessage) error
 
 	// SetTicketManager sets the ticket manager
 	SetTicketManager(tm tickettypes.TicketManager)
