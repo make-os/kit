@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var validAddrRule = func(err error) func(interface{}) error {

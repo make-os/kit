@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Manager provides RPC service management functionality.

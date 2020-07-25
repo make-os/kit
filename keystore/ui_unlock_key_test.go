@@ -6,10 +6,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	types2 "gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/types"
 )
 
 var _ = Describe("Reveal", func() {

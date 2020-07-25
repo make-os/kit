@@ -6,15 +6,15 @@ import (
 	"strconv"
 
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/types/constants"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // RPCModule provides RPCClient functionalities

@@ -3,11 +3,11 @@ package rpc
 import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	modtypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // UserAPI provides RPC methods for various user related functionalities.

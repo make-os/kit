@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/types/state"
 )
 
 // EnforcerFunc describes a function used for checking policies.

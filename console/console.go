@@ -13,17 +13,17 @@ import (
 
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	apitypes "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/modules/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	apitypes "gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/modules/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 )
 
 // Console defines functionalities for create and using

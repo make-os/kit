@@ -21,12 +21,12 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	apitypes "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/console"
-	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	apitypes "gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/console"
+	"gitlab.com/makeos/lobe/keystore"
+	"gitlab.com/makeos/lobe/modules"
 )
 
 // connectToServer creates an RPC client to configured remote server.

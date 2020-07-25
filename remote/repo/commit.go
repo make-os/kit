@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/lobe/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )

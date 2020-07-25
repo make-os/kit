@@ -6,10 +6,10 @@ import (
 
 	"github.com/vmihailenco/msgpack"
 	msgpack2 "github.com/vmihailenco/msgpack/v4"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // All Transaction type

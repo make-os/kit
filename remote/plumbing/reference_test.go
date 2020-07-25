@@ -7,9 +7,9 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("Common", func() {

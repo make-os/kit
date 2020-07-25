@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/api/utils"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/commands/repocmd"
+	"gitlab.com/makeos/lobe/api/utils"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/repocmd"
 )
 
 // repoCmd represents the repo command

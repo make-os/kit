@@ -3,8 +3,8 @@ package rpc
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/modules/types"
 )
 
 var _ = Describe("AccountLocal", func() {

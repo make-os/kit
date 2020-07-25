@@ -10,10 +10,10 @@ import (
 	"github.com/imroc/req"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var _ = Describe("Account", func() {

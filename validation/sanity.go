@@ -5,21 +5,21 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/remote/validation"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
 
 	v "github.com/go-ozzo/ozzo-validation"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/lobe/params"
 )
 
 // CheckRecipient validates the recipient address

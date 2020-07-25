@@ -21,10 +21,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/keystore/types"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore"
+	"gitlab.com/makeos/lobe/keystore/types"
 )
 
 // keysCmd represents the parent command for all key related commands

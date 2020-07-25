@@ -17,12 +17,12 @@ import (
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/config"
-	dht2 "gitlab.com/makeos/mosdef/dht"
-	announcer2 "gitlab.com/makeos/mosdef/dht/announcer"
-	"gitlab.com/makeos/mosdef/dht/streamer"
-	"gitlab.com/makeos/mosdef/dht/streamer/types"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/config"
+	dht2 "gitlab.com/makeos/lobe/dht"
+	announcer2 "gitlab.com/makeos/lobe/dht/announcer"
+	"gitlab.com/makeos/lobe/dht/streamer"
+	"gitlab.com/makeos/lobe/dht/streamer/types"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 )
 
 var (

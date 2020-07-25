@@ -6,14 +6,14 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	rest "gitlab.com/makeos/mosdef/api/remote/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/mocks"
-	mocks2 "gitlab.com/makeos/mosdef/mocks/rpc"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	rest "gitlab.com/makeos/lobe/api/remote/client"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/mocks"
+	mocks2 "gitlab.com/makeos/lobe/mocks/rpc"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("ClientUtils", func() {

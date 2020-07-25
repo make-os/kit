@@ -8,10 +8,10 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore/types"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore/types"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 )
 
 var _ = Describe("Create", func() {

@@ -10,12 +10,12 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
-	io2 "gitlab.com/makeos/mosdef/util/io"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/util"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	io2 "gitlab.com/makeos/lobe/util/io"
 )
 
 type MergeRequestCreateArgs struct {

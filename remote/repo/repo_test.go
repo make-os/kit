@@ -6,17 +6,17 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	rr "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/remote/types"
-	state2 "gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/crypto"
+	rr "gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/remote/types"
+	state2 "gitlab.com/makeos/lobe/types/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

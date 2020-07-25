@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // ErrBlockInfoNotFound means the block info was not found

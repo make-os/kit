@@ -4,8 +4,8 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/fatih/structs"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // VMMember describes a member function or variable of a VM

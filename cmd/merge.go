@@ -21,12 +21,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/commands/mergecmd"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/io"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/mergecmd"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/io"
 )
 
 // mergeReqCmd represents the merge request command

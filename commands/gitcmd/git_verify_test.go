@@ -10,13 +10,13 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/mocks"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/mocks"
+	types2 "gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("GitVerify", func() {

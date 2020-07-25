@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	modulestypes "gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/util"
+	modulestypes "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // CreateRepo handles request to create a repository

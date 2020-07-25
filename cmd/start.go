@@ -21,8 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/node"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/node"
 )
 
 func start(onStart func(n *node.Node)) {

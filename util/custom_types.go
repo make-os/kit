@@ -12,7 +12,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // Constants

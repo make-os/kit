@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/objx"
 
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Various names for staking categories

@@ -2,8 +2,8 @@ package txns
 
 import (
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // TxRepoCreate implements BaseTx, it describes a transaction that creates a

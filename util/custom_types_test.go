@@ -3,7 +3,7 @@ package util
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 var _ = Describe("Errors", func() {

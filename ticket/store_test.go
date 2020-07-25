@@ -3,14 +3,14 @@ package ticket
 import (
 	"os"
 
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("Store", func() {

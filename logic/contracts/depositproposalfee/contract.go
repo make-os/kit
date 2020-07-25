@@ -1,11 +1,11 @@
 package depositproposalfee
 
 import (
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/common"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/common"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
 )
 
 // DepositProposalFeeContract is a system contract for adding deposit fee to a proposal.

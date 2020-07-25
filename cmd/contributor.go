@@ -6,10 +6,10 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/api/utils"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/commands/contribcmd"
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/api/utils"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/contribcmd"
+	"gitlab.com/makeos/lobe/types/state"
 )
 
 // contribCmd represents the contributor command

@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/lobe/rpc"
 )
 
 type TestCase struct {

@@ -4,14 +4,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/lobe/mocks"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("Create", func() {

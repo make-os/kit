@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/imroc/req"
-	"gitlab.com/makeos/mosdef/api/types"
+	"gitlab.com/makeos/lobe/api/types"
 )
 
 // Client describes methods for accessing REST API endpoints

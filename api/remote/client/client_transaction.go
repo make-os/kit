@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/makeos/mosdef/api/remote"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/lobe/api/remote"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/types/constants"
 )
 
 // SendTxPayload sends a signed transaction to the mempool

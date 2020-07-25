@@ -7,32 +7,32 @@ import (
 	"net/url"
 	"os"
 
-	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
-	dhtserver "gitlab.com/makeos/mosdef/dht/server"
-	"gitlab.com/makeos/mosdef/dht/server/types"
-	types2 "gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/rpc"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	rpcApi "gitlab.com/makeos/lobe/api/rpc"
+	dhtserver "gitlab.com/makeos/lobe/dht/server"
+	"gitlab.com/makeos/lobe/dht/server/types"
+	types2 "gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/remote/server"
+	"gitlab.com/makeos/lobe/rpc"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/modules"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/extensions"
-	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/lobe/extensions"
+	"gitlab.com/makeos/lobe/keystore"
 
-	"gitlab.com/makeos/mosdef/ticket"
+	"gitlab.com/makeos/lobe/ticket"
 
-	"gitlab.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/lobe/mempool"
 
-	"gitlab.com/makeos/mosdef/logic"
+	"gitlab.com/makeos/lobe/logic"
 
-	"gitlab.com/makeos/mosdef/node/services"
+	"gitlab.com/makeos/lobe/node/services"
 
 	"github.com/pkg/errors"
 
@@ -42,13 +42,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/storage"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 )
 
 // RPCServer represents the client
@@ -372,7 +372,7 @@ func (n *Node) GetService() services.Service {
 
 // Stop the node
 func (n *Node) Stop() {
-	n.log.Info("mosdef is stopping...")
+	n.log.Info("lobe is stopping...")
 
 	if n.dht != nil {
 		n.dht.Stop()
@@ -394,5 +394,5 @@ func (n *Node) Stop() {
 		n.log.Info("Databases have been closed")
 	}
 
-	n.log.Info("mosdef has stopped")
+	n.log.Info("lobe has stopped")
 }

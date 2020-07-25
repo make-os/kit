@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	remote "gitlab.com/makeos/mosdef/api/remote/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/api/types"
+	remote "gitlab.com/makeos/lobe/api/remote/client"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/api/types"
 )
 
 // NextNonceGetter describes a function for getting the next nonce of an account.

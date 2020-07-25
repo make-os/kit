@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/lobe/types/constants"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/ripemd160"
 )

@@ -3,8 +3,8 @@ package state
 import (
 	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // VoterType represents a type of repository voter type

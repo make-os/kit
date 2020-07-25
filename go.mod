@@ -1,4 +1,4 @@
-module gitlab.com/makeos/mosdef
+module gitlab.com/makeos/lobe
 
 go 1.13
 

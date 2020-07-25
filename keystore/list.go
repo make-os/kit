@@ -12,10 +12,10 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/keystore/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/keystore/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 // List returns the accounts stored on disk.

@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/lobe/crypto"
 )
 
 type KeyType int

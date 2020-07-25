@@ -4,9 +4,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	state2 "gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/pkgs/tree"
+	state2 "gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 var _ = Describe("NamespaceKeeper", func() {

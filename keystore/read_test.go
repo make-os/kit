@@ -8,9 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/crypto"
-	keystoretypes "gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/lobe/crypto"
+	keystoretypes "gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/types"
 )
 
 var _ = Describe("Read", func() {

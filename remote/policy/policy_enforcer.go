@@ -1,7 +1,7 @@
 package policy
 
 import (
-	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/lobe/types/state"
 )
 
 type policyItem struct {

@@ -7,10 +7,10 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	dht2 "gitlab.com/makeos/mosdef/dht"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/pkgs/queue"
-	"gitlab.com/makeos/mosdef/util"
+	dht2 "gitlab.com/makeos/lobe/dht"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/pkgs/queue"
+	"gitlab.com/makeos/lobe/util"
 )
 
 type Announcer interface {

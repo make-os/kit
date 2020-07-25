@@ -8,11 +8,11 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
-	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/crypto"
+	types2 "gitlab.com/makeos/lobe/keystore/types"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
+	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 )
 
 // StoredKey represents an encrypted key stored on disk

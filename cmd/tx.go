@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/api/utils"
-	"gitlab.com/makeos/mosdef/commands/txcmd"
+	"gitlab.com/makeos/lobe/api/utils"
+	"gitlab.com/makeos/lobe/commands/txcmd"
 )
 
 // txCmd represents the repo command

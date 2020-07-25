@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/commands/common"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/util"
-	cf "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/commands/common"
+	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/util"
+	cf "gitlab.com/makeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

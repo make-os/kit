@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/makeos/mosdef/util"
+import "gitlab.com/makeos/lobe/util"
 
 type (
 	// ColChangeType describes a change to a collection item

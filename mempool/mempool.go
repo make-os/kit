@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 
-	t "gitlab.com/makeos/mosdef/types"
+	t "gitlab.com/makeos/lobe/types"
 
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	auto "github.com/tendermint/tendermint/libs/autofile"
 	"github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/mempool/pool"
+	"gitlab.com/makeos/lobe/mempool/pool"
 )
 
 // Mempool related events

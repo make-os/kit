@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/lobe/params"
 )
 
 // PushPool wraps the transaction container providing a pool

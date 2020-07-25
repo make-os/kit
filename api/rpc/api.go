@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/rpc"
 )
 
 // APIs returns all API handlers

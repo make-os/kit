@@ -21,14 +21,14 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/commands/gitcmd"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/gitcmd"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/util"
 
 	tmcfg "github.com/tendermint/tendermint/config"
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -80,8 +80,8 @@ func Execute() {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "mosdef",
-	Short: "Mosdef is the official client for MakeOS network",
+	Use:   "lobe",
+	Short: "lobe is the official client for MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		config.Configure(cfg, tmconfig, &itr)

@@ -8,12 +8,12 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/commands/issuecmd"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/commands/issuecmd"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/testutil"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 

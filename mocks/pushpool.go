@@ -7,10 +7,10 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	msgpack "github.com/vmihailenco/msgpack"
-	types "gitlab.com/makeos/mosdef/remote/push/types"
-	types0 "gitlab.com/makeos/mosdef/remote/types"
-	util "gitlab.com/makeos/mosdef/util"
-	identifier "gitlab.com/makeos/mosdef/util/identifier"
+	types "gitlab.com/makeos/lobe/remote/push/types"
+	types0 "gitlab.com/makeos/lobe/remote/types"
+	util "gitlab.com/makeos/lobe/util"
+	identifier "gitlab.com/makeos/lobe/util/identifier"
 	reflect "reflect"
 )
 

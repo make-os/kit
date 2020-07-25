@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Params represent JSON API parameters

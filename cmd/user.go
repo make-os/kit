@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/api/utils"
-	"gitlab.com/makeos/mosdef/commands/common"
-	usercmd "gitlab.com/makeos/mosdef/commands/usercmd"
+	"gitlab.com/makeos/lobe/api/utils"
+	"gitlab.com/makeos/lobe/commands/common"
+	usercmd "gitlab.com/makeos/lobe/commands/usercmd"
 )
 
 // userCmd represents the user command

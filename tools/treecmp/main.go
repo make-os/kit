@@ -10,12 +10,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/k0kubun/pp"
 	"github.com/tendermint/iavl"
-	"gitlab.com/makeos/mosdef/logic/keepers"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
-	"gitlab.com/makeos/mosdef/util/crypto"
+	"gitlab.com/makeos/lobe/logic/keepers"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/util"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 func getAdapter(stateDBPath string) *storage.TMDBAdapter {
@@ -111,8 +111,8 @@ func printRawStrDiff(diffs []Diffs) {
 func main() {
 	diffs := findAndPrintDiffKeys(
 		1505,
-		"/Users/ncodes/.mosdef_dev_node1/1/data/appstate.db",
-		"/Users/ncodes/.mosdef_dev_node2/1/data/appstate.db")
+		"/Users/ncodes/.lobe_dev_node1/1/data/appstate.db",
+		"/Users/ncodes/.lobe_dev_node2/1/data/appstate.db")
 
 	// printRawStrDiff(diffs)
 	printBytesDiff(diffs)

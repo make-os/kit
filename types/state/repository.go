@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/util"
 )
 
 type FeeMode int

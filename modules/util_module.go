@@ -12,11 +12,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // ConsoleUtilModule provides access to various console utility functions.

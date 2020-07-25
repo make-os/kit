@@ -36,13 +36,13 @@ release-linux:
 	 env GOVERSION=$(GOVERSION) goreleaser release --snapshot --rm-dist -f ".goreleaser.linux.yml"
 
 install:
-	cd cmd/mosdef && go install
+	cd cmd/lobe && go install
 
 vet:
 	go vet ./...
 
 genmocks:
-	mockgen -destination=mocks/remote_types.go -package mocks gitlab.com/makeos/mosdef/remote/types LiteGit,LocalRepo,Commit
+	mockgen -destination=mocks/remote_types.go -package mocks gitlab.com/makeos/lobe/remote/types LiteGit,LocalRepo,Commit
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks

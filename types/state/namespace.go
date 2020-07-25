@@ -2,7 +2,7 @@ package state
 
 import (
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Namespace describes an object for storing human-readable names mapping to

@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/btcsuite/btcutil/bech32"
-	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/lobe/types/constants"
 )
 
 const (

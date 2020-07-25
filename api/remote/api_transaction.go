@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // SendTxPayload sends a signed transaction to the mempool

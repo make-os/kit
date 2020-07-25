@@ -5,33 +5,33 @@ import (
 	"os"
 
 	"github.com/tendermint/tendermint/privval"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
-	"gitlab.com/makeos/mosdef/params"
-	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
+	"gitlab.com/makeos/lobe/params"
+	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/logic/keepers"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/lobe/logic/keepers"
+	"gitlab.com/makeos/lobe/types"
 
 	"github.com/golang/mock/gomock"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
-	"gitlab.com/makeos/mosdef/ticket"
+	"gitlab.com/makeos/lobe/ticket"
 
-	l "gitlab.com/makeos/mosdef/logic"
+	l "gitlab.com/makeos/lobe/logic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 func genFilePV(bz []byte) *privval.FilePV {

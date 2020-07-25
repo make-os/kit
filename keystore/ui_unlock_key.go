@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/keystore/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/keystore/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 // UIUnlockKey renders a CLI UI to unlock a target key..

@@ -3,26 +3,26 @@ package ticket
 import (
 	"os"
 
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
+	tickettypes "gitlab.com/makeos/lobe/ticket/types"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/core"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
 
 	"github.com/golang/mock/gomock"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	l "gitlab.com/makeos/mosdef/logic"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	l "gitlab.com/makeos/lobe/logic"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/testutil"
 )
 
 var _ = Describe("Manager", func() {

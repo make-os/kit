@@ -8,10 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/modules"
+	"gitlab.com/makeos/lobe/params"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("ConsoleUtilModule", func() {

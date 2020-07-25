@@ -6,16 +6,16 @@ import (
 
 	"github.com/golang/mock/gomock"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/types/txns"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	tmmem "github.com/tendermint/tendermint/mempool"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

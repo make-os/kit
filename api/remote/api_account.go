@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // GetAccountNonce handles request for getting the nonce of an account

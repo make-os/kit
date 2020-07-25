@@ -16,8 +16,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/console"
-	"gitlab.com/makeos/mosdef/node"
+	"gitlab.com/makeos/lobe/console"
+	"gitlab.com/makeos/lobe/node"
 )
 
 // consoleCmd represents the console command

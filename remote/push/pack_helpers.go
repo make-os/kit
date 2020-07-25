@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
+	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
+	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"

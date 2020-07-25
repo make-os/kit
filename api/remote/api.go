@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	apitypes "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
+	apitypes "gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
 )
 
 type ServeMux interface {

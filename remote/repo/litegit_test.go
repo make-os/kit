@@ -8,12 +8,12 @@ import (
 	"github.com/bitfield/script"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	"gitlab.com/makeos/lobe/remote/repo"
+	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/util"
 )
 
 var _ = Describe("Gitops", func() {

@@ -9,20 +9,20 @@ import (
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/remote/push"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	repo3 "gitlab.com/makeos/mosdef/remote/repo"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/remote/push"
+	"gitlab.com/makeos/lobe/remote/push/types"
+	repo3 "gitlab.com/makeos/lobe/remote/repo"
+	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
+	types2 "gitlab.com/makeos/lobe/remote/types"
+	"gitlab.com/makeos/lobe/testutil"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	. "github.com/onsi/gomega"
-	. "gitlab.com/makeos/mosdef/remote/refsync"
+	. "gitlab.com/makeos/lobe/remote/refsync"
 )
 
 var _ = Describe("RefSync", func() {

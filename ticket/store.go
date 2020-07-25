@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"sort"
 
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	types2 "gitlab.com/makeos/lobe/ticket/types"
 
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/storage"
+	"gitlab.com/makeos/lobe/util"
 )
 
 const (

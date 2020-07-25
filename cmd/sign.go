@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/api/utils"
-	"gitlab.com/makeos/mosdef/commands/common"
-	"gitlab.com/makeos/mosdef/commands/signcmd"
-	"gitlab.com/makeos/mosdef/remote/server"
+	"gitlab.com/makeos/lobe/api/utils"
+	"gitlab.com/makeos/lobe/commands/common"
+	"gitlab.com/makeos/lobe/commands/signcmd"
+	"gitlab.com/makeos/lobe/remote/server"
 )
 
 // signCmd represents the commit command

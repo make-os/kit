@@ -8,8 +8,8 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
 	otto "github.com/robertkrimen/otto"
-	types "gitlab.com/makeos/mosdef/modules/types"
-	util "gitlab.com/makeos/mosdef/util"
+	types "gitlab.com/makeos/lobe/modules/types"
+	util "gitlab.com/makeos/lobe/util"
 	reflect "reflect"
 )
 

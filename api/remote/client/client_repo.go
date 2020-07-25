@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
-	"gitlab.com/makeos/mosdef/api/remote"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/api/remote"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/types/state"
+	"gitlab.com/makeos/lobe/types/txns"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // CreateRepo creates transaction to create a new repository

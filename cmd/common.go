@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
-	remote "gitlab.com/makeos/mosdef/api/remote/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	rr "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/remote/types"
+	remote "gitlab.com/makeos/lobe/api/remote/client"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/remote/plumbing"
+	rr "gitlab.com/makeos/lobe/remote/repo"
+	"gitlab.com/makeos/lobe/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 

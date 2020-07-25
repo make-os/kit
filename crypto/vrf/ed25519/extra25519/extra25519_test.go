@@ -10,7 +10,7 @@ import (
 	"crypto/sha512"
 	"testing"
 
-	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
+	"gitlab.com/makeos/lobe/crypto/vrf/ed25519/edwards25519"
 
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"

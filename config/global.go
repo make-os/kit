@@ -3,8 +3,8 @@ package config
 import (
 	golog "log"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/crypto"
+	"gitlab.com/makeos/lobe/util"
 
 	"github.com/tendermint/tendermint/privval"
 
@@ -12,7 +12,7 @@ import (
 
 	"github.com/olebedev/emitter"
 	"github.com/tendermint/tendermint/p2p"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/lobe/pkgs/logger"
 )
 
 // Globals holds references to global objects

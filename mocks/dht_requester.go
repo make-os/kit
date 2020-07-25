@@ -10,8 +10,8 @@ import (
 	network "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
-	streamer "gitlab.com/makeos/mosdef/dht/streamer"
-	io "gitlab.com/makeos/mosdef/util/io"
+	streamer "gitlab.com/makeos/lobe/dht/streamer"
+	io "gitlab.com/makeos/lobe/util/io"
 	reflect "reflect"
 )
 

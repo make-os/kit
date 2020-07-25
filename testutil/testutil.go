@@ -7,17 +7,17 @@ import (
 	path "path/filepath"
 
 	"github.com/golang/mock/gomock"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/lobe/mocks"
+	"gitlab.com/makeos/lobe/pkgs/logger"
+	"gitlab.com/makeos/lobe/storage"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 
 	"github.com/spf13/viper"
 	tmconfig "github.com/tendermint/tendermint/config"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/util"
 
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/lobe/config"
 )
 
 // SetTestCfg prepare a config directory for tests

@@ -1,8 +1,8 @@
 package client
 
 import (
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/api/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // SendTxPayload sends a signed transaction payload to the mempool

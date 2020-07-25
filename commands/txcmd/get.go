@@ -6,9 +6,9 @@ import (
 
 	"github.com/ncodes/go-prettyjson"
 	"github.com/pkg/errors"
-	restclient "gitlab.com/makeos/mosdef/api/remote/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/api/utils"
+	restclient "gitlab.com/makeos/lobe/api/remote/client"
+	"gitlab.com/makeos/lobe/api/rpc/client"
+	"gitlab.com/makeos/lobe/api/utils"
 )
 
 // GetArgs contains arguments for GetCmd.

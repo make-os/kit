@@ -10,11 +10,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/util"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/config"
+	"gitlab.com/makeos/lobe/modules/types"
+	"gitlab.com/makeos/lobe/types/constants"
+	"gitlab.com/makeos/lobe/util"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"

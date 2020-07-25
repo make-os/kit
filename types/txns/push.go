@@ -2,10 +2,10 @@ package txns
 
 import (
 	"github.com/vmihailenco/msgpack"
-	pptyp "gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/crypto"
-	"gitlab.com/makeos/mosdef/util/identifier"
+	pptyp "gitlab.com/makeos/lobe/remote/push/types"
+	"gitlab.com/makeos/lobe/util"
+	"gitlab.com/makeos/lobe/util/crypto"
+	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 type PushEndorsements []*pptyp.PushEndorsement

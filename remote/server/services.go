@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/push"
-	"gitlab.com/makeos/mosdef/remote/types"
-	fmt2 "gitlab.com/makeos/mosdef/util/colorfmt"
+	"gitlab.com/makeos/lobe/remote/policy"
+	"gitlab.com/makeos/lobe/remote/push"
+	"gitlab.com/makeos/lobe/remote/types"
+	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )

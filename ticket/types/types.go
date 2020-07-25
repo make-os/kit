@@ -1,8 +1,8 @@
 package types
 
 import (
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/lobe/types"
+	"gitlab.com/makeos/lobe/util"
 )
 
 // Ticket represents a validator ticket
