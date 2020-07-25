@@ -121,13 +121,17 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	devDataDirPrefix := viper.GetString("home.prefix")
 	devMode := viper.GetBool("dev")
 
+	// If home.prefix is set, set mode to dev mode.
+	if devDataDirPrefix != "" {
+		devMode = true
+		dataDir = dataDir + "_" + devDataDirPrefix
+	}
+
 	// In development mode, use the development data directory.
-	// Attempt to create the directory
 	if devMode {
-		dataDir = DefaultDevDataDir
 		c.Node.Mode = ModeDev
-		if devDataDirPrefix != "" {
-			dataDir = dataDir + "_" + devDataDirPrefix
+		if devDataDirPrefix == "" {
+			dataDir = DefaultDevDataDir
 		}
 	}
 
