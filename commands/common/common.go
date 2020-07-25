@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/keystore"
-	"gitlab.com/makeos/lobe/keystore/types"
-	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/keystore"
+	"github.com/themakeos/lobe/keystore/types"
+	remotetypes "github.com/themakeos/lobe/remote/types"
 )
 
 var (

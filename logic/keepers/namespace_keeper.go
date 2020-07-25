@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/pkgs/tree"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/pkgs/tree"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 )
 
 // NamespaceKeeper manages namespaces.

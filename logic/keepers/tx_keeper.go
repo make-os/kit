@@ -2,9 +2,9 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/storage"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/txns"
+	"github.com/themakeos/lobe/storage"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/txns"
 )
 
 // TxKeeper manages transaction data

@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // PublicKey represents a 32-byte ED25519 public key

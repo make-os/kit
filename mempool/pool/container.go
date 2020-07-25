@@ -7,9 +7,9 @@ import (
 
 	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 var (

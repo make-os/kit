@@ -1,22 +1,22 @@
 package contracts
 
 import (
-	"gitlab.com/makeos/lobe/logic/contracts/createrepo"
-	"gitlab.com/makeos/lobe/logic/contracts/depositproposalfee"
-	"gitlab.com/makeos/lobe/logic/contracts/gitpush"
-	"gitlab.com/makeos/lobe/logic/contracts/purchaseticket"
-	"gitlab.com/makeos/lobe/logic/contracts/registernamespace"
-	"gitlab.com/makeos/lobe/logic/contracts/registerpushkey"
-	"gitlab.com/makeos/lobe/logic/contracts/registerrepopushkeys"
-	"gitlab.com/makeos/lobe/logic/contracts/setdelcommission"
-	"gitlab.com/makeos/lobe/logic/contracts/transfercoin"
-	"gitlab.com/makeos/lobe/logic/contracts/unbondticket"
-	"gitlab.com/makeos/lobe/logic/contracts/updatedelpushkey"
-	"gitlab.com/makeos/lobe/logic/contracts/updatenamespacedomains"
-	"gitlab.com/makeos/lobe/logic/contracts/updaterepo"
-	"gitlab.com/makeos/lobe/logic/contracts/upsertowner"
-	"gitlab.com/makeos/lobe/logic/contracts/voteproposal"
-	"gitlab.com/makeos/lobe/types/core"
+	"github.com/themakeos/lobe/logic/contracts/createrepo"
+	"github.com/themakeos/lobe/logic/contracts/depositproposalfee"
+	"github.com/themakeos/lobe/logic/contracts/gitpush"
+	"github.com/themakeos/lobe/logic/contracts/purchaseticket"
+	"github.com/themakeos/lobe/logic/contracts/registernamespace"
+	"github.com/themakeos/lobe/logic/contracts/registerpushkey"
+	"github.com/themakeos/lobe/logic/contracts/registerrepopushkeys"
+	"github.com/themakeos/lobe/logic/contracts/setdelcommission"
+	"github.com/themakeos/lobe/logic/contracts/transfercoin"
+	"github.com/themakeos/lobe/logic/contracts/unbondticket"
+	"github.com/themakeos/lobe/logic/contracts/updatedelpushkey"
+	"github.com/themakeos/lobe/logic/contracts/updatenamespacedomains"
+	"github.com/themakeos/lobe/logic/contracts/updaterepo"
+	"github.com/themakeos/lobe/logic/contracts/upsertowner"
+	"github.com/themakeos/lobe/logic/contracts/voteproposal"
+	"github.com/themakeos/lobe/types/core"
 )
 
 // SystemContracts is a list of all system contracts

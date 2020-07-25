@@ -8,8 +8,8 @@ import (
 	mrand "math/rand"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util/identifier"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -19,10 +19,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gogo/protobuf/proto"
-	"gitlab.com/makeos/lobe/crypto/bls"
-	"gitlab.com/makeos/lobe/crypto/vrf"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/crypto/bls"
+	"github.com/themakeos/lobe/crypto/vrf"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/util"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )

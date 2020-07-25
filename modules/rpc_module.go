@@ -6,15 +6,15 @@ import (
 	"strconv"
 
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/types/constants"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/types/constants"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 // RPCModule provides RPCClient functionalities

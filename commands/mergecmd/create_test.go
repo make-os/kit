@@ -9,14 +9,14 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/commands/mergecmd"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/testutil"
-	io2 "gitlab.com/makeos/lobe/util/io"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/commands/mergecmd"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/testutil"
+	io2 "github.com/themakeos/lobe/util/io"
 )
 
 func testPostCommentCreator(isNewPost bool, reference string, err error) func(targetRepo types.LocalRepo,

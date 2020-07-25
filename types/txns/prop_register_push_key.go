@@ -1,10 +1,10 @@
 package txns
 
 import (
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // TxRepoProposalRegisterPushKey implements BaseTx, it describes a repository proposal

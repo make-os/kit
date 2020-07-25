@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/makeos/lobe/storage"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/storage"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/util"
 )
 
 // ErrBlockInfoNotFound means the block info was not found

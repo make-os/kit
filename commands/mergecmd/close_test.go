@@ -7,12 +7,12 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/commands/mergecmd"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/testutil"
+	"github.com/themakeos/lobe/commands/mergecmd"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/testutil"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 

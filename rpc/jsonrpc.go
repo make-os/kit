@@ -10,11 +10,11 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
 )
 
 const (

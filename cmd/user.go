@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/lobe/api/utils"
-	"gitlab.com/makeos/lobe/commands/common"
-	usercmd "gitlab.com/makeos/lobe/commands/usercmd"
+	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/commands/common"
+	usercmd "github.com/themakeos/lobe/commands/usercmd"
 )
 
 // userCmd represents the user command

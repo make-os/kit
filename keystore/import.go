@@ -8,9 +8,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/keystore/types"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/keystore/types"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // ImportCmd creates a new key from a private key stored in a file.

@@ -8,10 +8,10 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/remote/types"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/remote/types"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 type GitVerifyArgs struct {

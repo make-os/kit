@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 // GetAccount gets an account corresponding to a given address

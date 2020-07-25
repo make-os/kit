@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
 )
 
 // IssueStatusArgs contains parameters for IssueStatusCmd

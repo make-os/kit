@@ -3,13 +3,13 @@ package transfercoin
 import (
 	"fmt"
 
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 var (

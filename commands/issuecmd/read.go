@@ -10,11 +10,11 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/commands/common"
-	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/util"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/commands/common"
+	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

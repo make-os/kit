@@ -1,8 +1,8 @@
 package state
 
 import (
+	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/util"
 )
 
 // Namespace describes an object for storing human-readable names mapping to

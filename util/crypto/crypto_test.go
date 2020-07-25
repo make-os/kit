@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/libs/bech32"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Crypto", func() {

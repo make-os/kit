@@ -4,8 +4,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/mempool"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
 )
 
 // Mempool describes a transaction pool for ordering transactions that will be

@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/themakeos/lobe/remote/types"
+	types2 "github.com/themakeos/lobe/types"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/remote/types"
-	types2 "gitlab.com/makeos/lobe/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )

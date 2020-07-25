@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/lobe/console"
-	"gitlab.com/makeos/lobe/node"
+	"github.com/themakeos/lobe/console"
+	"github.com/themakeos/lobe/node"
 )
 
 // consoleCmd represents the console command

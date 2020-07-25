@@ -6,9 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	client "gitlab.com/makeos/lobe/api/rpc/client"
-	types "gitlab.com/makeos/lobe/api/types"
-	util "gitlab.com/makeos/lobe/util"
+	client "github.com/themakeos/lobe/api/rpc/client"
+	types "github.com/themakeos/lobe/api/types"
+	util "github.com/themakeos/lobe/util"
 	reflect "reflect"
 )
 

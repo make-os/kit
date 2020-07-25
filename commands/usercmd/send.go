@@ -8,14 +8,14 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	restclient "gitlab.com/makeos/lobe/api/remote/client"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/api/utils"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
-	"gitlab.com/makeos/lobe/util/identifier"
+	restclient "github.com/themakeos/lobe/api/remote/client"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // SendArgs contains arguments for SendCmd.

@@ -3,10 +3,10 @@ package rpc
 import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	modulestypes "gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/constants"
+	modulestypes "github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/constants"
 )
 
 // RepoAPI provides RPC methods for various repo related functionalities.

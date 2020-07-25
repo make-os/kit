@@ -6,12 +6,12 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/testutil"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/testutil"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
 )
 
 func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {

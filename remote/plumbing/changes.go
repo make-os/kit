@@ -3,9 +3,9 @@ package plumbing
 import (
 	"strings"
 
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

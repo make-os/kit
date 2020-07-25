@@ -2,10 +2,10 @@ package txns
 
 import (
 	"github.com/stretchr/objx"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // TxTicketUnbond implements BaseTx, it describes a transaction that unbonds a

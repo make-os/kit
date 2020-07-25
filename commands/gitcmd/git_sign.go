@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/remote/server"
-	"gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/remote/server"
+	"github.com/themakeos/lobe/remote/types"
 )
 
 type GitSignArgs struct {

@@ -6,18 +6,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/lobe/remote/push"
-	types2 "gitlab.com/makeos/lobe/remote/push/types"
-	repo3 "gitlab.com/makeos/lobe/remote/repo"
-	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
-	"gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/push"
+	types2 "github.com/themakeos/lobe/remote/push/types"
+	repo3 "github.com/themakeos/lobe/remote/repo"
+	testutil2 "github.com/themakeos/lobe/remote/testutil"
+	"github.com/themakeos/lobe/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/testutil"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/testutil"
+	"github.com/themakeos/lobe/util"
 )
 
 type WriteCloser struct {

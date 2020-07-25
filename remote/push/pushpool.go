@@ -7,12 +7,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/remote/push/types"
+	"github.com/themakeos/lobe/remote/validation"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/util"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/remote/push/types"
-	"gitlab.com/makeos/lobe/remote/validation"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/util"
 )
 
 var (

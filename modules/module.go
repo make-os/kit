@@ -5,17 +5,17 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/dht/server/types"
-	"gitlab.com/makeos/lobe/extensions"
-	"gitlab.com/makeos/lobe/keystore"
-	"gitlab.com/makeos/lobe/mempool"
-	modulestypes "gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/node/services"
-	"gitlab.com/makeos/lobe/rpc"
-	types2 "gitlab.com/makeos/lobe/ticket/types"
-	"gitlab.com/makeos/lobe/types/core"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/dht/server/types"
+	"github.com/themakeos/lobe/extensions"
+	"github.com/themakeos/lobe/keystore"
+	"github.com/themakeos/lobe/mempool"
+	modulestypes "github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/node/services"
+	"github.com/themakeos/lobe/rpc"
+	types2 "github.com/themakeos/lobe/ticket/types"
+	"github.com/themakeos/lobe/types/core"
 )
 
 // Module implements ModulesHub. It is a hub for other modules.

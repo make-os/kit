@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/pkgs/tree"
-	"gitlab.com/makeos/lobe/storage"
+	"github.com/themakeos/lobe/pkgs/tree"
+	"github.com/themakeos/lobe/storage"
 )
 
 // RepoKeeper manages repository state.

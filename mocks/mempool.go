@@ -9,9 +9,9 @@ import (
 	types "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types0 "github.com/tendermint/tendermint/types"
-	types1 "gitlab.com/makeos/lobe/types"
-	core "gitlab.com/makeos/lobe/types/core"
-	util "gitlab.com/makeos/lobe/util"
+	types1 "github.com/themakeos/lobe/types"
+	core "github.com/themakeos/lobe/types/core"
+	util "github.com/themakeos/lobe/util"
 	reflect "reflect"
 )
 

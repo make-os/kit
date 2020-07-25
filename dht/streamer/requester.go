@@ -13,10 +13,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/dht"
-	"gitlab.com/makeos/lobe/dht/providertracker"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/util/io"
+	"github.com/themakeos/lobe/dht"
+	"github.com/themakeos/lobe/dht/providertracker"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/util/io"
 )
 
 var (

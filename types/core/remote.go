@@ -3,14 +3,14 @@ package core
 import (
 	"context"
 
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/dht/server/types"
-	types2 "gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/remote/fetcher"
-	pushtypes "gitlab.com/makeos/lobe/remote/push/types"
-	remotetypes "gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/dht/server/types"
+	types2 "github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/remote/fetcher"
+	pushtypes "github.com/themakeos/lobe/remote/push/types"
+	remotetypes "github.com/themakeos/lobe/remote/types"
 )
 
 // PushKeyGetter represents a function used for fetching a push key

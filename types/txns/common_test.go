@@ -3,8 +3,8 @@ package txns
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Common", func() {

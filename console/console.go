@@ -12,18 +12,18 @@ import (
 	"sync"
 
 	"github.com/spf13/cast"
+	"github.com/themakeos/lobe/api/rpc/client"
+	apitypes "github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/modules/types"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	apitypes "gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/modules/types"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/lobe/config"
+	"github.com/themakeos/lobe/config"
 )
 
 // Console defines functionalities for create and using

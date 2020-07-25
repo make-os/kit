@@ -1,9 +1,9 @@
 package txns
 
 import (
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
 )
 
 // TxUpDelPushKey implements BaseTx, it describes a transaction used to update

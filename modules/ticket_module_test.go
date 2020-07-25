@@ -8,14 +8,14 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	crypto2 "gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/modules"
-	"gitlab.com/makeos/lobe/ticket/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	crypto2 "github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/modules"
+	"github.com/themakeos/lobe/ticket/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("TicketModule", func() {

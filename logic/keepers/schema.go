@@ -1,8 +1,8 @@
 package keepers
 
 import (
-	"gitlab.com/makeos/lobe/storage"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/storage"
+	"github.com/themakeos/lobe/util"
 )
 
 const (

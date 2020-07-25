@@ -3,10 +3,10 @@ package remote
 import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Account", func() {

@@ -8,9 +8,9 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("API", func() {

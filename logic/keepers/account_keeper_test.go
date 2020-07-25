@@ -4,11 +4,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"gitlab.com/makeos/lobe/pkgs/tree"
-	state2 "gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/pkgs/tree"
+	state2 "github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util/identifier"
 
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Account", func() {

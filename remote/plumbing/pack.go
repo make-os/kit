@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/remote/types"
-	types2 "gitlab.com/makeos/lobe/types"
-	io2 "gitlab.com/makeos/lobe/util/io"
+	"github.com/themakeos/lobe/remote/types"
+	types2 "github.com/themakeos/lobe/types"
+	io2 "github.com/themakeos/lobe/util/io"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"

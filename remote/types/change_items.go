@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/makeos/lobe/util"
+import "github.com/themakeos/lobe/util"
 
 type (
 	// ColChangeType describes a change to a collection item

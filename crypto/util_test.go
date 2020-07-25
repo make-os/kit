@@ -3,7 +3,7 @@ package crypto
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("PublicKey", func() {

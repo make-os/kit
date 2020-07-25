@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 var _ = Describe("Identifier", func() {

@@ -5,10 +5,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/util"
 )
 
 type FeeMode int

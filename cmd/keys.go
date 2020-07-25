@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/keystore"
-	"gitlab.com/makeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/keystore"
+	"github.com/themakeos/lobe/keystore/types"
 )
 
 // keysCmd represents the parent command for all key related commands

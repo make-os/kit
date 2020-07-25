@@ -5,10 +5,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/txns"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/txns"
 )
 
 var _ = Describe("pool", func() {

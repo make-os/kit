@@ -1,11 +1,11 @@
 package txns
 
 import (
+	pptyp "github.com/themakeos/lobe/remote/push/types"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
-	pptyp "gitlab.com/makeos/lobe/remote/push/types"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/crypto"
-	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 type PushEndorsements []*pptyp.PushEndorsement

@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
-	"gitlab.com/makeos/lobe/api/remote"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/api/remote"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 // GetPushKeyOwnerNonce returns the nonce of the push key owner account

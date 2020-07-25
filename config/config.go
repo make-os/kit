@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/olebedev/emitter"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/util"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ import (
 	"github.com/tendermint/tendermint/config"
 
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 var (

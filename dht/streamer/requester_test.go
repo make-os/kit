@@ -15,13 +15,13 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/dht"
-	"gitlab.com/makeos/lobe/dht/streamer"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/testutil"
-	io2 "gitlab.com/makeos/lobe/util/io"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/dht"
+	"github.com/themakeos/lobe/dht/streamer"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/testutil"
+	io2 "github.com/themakeos/lobe/util/io"
 )
 
 var _ = Describe("BasicObjectRequester", func() {

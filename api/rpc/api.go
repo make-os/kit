@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/rpc"
+	"github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/rpc"
 )
 
 // APIs returns all API handlers

@@ -3,16 +3,16 @@ package logic_test
 import (
 	"os"
 
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/storage"
-	"gitlab.com/makeos/lobe/testutil"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/storage"
+	"github.com/themakeos/lobe/testutil"
 
-	l "gitlab.com/makeos/lobe/logic"
+	l "github.com/themakeos/lobe/logic"
 )
 
 var _ = Describe("Logic", func() {

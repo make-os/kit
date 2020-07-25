@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/logic/contracts/common"
-	"gitlab.com/makeos/lobe/logic/proposals"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/logic/contracts/common"
+	"github.com/themakeos/lobe/logic/proposals"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // MakeMergeRequestProposalID returns the full proposal ID of a given merge request ID

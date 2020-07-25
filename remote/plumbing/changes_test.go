@@ -5,11 +5,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/testutil"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/config"
+	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/testutil"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Changes", func() {

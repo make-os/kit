@@ -5,13 +5,13 @@ import (
 	"math"
 
 	"github.com/shopspring/decimal"
+	"github.com/themakeos/lobe/params"
+	tickettypes "github.com/themakeos/lobe/ticket/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/params"
-	tickettypes "gitlab.com/makeos/lobe/ticket/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 func MakeProposal(

@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"

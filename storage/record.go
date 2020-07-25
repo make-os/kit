@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 // ErrRecordNotFound indicates that a record was not found

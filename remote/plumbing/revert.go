@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/types"
 )
 
 // ActionType represents a repo altering action

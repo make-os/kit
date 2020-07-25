@@ -6,9 +6,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/keystore/types"
 )
 
 var _ = Describe("List", func() {

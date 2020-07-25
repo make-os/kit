@@ -6,16 +6,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/crypto/bls"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/remote/validation"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/crypto/bls"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/remote/validation"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer

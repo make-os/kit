@@ -7,12 +7,12 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/remote/push/types"
-	"gitlab.com/makeos/lobe/types/core"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/remote/push/types"
+	"github.com/themakeos/lobe/types/core"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
 )
 
 func txCheckNoIssue(tx types.PushNote, logic core.Logic) error {

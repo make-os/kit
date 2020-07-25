@@ -9,12 +9,12 @@ import (
 	"github.com/fatih/structs"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/util"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/util"
 )
 
 const (

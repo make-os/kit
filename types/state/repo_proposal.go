@@ -2,9 +2,9 @@ package state
 
 import (
 	"github.com/shopspring/decimal"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
 )
 
 // VoterType represents a type of repository voter type

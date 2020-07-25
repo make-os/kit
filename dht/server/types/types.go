@@ -5,7 +5,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"gitlab.com/makeos/lobe/dht/streamer/types"
+	"github.com/themakeos/lobe/dht/streamer/types"
 )
 
 // DHT represents a distributed hash table

@@ -14,9 +14,9 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/rpc/v2/json"
 	"github.com/k0kubun/pp"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/util"
 )
 
 // Timeout is the max duration for connection and read attempt

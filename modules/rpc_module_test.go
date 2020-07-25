@@ -9,13 +9,13 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/config"
-	mocks2 "gitlab.com/makeos/lobe/mocks/rpc"
-	"gitlab.com/makeos/lobe/modules"
-	"gitlab.com/makeos/lobe/testutil"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/config"
+	mocks2 "github.com/themakeos/lobe/mocks/rpc"
+	"github.com/themakeos/lobe/modules"
+	"github.com/themakeos/lobe/testutil"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("RPCModule", func() {

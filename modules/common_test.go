@@ -8,13 +8,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/mocks"
-	mocks2 "gitlab.com/makeos/lobe/mocks/rpc"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/mocks"
+	mocks2 "github.com/themakeos/lobe/mocks/rpc"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 type TestCase struct {

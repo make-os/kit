@@ -7,32 +7,32 @@ import (
 	"net/url"
 	"os"
 
-	rpcApi "gitlab.com/makeos/lobe/api/rpc"
-	dhtserver "gitlab.com/makeos/lobe/dht/server"
-	"gitlab.com/makeos/lobe/dht/server/types"
-	types2 "gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/remote/server"
-	"gitlab.com/makeos/lobe/rpc"
-	tickettypes "gitlab.com/makeos/lobe/ticket/types"
-	"gitlab.com/makeos/lobe/types/core"
+	rpcApi "github.com/themakeos/lobe/api/rpc"
+	dhtserver "github.com/themakeos/lobe/dht/server"
+	"github.com/themakeos/lobe/dht/server/types"
+	types2 "github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/remote/server"
+	"github.com/themakeos/lobe/rpc"
+	tickettypes "github.com/themakeos/lobe/ticket/types"
+	"github.com/themakeos/lobe/types/core"
 
+	"github.com/themakeos/lobe/modules"
+	"github.com/themakeos/lobe/util"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/modules"
-	"gitlab.com/makeos/lobe/util"
 
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/lobe/extensions"
-	"gitlab.com/makeos/lobe/keystore"
+	"github.com/themakeos/lobe/extensions"
+	"github.com/themakeos/lobe/keystore"
 
-	"gitlab.com/makeos/lobe/ticket"
+	"github.com/themakeos/lobe/ticket"
 
-	"gitlab.com/makeos/lobe/mempool"
+	"github.com/themakeos/lobe/mempool"
 
-	"gitlab.com/makeos/lobe/logic"
+	"github.com/themakeos/lobe/logic"
 
-	"gitlab.com/makeos/lobe/node/services"
+	"github.com/themakeos/lobe/node/services"
 
 	"github.com/pkg/errors"
 
@@ -42,13 +42,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"gitlab.com/makeos/lobe/storage"
+	"github.com/themakeos/lobe/storage"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 // RPCServer represents the client

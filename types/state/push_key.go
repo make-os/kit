@@ -1,10 +1,10 @@
 package state
 
 import (
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
 )
 
 // BarePushKey returns a PushKey object with zero values

@@ -2,14 +2,14 @@ package core
 
 import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/pkgs/tree"
-	"gitlab.com/makeos/lobe/storage"
-	tickettypes "gitlab.com/makeos/lobe/ticket/types"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/pkgs/tree"
+	"github.com/themakeos/lobe/storage"
+	tickettypes "github.com/themakeos/lobe/ticket/types"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // BlockValidators contains validators of a block

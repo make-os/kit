@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmtypes "github.com/tendermint/tendermint/types"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // initializeTendermint initializes tendermint

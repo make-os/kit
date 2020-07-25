@@ -1,8 +1,8 @@
 package types
 
 import (
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
 )
 
 // Ticket represents a validator ticket

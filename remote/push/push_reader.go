@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"

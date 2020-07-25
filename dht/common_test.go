@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	. "github.com/onsi/ginkgo"
-	"gitlab.com/makeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/plumbing"
 
 	. "github.com/onsi/gomega"
 )

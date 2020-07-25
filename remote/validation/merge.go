@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
+	"github.com/themakeos/lobe/logic/contracts/mergerequest"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

@@ -5,13 +5,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/modules"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/txns"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/modules"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/txns"
 )
 
 var _ = Describe("PoolModule", func() {

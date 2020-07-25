@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	crypto "gitlab.com/makeos/lobe/crypto"
-	types "gitlab.com/makeos/lobe/keystore/types"
+	crypto "github.com/themakeos/lobe/crypto"
+	types "github.com/themakeos/lobe/keystore/types"
 	io "io"
 	reflect "reflect"
 	time "time"

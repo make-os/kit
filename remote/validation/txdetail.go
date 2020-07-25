@@ -5,14 +5,14 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/logic/contracts/mergerequest"
-	"gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/logic/contracts/mergerequest"
+	"github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
 )
 
 // TxDetailChecker describes a function for checking a transaction detail

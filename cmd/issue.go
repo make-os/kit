@@ -7,13 +7,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/commands/issuecmd"
+	"github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/repo"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/io"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/commands/issuecmd"
-	"gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/repo"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/io"
 )
 
 // issueCmd represents the issue command

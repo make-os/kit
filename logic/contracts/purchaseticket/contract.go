@@ -3,13 +3,13 @@ package purchaseticket
 import (
 	"fmt"
 
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 // TicketPurchaseContract is a system contract for purchasing a ticket.

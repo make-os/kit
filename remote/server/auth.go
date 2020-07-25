@@ -9,16 +9,16 @@ import (
 
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/remote/policy"
+	remotetypes "github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/validation"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/keystore/types"
-	"gitlab.com/makeos/lobe/remote/policy"
-	remotetypes "gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/remote/validation"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
 )
 
 var (

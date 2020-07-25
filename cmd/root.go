@@ -6,15 +6,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/commands/gitcmd"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/remote/repo"
+	"github.com/themakeos/lobe/util"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/commands/gitcmd"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/remote/repo"
-	"gitlab.com/makeos/lobe/util"
 
 	tmcfg "github.com/tendermint/tendermint/config"
-	"gitlab.com/makeos/lobe/config"
+	"github.com/themakeos/lobe/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -67,7 +67,7 @@ func Execute() {
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lob",
-	Short: "Lobe is the official client for the MakeOS network",
+	Short: "Lobe is the official client for the themakeos network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		config.Configure(cfg, tmconfig, &itr)

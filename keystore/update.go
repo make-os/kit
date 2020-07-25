@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/util/crypto"
 )
 
 // UpdateCmd fetches and lists all accounts

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/pkgs/logger"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

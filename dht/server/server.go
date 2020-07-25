@@ -17,16 +17,16 @@ import (
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/config"
-	dht2 "gitlab.com/makeos/lobe/dht"
-	announcer2 "gitlab.com/makeos/lobe/dht/announcer"
-	"gitlab.com/makeos/lobe/dht/streamer"
-	"gitlab.com/makeos/lobe/dht/streamer/types"
-	"gitlab.com/makeos/lobe/pkgs/logger"
+	"github.com/themakeos/lobe/config"
+	dht2 "github.com/themakeos/lobe/dht"
+	announcer2 "github.com/themakeos/lobe/dht/announcer"
+	"github.com/themakeos/lobe/dht/streamer"
+	"github.com/themakeos/lobe/dht/streamer/types"
+	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 var (
-	ProtocolPrefix = dht.ProtocolPrefix("/makeos")
+	ProtocolPrefix = dht.ProtocolPrefix("/themakeos")
 )
 
 // Server provides distributed hash table functionalities.

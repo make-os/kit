@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/olebedev/emitter"
-	"gitlab.com/makeos/lobe/mempool"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/mempool"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 // subscribe subscribes to various incoming events

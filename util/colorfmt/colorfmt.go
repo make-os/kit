@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/lobe/config"
+	"github.com/themakeos/lobe/config"
 )
 
 func colorStr(format string, attr []color.Attribute, a ...interface{}) string {

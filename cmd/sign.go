@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/lobe/api/utils"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/commands/signcmd"
-	"gitlab.com/makeos/lobe/remote/server"
+	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/commands/signcmd"
+	"github.com/themakeos/lobe/remote/server"
 )
 
 // signCmd represents the commit command

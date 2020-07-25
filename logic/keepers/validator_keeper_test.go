@@ -7,13 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/storage"
-	storagemocks "gitlab.com/makeos/lobe/storage/mocks"
-	"gitlab.com/makeos/lobe/testutil"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/storage"
+	storagemocks "github.com/themakeos/lobe/storage/mocks"
+	"github.com/themakeos/lobe/testutil"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("SystemKeeper", func() {

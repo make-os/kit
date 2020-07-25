@@ -3,17 +3,17 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	modulestypes "gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/node/services"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/txns"
+	"github.com/themakeos/lobe/api/rpc/client"
+	modulestypes "github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/node/services"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/txns"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 // TxModule provides transaction functionalities to JS environment

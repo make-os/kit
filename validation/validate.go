@@ -3,12 +3,12 @@ package validation
 import (
 	"fmt"
 
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 
-	"gitlab.com/makeos/lobe/crypto"
+	"github.com/themakeos/lobe/crypto"
 )
 
 var feI = util.FieldErrorWithIndex

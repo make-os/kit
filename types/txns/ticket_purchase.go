@@ -2,11 +2,11 @@ package txns
 
 import (
 	"github.com/stretchr/objx"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
 )
 
 // TxTicketPurchase implements BaseTx, it describes a transaction that purchases

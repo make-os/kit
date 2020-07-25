@@ -2,10 +2,10 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/storage"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/storage"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/util"
 )
 
 // ValidatorKeeper manages information about validators

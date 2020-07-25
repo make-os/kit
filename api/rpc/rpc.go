@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/util"
 )
 
 // Manager provides RPC service management functionality.

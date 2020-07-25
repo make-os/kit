@@ -2,12 +2,12 @@ package types
 
 import (
 	"github.com/shopspring/decimal"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/util"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
-	"gitlab.com/makeos/lobe/util/identifier"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

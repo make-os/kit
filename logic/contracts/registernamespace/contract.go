@@ -1,13 +1,13 @@
 package registernamespace
 
 import (
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/params"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/params"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // RegisterNamespaceContract is a system contract to register a namespace.

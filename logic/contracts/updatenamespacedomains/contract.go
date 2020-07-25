@@ -1,11 +1,11 @@
 package updatenamespacedomains
 
 import (
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
-	"gitlab.com/makeos/lobe/types/txns"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/txns"
+	"github.com/themakeos/lobe/util"
 )
 
 // NamespaceDomainUpdateContract is a system contract to update the domains of a namespace.

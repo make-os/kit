@@ -11,11 +11,11 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/keystore/types"
-	"gitlab.com/makeos/lobe/util"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
-	crypto2 "gitlab.com/makeos/lobe/util/crypto"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/util"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
+	crypto2 "github.com/themakeos/lobe/util/crypto"
 )
 
 const (

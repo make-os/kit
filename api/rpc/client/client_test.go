@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Client", func() {

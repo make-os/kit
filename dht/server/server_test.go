@@ -10,15 +10,15 @@ import (
 	routing2 "github.com/libp2p/go-libp2p-core/routing"
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/phayes/freeport"
-	"gitlab.com/makeos/lobe/dht"
-	"gitlab.com/makeos/lobe/dht/server"
-	testutil2 "gitlab.com/makeos/lobe/remote/testutil"
+	"github.com/themakeos/lobe/dht"
+	"github.com/themakeos/lobe/dht/server"
+	testutil2 "github.com/themakeos/lobe/remote/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/testutil"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/testutil"
 )
 
 type testObjectFinder struct {

@@ -2,9 +2,9 @@ package keepers
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/lobe/pkgs/tree"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/pkgs/tree"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // AccountKeeper manages account state.

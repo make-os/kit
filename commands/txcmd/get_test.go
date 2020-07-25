@@ -7,8 +7,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	restclient "gitlab.com/makeos/lobe/api/remote/client"
-	"gitlab.com/makeos/lobe/api/rpc/client"
+	restclient "github.com/themakeos/lobe/api/remote/client"
+	"github.com/themakeos/lobe/api/rpc/client"
 )
 
 var _ = Describe("TxCmd", func() {

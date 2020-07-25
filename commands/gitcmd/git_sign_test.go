@@ -9,14 +9,14 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/keystore/types"
-	"gitlab.com/makeos/lobe/mocks"
-	"gitlab.com/makeos/lobe/remote/server"
-	remotetypes "gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/testutil"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/remote/server"
+	remotetypes "github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("GitSign", func() {

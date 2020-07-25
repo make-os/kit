@@ -7,13 +7,13 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	restclient "gitlab.com/makeos/lobe/api/remote/client"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/api/types"
-	"gitlab.com/makeos/lobe/api/utils"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
+	restclient "github.com/themakeos/lobe/api/remote/client"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/api/types"
+	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // VoteArgs contains arguments for VoteCmd.

@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/util"
 
-	"gitlab.com/makeos/lobe/params"
+	"github.com/themakeos/lobe/params"
 )
 
 // PushPool wraps the transaction container providing a pool

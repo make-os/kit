@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"
-	"gitlab.com/makeos/lobe/dht"
-	"gitlab.com/makeos/lobe/logic/contracts"
-	"gitlab.com/makeos/lobe/types"
-	"gitlab.com/makeos/lobe/types/core"
+	"github.com/themakeos/lobe/dht"
+	"github.com/themakeos/lobe/logic/contracts"
+	"github.com/themakeos/lobe/types"
+	"github.com/themakeos/lobe/types/core"
 )
 
 // ExecTx executes a transaction.

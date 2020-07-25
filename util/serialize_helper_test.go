@@ -7,8 +7,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/themakeos/lobe/util/mocks"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/lobe/util/mocks"
 )
 
 type testStruct struct {

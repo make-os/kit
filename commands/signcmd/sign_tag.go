@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	restclient "gitlab.com/makeos/lobe/api/remote/client"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/api/utils"
-	"gitlab.com/makeos/lobe/commands/common"
-	"gitlab.com/makeos/lobe/config"
-	"gitlab.com/makeos/lobe/remote/server"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/util"
+	restclient "github.com/themakeos/lobe/api/remote/client"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/commands/common"
+	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/remote/server"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

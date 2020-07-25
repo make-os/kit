@@ -11,7 +11,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 )
 
 func readerFromBytes(bz []byte) *resetableReader {

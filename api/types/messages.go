@@ -1,10 +1,10 @@
 package types
 
 import (
-	"gitlab.com/makeos/lobe/crypto"
-	"gitlab.com/makeos/lobe/rpc"
-	"gitlab.com/makeos/lobe/types/state"
-	"gitlab.com/makeos/lobe/util/identifier"
+	"github.com/themakeos/lobe/crypto"
+	"github.com/themakeos/lobe/rpc"
+	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util/identifier"
 )
 
 // HashResponse contains the hash of a transaction request

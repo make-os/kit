@@ -5,15 +5,15 @@ import (
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"gitlab.com/makeos/lobe/api/rpc/client"
-	"gitlab.com/makeos/lobe/modules/types"
-	"gitlab.com/makeos/lobe/node/services"
-	"gitlab.com/makeos/lobe/types/constants"
-	"gitlab.com/makeos/lobe/types/core"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/modules/types"
+	"github.com/themakeos/lobe/node/services"
+	"github.com/themakeos/lobe/types/constants"
+	"github.com/themakeos/lobe/types/core"
 
-	"gitlab.com/makeos/lobe/crypto"
+	"github.com/themakeos/lobe/crypto"
 
-	"gitlab.com/makeos/lobe/util"
+	"github.com/themakeos/lobe/util"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"

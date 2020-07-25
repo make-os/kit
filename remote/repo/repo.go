@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	plumbing2 "gitlab.com/makeos/lobe/remote/plumbing"
-	"gitlab.com/makeos/lobe/remote/types"
-	"gitlab.com/makeos/lobe/types/state"
+	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
+	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/types/state"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 
 	"gopkg.in/src-d/go-git.v4/config"

@@ -3,15 +3,15 @@ package storage_test
 import (
 	"os"
 
-	"gitlab.com/makeos/lobe/testutil"
+	"github.com/themakeos/lobe/testutil"
 
-	"gitlab.com/makeos/lobe/storage"
+	"github.com/themakeos/lobe/storage"
 
 	"github.com/dgraph-io/badger"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/lobe/config"
+	"github.com/themakeos/lobe/config"
 )
 
 var _ = Describe("storage.Badger", func() {

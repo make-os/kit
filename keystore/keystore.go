@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"gitlab.com/makeos/lobe/util/colorfmt"
-	io2 "gitlab.com/makeos/lobe/util/io"
+	"github.com/themakeos/lobe/util/colorfmt"
+	io2 "github.com/themakeos/lobe/util/io"
 	"golang.org/x/crypto/scrypt"
 )
 

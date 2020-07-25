@@ -8,8 +8,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	fmt2 "gitlab.com/makeos/lobe/util/colorfmt"
-	"gitlab.com/makeos/lobe/util/crypto"
+	fmt2 "github.com/themakeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/util/crypto"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints
