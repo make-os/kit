@@ -2,8 +2,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 project_name: lobe
 builds:
-  - binary: lobe
-    main: ./main.go
+  - binary: lob
+    main: ./cmd/lobe/main.go
     goos:
       - linux
       - darwin
@@ -16,13 +16,13 @@ builds:
     hooks:
       pre: packr
       post: packr clean
-archive:
-  replacements:
-    darwin: darwin
-    linux: linux
-    windows: windows
-    386: i386
-    amd64: x86_64
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
 checksum:
   name_template: "checksums.txt"
 snapshot:
@@ -34,3 +34,5 @@ changelog:
       - "^test:"
       - "^dist:"
       - "^scripts:"
+      - "^play:"
+      - "^mocks:"
