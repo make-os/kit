@@ -4,3 +4,4 @@ play
 .idea/*
 *.coverprofile
 *.local
+.DS_Store
