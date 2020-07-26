@@ -9,6 +9,7 @@ import (
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/util"
 )
 
 // GetArgs contains arguments for GetCmd.
@@ -34,6 +35,9 @@ func GetCmd(args *GetArgs) error {
 
 	data, err := args.GetTransaction(args.Hash, args.RPCClient, args.RemoteClients)
 	if err != nil {
+		if reqErr, ok := errors.Cause(err).(*util.ReqError); ok && reqErr.HttpCode == 404 {
+			return fmt.Errorf("unknown transaction")
+		}
 		return errors.Wrap(err, "failed to get transaction")
 	}
 
