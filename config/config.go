@@ -67,7 +67,7 @@ func RawStateToGenesisData(state json.RawMessage) []*GenDataEntry {
 }
 
 // GenesisData returns the genesis data in raw JSON format
-func GenesisDataJSON() json.RawMessage {
+func GetRawGenesisData() json.RawMessage {
 	box := packr.NewBox("../data")
 	genesisData, err := box.FindString("genesis.json")
 	if err != nil {
