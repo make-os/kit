@@ -28,7 +28,7 @@ type NodeConfig struct {
 	PersistentPeers string `json:"addpeer" mapstructure:"addpeer"`
 
 	// GitBinPath is the path to the git executable
-	GitBinPath string `json:"gitbin" mapstructure:"gitbin"`
+	GitBinPath string `json:"gitpath" mapstructure:"gitpath"`
 
 	// Extensions contains list of extensions to run on startup
 	Extensions []string `json:"exts" mapstructure:"exts"`

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
@@ -16,7 +14,6 @@ var signCmd = &cobra.Command{
 	Short: "Sign a commit, tag or note and generate push request token",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Unknown command. See usage below")
 		cmd.Help()
 	},
 }

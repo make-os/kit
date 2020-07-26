@@ -6,11 +6,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/commands/gitcmd"
 	"github.com/themakeos/lobe/pkgs/logger"
 	"github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
 
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -64,7 +66,7 @@ func Execute() {
 	}
 }
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
 	Use:   "lob",
 	Short: "Lobe is the official client for the MakeOS network",
@@ -74,9 +76,27 @@ var rootCmd = &cobra.Command{
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
 
-		if cmd.CalledAs() != "init" {
-			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(),
-				tmconfig.PrivValidatorStateFile())
+		switch cmd.CalledAs() {
+		case "init":
+			if cmd.CalledAs() != "init" {
+				cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(),
+					tmconfig.PrivValidatorStateFile())
+			}
+
+		// Ensure git binary are reachable and have an acceptable version
+		case "start", "console", "sign", "attach", "config":
+			if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
+				if semver.New(version).LessThan(*semver.New("2.22.0")) {
+					log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.
+Visit https://git-scm.com/downloads to download and install the latest version.`,
+					))
+				}
+			} else {
+				log.Fatal(colorfmt.YellowString(`Git executable was not found. 
+If you already have Git installed, provide the executable's location using --gitpath, 
+otherwise visit https://git-scm.com/downloads to download and install it.`,
+				))
+			}
 		}
 
 		// Set version information
@@ -156,7 +176,7 @@ func init() {
 	// Register flags
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
-	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Set path to git executable")
+	rootCmd.PersistentFlags().String("gitpath", "", "Set path to git executable")
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
@@ -172,7 +192,7 @@ func init() {
 	rootCmd.PersistentFlags().MarkHidden("verify")
 
 	// Viper bindings
-	viper.BindPFlag("node.gitbin", rootCmd.PersistentFlags().Lookup("gitbin"))
+	viper.BindPFlag("node.gitpath", rootCmd.PersistentFlags().Lookup("gitpath"))
 	viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
 	viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
 	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
