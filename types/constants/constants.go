@@ -13,6 +13,7 @@ const (
 	NamespaceExtension   = "ext"
 	NamespaceDHT         = "dht"
 	NamespaceConsoleUtil = "util"
+	NamespaceDev         = "dev"
 	NamespaceTicket      = "ticket"
 	NamespaceHost        = "host"
 )

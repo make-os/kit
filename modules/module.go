@@ -53,6 +53,7 @@ func New(
 			Util:    NewConsoleUtilModule(os.Stdout),
 			RPC:     NewRPCModule(cfg, rpcServer),
 			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
+			Dev:     NewDevModule(),
 		},
 	}
 }
@@ -74,6 +75,7 @@ func NewAttachable(cfg *config.AppConfig, client client.Client, ks *keystore.Key
 			Util:    NewConsoleUtilModule(os.Stdout),
 			RPC:     NewRPCModule(cfg, nil),
 			Pool:    NewAttachablePoolModule(client),
+			Dev:     NewDevModule(),
 		},
 	}
 }

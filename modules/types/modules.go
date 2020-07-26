@@ -46,6 +46,7 @@ type Modules struct {
 	DHT     DHTModule
 	ExtMgr  ExtManager
 	RPC     RPCModule
+	Dev     DevModule
 }
 
 // ConfigureVM applies all modules' VM configurations to the given VM.
@@ -183,6 +184,12 @@ type RPCModule interface {
 	Module
 	IsRunning() bool
 	ConnectLocal() util.Map
+}
+
+type DevModule interface {
+	Module
+	GetDevUserAccountKey() string
+	GetDevUserAddress() string
 }
 
 // ModuleCommon provides common module fields and methods.

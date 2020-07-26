@@ -33,7 +33,7 @@ var (
 	DefaultDevDataDir = os.ExpandEnv("$HOME/." + AppName + "_dev")
 
 	// KeystoreDirName is the name of the directory where accounts are stored
-	KeystoreDirName = "accounts"
+	KeystoreDirName = "keystore"
 
 	// AppEnvPrefix is used as the prefix for environment variables
 	AppEnvPrefix = AppName
@@ -75,7 +75,7 @@ func GetRawGenesisData(devMode bool) json.RawMessage {
 		genesisFileName = "genesis_dev.json"
 	}
 
-	box := packr.NewBox("../data")
+	box := packr.NewBox("../" + params.EmbeddableDataDir)
 	genesisData, err := box.FindString(genesisFileName)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to read genesis file"))

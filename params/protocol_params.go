@@ -7,6 +7,12 @@ import (
 )
 
 const (
+	// EmbeddableDataDir is the directory where files that will
+	// be embedded in the app executable are stored
+	EmbeddableDataDir = "data"
+)
+
+const (
 	// AddressVersion is the base58 encode version adopted
 	AddressVersion byte = 92
 
