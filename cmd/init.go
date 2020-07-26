@@ -76,7 +76,7 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 	// Set default genesis app state if not provided.
 	// If provided and it is a file path, read the file and use it.
 	if genesisState == "" {
-		genDoc.AppState = config.GetRawGenesisData()
+		genDoc.AppState = config.GetRawGenesisData(cfg.IsDev())
 	} else {
 		genDoc.AppState = []byte(genesisState)
 		if ok, _ := govalidator.IsFilePath(genesisState); ok || strings.HasPrefix(genesisState, "./") {

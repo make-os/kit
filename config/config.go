@@ -66,10 +66,17 @@ func RawStateToGenesisData(state json.RawMessage) []*GenDataEntry {
 	return data
 }
 
-// GenesisData returns the genesis data in raw JSON format
-func GetRawGenesisData() json.RawMessage {
+// GenesisData returns the genesis data in raw JSON format.
+// If devMode is true, the development genesis file is used.
+func GetRawGenesisData(devMode bool) json.RawMessage {
+
+	genesisFileName := "genesis.json"
+	if devMode {
+		genesisFileName = "genesis_dev.json"
+	}
+
 	box := packr.NewBox("../data")
-	genesisData, err := box.FindString("genesis.json")
+	genesisData, err := box.FindString(genesisFileName)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to read genesis file"))
 	}

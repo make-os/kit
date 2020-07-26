@@ -1,0 +1,20 @@
+[
+    {
+        "type": "account",
+        "address": "maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w",
+        "balance": "2000000"
+    },
+    {
+        "type": "repo",
+        "name": "makeos",
+        "helm": true,
+        "owners": {
+            "maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w": {
+                "creator": true,
+                "joinedAt": 1,
+                "veto": true
+            }
+        },
+        "config": {}
+    }
+]
