@@ -11,6 +11,7 @@ import (
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/util"
@@ -31,7 +32,7 @@ type SignTagArgs struct {
 	Message string
 
 	// PushKeyID is the signers push key ID
-	PushKeyID string
+	SigningKey string
 
 	// PushKeyPass is the signers push key passphrase
 	PushKeyPass string
@@ -60,7 +61,7 @@ type SignTagArgs struct {
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalRepo, args *SignTagArgs) error {
+func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error {
 
 	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
 	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
@@ -70,27 +71,33 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 
 	// If --local-user (-u) flag is provided in the git args, use the value as the push key ID
 	if gitFlags.Lookup("local-user").Changed {
-		args.PushKeyID, _ = gitFlags.GetString("local-user")
+		args.SigningKey, _ = gitFlags.GetString("local-user")
 	}
 
 	// Get the signing key id from the git config if not passed as an argument
-	if args.PushKeyID == "" {
-		args.PushKeyID = targetRepo.GetConfig("user.signingKey")
-		if args.PushKeyID == "" {
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+		if args.SigningKey == "" {
 			return ErrMissingPushKeyID
 		}
 	}
 
 	// Get and unlock the pusher key
+	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.PushKeyID,
+		KeyAddrOrIdx: pushKeyID,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
-		TargetRepo:   targetRepo,
+		TargetRepo:   repo,
 		Prompt:       "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
+	} else if crypto.IsValidUserAddr(key.GetAddress()) == nil {
+		// If the key's address is not a push key address, then we need to convert to a push key address
+		// as that is what the remote node will accept. We do this because we assume the user wants to
+		// use a user key to sign.
+		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
 	// If --message (-m) flag is provided, use the value as the message
@@ -103,7 +110,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
-		nonce, err := args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
+		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
@@ -115,12 +122,12 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 		Fee:       util.String(args.Fee),
 		Value:     util.String(args.Value),
 		Nonce:     args.Nonce,
-		PushKeyID: args.PushKeyID,
+		PushKeyID: pushKeyID,
 		Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail,
+	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail,
 		key, args.ResetTokens); err != nil {
 		return err
 	}
@@ -128,14 +135,17 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, targetRepo.GetName())
+	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, repo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
 		defer func() { os.Setenv(passVar, "") }()
 	}
 
-	// Create the tag
-	if err = targetRepo.CreateTagWithMsg(gitArgs, args.Message, args.PushKeyID); err != nil {
+	// Create the signed tag.
+	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
+	// may contain push key id derived from a user key specified in args.SigningKey.
+	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
+	if err = repo.CreateTagWithMsg(gitArgs, args.Message, args.SigningKey); err != nil {
 		return err
 	}
 

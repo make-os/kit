@@ -9,6 +9,7 @@ import (
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
@@ -30,7 +31,7 @@ type SignNoteArgs struct {
 	Name string
 
 	// PushKeyID is the signers push key ID
-	PushKeyID string
+	SigningKey string
 
 	// PushKeyPass is the signers push key passphrase
 	PushKeyPass string
@@ -58,26 +59,32 @@ type SignNoteArgs struct {
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-func SignNoteCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignNoteArgs) error {
+func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
-	if args.PushKeyID == "" {
-		args.PushKeyID = targetRepo.GetConfig("user.signingKey")
-		if args.PushKeyID == "" {
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+		if args.SigningKey == "" {
 			return ErrMissingPushKeyID
 		}
 	}
 
 	// Get and unlock the pusher key
+	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.PushKeyID,
+		KeyAddrOrIdx: pushKeyID,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
-		TargetRepo:   targetRepo,
+		TargetRepo:   repo,
 		Prompt:       "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
+	} else if crypto.IsValidUserAddr(key.GetAddress()) == nil {
+		// If the key's address is not a push key address, then we need to convert to a push key address
+		// as that is what the remote node will accept. We do this because we assume the user wants to
+		// use a user key to sign.
+		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
 	// Expand note name to full reference name if name is short
@@ -86,14 +93,14 @@ func SignNoteCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignNo
 	}
 
 	// Get the HEAD hash of the note and add it as a option
-	noteRef, err := targetRepo.Reference(plumbing.ReferenceName(args.Name), true)
+	noteRef, err := repo.Reference(plumbing.ReferenceName(args.Name), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get note reference")
 	}
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
-		nonce, err := args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
+		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
@@ -105,14 +112,13 @@ func SignNoteCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignNo
 		Fee:       util.String(args.Fee),
 		Value:     util.String(args.Value),
 		Nonce:     args.Nonce,
-		PushKeyID: args.PushKeyID,
+		PushKeyID: pushKeyID,
 		Reference: noteRef.Name().String(),
 		Head:      noteRef.Hash().String(),
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail,
-		key, args.ResetTokens); err != nil {
+	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
 		return err
 	}
 

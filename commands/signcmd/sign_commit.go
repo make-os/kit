@@ -6,16 +6,17 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/asaskevich/govalidator"
 	errors2 "github.com/pkg/errors"
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
+	"github.com/themakeos/lobe/crypto"
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/remote/validation"
 	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -49,7 +50,7 @@ type SignCommitArgs struct {
 	ForceCheckout bool
 
 	// PushKeyID is the signers push key ID
-	PushKeyID string
+	SigningKey string
 
 	// PushKeyPass is the signers push key passphrase
 	PushKeyPass string
@@ -81,41 +82,45 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignCommitArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommitArgs) error {
 
-	// Get the signing key id from the git config if not passed as an argument
-	if args.PushKeyID == "" {
-		args.PushKeyID = targetRepo.GetConfig("user.signingKey")
-		if args.PushKeyID == "" {
+	// If signing key was not provided, use signing key id from the git config
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+		if args.SigningKey == "" {
 			return ErrMissingPushKeyID
 		}
 	}
 
-	// Get and unlock the pusher key
+	// Get and unlock the signing key
+	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.PushKeyID,
+		KeyAddrOrIdx: pushKeyID,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
-		TargetRepo:   targetRepo,
+		TargetRepo:   repo,
 		Prompt:       "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors2.Wrap(err, "failed to unlock the signing key")
+	} else if crypto.IsValidUserAddr(key.GetAddress()) == nil {
+		// If the key's address is not a push key address, then we need to convert to a push key address
+		// as that is what the remote node will accept. We do this because we assume the user wants to
+		// use a user key to sign.
+		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
-	// Validate merge ID is set.
-	// Must be numeric and 8 bytes long
+	// if MergeID is set, validate it.
 	if args.MergeID != "" {
-		if !govalidator.IsNumeric(args.MergeID) {
-			return fmt.Errorf("merge id must be numeric")
-		} else if len(args.MergeID) > 8 {
-			return fmt.Errorf("merge proposal id exceeded 8 bytes limit")
+		err = validation.CheckMergeProposalID(args.MergeID, -1)
+		if err != nil {
+			return fmt.Errorf(err.(*util.BadFieldError).Msg)
 		}
 	}
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
-		nonce, err := args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
+		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
@@ -124,33 +129,32 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 
 	// Get the current active branch.
 	// When branch is explicitly provided, use it as the active branch
-	var activeBranchCpy string
-	activeBranch, err := targetRepo.Head()
-	activeBranchCpy = activeBranch
+	var curHead string
+	repoHead, err := repo.Head()
+	curHead = repoHead
 	if err != nil {
 		return fmt.Errorf("failed to get HEAD")
 	} else if args.Branch != "" {
-		activeBranch = args.Branch
-		if !plumbing2.IsReference(activeBranch) {
-			activeBranch = plumbing.NewBranchReferenceName(activeBranch).String()
+		repoHead = args.Branch
+		if !plumbing2.IsReference(repoHead) {
+			repoHead = plumbing.NewBranchReferenceName(repoHead).String()
 		}
 	}
 
 	// If an explicit branch was provided via flag, check it out.
 	// Then set a deferred function to revert back the the original branch.
-	if activeBranch != activeBranchCpy {
-		if err := targetRepo.Checkout(plumbing.ReferenceName(activeBranch).Short(),
+	if repoHead != curHead {
+		if err := repo.Checkout(plumbing.ReferenceName(repoHead).Short(),
 			false, args.ForceCheckout); err != nil {
-			return fmt.Errorf("failed to checkout branch (%s): %s", activeBranch, err)
+			return fmt.Errorf("failed to checkout branch (%s): %s", repoHead, err)
 		}
 		defer func() {
-			_ = targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
+			_ = repo.Checkout(plumbing.ReferenceName(curHead).Short(), false, false)
 		}()
 	}
 
-	// Use active branch as the tx reference only if
-	// head arg. was not explicitly provided
-	var reference = activeBranch
+	// Use active branch as the tx reference only if HEAD arg. was not explicitly provided
+	var reference = repoHead
 	if args.Head != "" {
 		reference = args.Head
 		if !plumbing2.IsReference(reference) {
@@ -163,28 +167,31 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 		Fee:             util.String(args.Fee),
 		Value:           util.String(args.Value),
 		Nonce:           args.Nonce,
-		PushKeyID:       args.PushKeyID,
+		PushKeyID:       pushKeyID,
 		MergeProposalID: args.MergeID,
 		Reference:       reference,
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
+	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
 		return err
 	}
 
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, targetRepo.GetName())
+	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, repo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		_ = os.Setenv(passVar, args.PushKeyPass)
 		defer func() { _ = os.Setenv(passVar, "") }()
 	}
 
-	// Create a new quiet commit if recent commit amendment is not desired
+	// Create a new quiet commit if recent commit amendment is not desired.
+	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
+	// may contain push key id derived from a user key specified in args.SigningKey.
+	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
 	if !args.AmendCommit {
-		if err := targetRepo.CreateSignedEmptyCommit(args.Message, args.PushKeyID); err != nil {
+		if err := repo.CreateSignedEmptyCommit(args.Message, args.SigningKey); err != nil {
 			return err
 		}
 		return nil
@@ -192,7 +199,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err := targetRepo.GetRecentCommitHash()
+	hash, err := repo.GetRecentCommitHash()
 	if err != nil {
 		if err == plumbing2.ErrNoCommits {
 			return errors.New("no commits have been created yet")
@@ -201,15 +208,18 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	}
 
 	// Use previous commit message as default
-	commit, err := targetRepo.CommitObject(plumbing.NewHash(hash))
+	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return err
 	} else if args.Message == "" {
 		args.Message = commit.Message
 	}
 
-	// Update the recent commit message
-	if err = targetRepo.UpdateRecentCommitMsg(args.Message, args.PushKeyID); err != nil {
+	// Update the recent commit message.
+	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
+	// may contain push key id derived from a user key specified in args.SigningKey.
+	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
+	if err = repo.UpdateRecentCommitMsg(args.Message, args.SigningKey); err != nil {
 		return err
 	}
 
