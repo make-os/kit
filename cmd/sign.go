@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
@@ -23,7 +24,7 @@ var signCommitCmd = &cobra.Command{
 	Short: "Sign or amend current commit",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fee, _ := cmd.Flags().GetString("fee")
+		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
@@ -44,7 +45,7 @@ var signCommitCmd = &cobra.Command{
 
 		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
 			Message:               msg,
-			Fee:                   fee,
+			Fee:                   cast.ToString(fee),
 			Nonce:                 nonce,
 			Value:                 value,
 			AmendCommit:           amend,
@@ -52,7 +53,7 @@ var signCommitCmd = &cobra.Command{
 			Head:                  head,
 			Branch:                branch,
 			ForceCheckout:         forceCheckout,
-			PushKeyID:             signingKey,
+			SigningKey:            signingKey,
 			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,
@@ -72,7 +73,7 @@ var signTagCmd = &cobra.Command{
 	Short: "Create and sign an annotated tag",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fee, _ := cmd.Flags().GetString("fee")
+		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
@@ -89,10 +90,10 @@ var signTagCmd = &cobra.Command{
 		args = cmd.Flags().Args()
 		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
 			Message:               msg,
-			Fee:                   fee,
+			Fee:                   cast.ToString(fee),
 			Nonce:                 nonce,
 			Value:                 value,
-			PushKeyID:             signingKey,
+			SigningKey:            signingKey,
 			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,
@@ -112,7 +113,7 @@ var signNoteCmd = &cobra.Command{
 	Short: "Sign a note",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fee, _ := cmd.Flags().GetString("fee")
+		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
@@ -131,10 +132,10 @@ var signNoteCmd = &cobra.Command{
 
 		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
 			Name:                  args[0],
-			Fee:                   fee,
+			Fee:                   cast.ToString(fee),
 			Nonce:                 nonce,
 			Value:                 value,
-			PushKeyID:             signingKey,
+			SigningKey:            signingKey,
 			PushKeyPass:           signingKeyPass,
 			Remote:                targetRemotes,
 			ResetTokens:           resetRemoteTokens,

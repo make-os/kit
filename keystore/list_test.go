@@ -29,23 +29,23 @@ var _ = Describe("List", func() {
 
 	Describe(".List", func() {
 		var ks *Keystore
-		When("two keys are created. one is KeyTypeAccount and the other is KeyTypePush", func() {
+		When("two keys are created. one is KeyTypeUser and the other is KeyTypePush", func() {
 			BeforeEach(func() {
 				ks = New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, types.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 				key2 := crypto.NewKeyFromIntSeed(2)
 				err = ks.CreateKey(key2, types.KeyTypePush, "")
 				Expect(err).To(BeNil())
 			})
 
-			It("should return 2 keys of KeyTypeAccount and KeyTypePush types", func() {
+			It("should return 2 keys of KeyTypeUser and KeyTypePush types", func() {
 				keys, err := ks.List()
 				Expect(err).To(BeNil())
 				Expect(keys).To(HaveLen(2))
-				Expect(keys[0].GetType()).To(Equal(types.KeyTypeAccount))
-				Expect(keys[1].GetType()).To(Equal(types.KeyTypePush))
+				Expect(keys[0].GetType()).To(Or(Equal(types.KeyTypeUser), Equal(types.KeyTypePush)))
+				Expect(keys[1].GetType()).To(Or(Equal(types.KeyTypeUser), Equal(types.KeyTypePush)))
 			})
 		})
 	})

@@ -24,16 +24,26 @@ func (ks *Keystore) ImportCmd(keyfile string, keyType types.KeyType, pass string
 		return fmt.Errorf("key file path is required")
 	}
 
-	fullKeyFilePath, err := filepath.Abs(keyfile)
+	var err error
+	var keyFileContent []byte
+	var fullKeyFilePath string
+
+	if crypto.IsValidPrivKey(keyfile) == nil {
+		keyFileContent = []byte(keyfile)
+		goto decode_key
+	}
+
+	fullKeyFilePath, err = filepath.Abs(keyfile)
 	if err != nil {
 		return fmt.Errorf("invalid key file path {%s}", keyfile)
 	}
 
-	keyFileContent, err := ioutil.ReadFile(fullKeyFilePath)
+	keyFileContent, err = ioutil.ReadFile(fullKeyFilePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to read key file")
 	}
 
+decode_key:
 	// Ensure the key file contains a valid private key
 	fileContentStr := strings.TrimSpace(string(keyFileContent))
 	sk, err := crypto.PrivKeyFromBase58(fileContentStr)
@@ -73,7 +83,7 @@ create:
 	}
 
 	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key imported successfully!"))
-	if keyType == types.KeyTypeAccount {
+	if keyType == types.KeyTypeUser {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.PushAddr().String()))

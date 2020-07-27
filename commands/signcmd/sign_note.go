@@ -80,7 +80,7 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
-	} else if crypto.IsValidUserAddr(key.GetAddress()) == nil {
+	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
 		// If the key's address is not a push key address, then we need to convert to a push key address
 		// as that is what the remote node will accept. We do this because we assume the user wants to
 		// use a user key to sign.

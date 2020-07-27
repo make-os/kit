@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/themakeos/lobe/keystore/types"
 	"github.com/themakeos/lobe/util/crypto"
 )
 
@@ -17,7 +18,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 	}
 
 	// Unlock the key
-	account, err := ks.UIUnlockKey(addressOrIndex, passphrase, "")
+	acct, err := ks.UIUnlockKey(addressOrIndex, passphrase, "")
 	if err != nil {
 		return err
 	}
@@ -31,18 +32,20 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 
 	// Re-encrypt with the new passphrase
 	newPassphraseHardened := hardenPassword([]byte(newPassphrase))
-	updatedCipher, err := crypto.Encrypt(account.GetUnlockedData(), newPassphraseHardened[:])
+	updatedCipher, err := crypto.Encrypt(acct.GetUnlockedData(), newPassphraseHardened[:])
 	if err != nil {
 		return fmt.Errorf("unable to re-lock key")
 	}
 
 	// Backup the existing key file
-	backupPath := filepath.Join(ks.dir, account.GetFilename()) + "_backup"
-	os.Rename(filepath.Join(ks.dir, account.GetFilename()), backupPath)
+	backupPath := filepath.Join(ks.dir, acct.GetFilename()) + "_backup"
+	os.Rename(filepath.Join(ks.dir, acct.GetFilename()), backupPath)
 
 	// Create the new key file
-	filename := createKeyFileName(account.GetCreatedAt().Unix(), account.GetAddress(), newPassphrase)
-	err = ioutil.WriteFile(filepath.Join(ks.dir, filename), updatedCipher, 0644)
+	unprotected := passphrase == DefaultPassphrase
+	fileID := types.KeyTypeChar[acct.GetType()] + acct.GetKey().PubKey().Base58()
+	fileName := makeKeyStoreName(acct.GetCreatedAt().Unix(), fileID, unprotected)
+	err = ioutil.WriteFile(filepath.Join(ks.dir, fileName), updatedCipher, 0644)
 	if err != nil {
 		return fmt.Errorf("unable to write payload to disk")
 	}

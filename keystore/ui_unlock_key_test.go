@@ -50,7 +50,7 @@ var _ = Describe("Reveal", func() {
 
 			BeforeEach(func() {
 				key = crypto.NewKeyFromIntSeed(1)
-				err := ks.CreateKey(key, types2.KeyTypeAccount, "")
+				err := ks.CreateKey(key, types2.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 			})
 
@@ -58,7 +58,7 @@ var _ = Describe("Reveal", func() {
 				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
-				Expect(acct.GetAddress()).To(Equal(key.Addr().String()))
+				Expect(acct.GetUserAddress()).To(Equal(key.Addr().String()))
 			})
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Reveal", func() {
 
 			BeforeEach(func() {
 				key = crypto.NewKeyFromIntSeed(1)
-				err := ks.CreateKey(key, types2.KeyTypeAccount, "my_pass")
+				err := ks.CreateKey(key, types2.KeyTypeUser, "my_pass")
 				Expect(err).To(BeNil())
 			})
 
@@ -80,7 +80,7 @@ var _ = Describe("Reveal", func() {
 				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
-				Expect(acct.GetAddress()).To(Equal(key.Addr().String()))
+				Expect(acct.GetUserAddress()).To(Equal(key.Addr().String()))
 				Expect(prompted).To(BeTrue())
 			})
 

@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -616,7 +615,7 @@ func ParseUint(s string, base int, bitSize int) (UInt64, error) {
 // IsGitInstalled checks whether git executable exist in the given path.
 // Returns true and git version if installed or false.
 func IsGitInstalled(path string) (bool, string) {
-	cmd := exec.Command(filepath.Join(path, "git"), "version")
+	cmd := exec.Command(path, "version")
 	out, err := cmd.Output()
 	if err != nil {
 		return false, ""

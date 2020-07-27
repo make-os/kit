@@ -98,7 +98,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 	// If nonce is unset, get the nonce from a remote server
 	nonce := args.Nonce
 	if nonce == 0 {
-		nextNonce, err := args.GetNextNonce(key.GetAddress(), args.RPCClient, args.RemoteClients)
+		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return errors.Wrap(err, "failed to get signer's next nonce")
 		}

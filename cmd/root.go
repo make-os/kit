@@ -72,19 +72,16 @@ var rootCmd = &cobra.Command{
 	Short: "Lobe is the official client for the MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
+		curCmd := cmd.CalledAs()
 
-		switch cmd.CalledAs() {
-		case "init":
-			if cmd.CalledAs() != "init" {
-				cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(),
-					tmconfig.PrivValidatorStateFile())
-			}
+		if curCmd != "init" {
+			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
+		}
 
-		// Ensure git binary are reachable and have an acceptable version
-		case "start", "console", "sign", "attach", "config":
+		// Ensure git executable of an acceptable version is installed
+		if funk.ContainsString([]string{"init", "start", "console", "sign", "attach", "config"}, curCmd) {
 			if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
 				if semver.New(version).LessThan(*semver.New("2.22.0")) {
 					log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.
@@ -176,7 +173,7 @@ func init() {
 	// Register flags
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
-	rootCmd.PersistentFlags().String("gitpath", "", "Set path to git executable")
+	rootCmd.PersistentFlags().String("gitpath", "git", "Set path to git executable")
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")

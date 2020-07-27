@@ -56,14 +56,10 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase
 		return errors.Wrap(err, "key encryption failed")
 	}
 
-	addr := key.Addr()
-	if keyType == types.KeyTypePush {
-		addr = key.PushAddr()
-	}
-
 	// Save the key
 	now := time.Now().Unix()
-	fileName := createKeyFileName(now, addr.String(), passphrase)
+	unprotected := passphrase == DefaultPassphrase
+	fileName := makeKeyStoreName(now, types.KeyTypeChar[keyType]+key.PubKey().Base58(), unprotected)
 	err = ioutil.WriteFile(filepath.Join(ks.dir, fileName), ct, 0644)
 	if err != nil {
 		return err
@@ -72,9 +68,10 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase
 	return nil
 }
 
-func createKeyFileName(timeNow int64, addr, passphrase string) string {
-	fn := fmt.Sprintf("%d_%s", timeNow, addr)
-	if passphrase == DefaultPassphrase {
+// makeKeyStoreName creates a name to be used as a keystore file name
+func makeKeyStoreName(timeNow int64, fileID string, unprotected bool) string {
+	fn := fmt.Sprintf("%d_%s", timeNow, fileID)
+	if unprotected {
 		fn = fn + "_unprotected"
 	}
 	return fn
@@ -133,7 +130,7 @@ func (ks *Keystore) CreateCmd(
 	}
 
 	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key successfully created!"))
-	if keyType == types.KeyTypeAccount {
+	if keyType == types.KeyTypeUser {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.PushAddr().String()))

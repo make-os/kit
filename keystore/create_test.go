@@ -35,7 +35,7 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, types.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 			})
 
@@ -55,9 +55,9 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, types.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
-				err = ks.CreateKey(key, types.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeUser, "")
 			})
 
 			It("should return error about an existing key", func() {
@@ -72,7 +72,7 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, types.KeyTypeAccount, pass)
+				err = ks.CreateKey(key, types.KeyTypeUser, pass)
 				Expect(err).To(BeNil())
 			})
 
@@ -97,5 +97,9 @@ var _ = Describe("Create", func() {
 				Expect(entries[0].Name()).ToNot(ContainSubstring("_unprotected"))
 			})
 		})
+	})
+
+	Describe(".CreateCmd", func() {
+
 	})
 })

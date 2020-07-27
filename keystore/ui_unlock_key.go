@@ -23,7 +23,7 @@ func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (t
 
 	// Set default prompt if unset by caller
 	if promptMsg == "" {
-		promptMsg = fmt2.WhiteBoldString("Chosen Account: ") + storedAcct.GetAddress() + "\n"
+		promptMsg = fmt2.WhiteBoldString("Chosen Account: ") + storedAcct.GetUserAddress() + "\n"
 	}
 
 	// Set the passphrase to the default passphrase if account

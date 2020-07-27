@@ -10,9 +10,15 @@ import (
 type KeyType int
 
 const (
-	KeyTypeAccount KeyType = iota
+	KeyTypeUser KeyType = iota
 	KeyTypePush
 )
+
+// KeyTypeChar maps key type to their respective file prefix
+var KeyTypeChar = map[KeyType]string{
+	KeyTypeUser: "u",
+	KeyTypePush: "p",
+}
 
 // StoredKey represents a locally persisted key
 type StoredKey interface {
@@ -21,7 +27,8 @@ type StoredKey interface {
 	GetPayload() *KeyPayload
 	Unlock(passphrase string) error
 	GetFilename() string
-	GetAddress() string
+	GetUserAddress() string
+	GetPushKeyAddress() string
 	IsUnprotected() bool
 	GetType() KeyType
 	GetUnlockedData() []byte
@@ -44,9 +51,10 @@ func (sm StoredKeyMeta) Get(key string) interface{} {
 
 // KeyPayload contains key data that will  be stored on disk
 type KeyPayload struct {
-	SecretKey     string `json:"secretKey" msgpack:"secretKey"`
 	Type          int    `json:"type" msgpack:"type"`
 	FormatVersion string `json:"version" msgpack:"version"`
+
+	SecretKey string `json:"secretKey" msgpack:"secretKey"`
 }
 
 // Keystore describes a module for managing keys

@@ -58,7 +58,7 @@ Always backup your keeps regularly.`,
 		pushType, _ := cmd.Flags().GetBool("push")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		kt := types.KeyTypeAccount
+		kt := types.KeyTypeUser
 		if pushType {
 			kt = types.KeyTypePush
 		}
@@ -130,7 +130,7 @@ key.
 
 		pass, _ := cmd.Flags().GetString("pass")
 		pushType, _ := cmd.Flags().GetBool("push")
-		kt := types.KeyTypeAccount
+		kt := types.KeyTypeUser
 		if pushType {
 			kt = types.KeyTypePush
 		}
@@ -207,7 +207,7 @@ func init() {
 	keyCreateCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
 	keyGenCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
-	keyCreateCmd.Flags().Bool("push", false, "Create a push key")
-	keyImportCmd.Flags().Bool("push", false, "Create a push key")
+	keyCreateCmd.Flags().Bool("push", false, "Mark as Push Key")
+	keyImportCmd.Flags().Bool("push", false, "Mark as Push Key")
 	keyGetCmd.Flags().Bool("showKey", false, "Show the private key")
 }

@@ -2,11 +2,11 @@ package keystore
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/spf13/cast"
 	"github.com/themakeos/lobe/crypto"
 	types2 "github.com/themakeos/lobe/keystore/types"
 	"github.com/themakeos/lobe/types"
@@ -21,8 +21,11 @@ type StoredKey struct {
 	// Type indicates the key type
 	Type types2.KeyType
 
-	// Address is the key's address
-	Address string
+	// Address is the user address encoding of the key
+	UserAddress string
+
+	// PushAddress is the push address encoding of the key
+	PushAddress string
 
 	// Cipher includes the encryption data
 	Cipher []byte
@@ -71,9 +74,14 @@ func (sk *StoredKey) GetType() types2.KeyType {
 	return sk.Type
 }
 
-// GetAddress returns the address of the key
-func (sk *StoredKey) GetAddress() string {
-	return sk.Address
+// GetUserAddress returns the address of the key
+func (sk *StoredKey) GetUserAddress() string {
+	return sk.UserAddress
+}
+
+// GetPushKeyAddress returns the push address of the key
+func (sk *StoredKey) GetPushKeyAddress() string {
+	return sk.PushAddress
 }
 
 // GetKey returns the underlying Ed25519 key.
@@ -144,7 +152,7 @@ func (ks *Keystore) Exist(address string) (bool, error) {
 	}
 
 	for _, acct := range accounts {
-		if acct.GetAddress() == address {
+		if acct.GetUserAddress() == address {
 			return true, nil
 		}
 	}
@@ -177,13 +185,12 @@ func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (types2.StoredKey, err
 		return ks.GetByAddress(idxOrAddr)
 	}
 	if govalidator.IsNumeric(idxOrAddr) {
-		idx, _ := strconv.Atoi(idxOrAddr)
-		return ks.GetByIndex(idx)
+		return ks.GetByIndex(cast.ToInt(idxOrAddr))
 	}
 	return nil, types.ErrKeyUnknown
 }
 
-// GetByAddress gets a key by its address in the list of accounts.
+// GetByAddress finds a key where its user address or push key address matches addr
 func (ks *Keystore) GetByAddress(addr string) (types2.StoredKey, error) {
 
 	accounts, err := ks.List()
@@ -192,7 +199,7 @@ func (ks *Keystore) GetByAddress(addr string) (types2.StoredKey, error) {
 	}
 
 	account := funk.Find(accounts, func(x types2.StoredKey) bool {
-		return x.GetAddress() == addr
+		return x.GetUserAddress() == addr || x.GetPushKeyAddress() == addr
 	})
 
 	if account == nil {

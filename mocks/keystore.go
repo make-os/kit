@@ -106,18 +106,18 @@ func (mr *MockStoredKeyMockRecorder) GetFilename() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilename", reflect.TypeOf((*MockStoredKey)(nil).GetFilename))
 }
 
-// GetAddress mocks base method
-func (m *MockStoredKey) GetAddress() string {
+// GetUserAddress mocks base method
+func (m *MockStoredKey) GetUserAddress() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAddress")
+	ret := m.ctrl.Call(m, "GetUserAddress")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetAddress indicates an expected call of GetAddress
+// GetUserAddress indicates an expected call of GetUserAddress
 func (mr *MockStoredKeyMockRecorder) GetAddress() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddress", reflect.TypeOf((*MockStoredKey)(nil).GetAddress))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserAddress", reflect.TypeOf((*MockStoredKey)(nil).GetUserAddress))
 }
 
 // IsUnprotected mocks base method

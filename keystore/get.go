@@ -71,11 +71,11 @@ unlock:
 
 	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key revealed successfully!"))
 
-	if !crypto.IsValidPushAddr(storedAcct.GetAddress()) {
-		fmt.Fprintln(ks.out, "- User Address: "+fmt2.HiCyanString(storedAcct.GetAddress()))
+	if !crypto.IsValidPushAddr(storedAcct.GetUserAddress()) {
+		fmt.Fprintln(ks.out, "- User Address: "+fmt2.HiCyanString(storedAcct.GetUserAddress()))
 		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetKey().PushAddr().String()))
 	} else {
-		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetAddress()))
+		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetUserAddress()))
 		fmt.Fprintln(ks.out, "- User Address: "+fmt2.HiCyanString(storedAcct.GetKey().Addr().String()))
 	}
 

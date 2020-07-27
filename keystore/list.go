@@ -12,6 +12,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
+	"github.com/prometheus/common/log"
 	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/crypto"
 	"github.com/themakeos/lobe/keystore/types"
@@ -20,7 +21,6 @@ import (
 
 // List returns the accounts stored on disk.
 func (ks *Keystore) List() (accounts []types.StoredKey, err error) {
-
 	files, err := ioutil.ReadDir(ks.dir)
 	if err != nil {
 		return nil, err
@@ -31,24 +31,36 @@ func (ks *Keystore) List() (accounts []types.StoredKey, err error) {
 			continue
 		}
 
-		m, _ := regexp.Match("^[0-9]{10}_[a-zA-Z0-9]{43,}(_unprotected)?$", []byte(f.Name()))
+		// [0-9]{10}: Is the creation unix timestamp
+		// [up]: Indicates 'user' or 'push' key as primary
+		// [_unprotected]: indicates encryption with default passphrase.
+		m, _ := regexp.Match("^[0-9]{10}_([up])[a-zA-Z0-9]{51}(_unprotected)?$", []byte(f.Name()))
 		if !m {
 			continue
 		}
 
-		nameParts := strings.Split(f.Name(), "_")
-		unixTime, _ := strconv.ParseInt(nameParts[0], 10, 64)
+		parts := strings.Split(f.Name(), "_")
+		unixTime, _ := strconv.ParseInt(parts[0], 10, 64)
 		timeCreated := time.Unix(unixTime, 0)
 		cipher, _ := ioutil.ReadFile(filepath.Join(ks.dir, f.Name()))
-		address := nameParts[1]
-		keyType := types.KeyTypeAccount
-		if crypto.IsValidPushAddr(address) == nil {
+		pubKey := parts[1][1:]
+
+		// Decode the public key
+		pk, err := crypto.PubKeyFromBase58(pubKey)
+		if err != nil {
+			log.Infof("found an invalid key file: %s", f.Name())
+			continue
+		}
+
+		keyType := types.KeyTypeUser
+		if parts[1][:1] == "p" {
 			keyType = types.KeyTypePush
 		}
 
 		accounts = append(accounts, &StoredKey{
 			Type:        keyType,
-			Address:     address,
+			UserAddress: pk.Addr().String(),
+			PushAddress: pk.PushAddr().String(),
 			Cipher:      cipher,
 			CreatedAt:   timeCreated,
 			Filename:    f.Name(),
@@ -85,9 +97,15 @@ func (ks *Keystore) ListCmd(out io.Writer) error {
 		if a.IsUnprotected() {
 			tagStr = fmt2.RedString("unprotected")
 		}
+
+		displayAddr := a.GetUserAddress()
+		if a.GetType() == types.KeyTypePush {
+			displayAddr = a.GetPushKeyAddress()
+		}
+
 		table.Append([]string{
 			fmt.Sprintf("[%d]", i),
-			fmt2.CyanString(a.GetAddress()),
+			fmt2.CyanString(displayAddr),
 			humanize.Time(a.GetCreatedAt()),
 			tagStr,
 		})

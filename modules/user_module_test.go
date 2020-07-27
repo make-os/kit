@@ -84,7 +84,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return address of accounts on success", func() {
-			keys := []types.StoredKey{&keystore.StoredKey{Address: "addr1"}, &keystore.StoredKey{Address: "addr2"}}
+			keys := []types.StoredKey{&keystore.StoredKey{UserAddress: "addr1"}, &keystore.StoredKey{UserAddress: "addr2"}}
 			mockKeystore.EXPECT().List().Return(keys, nil)
 			accts := m.ListLocalAccounts()
 			Expect(accts).To(HaveLen(2))
