@@ -82,17 +82,10 @@ func NewClient(opts *Options) *RPCClient {
 	}
 
 	if opts.Host == "" {
-		panic("options.host is required")
+		opts.Host = "0.0.0.0"
 	}
 
-	if opts.Port == 0 {
-		panic("options.port is required")
-	}
-
-	client := &RPCClient{
-		c:    new(http.Client),
-		opts: opts,
-	}
+	client := &RPCClient{c: new(http.Client), opts: opts}
 	client.call = client.Call
 
 	return client
