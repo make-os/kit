@@ -53,6 +53,7 @@ type KeyUnlocker func(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredK
 // - It will using the given passphrase if set, otherwise
 // - if the target repo is set, it will try to get it from the git config (user.passphrase).
 // - If passphrase is still unknown, it will attempt to get it from an environment variable.
+// - On success, args.Passphrase is updated with the passphrase used to unlock the key.
 func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, error) {
 
 	// Get the key from the key store
@@ -94,10 +95,13 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 		return nil, fmt.Errorf("passphrase of signing key is required")
 	}
 
-	key, err = ks.UIUnlockKey(args.KeyAddrOrIdx, args.Passphrase, args.Prompt)
+	key, passphrase, err := ks.UnlockKeyUI(args.KeyAddrOrIdx, args.Passphrase, args.Prompt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unlock key (%s)", args.KeyAddrOrIdx)
 	}
+
+	// Index the passphrase used to unlock the key.
+	key.GetMeta()["passphrase"] = passphrase
 
 	return key, nil
 }

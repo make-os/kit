@@ -62,7 +62,7 @@ var _ = Describe("SignTag", func() {
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockStoredKey.EXPECT().GetKey().Return(key)
 			args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
 			SignTagCmd(cfg, []string{}, mockRepo, args)
@@ -73,7 +73,7 @@ var _ = Describe("SignTag", func() {
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
 			err := SignTagCmd(cfg, []string{}, mockRepo, args)
 			Expect(err).ToNot(BeNil())
@@ -85,7 +85,7 @@ var _ = Describe("SignTag", func() {
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", fmt.Errorf("error"))
 			err := SignTagCmd(cfg, []string{}, mockRepo, args)
@@ -97,7 +97,7 @@ var _ = Describe("SignTag", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 			mockRepo.EXPECT().GetName().Return("repo_name")
@@ -111,7 +111,7 @@ var _ = Describe("SignTag", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 			mockRepo.EXPECT().GetName().Return("repo_name")
@@ -125,7 +125,7 @@ var _ = Describe("SignTag", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args := &SignTagArgs{SigningKey: key.Addr().String()}
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetAddress().Return(key.Addr().String())
+				mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 				mockStoredKey.EXPECT().GetKey().Return(key)
 				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 					Expect(address).To(Equal(key.PushAddr().String()))
@@ -146,7 +146,7 @@ var _ = Describe("SignTag", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args := &SignTagArgs{}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 			mockRepo.EXPECT().GetName().Return("repo_name")
@@ -160,7 +160,7 @@ var _ = Describe("SignTag", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 			mockRepo.EXPECT().GetName().Return("repo_name")

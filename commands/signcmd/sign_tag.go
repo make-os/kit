@@ -100,6 +100,10 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
+	// Updated the push key passphrase to the actual passphrase used to unlock the key.
+	// This is required when the passphrase was gotten via an interactive prompt.
+	args.PushKeyPass = key.GetMeta().Get("passphrase").(string)
+
 	// If --message (-m) flag is provided, use the value as the message
 	if gitFlags.Lookup("message").Changed {
 		args.Message, _ = gitFlags.GetString("message")

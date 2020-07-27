@@ -110,6 +110,10 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
+	// Updated the push key passphrase to the actual passphrase used to unlock the key.
+	// This is required when the passphrase was gotten via an interactive prompt.
+	args.PushKeyPass = key.GetMeta().Get("passphrase").(string)
+
 	// if MergeID is set, validate it.
 	if args.MergeID != "" {
 		err = validation.CheckMergeProposalID(args.MergeID, -1)

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"encoding/json"
+	json "encoding/json"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
 	config "github.com/themakeos/lobe/config"
@@ -821,18 +821,18 @@ func (mr *MockAtomicLogicMockRecorder) StateTree() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateTree", reflect.TypeOf((*MockAtomicLogic)(nil).StateTree))
 }
 
-// WriteGenesisState mocks base method
-func (m *MockAtomicLogic) ApplyGenesisState(json.RawMessage) error {
+// ApplyGenesisState mocks base method
+func (m *MockAtomicLogic) ApplyGenesisState(state json.RawMessage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WriteGenesisState")
+	ret := m.ctrl.Call(m, "ApplyGenesisState", state)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WriteGenesisState indicates an expected call of WriteGenesisState
-func (mr *MockAtomicLogicMockRecorder) WriteGenesisState() *gomock.Call {
+// ApplyGenesisState indicates an expected call of ApplyGenesisState
+func (mr *MockAtomicLogicMockRecorder) ApplyGenesisState(state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockAtomicLogic)(nil).ApplyGenesisState))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyGenesisState", reflect.TypeOf((*MockAtomicLogic)(nil).ApplyGenesisState), state)
 }
 
 // SetTicketManager mocks base method
@@ -1186,18 +1186,18 @@ func (mr *MockLogicMockRecorder) StateTree() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateTree", reflect.TypeOf((*MockLogic)(nil).StateTree))
 }
 
-// WriteGenesisState mocks base method
-func (m *MockLogic) ApplyGenesisState(json.RawMessage) error {
+// ApplyGenesisState mocks base method
+func (m *MockLogic) ApplyGenesisState(state json.RawMessage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WriteGenesisState")
+	ret := m.ctrl.Call(m, "ApplyGenesisState", state)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WriteGenesisState indicates an expected call of WriteGenesisState
-func (mr *MockLogicMockRecorder) WriteGenesisState() *gomock.Call {
+// ApplyGenesisState indicates an expected call of ApplyGenesisState
+func (mr *MockLogicMockRecorder) ApplyGenesisState(state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockLogic)(nil).ApplyGenesisState))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyGenesisState", reflect.TypeOf((*MockLogic)(nil).ApplyGenesisState), state)
 }
 
 // SetTicketManager mocks base method

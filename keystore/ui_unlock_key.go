@@ -8,17 +8,18 @@ import (
 	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
-// UIUnlockKey renders a CLI UI to unlock a target key..
+// UnlockKeyUI unlocks a target key by rendering prompt to collect a passphrase.
 // addressOrIndex: The address or index of the key.
 // passphrase: The user supplied passphrase. If not provided, an
 // interactive session will be started to collect the passphrase
-func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, error) {
+// Onsuccess, it returns the unlocked key and the passphrase used to unlock it.
+func (ks *Keystore) UnlockKeyUI(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, string, error) {
 	var err error
 
 	// Get the key
 	storedAcct, err := ks.GetByIndexOrAddress(addressOrIndex)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Set default prompt if unset by caller
@@ -46,13 +47,13 @@ func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (t
 	// So, 'passphrase' contains a file path, read the passphrase from it
 	passphrase, err = readPassFromFile(passphrase)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 unlock:
 	if err = storedAcct.Unlock(passphrase); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return storedAcct, nil
+	return storedAcct, passphrase, nil
 }

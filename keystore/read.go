@@ -56,6 +56,9 @@ type StoredKey struct {
 
 // GetMeta returns the meta information of the key
 func (sk *StoredKey) GetMeta() types2.StoredKeyMeta {
+	if sk.meta == nil {
+		sk.meta = map[string]interface{}{}
+	}
 	return sk.meta
 }
 

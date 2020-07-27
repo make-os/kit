@@ -72,7 +72,7 @@ var _ = Describe("CreateCmd", func() {
 		It("should return error when nonce is 0 and it failed to fetch next nonce", func() {
 			args := &CreateArgs{SigningKey: "1", SigningKeyPass: "pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
@@ -88,7 +88,7 @@ var _ = Describe("CreateCmd", func() {
 		It("should return error when to create repo", func() {
 			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
@@ -113,7 +113,7 @@ var _ = Describe("CreateCmd", func() {
 		It("should return nil on success", func() {
 			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil

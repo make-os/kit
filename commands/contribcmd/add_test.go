@@ -52,7 +52,7 @@ var _ = Describe("ContribCmd", func() {
 		It("should return error when unable to get signing key next nonce", func() {
 			args := &AddArgs{SigningKey: "sk", SigningKeyPass: "sk_pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
@@ -68,7 +68,7 @@ var _ = Describe("ContribCmd", func() {
 		It("should return error when unable add repo contributor", func() {
 			args := &AddArgs{SigningKey: "sk", SigningKeyPass: "sk_pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
@@ -89,7 +89,7 @@ var _ = Describe("ContribCmd", func() {
 			args := &AddArgs{SigningKey: "sk", SigningKeyPass: "sk_pass"}
 			BeforeEach(func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
-				mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+				mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 				mockKey.EXPECT().GetKey().Return(key)
 				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 					return mockKey, nil

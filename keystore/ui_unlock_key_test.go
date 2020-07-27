@@ -12,7 +12,7 @@ import (
 	"github.com/themakeos/lobe/types"
 )
 
-var _ = Describe("Reveal", func() {
+var _ = Describe("UnlockKeyUI", func() {
 	var err error
 	var oldStdout = os.Stdout
 	path := filepath.Join("./", "test_cfg")
@@ -31,7 +31,7 @@ var _ = Describe("Reveal", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".UIUnlockKey", func() {
+	FDescribe(".UnlockKeyUI", func() {
 		var ks *Keystore
 		BeforeEach(func() {
 			ks = New(keyDir)
@@ -39,7 +39,7 @@ var _ = Describe("Reveal", func() {
 
 		When("address does not exist", func() {
 			It("should return err", func() {
-				_, err := ks.UIUnlockKey("unknown", "pass", "")
+				_, _, err := ks.UnlockKeyUI("unknown", "pass", "")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
@@ -55,14 +55,14 @@ var _ = Describe("Reveal", func() {
 			})
 
 			It("should unlock account without providing a passphrase", func() {
-				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
+				acct, _, err := ks.UnlockKeyUI(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
 				Expect(acct.GetUserAddress()).To(Equal(key.Addr().String()))
 			})
 		})
 
-		When("key has passphrase (safe)", func() {
+		When("key has passphrase", func() {
 			var key *crypto.Key
 
 			BeforeEach(func() {
@@ -77,11 +77,12 @@ var _ = Describe("Reveal", func() {
 					prompted = true
 					return "my_pass"
 				}
-				acct, err := ks.UIUnlockKey(key.Addr().String(), "", "")
+				acct, passphrase, err := ks.UnlockKeyUI(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
 				Expect(acct).ToNot(BeNil())
 				Expect(acct.GetUserAddress()).To(Equal(key.Addr().String()))
 				Expect(prompted).To(BeTrue())
+				Expect(passphrase).To(Equal("my_pass"))
 			})
 
 			It("should return error when user passphrase is incorrect", func() {
@@ -90,7 +91,7 @@ var _ = Describe("Reveal", func() {
 					prompted = true
 					return "my_wrong_pass"
 				}
-				_, err := ks.UIUnlockKey(key.Addr().String(), "", "")
+				_, _, err := ks.UnlockKeyUI(key.Addr().String(), "", "")
 				Expect(prompted).To(BeTrue())
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("invalid passphrase"))

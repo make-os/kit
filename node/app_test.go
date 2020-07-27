@@ -87,7 +87,7 @@ var _ = Describe("App", func() {
 		When("writing initial genesis file fails", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return(nil)
-				mockLogic.AtomicLogic.EXPECT().WriteGenesisState().Return(fmt.Errorf("bad thing"))
+				mockLogic.AtomicLogic.EXPECT().ApplyGenesisState(gomock.Any()).Return(fmt.Errorf("bad thing"))
 				app.logic = mockLogic.AtomicLogic
 			})
 
@@ -101,7 +101,7 @@ var _ = Describe("App", func() {
 		When("validator indexing fails", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return(nil)
-				mockLogic.AtomicLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockLogic.AtomicLogic.EXPECT().ApplyGenesisState(gomock.Any()).Return(nil)
 				mockLogic.Validator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("bad thing"))
 				app.logic = mockLogic.AtomicLogic
 			})
@@ -116,7 +116,7 @@ var _ = Describe("App", func() {
 		When("initialization succeeds", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return(nil).Times(2)
-				mockLogic.AtomicLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockLogic.AtomicLogic.EXPECT().ApplyGenesisState(gomock.Any()).Return(nil)
 				mockLogic.StateTree.EXPECT().Version().Return(int64(1))
 				mockLogic.Validator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
 				app.logic = mockLogic.AtomicLogic

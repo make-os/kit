@@ -115,9 +115,23 @@ func (m *MockStoredKey) GetUserAddress() string {
 }
 
 // GetUserAddress indicates an expected call of GetUserAddress
-func (mr *MockStoredKeyMockRecorder) GetAddress() *gomock.Call {
+func (mr *MockStoredKeyMockRecorder) GetUserAddress() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserAddress", reflect.TypeOf((*MockStoredKey)(nil).GetUserAddress))
+}
+
+// GetPushKeyAddress mocks base method
+func (m *MockStoredKey) GetPushKeyAddress() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushKeyAddress")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetPushKeyAddress indicates an expected call of GetPushKeyAddress
+func (mr *MockStoredKeyMockRecorder) GetPushKeyAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyAddress", reflect.TypeOf((*MockStoredKey)(nil).GetPushKeyAddress))
 }
 
 // IsUnprotected mocks base method
@@ -248,19 +262,20 @@ func (mr *MockKeystoreMockRecorder) AskForPasswordOnce(prompt ...interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AskForPasswordOnce", reflect.TypeOf((*MockKeystore)(nil).AskForPasswordOnce), prompt...)
 }
 
-// UIUnlockKey mocks base method
-func (m *MockKeystore) UIUnlockKey(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, error) {
+// UnlockKeyUI mocks base method
+func (m *MockKeystore) UnlockKeyUI(addressOrIndex, passphrase, promptMsg string) (types.StoredKey, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UIUnlockKey", addressOrIndex, passphrase, promptMsg)
+	ret := m.ctrl.Call(m, "UnlockKeyUI", addressOrIndex, passphrase, promptMsg)
 	ret0, _ := ret[0].(types.StoredKey)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// UIUnlockKey indicates an expected call of UIUnlockKey
-func (mr *MockKeystoreMockRecorder) UIUnlockKey(addressOrIndex, passphrase, promptMsg interface{}) *gomock.Call {
+// UnlockKeyUI indicates an expected call of UnlockKeyUI
+func (mr *MockKeystoreMockRecorder) UnlockKeyUI(addressOrIndex, passphrase, promptMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UIUnlockKey", reflect.TypeOf((*MockKeystore)(nil).UIUnlockKey), addressOrIndex, passphrase, promptMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlockKeyUI", reflect.TypeOf((*MockKeystore)(nil).UnlockKeyUI), addressOrIndex, passphrase, promptMsg)
 }
 
 // UpdateCmd mocks base method

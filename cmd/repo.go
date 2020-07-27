@@ -146,12 +146,8 @@ func initRepoVoteCmd() {
 
 func initRepoConfigCmd() {
 	ssp := repoConfigCmd.Flags().StringSliceP
-	f64p := repoConfigCmd.Flags().Float64P
-	uint64p := repoConfigCmd.Flags().Uint64P
 	boolf := repoConfigCmd.Flags().Bool
 	ssp("set-remote", "r", []string{}, "Set one or more remotes")
-	f64p("fee", "f", 0, "The fee to pay to the network per push request")
-	uint64p("nonce", "n", 0, "The next nonce of the account signing the transaction")
 	boolf("no-sign", false, "Disable automatic signing")
 	addCommonTxFlags(repoConfigCmd.Flags())
 }

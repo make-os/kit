@@ -85,7 +85,7 @@ var _ = Describe("SignCommit", func() {
 		It("should return error when unable get next nonce of signer", func() {
 			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc"}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
@@ -101,7 +101,7 @@ var _ = Describe("SignCommit", func() {
 		It("should return error when unable create registration transaction", func() {
 			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc"}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
 			mockSigningKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
@@ -121,7 +121,7 @@ var _ = Describe("SignCommit", func() {
 		It("should return no error on successful transaction creation", func() {
 			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
 			mockSigningKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil

@@ -1678,3 +1678,68 @@ func (mr *MockRPCModuleMockRecorder) ConnectLocal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectLocal", reflect.TypeOf((*MockRPCModule)(nil).ConnectLocal))
 }
+
+// MockDevModule is a mock of DevModule interface
+type MockDevModule struct {
+	ctrl     *gomock.Controller
+	recorder *MockDevModuleMockRecorder
+}
+
+// MockDevModuleMockRecorder is the mock recorder for MockDevModule
+type MockDevModuleMockRecorder struct {
+	mock *MockDevModule
+}
+
+// NewMockDevModule creates a new mock instance
+func NewMockDevModule(ctrl *gomock.Controller) *MockDevModule {
+	mock := &MockDevModule{ctrl: ctrl}
+	mock.recorder = &MockDevModuleMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockDevModule) EXPECT() *MockDevModuleMockRecorder {
+	return m.recorder
+}
+
+// ConfigureVM mocks base method
+func (m *MockDevModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
+	ret0, _ := ret[0].(prompt.Completer)
+	return ret0
+}
+
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockDevModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockDevModule)(nil).ConfigureVM), vm)
+}
+
+// GetDevUserAccountKey mocks base method
+func (m *MockDevModule) GetDevUserAccountKey() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDevUserAccountKey")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetDevUserAccountKey indicates an expected call of GetDevUserAccountKey
+func (mr *MockDevModuleMockRecorder) GetDevUserAccountKey() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDevUserAccountKey", reflect.TypeOf((*MockDevModule)(nil).GetDevUserAccountKey))
+}
+
+// GetDevUserAddress mocks base method
+func (m *MockDevModule) GetDevUserAddress() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDevUserAddress")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetDevUserAddress indicates an expected call of GetDevUserAddress
+func (mr *MockDevModuleMockRecorder) GetDevUserAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDevUserAddress", reflect.TypeOf((*MockDevModule)(nil).GetDevUserAddress))
+}

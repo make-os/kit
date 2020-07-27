@@ -52,7 +52,7 @@ var _ = Describe("VoteCmd", func() {
 		It("should return error when nonce is 0 and it failed to fetch next nonce", func() {
 			args := &VoteArgs{SigningKey: "1", SigningKeyPass: "pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
@@ -68,7 +68,7 @@ var _ = Describe("VoteCmd", func() {
 		It("should return error when to cast vote", func() {
 			args := &VoteArgs{RepoName: "repo1", Fee: 1.2, Vote: 1, SigningKey: "1", SigningKeyPass: "pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
@@ -93,7 +93,7 @@ var _ = Describe("VoteCmd", func() {
 		It("should return nil on success", func() {
 			args := &VoteArgs{RepoName: "repo1", Vote: 1, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass"}
 			mockKey := mocks.NewMockStoredKey(ctrl)
-			mockKey.EXPECT().GetAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
