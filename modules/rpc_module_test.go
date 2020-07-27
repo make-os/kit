@@ -1,14 +1,12 @@
 package modules_test
 
 import (
-	"net"
 	"os"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
-	"github.com/stretchr/testify/assert"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/config"
 	mocks2 "github.com/themakeos/lobe/mocks/rpc"
@@ -64,21 +62,6 @@ var _ = Describe("RPCModule", func() {
 	Describe(".ConnectLocal", func() {
 		BeforeEach(func() {
 			cfg.RPC.Address = "127.0.0.1:4000"
-		})
-
-		It("should panic when unable to parse local rpc address", func() {
-			cfg.RPC.Address = "invalid"
-			err := &net.AddrError{Err: "missing port in address", Addr: "invalid"}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ConnectLocal()
-			})
-		})
-
-		It("should panic when unable to connect to RPC address", func() {
-			err := &util.ReqError{Code: "connect_error", HttpCode: 500, Msg: "Post http://127.0.0.1:4000: dial tcp 127.0.0.1:4000: connect: connection refused", Field: ""}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ConnectLocal()
-			})
 		})
 
 		It("should return client context object with only 'call' property when no methods from RPC", func() {

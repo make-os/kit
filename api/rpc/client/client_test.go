@@ -12,18 +12,6 @@ import (
 var _ = Describe("Client", func() {
 
 	Describe(".NewClient", func() {
-		When("host is not set", func() {
-			It("should panic", func() {
-				Expect(func() { NewClient(&Options{}) }).To(Panic())
-			})
-		})
-
-		When("port is not set", func() {
-			It("should panic", func() {
-				Expect(func() { NewClient(&Options{Host: "127.0.0.1"}) }).To(Panic())
-			})
-		})
-
 		When("host and port are set", func() {
 			It("should not panic", func() {
 				Expect(func() { NewClient(&Options{Host: "127.0.0.1", Port: 5000}) }).ToNot(Panic())

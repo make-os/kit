@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/stretchr/objx"
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
@@ -102,7 +103,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = key.GetMeta().Get("passphrase").(string)
+	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
 	// If --message (-m) flag is provided, use the value as the message
 	if gitFlags.Lookup("message").Changed {

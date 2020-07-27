@@ -61,6 +61,7 @@ var _ = Describe("SignTag", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.Addr().String())
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockStoredKey.EXPECT().GetKey().Return(key)
@@ -72,6 +73,7 @@ var _ = Describe("SignTag", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
@@ -84,6 +86,7 @@ var _ = Describe("SignTag", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.GetNextNonce = testGetNextNonce2("1", nil)
@@ -95,6 +98,7 @@ var _ = Describe("SignTag", func() {
 
 		It("should return error when unable to create tag", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
@@ -109,6 +113,7 @@ var _ = Describe("SignTag", func() {
 
 		It("should return no error when tag is created", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
@@ -123,6 +128,7 @@ var _ = Describe("SignTag", func() {
 		When("args.SigningKey is a user address", func() {
 			It("should pass user address to CreateTagWithMsg. Pass push key id to TxDetail object and GetNextNonce", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 				args := &SignTagArgs{SigningKey: key.Addr().String()}
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
@@ -144,6 +150,7 @@ var _ = Describe("SignTag", func() {
 
 		It("should set args.PushKeyID to value of git flag --local-user", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
@@ -158,6 +165,7 @@ var _ = Describe("SignTag", func() {
 
 		It("should set args.PushKeyID to value of git flag --message", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())

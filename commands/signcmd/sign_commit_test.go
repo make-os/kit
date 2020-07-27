@@ -81,6 +81,7 @@ var _ = Describe("SignCommit", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.Addr().String())
 			args := &SignCommitArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockStoredKey.EXPECT().GetKey().Return(key)
@@ -94,6 +95,8 @@ var _ = Describe("SignCommit", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 			args := &SignCommitArgs{MergeID: "abc123_invalid"}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String()).Times(2)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
@@ -111,6 +114,7 @@ var _ = Describe("SignCommit", func() {
 				return "", fmt.Errorf("error")
 			}}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
@@ -123,6 +127,7 @@ var _ = Describe("SignCommit", func() {
 			args := &SignCommitArgs{GetNextNonce: testGetNextNonce}
 			mockRepo.EXPECT().Head().Return("", fmt.Errorf("error"))
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
@@ -135,6 +140,7 @@ var _ = Describe("SignCommit", func() {
 				mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 				args := &SignCommitArgs{GetNextNonce: testGetNextNonce, Branch: "refs/heads/dev"}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -148,6 +154,7 @@ var _ = Describe("SignCommit", func() {
 				mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
 				args := &SignCommitArgs{GetNextNonce: testGetNextNonce, Branch: "refs/heads/dev"}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -162,6 +169,7 @@ var _ = Describe("SignCommit", func() {
 			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), GetNextNonce: testGetNextNonce}
 			args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", fmt.Errorf("error"))
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
+			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -176,6 +184,7 @@ var _ = Describe("SignCommit", func() {
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -190,6 +199,7 @@ var _ = Describe("SignCommit", func() {
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -212,6 +222,7 @@ var _ = Describe("SignCommit", func() {
 					}
 					mockRepo.EXPECT().GetName().Return("repo_name")
 					mockStoredKey := mocks.NewMockStoredKey(ctrl)
+					mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 					args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 					mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 					mockStoredKey.EXPECT().GetKey().Return(key)
@@ -235,6 +246,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
 				err := SignCommitCmd(cfg, mockRepo, args)
@@ -249,6 +261,7 @@ var _ = Describe("SignCommit", func() {
 
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
@@ -262,6 +275,7 @@ var _ = Describe("SignCommit", func() {
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: true}
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
@@ -276,6 +290,7 @@ var _ = Describe("SignCommit", func() {
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: true}
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
@@ -290,6 +305,7 @@ var _ = Describe("SignCommit", func() {
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "", GetNextNonce: testGetNextNonce, AmendCommit: true}
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
@@ -307,6 +323,7 @@ var _ = Describe("SignCommit", func() {
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "", GetNextNonce: testGetNextNonce, AmendCommit: true}
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
@@ -322,6 +339,7 @@ var _ = Describe("SignCommit", func() {
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "", GetNextNonce: testGetNextNonce, AmendCommit: true}
 				args.RemoteURLTokenUpdater = testRemoteURLTokenUpdater("", nil)
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")

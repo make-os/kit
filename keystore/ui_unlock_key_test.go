@@ -31,7 +31,7 @@ var _ = Describe("UnlockKeyUI", func() {
 		Expect(err).To(BeNil())
 	})
 
-	FDescribe(".UnlockKeyUI", func() {
+	Describe(".UnlockKeyUI", func() {
 		var ks *Keystore
 		BeforeEach(func() {
 			ks = New(keyDir)

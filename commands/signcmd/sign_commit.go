@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	errors2 "github.com/pkg/errors"
+	"github.com/stretchr/objx"
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
@@ -112,7 +113,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = key.GetMeta().Get("passphrase").(string)
+	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
 	// if MergeID is set, validate it.
 	if args.MergeID != "" {
