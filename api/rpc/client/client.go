@@ -13,7 +13,6 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/rpc/v2/json"
-	"github.com/k0kubun/pp"
 	"github.com/themakeos/lobe/api/types"
 	"github.com/themakeos/lobe/rpc"
 	"github.com/themakeos/lobe/util"
@@ -153,7 +152,6 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	var m map[string]interface{}
 	err = json.DecodeClientResponse(resp.Body, &m)
 	if err != nil {
-		pp.Println(err)
 		return nil, resp.StatusCode, err
 	}
 
