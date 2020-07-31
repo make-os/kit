@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	errors2 "github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
@@ -62,6 +63,9 @@ type SignCommitArgs struct {
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
+	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
+	SetRemotePushTokensOptionOnly bool
+
 	// RpcClient is the RPC client
 	RPCClient client.Client
 
@@ -74,23 +78,24 @@ type SignCommitArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce utils.NextNonceGetter
 
-	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
-	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
+	// SetRemotePushToken is a function for setting push tokens on a git remote config
+	SetRemotePushToken server.RemotePushTokenSetter
 }
 
 var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
+
+type SignCommitFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommitArgs) error
 
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
 func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommitArgs) error {
 
-	// If signing key was not provided, use signing key id from the git config
+	populateSignCommitArgsFromRepoConfig(repo, args)
+
+	// Signing key is required
 	if args.SigningKey == "" {
-		args.SigningKey = repo.GetConfig("user.signingKey")
-		if args.SigningKey == "" {
-			return ErrMissingPushKeyID
-		}
+		return ErrMissingPushKeyID
 	}
 
 	// Get and unlock the signing key
@@ -105,9 +110,6 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	if err != nil {
 		return errors2.Wrap(err, "failed to unlock the signing key")
 	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		// If the key's address is not a push key address, then we need to convert to a push key address
-		// as that is what the remote node will accept. We do this because we assume the user wants to
-		// use a user key to sign.
 		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
@@ -127,7 +129,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	if args.Nonce == 0 {
 		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
-			return err
+			return errors2.Wrapf(err, "get-next-nonce error")
 		}
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
@@ -177,8 +179,14 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		Reference:       reference,
 	}
 
-	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
+	// Create & set push request token to remote URLs in config
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
+		TargetRemote:                  args.Remote,
+		TxDetail:                      txDetail,
+		PushKey:                       key,
+		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		ResetTokens:                   args.ResetTokens,
+	}); err != nil {
 		return err
 	}
 
@@ -229,4 +237,29 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	}
 
 	return nil
+}
+
+// populateSignCommitArgsFromRepoConfig populates empty arguments field from repo config.
+func populateSignCommitArgsFromRepoConfig(repo types.LocalRepo, args *SignCommitArgs) {
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+	}
+	if args.PushKeyPass == "" {
+		args.PushKeyPass = repo.GetConfig("user.passphrase")
+	}
+	if util.IsZeroString(args.Fee) {
+		args.Fee = repo.GetConfig("user.fee")
+	}
+	if args.Nonce == 0 {
+		args.Nonce = cast.ToUint64(repo.GetConfig("user.nonce"))
+	}
+	if util.IsZeroString(args.Value) {
+		args.Value = repo.GetConfig("user.value")
+	}
+	if args.AmendCommit == false {
+		args.AmendCommit = cast.ToBool(repo.GetConfig("commit.amend"))
+	}
+	if args.SetRemotePushTokensOptionOnly == false {
+		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetConfig("sign.noUsername"))
+	}
 }

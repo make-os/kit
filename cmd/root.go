@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/gen2brain/beeep"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/commands/gitcmd"
 	"github.com/themakeos/lobe/pkgs/logger"
@@ -141,6 +142,9 @@ var fallbackCmd = &cobra.Command{
 				StdErr:          os.Stderr,
 				StdOut:          os.Stdout,
 			}); err != nil {
+				if cfg.IsDev() {
+					beeep.Alert("ERROR", err.Error(), "")
+				}
 				log.Fatal(err.Error())
 			}
 			os.Exit(0)

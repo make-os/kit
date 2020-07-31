@@ -139,6 +139,34 @@ var _ = Describe("RepoContext", func() {
 		})
 	})
 
+	Describe(".GetConfig", func() {
+		It("should empty result if key does not contain a section", func() {
+			Expect(r.GetConfig("key")).To(BeEmpty())
+		})
+
+		It("should empty result if key does contains more than one subsections", func() {
+			Expect(r.GetConfig("key")).To(BeEmpty())
+		})
+
+		It("should empty result if key does contains more than one subsections", func() {
+			Expect(r.GetConfig("section.key")).To(BeEmpty())
+		})
+
+		It("should empty result if key does not exist", func() {
+			Expect(r.GetConfig("section.subsection.subsection.key")).To(BeEmpty())
+		})
+
+		It("should expected result if key exist", func() {
+			c, err := r.Config()
+			Expect(err).To(BeNil())
+			c.Raw.Section("section").SetOption("key", "stuff")
+			Expect(r.SetConfig(c)).To(BeNil())
+			c.Raw.Section("section").Subsection("subsection").SetOption("key", "stuff")
+			Expect(r.SetConfig(c)).To(BeNil())
+			Expect(r.GetConfig("section.subsection.key")).To(Equal("stuff"))
+		})
+	})
+
 	Describe(".IsAncestor", func() {
 		It("should return no error when child is a descendant of parent", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")

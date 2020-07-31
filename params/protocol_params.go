@@ -88,6 +88,9 @@ var (
 	// PushNotesEndorsementsCacheSize is the max size for push note senders cache
 	PushNotesEndorsementsCacheSize = 5000
 
+	// RecentlySeenPacksCacheSize is the max size for the cache storing seen pack IDs
+	RecentlySeenPacksCacheSize = 5000
+
 	// RepoPrunerTickDur is the duration between each repo pruning operation
 	RepoPrunerTickDur = 10 * time.Second
 

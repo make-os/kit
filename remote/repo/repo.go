@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/types/state"
+	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 
 	"gopkg.in/src-d/go-git.v4/config"
@@ -137,6 +139,36 @@ func (r *Repo) IsClean() (bool, error) {
 // SetPath sets the repository root path
 func (r *Repo) SetPath(path string) {
 	r.Path = path
+}
+
+// GetConfig finds and returns a config value
+func (lg *Repo) GetConfig(path string) string {
+	cfg, _ := lg.Config()
+	if cfg == nil {
+		return ""
+	}
+
+	pathParts := strings.Split(path, ".")
+
+	// If path does not contain a section and a key (e.g: section.key),
+	// return empty result
+	if partsLen := len(pathParts); partsLen < 2 || partsLen > 3 {
+		return ""
+	}
+
+	var sec interface{} = cfg.Raw.Section(pathParts[0])
+	for i, part := range pathParts[1:] {
+		if i == len(pathParts[1:])-1 {
+			if o, ok := sec.(*config2.Subsection); ok {
+				return o.Option(part)
+			} else {
+				return sec.(*config2.Section).Option(part)
+			}
+		}
+		sec = sec.(*config2.Section).Subsection(part)
+	}
+
+	return ""
 }
 
 // WrappedCommitObject returns commit that implements types.WrappedCommit interface.

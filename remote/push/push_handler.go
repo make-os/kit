@@ -132,7 +132,7 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteC
 	}
 
 	// Perform actions that should happen before git consumes the stream.
-	// Ex: Pre-push processing authorization
+	// - Authorization
 	h.PushReader.OnReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
 		return errors.Wrap(h.AuthorizationHandler(ur), "authorization")
 	})

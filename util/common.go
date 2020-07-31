@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/cbroglie/mustache"
+	"github.com/gen2brain/beeep"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
@@ -621,4 +622,9 @@ func IsGitInstalled(path string) (bool, string) {
 		return false, ""
 	}
 	return true, strings.Fields(string(out))[2]
+}
+
+// Notify displays a desktop notification
+func Notify(val string) {
+	beeep.Alert("", val, "")
 }

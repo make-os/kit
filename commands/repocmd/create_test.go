@@ -111,7 +111,7 @@ var _ = Describe("CreateCmd", func() {
 		})
 
 		It("should return nil on success", func() {
-			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`}
+			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`, Stdout: ioutil.Discard}
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)

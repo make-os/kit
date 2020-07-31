@@ -55,10 +55,10 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	return c, nil
 }
 
-// getRemoteAPIClients gets REST clients for every  http(s) remote
+// getRemoteAPIClientsFromRepo gets REST clients for every  http(s) remote
 // URL set on the given repository. Immediately returns nothing if
 // --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo types.LocalRepo) (clients []remote.Client) {
+func getRemoteAPIClientsFromRepo(cmd *cobra.Command, repo types.LocalRepo) (clients []remote.Client) {
 	noRemote, _ := cmd.Flags().GetBool("no.api")
 	if noRemote {
 		return
@@ -82,7 +82,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo types.LocalRepo) (clients []re
 
 // getClients returns an RPC and Remote API clients.
 // If a repository is found on the current working directory,
-// its remote endpoints are collected and converted to remote clients.
+// its remote urls are collected and converted to remote clients.
 // If `api.address` is set, another remote client is created for it.
 func getRepoAndClients(cmd *cobra.Command) (types.LocalRepo, client.Client, []remote.Client) {
 
@@ -92,7 +92,7 @@ func getRepoAndClients(cmd *cobra.Command) (types.LocalRepo, client.Client, []re
 
 	targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
 	if targetRepo != nil {
-		remoteClients = getRemoteAPIClients(cmd, targetRepo)
+		remoteClients = getRemoteAPIClientsFromRepo(cmd, targetRepo)
 	}
 
 	// If remote API address flag was set, create a client with it
@@ -128,10 +128,10 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 // addCommonTxFlags adds flags required for commands that create network transactions
 func addCommonTxFlags(fs *pflag.FlagSet) {
 	if fs.Lookup("fee") == nil {
-		fs.Float64P("fee", "f", 0, "The transaction fee to pay to the network")
+		fs.Float64P("fee", "f", 0, "Set transaction fee to pay to the network")
 	}
 	if fs.Lookup("nonce") == nil {
-		fs.Uint64P("nonce", "n", 0, "The next nonce of the account signing the transaction")
+		fs.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
 	}
 	if fs.Lookup("signing-key") == nil {
 		fs.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")

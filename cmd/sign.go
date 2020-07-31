@@ -37,6 +37,7 @@ var signCommitCmd = &cobra.Command{
 		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
+		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd)
 		if targetRepo == nil {
@@ -44,24 +45,25 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
-			Message:               msg,
-			Fee:                   cast.ToString(fee),
-			Nonce:                 nonce,
-			Value:                 value,
-			AmendCommit:           amend,
-			MergeID:               mergeID,
-			Head:                  head,
-			Branch:                branch,
-			ForceCheckout:         forceCheckout,
-			SigningKey:            signingKey,
-			PushKeyPass:           signingKeyPass,
-			Remote:                targetRemotes,
-			ResetTokens:           resetRemoteTokens,
-			RPCClient:             client,
-			RemoteClients:         remoteClients,
-			KeyUnlocker:           common.UnlockKey,
-			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
-			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
+			Message:                       msg,
+			Fee:                           cast.ToString(fee),
+			Nonce:                         nonce,
+			Value:                         value,
+			AmendCommit:                   amend,
+			MergeID:                       mergeID,
+			Head:                          head,
+			Branch:                        branch,
+			ForceCheckout:                 forceCheckout,
+			SigningKey:                    signingKey,
+			PushKeyPass:                   signingKeyPass,
+			Remote:                        targetRemotes,
+			ResetTokens:                   resetRemoteTokens,
+			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			RPCClient:                     client,
+			RemoteClients:                 remoteClients,
+			KeyUnlocker:                   common.UnlockKey,
+			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -81,6 +83,8 @@ var signTagCmd = &cobra.Command{
 		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
+		force, _ := cmd.Flags().GetBool("force")
+		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd)
 		if targetRepo == nil {
@@ -89,19 +93,21 @@ var signTagCmd = &cobra.Command{
 
 		args = cmd.Flags().Args()
 		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
-			Message:               msg,
-			Fee:                   cast.ToString(fee),
-			Nonce:                 nonce,
-			Value:                 value,
-			SigningKey:            signingKey,
-			PushKeyPass:           signingKeyPass,
-			Remote:                targetRemotes,
-			ResetTokens:           resetRemoteTokens,
-			RPCClient:             client,
-			RemoteClients:         remoteClients,
-			KeyUnlocker:           common.UnlockKey,
-			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
-			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
+			Message:                       msg,
+			Fee:                           cast.ToString(fee),
+			Nonce:                         nonce,
+			Value:                         value,
+			SigningKey:                    signingKey,
+			PushKeyPass:                   signingKeyPass,
+			Force:                         force,
+			Remote:                        targetRemotes,
+			ResetTokens:                   resetRemoteTokens,
+			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			RPCClient:                     client,
+			RemoteClients:                 remoteClients,
+			KeyUnlocker:                   common.UnlockKey,
+			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -120,6 +126,7 @@ var signNoteCmd = &cobra.Command{
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
+		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
 
 		if len(args) == 0 {
 			log.Fatal("name is required")
@@ -131,19 +138,20 @@ var signNoteCmd = &cobra.Command{
 		}
 
 		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
-			Name:                  args[0],
-			Fee:                   cast.ToString(fee),
-			Nonce:                 nonce,
-			Value:                 value,
-			SigningKey:            signingKey,
-			PushKeyPass:           signingKeyPass,
-			Remote:                targetRemotes,
-			ResetTokens:           resetRemoteTokens,
-			RPCClient:             client,
-			RemoteClients:         remoteClients,
-			KeyUnlocker:           common.UnlockKey,
-			GetNextNonce:          utils.GetNextNonceOfPushKeyOwner,
-			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
+			Name:                          args[0],
+			Fee:                           cast.ToString(fee),
+			Nonce:                         nonce,
+			Value:                         value,
+			SigningKey:                    signingKey,
+			PushKeyPass:                   signingKeyPass,
+			Remote:                        targetRemotes,
+			ResetTokens:                   resetRemoteTokens,
+			RPCClient:                     client,
+			RemoteClients:                 remoteClients,
+			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			KeyUnlocker:                   common.UnlockKey,
+			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -160,12 +168,14 @@ func init() {
 
 	// Top-level flags
 	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
+	pf.Bool("no-username", false, "Don't sent tokens on remote URLs")
 
 	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
 	signCommitCmd.Flags().StringP("branch", "b", "", "Specify a target branch to sign (default: HEAD)")
 	signCommitCmd.Flags().Bool("force", false, "Forcefully checkout the target branch to sign")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
+	signTagCmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
 
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")

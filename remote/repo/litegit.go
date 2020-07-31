@@ -125,15 +125,6 @@ func (lg *LiteGit) GetHEAD(short bool) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// GetConfig finds and returns a config value
-func (lg *LiteGit) GetConfig(path string) string {
-	out, err := ExecGitCmd(lg.gitBinPath, lg.path, "config", path)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(out))
-}
-
 // CreateSignedEmptyCommit creates and optionally sign a quiet commit.
 // msg: The commit message.
 // signingKey: The optional signing key. If provided, the commit is signed

@@ -31,6 +31,9 @@ type LocalRepo interface {
 	// the repository or its namespace
 	IsContributor(pushKeyID string) bool
 
+	// GetConfig finds and returns a config value
+	GetConfig(path string) string
+
 	// GetRemoteURLs returns the remote URLS of the repository
 	GetRemoteURLs() (urls []string)
 
@@ -144,7 +147,6 @@ type LiteGit interface {
 	GetRecentCommitHash() (string, error)
 	GetHEAD(short bool) (string, error)
 	NumCommits(branch string, noMerges bool) (int, error)
-	GetConfig(path string) string
 	CreateSignedEmptyCommit(msg, signingKey string, env ...string) error
 	CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error
 	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)

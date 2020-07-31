@@ -2,6 +2,7 @@ package repocmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/golang/mock/gomock"
@@ -91,7 +92,7 @@ var _ = Describe("VoteCmd", func() {
 		})
 
 		It("should return nil on success", func() {
-			args := &VoteArgs{RepoName: "repo1", Vote: 1, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass"}
+			args := &VoteArgs{RepoName: "repo1", Vote: 1, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Stdout: ioutil.Discard}
 			mockKey := mocks.NewMockStoredKey(ctrl)
 			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
 			mockKey.EXPECT().GetKey().Return(key)

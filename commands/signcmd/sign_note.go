@@ -4,6 +4,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
+	"github.com/stretchr/objx"
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
@@ -42,6 +44,9 @@ type SignNoteArgs struct {
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
+	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
+	SetRemotePushTokensOptionOnly bool
+
 	// RpcClient is the RPC client
 	RPCClient client.Client
 
@@ -54,12 +59,15 @@ type SignNoteArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce utils.NextNonceGetter
 
-	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
-	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
+	SetRemotePushToken server.RemotePushTokenSetter
 }
+
+type SignNoteFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
 func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error {
+
+	populateSignNoteArgsFromRepoConfig(repo, args)
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.SigningKey == "" {
@@ -81,11 +89,12 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
 	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		// If the key's address is not a push key address, then we need to convert to a push key address
-		// as that is what the remote node will accept. We do this because we assume the user wants to
-		// use a user key to sign.
 		pushKeyID = key.GetKey().PushAddr().String()
 	}
+
+	// Updated the push key passphrase to the actual passphrase used to unlock the key.
+	// This is required when the passphrase was gotten via an interactive prompt.
+	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
 	// Expand note name to full reference name if name is short
 	if !plumbing2.IsReference(args.Name) {
@@ -117,10 +126,38 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 		Head:      noteRef.Hash().String(),
 	}
 
-	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
+	// Create & set push request token to remote URLs in config
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
+		TargetRemote:                  args.Remote,
+		TxDetail:                      txDetail,
+		PushKey:                       key,
+		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		ResetTokens:                   args.ResetTokens,
+	}); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// populateSignNoteArgsFromRepoConfig populates empty arguments field from repo config.
+func populateSignNoteArgsFromRepoConfig(repo types.LocalRepo, args *SignNoteArgs) {
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+	}
+	if args.PushKeyPass == "" {
+		args.PushKeyPass = repo.GetConfig("user.passphrase")
+	}
+	if args.Fee == "" {
+		args.Fee = repo.GetConfig("user.fee")
+	}
+	if args.Nonce == 0 {
+		args.Nonce = cast.ToUint64(repo.GetConfig("user.nonce"))
+	}
+	if args.Value == "" {
+		args.Value = repo.GetConfig("user.value")
+	}
+	if args.SetRemotePushTokensOptionOnly == false {
+		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetConfig("sign.noUsername"))
+	}
 }

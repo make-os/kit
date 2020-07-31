@@ -156,20 +156,6 @@ func (mr *MockLiteGitMockRecorder) ExpandShortHash(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLiteGit)(nil).ExpandShortHash), arg0)
 }
 
-// GetConfig mocks base method
-func (m *MockLiteGit) GetConfig(arg0 string) string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfig", arg0)
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetConfig indicates an expected call of GetConfig
-func (mr *MockLiteGitMockRecorder) GetConfig(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockLiteGit)(nil).GetConfig), arg0)
-}
-
 // GetHEAD mocks base method
 func (m *MockLiteGit) GetHEAD(arg0 bool) (string, error) {
 	m.ctrl.T.Helper()

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/objx"
 	restclient "github.com/themakeos/lobe/api/remote/client"
@@ -41,8 +42,14 @@ type SignTagArgs struct {
 	// Remote specifies the remote name whose URL we will attach the push token to
 	Remote string
 
+	// Force force git-tag to overwrite existing tag
+	Force bool
+
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
+
+	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
+	SetRemotePushTokensOptionOnly bool
 
 	// RpcClient is the RPC client
 	RPCClient client.Client
@@ -56,13 +63,21 @@ type SignTagArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce utils.NextNonceGetter
 
-	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
-	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
+	// SetRemotePushToken is a function for setting push tokens on a git remote config
+	SetRemotePushToken server.RemotePushTokenSetter
 }
+
+type SignTagFunc func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
 func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error {
+
+	populateSignTagArgsFromRepoConfig(repo, args)
+
+	if args.Force {
+		gitArgs = append(gitArgs, "-f")
+	}
 
 	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
 	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
@@ -95,15 +110,27 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
 	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		// If the key's address is not a push key address, then we need to convert to a push key address
-		// as that is what the remote node will accept. We do this because we assume the user wants to
-		// use a user key to sign.
 		pushKeyID = key.GetKey().PushAddr().String()
 	}
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
 	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
+
+	// Get the tag object
+	tagRef, err := repo.Tag(gitArgs[0])
+	if err != nil && err != plumbing.ErrReferenceNotFound {
+		return err
+	}
+	tag, err := repo.TagObject(tagRef.Hash())
+	if err != nil {
+		return err
+	}
+
+	// Use the existing tag's message as default if the tag already exist.
+	if args.Message == "" && tag != nil {
+		args.Message = tag.Message
+	}
 
 	// If --message (-m) flag is provided, use the value as the message
 	if gitFlags.Lookup("message").Changed {
@@ -132,8 +159,13 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(repo, args.Remote, txDetail,
-		key, args.ResetTokens); err != nil {
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
+		TargetRemote:                  args.Remote,
+		TxDetail:                      txDetail,
+		PushKey:                       key,
+		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		ResetTokens:                   args.ResetTokens,
+	}); err != nil {
 		return err
 	}
 
@@ -155,4 +187,26 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	return nil
+}
+
+// populateSignTagArgsFromRepoConfig populates empty arguments field from repo config.
+func populateSignTagArgsFromRepoConfig(repo types.LocalRepo, args *SignTagArgs) {
+	if args.SigningKey == "" {
+		args.SigningKey = repo.GetConfig("user.signingKey")
+	}
+	if args.PushKeyPass == "" {
+		args.PushKeyPass = repo.GetConfig("user.passphrase")
+	}
+	if args.Fee == "" {
+		args.Fee = repo.GetConfig("user.fee")
+	}
+	if args.Nonce == 0 {
+		args.Nonce = cast.ToUint64(repo.GetConfig("user.nonce"))
+	}
+	if args.Value == "" {
+		args.Value = repo.GetConfig("user.value")
+	}
+	if args.SetRemotePushTokensOptionOnly == false {
+		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetConfig("sign.noUsername"))
+	}
 }

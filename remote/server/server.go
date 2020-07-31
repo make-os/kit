@@ -136,9 +136,9 @@ func NewRemoteServer(
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
-		noteSenders:             cache.NewCacheWithExpiringEntry(params.PushObjectsSendersCacheSize),
+		noteSenders:             cache.NewCacheWithExpiringEntry(params.PushNotesEndorsementsCacheSize),
 		endorsementSenders:      cache.NewCacheWithExpiringEntry(params.PushObjectsSendersCacheSize),
-		endorsementsReceived:    cache.NewCacheWithExpiringEntry(params.PushNotesEndorsementsCacheSize),
+		endorsementsReceived:    cache.NewCacheWithExpiringEntry(params.RecentlySeenPacksCacheSize),
 		checkEndorsement:        validation.CheckEndorsement,
 	}
 

@@ -63,3 +63,15 @@ func (w WrapReadSeekerCloser) Read(p []byte) (n int, err error) {
 func (w WrapReadSeekerCloser) Seek(offset int64, whence int) (int64, error) {
 	return 0, nil
 }
+
+type Reader struct {
+	Data []byte
+	Err  error
+}
+
+func (r Reader) Read(p []byte) (n int, err error) {
+	if r.Err == nil {
+		r.Err = io.EOF
+	}
+	return copy(p, r.Data[:]), r.Err
+}

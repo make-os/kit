@@ -1,6 +1,7 @@
 package push
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -8,10 +9,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
+
+var ErrSkipDuplicate = fmt.Errorf("skip duplicate request")
 
 // PackedReferenceObject represent references added to a pack file
 type PackedReferenceObject struct {
@@ -28,6 +33,11 @@ func (p *PackedReferences) Names() (refs []string) {
 		refs = append(refs, name)
 	}
 	return
+}
+
+// ID returns the ID of the packed references
+func (p *PackedReferences) ID() string {
+	return util.ToHex(crypto.Blake2b256(util.ToBytes(p)), true)
 }
 
 type PackObject struct {
@@ -136,7 +146,7 @@ func (r *PushReader) Read(gitCmd *exec.Cmd) error {
 	// Extract references from the packfile
 	r.References = r.getReferences(r.request)
 
-	// Call OnReferenceUpdateRequestRead callback method
+	// Call updateReqCB callback method
 	if r.updateReqCB != nil {
 		if err = r.updateReqCB(r.request); err != nil {
 			return err

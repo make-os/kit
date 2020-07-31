@@ -3,11 +3,15 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/commands/repocmd"
+	"github.com/themakeos/lobe/commands/signcmd"
+	"github.com/themakeos/lobe/remote/server"
 )
 
 // repoCmd represents the repo command
@@ -59,6 +63,16 @@ var repoCreateCmd = &cobra.Command{
 	},
 }
 
+func initRepoCreateCmd() {
+	sp := repoCreateCmd.Flags().StringP
+	fp := repoCreateCmd.Flags().Float64P
+	fp("value", "v", 0, "The amount of coins to transfer to the repository")
+	sp("config", "c", "", "Path to a file containing a repository configuration")
+	addCommonTxFlags(repoCreateCmd.Flags())
+	repoCreateCmd.MarkFlagRequired("fee")
+	repoCreateCmd.MarkFlagRequired("signing-key")
+}
+
 // repoVoteCmd represents a sub-command for voting on a repository's proposal
 var repoVoteCmd = &cobra.Command{
 	Use:   "vote [flags] <choice>",
@@ -96,45 +110,6 @@ var repoVoteCmd = &cobra.Command{
 	},
 }
 
-// repoConfigCmd represents a command for configuring a repository
-var repoConfigCmd = &cobra.Command{
-	Use:   "config [flags]",
-	Short: "Configure a repository",
-	Run: func(cmd *cobra.Command, args []string) {
-		// repoName, _ := cmd.Flags().GetString("repo")
-		fee, _ := cmd.Flags().GetFloat64("fee")
-		// signingKey, _ := cmd.Flags().GetString("signing-key")
-		// signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
-		// nonce, _ := cmd.Flags().GetUint64("nonce")
-		//
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
-		if targetRepo == nil {
-			log.Fatal("no repository found in current directory")
-		}
-
-		if err := repocmd.ConfigCmd(cfg, &repocmd.ConfigArgs{
-			Fee:           fee,
-			RPCClient:     client,
-			RemoteClients: remoteClients,
-			KeyUnlocker:   common.UnlockKey,
-			GetNextNonce:  utils.GetNextNonceOfAccount,
-			Stdout:        os.Stdout,
-		}); err != nil {
-			log.Fatal(err.Error())
-		}
-	},
-}
-
-func initRepoCreateCmd() {
-	sp := repoCreateCmd.Flags().StringP
-	fp := repoCreateCmd.Flags().Float64P
-	fp("value", "v", 0, "The amount of coins to transfer to the repository")
-	sp("config", "c", "", "Path to a file containing a repository configuration")
-	addCommonTxFlags(repoCreateCmd.Flags())
-	repoCreateCmd.MarkFlagRequired("fee")
-	repoCreateCmd.MarkFlagRequired("signing-key")
-}
-
 func initRepoVoteCmd() {
 	sp := repoVoteCmd.Flags().StringP
 	sp("repo", "r", "", "The name of the repository")
@@ -144,24 +119,146 @@ func initRepoVoteCmd() {
 	repoVoteCmd.MarkFlagRequired("signing-key")
 }
 
+// repoConfigCmd represents a command for configuring a repository
+var repoConfigCmd = &cobra.Command{
+	Use:     "config [flags]",
+	Aliases: []string{"set"},
+	Short:   "Configure repository settings",
+	Run: func(cmd *cobra.Command, args []string) {
+		fee, _ := cmd.Flags().GetFloat64("fee")
+		value, _ := cmd.Flags().GetFloat64("value")
+		signingKey, _ := cmd.Flags().GetString("signing-key")
+		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
+		nonce, _ := cmd.Flags().GetUint64("nonce")
+		noSign, _ := cmd.Flags().GetBool("no-sign")
+		amendCommit, _ := cmd.Flags().GetBool("commit.amend")
+		remotes, _ := cmd.Flags().GetStringSlice("remote")
+		evalPrintOut, _ := cmd.Flags().GetBool("print-out")
+
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if targetRepo == nil {
+			log.Fatal("no repository found in current directory")
+		}
+
+		var remoteObjs []repocmd.Remote
+		for _, r := range remotes {
+			path := strings.Fields(r)
+			if len(path) < 2 {
+				log.Fatal("invalid remote format. Expected '<name> <url>'")
+			}
+			remoteObjs = append(remoteObjs, repocmd.Remote{Name: path[0], URL: path[1]})
+		}
+
+		configArgs := &repocmd.ConfigArgs{
+			Value:           &value,
+			Nonce:           &nonce,
+			Fee:             &fee,
+			AmendCommit:     &amendCommit,
+			RPCClient:       client,
+			SigningKey:      &signingKey,
+			SigningKeyPass:  &signingKeyPass,
+			NoHook:          noSign,
+			PrintOutForEval: evalPrintOut,
+			RemoteClients:   remoteClients,
+			Remotes:         remoteObjs,
+			KeyUnlocker:     common.UnlockKey,
+			GetNextNonce:    utils.GetNextNonceOfAccount,
+			Stdout:          os.Stdout,
+		}
+
+		if !cmd.Flags().Changed("fee") {
+			configArgs.Fee = nil
+		}
+
+		if !cmd.Flags().Changed("value") {
+			configArgs.Value = nil
+		}
+
+		if !cmd.Flags().Changed("nonce") {
+			configArgs.Nonce = nil
+		}
+
+		if !cmd.Flags().Changed("signing-key") {
+			configArgs.SigningKey = nil
+		}
+
+		if !cmd.Flags().Changed("signing-key-pass") {
+			configArgs.SigningKeyPass = nil
+		}
+
+		if !cmd.Flags().Changed("commit.amend") {
+			configArgs.AmendCommit = nil
+		}
+
+		if err := repocmd.ConfigCmd(targetRepo, configArgs); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func initRepoConfigCmd() {
 	ssp := repoConfigCmd.Flags().StringSliceP
-	boolf := repoConfigCmd.Flags().Bool
-	ssp("set-remote", "r", []string{}, "Set one or more remotes")
-	boolf("no-sign", false, "Disable automatic signing")
+	bf := repoConfigCmd.Flags().Bool
+	bfp := repoConfigCmd.Flags().BoolP
+	fp := repoConfigCmd.Flags().Float64P
+	ssp("remote", "r", []string{}, "Set one or more remotes")
+	bf("no-sign", false, "Disable automatic signing")
+	bf("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
+	bfp("print-out", "o", false, "Print out more config to pass to eval()")
+	fp("value", "v", 0, "Set transaction value")
 	addCommonTxFlags(repoConfigCmd.Flags())
+}
+
+// repoHookCmd is a command handles git hooks
+var repoHookCmd = &cobra.Command{
+	Use:   "hook [flags] <remote>",
+	Short: "Performs hook operations",
+	Run: func(cmd *cobra.Command, args []string) {
+		authMode, _ := cmd.Flags().GetBool("askpass")
+
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if targetRepo == nil {
+			log.Fatal("no repository found in current directory")
+		}
+
+		if err := repocmd.HookCmd(cfg, targetRepo, &repocmd.HookArgs{
+			Args:               args,
+			AskPass:            authMode,
+			RemoteClients:      remoteClients,
+			RPCClient:          client,
+			KeyUnlocker:        common.UnlockKey,
+			GetNextNonce:       utils.GetNextNonceOfPushKeyOwner,
+			SetRemotePushToken: server.SetRemotePushToken,
+			CommitSigner:       signcmd.SignCommitCmd,
+			TagSigner:          signcmd.SignTagCmd,
+			NoteSigner:         signcmd.SignNoteCmd,
+			Stdout:             os.Stdout,
+			Stdin:              os.Stdin,
+			Stderr:             os.Stderr,
+		}); err != nil {
+			log.Fatal(errors.Wrap(err, "hook error").Error())
+		}
+	},
+}
+
+func initRepoHookCmd() {
+	bf := repoHookCmd.Flags().Bool
+	bf("askpass", false, "Mode for outputting credentials to git")
 }
 
 func init() {
 	rootCmd.AddCommand(repoCmd)
 	repoCmd.AddCommand(repoCreateCmd)
 	repoCmd.AddCommand(repoVoteCmd)
-	repoCmd.AddCommand(repoConfigCmd)
+	rootCmd.AddCommand(repoConfigCmd)
+	repoCmd.AddCommand(repoHookCmd)
 
 	initRepoCreateCmd()
 	initRepoVoteCmd()
 	initRepoConfigCmd()
+	initRepoHookCmd()
 
 	// API connection config flags
 	addAPIConnectionFlags(repoCmd.PersistentFlags())
+	addAPIConnectionFlags(repoConfigCmd.PersistentFlags())
 }

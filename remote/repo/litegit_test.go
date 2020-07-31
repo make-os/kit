@@ -247,19 +247,6 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".GetConfig", func() {
-		It("should return empty string when not found", func() {
-			val := r.GetConfig("some.config.key")
-			Expect(val).To(BeEmpty())
-		})
-
-		It("should return correct value when found", func() {
-			testutil2.ExecGit(path, "config", "some.config.key", "value")
-			val := r.GetConfig("some.config.key")
-			Expect(val).To(Equal("value"))
-		})
-	})
-
 	Describe(".CreateTagWithMsg", func() {
 
 		BeforeEach(func() {

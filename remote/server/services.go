@@ -306,7 +306,7 @@ func serveService(s *RequestContext) error {
 
 	noteID := s.PushHandler.(*push.BasicHandler).NoteID
 	w.Header().Set("TxID", noteID)
-	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", noteID)))
+	pktEnc.Encode(sidebandProgress(fmt.Sprintf("TxHash: %s", noteID)))
 
 	// Write output from git to the http response
 	for scn.Scan() {
