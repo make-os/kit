@@ -28,7 +28,7 @@ type Note struct {
 	References PushedReferences `json:"references,omitempty" msgpack:"references,omitempty"`
 
 	// PushKeyID is the push key ID of the pusher
-	PushKeyID []byte `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`
+	PushKeyID util.Bytes `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`
 
 	// PusherAddress is the Address of the pusher
 	PusherAddress identifier.Address `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`
@@ -43,7 +43,7 @@ type Note struct {
 	PusherAcctNonce uint64 `json:"accountNonce,omitempty" msgpack:"accountNonce,omitempty"`
 
 	// RemoteNodeSig is the signature of the note creator
-	RemoteNodeSig []byte `json:"creatorSig,omitempty" msgpack:"creatorSig,omitempty"`
+	RemoteNodeSig util.Bytes `json:"creatorSig,omitempty" msgpack:"creatorSig,omitempty"`
 
 	// RemotePubKey is the public key of the note creator/signer
 	CreatorPubKey util.Bytes32 `json:"creatorPubKey,omitempty" msgpack:"creatorPubKey,omitempty"`
@@ -244,6 +244,12 @@ func (pt *Note) GetValue() util.String {
 	return util.String(value.String())
 }
 
+// ToMap returns the map equivalent of the note
+func (pt *Note) ToMap() map[string]interface{} {
+	pt.TargetRepo = nil
+	return util.ToBasicMap(pt)
+}
+
 // EndorsedReference describes the current state of a reference endorsed by a host
 type EndorsedReference struct {
 	Hash []byte `json:"hash" msgpack:"hash,omitempty" mapstructure:"hash"`
@@ -428,15 +434,15 @@ type PushNote interface {
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
 	util.CodecUtil  `json:"-" msgpack:"-" mapstructure:"-"`
-	Name            string               `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
-	OldHash         string               `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
-	NewHash         string               `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
-	Nonce           uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
-	MergeProposalID string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
-	Fee             util.String          `json:"fee" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
-	Value           util.String          `json:"value" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
-	PushSig         []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
-	Data            *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
+	Name            string               `json:"name,omitempty" msgpack:"name,omitempty"`       // The full name of the reference
+	OldHash         string               `json:"oldHash,omitempty" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
+	NewHash         string               `json:"newHash,omitempty" msgpack:"newHash,omitempty"` // The hash of the reference after the push
+	Nonce           uint64               `json:"nonce,omitempty" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
+	MergeProposalID string               `json:"mergeID,omitempty" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	Fee             util.String          `json:"fee,omitempty" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
+	Value           util.String          `json:"value,omitempty" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
+	PushSig         util.Bytes           `json:"pushSig,omitempty" msgpack:"pushSig,omitempty"` // The signature of from the push request token
+	Data            *types.ReferenceData `json:"data,omitempty" msgpack:"data,omitempty"`       // Contains updates to the reference data
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

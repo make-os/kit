@@ -9,7 +9,9 @@ import (
 	restclient "github.com/themakeos/lobe/api/remote/client"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/api/utils"
+	"github.com/themakeos/lobe/modules"
 	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/colorfmt"
 )
 
 // GetArgs contains arguments for GetCmd.
@@ -17,6 +19,9 @@ type GetArgs struct {
 
 	// Hash is the transaction hash
 	Hash string
+
+	// Status indicates that only the status info is requested
+	Status bool
 
 	// RpcClient is the RPC client
 	RPCClient client.Client
@@ -42,6 +47,20 @@ func GetCmd(args *GetArgs) error {
 	}
 
 	if args.Stdout != nil {
+
+		if args.Status {
+			fmt.Print("Status: ")
+			switch data.Status {
+			case modules.TxStatusInBlock:
+				fmt.Fprintln(args.Stdout, colorfmt.GreenString("Confirmed"))
+			case modules.TxStatusInMempool:
+				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Mempool"))
+			case modules.TxStatusInPushpool:
+				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Pushpool"))
+			}
+			return nil
+		}
+
 		f := prettyjson.NewFormatter()
 		f.NewlineArray = ""
 		bz, _ := f.Marshal(data)

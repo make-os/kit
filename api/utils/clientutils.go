@@ -197,13 +197,13 @@ func SendCoin(
 type TxGetter func(
 	hash string,
 	rpcClient client.Client,
-	remoteClients []remote.Client) (res map[string]interface{}, err error)
+	remoteClients []remote.Client) (res *types.GetTxResponse, err error)
 
 // GetTransaction gets a finalized transaction by hash
 func GetTransaction(
 	hash string,
 	rpcClient client.Client,
-	remoteClients []remote.Client) (res map[string]interface{}, err error) {
+	remoteClients []remote.Client) (res *types.GetTxResponse, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		resp, err := c.GetTransaction(hash)
 		if err != nil {

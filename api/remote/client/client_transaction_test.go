@@ -10,6 +10,7 @@ import (
 	"github.com/imroc/req"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/themakeos/lobe/modules"
 	"github.com/themakeos/lobe/util"
 )
 
@@ -82,7 +83,10 @@ var _ = Describe("Account", func() {
 		It("should return response on success", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
-					data, _ := json.Marshal(map[string]interface{}{"value": "10.4"})
+					data, _ := json.Marshal(map[string]interface{}{
+						"status": modules.TxStatusInMempool,
+						"data":   map[string]interface{}{"key": "value"},
+					})
 					w.WriteHeader(200)
 					w.Write(data)
 				}
@@ -92,9 +96,8 @@ var _ = Describe("Account", func() {
 			}
 			resp, err := client.GetTransaction("repo1")
 			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(map[string]interface{}{
-				"value": "10.4",
-			}))
+			Expect(resp.Status).To(Equal(modules.TxStatusInMempool))
+			Expect(resp.Data).To(Equal(map[string]interface{}{"key": "value"}))
 		})
 	})
 })

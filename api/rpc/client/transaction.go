@@ -19,12 +19,12 @@ func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.HashRespo
 }
 
 // GetTransaction gets a transaction by its hash
-func (c *RPCClient) GetTransaction(hash string) (map[string]interface{}, error) {
+func (c *RPCClient) GetTransaction(hash string) (*types.GetTxResponse, error) {
 	resp, statusCode, err := c.call("tx_get", hash)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
-	var r map[string]interface{}
+	var r types.GetTxResponse
 	_ = util.DecodeMap(resp, &r)
-	return r, nil
+	return &r, nil
 }

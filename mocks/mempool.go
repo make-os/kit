@@ -315,3 +315,17 @@ func (mr *MockMempoolReactorMockRecorder) AddTx(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockMempoolReactor)(nil).AddTx), tx)
 }
+
+// GetTx mocks base method
+func (m *MockMempoolReactor) GetTx(hash string) types1.BaseTx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTx", hash)
+	ret0, _ := ret[0].(types1.BaseTx)
+	return ret0
+}
+
+// GetTx indicates an expected call of GetTx
+func (mr *MockMempoolReactorMockRecorder) GetTx(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockMempoolReactor)(nil).GetTx), hash)
+}

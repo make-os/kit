@@ -14,6 +14,7 @@ import (
 	"github.com/themakeos/lobe/mocks"
 	mocks2 "github.com/themakeos/lobe/mocks/rpc"
 	"github.com/themakeos/lobe/modules"
+	types3 "github.com/themakeos/lobe/remote/push/types"
 	"github.com/themakeos/lobe/types"
 	"github.com/themakeos/lobe/types/constants"
 	"github.com/themakeos/lobe/types/txns"
@@ -68,7 +69,7 @@ var _ = Describe("TxModule", func() {
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetTransaction("0x123").Return(map[string]interface{}{}, nil)
+			mockClient.EXPECT().GetTransaction("0x123").Return(&types2.GetTxResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("0x123")
 			})
@@ -81,17 +82,7 @@ var _ = Describe("TxModule", func() {
 			})
 		})
 
-		It("should panic if transaction does not exist", func() {
-			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			hash := tx.GetID()
-			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(nil, types.ErrTxNotFound)
-			err := &util.ReqError{Code: "tx_not_found", HttpCode: 404, Msg: "transaction not found", Field: "hash"}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Get(hash)
-			})
-		})
-
-		It("should panic if unable to get transaction", func() {
+		It("should panic if unable to get transaction from tx index", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			hash := tx.GetID()
 			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(nil, fmt.Errorf("error"))
@@ -101,12 +92,70 @@ var _ = Describe("TxModule", func() {
 			})
 		})
 
-		It("should return tx successfully if tx exist", func() {
+		It("should return result status=TxStatusInBlock and data=<tx> when transaction exists in tx index", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			hash := tx.GetID()
 			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(tx, nil)
 			res := m.Get(hash)
-			Expect(util.Map(util.ToMap(tx))).To(Equal(res))
+			Expect(res).To(HaveKey("status"))
+			Expect(res["status"]).To(Equal(modules.TxStatusInBlock))
+			Expect(res).To(HaveKey("data"))
+			Expect(res["data"]).To(Equal(util.ToMap(tx)))
+		})
+
+		When("tx not found in tx index, check mempool", func() {
+			It("should return result status=TxStatusInMempool and data=<tx> when transaction exists in the mempool", func() {
+				tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
+				hash := tx.GetID()
+				mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(nil, types.ErrTxNotFound)
+				mockMempoolReactor.EXPECT().GetTx(hash).Return(tx)
+				res := m.Get(hash)
+				Expect(res).To(HaveKey("status"))
+				Expect(res["status"]).To(Equal(modules.TxStatusInMempool))
+				Expect(res).To(HaveKey("data"))
+				Expect(res["data"]).To(Equal(util.ToMap(tx)))
+			})
+		})
+
+		When("tx not found in tx index and mempool, check pushpool", func() {
+			It("should return result status=TxStatusInPushpool and data=<note> when transaction exists in the pushpool", func() {
+				note := &types3.Note{RepoName: "repo1"}
+				hash := note.ID()
+				mockTxKeeper.EXPECT().GetTx(note.ID().Bytes()).Return(nil, types.ErrTxNotFound)
+				mockMempoolReactor.EXPECT().GetTx(hash.String()).Return(nil)
+
+				mockRemoteSrv := mocks.NewMockRemoteServer(ctrl)
+				mockLogic.EXPECT().GetRemoteServer().Return(mockRemoteSrv)
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockRemoteSrv.EXPECT().GetPushPool().Return(mockPushPool)
+				mockPushPool.EXPECT().Get(hash.HexStr()).Return(note)
+
+				res := m.Get(hash.HexStr())
+				Expect(res).To(HaveKey("status"))
+				Expect(res["status"]).To(Equal(modules.TxStatusInPushpool))
+				Expect(res).To(HaveKey("data"))
+				Expect(res["data"]).To(Equal(util.ToBasicMap(note)))
+			})
+		})
+
+		When("tx not found in tx index, mempool and pushpool", func() {
+			It("should panic", func() {
+				note := &types3.Note{RepoName: "repo1"}
+				hash := note.ID()
+				mockTxKeeper.EXPECT().GetTx(note.ID().Bytes()).Return(nil, types.ErrTxNotFound)
+				mockMempoolReactor.EXPECT().GetTx(hash.String()).Return(nil)
+
+				mockRemoteSrv := mocks.NewMockRemoteServer(ctrl)
+				mockLogic.EXPECT().GetRemoteServer().Return(mockRemoteSrv)
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockRemoteSrv.EXPECT().GetPushPool().Return(mockPushPool)
+				mockPushPool.EXPECT().Get(hash.HexStr()).Return(nil)
+
+				err := &util.ReqError{Code: "tx_not_found", HttpCode: 404, Msg: "transaction not found", Field: "hash"}
+				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+					m.Get(hash.HexStr())
+				})
+			})
 		})
 	})
 

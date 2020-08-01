@@ -12,6 +12,7 @@ import (
 	"github.com/themakeos/lobe/crypto"
 	"github.com/themakeos/lobe/mocks"
 	mocks2 "github.com/themakeos/lobe/mocks/rpc"
+	"github.com/themakeos/lobe/modules"
 	"github.com/themakeos/lobe/types/state"
 	"github.com/themakeos/lobe/util"
 )
@@ -303,7 +304,10 @@ var _ = Describe("ClientUtils", func() {
 
 		It("should return no err and response when only an rpc client is provided and it succeeded", func() {
 			hash := "0x123"
-			expectedRes := map[string]interface{}{"type": "1", "value": "10.2"}
+			expectedRes := &types.GetTxResponse{
+				Data:   map[string]interface{}{"type": "1", "value": "10.2"},
+				Status: modules.TxStatusInBlock,
+			}
 			remoteClient.EXPECT().GetTransaction(hash).Return(expectedRes, nil)
 			res, err := GetTransaction(hash, nil, []rest.Client{remoteClient})
 			Expect(err).To(BeNil())
@@ -312,7 +316,10 @@ var _ = Describe("ClientUtils", func() {
 
 		It("should return no err and response when only a remote client is provided and it succeeded", func() {
 			hash := "0x123"
-			expectedRes := map[string]interface{}{"type": "1", "value": "10.2"}
+			expectedRes := &types.GetTxResponse{
+				Data:   map[string]interface{}{"type": "1", "value": "10.2"},
+				Status: modules.TxStatusInBlock,
+			}
 			rpcClient.EXPECT().GetTransaction(hash).Return(expectedRes, nil)
 			res, err := GetTransaction(hash, rpcClient, []rest.Client{})
 			Expect(err).To(BeNil())

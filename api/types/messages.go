@@ -12,6 +12,12 @@ type HashResponse struct {
 	Hash string `json:"hash"`
 }
 
+// GetTxResponse contains the response of a request to get a transaction
+type GetTxResponse struct {
+	Data   map[string]interface{} `json:"data"`
+	Status string                 `json:"status"`
+}
+
 // GetAccountNonceResponse is the response of a request for an account's nonce.
 type GetAccountNonceResponse struct {
 	Nonce string `json:"nonce"`

@@ -71,10 +71,10 @@ func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ..
 }
 
 // GetTransaction mocks base method
-func (m *MockClient) GetTransaction(hash string) (map[string]interface{}, error) {
+func (m *MockClient) GetTransaction(hash string) (*types.GetTxResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransaction", hash)
-	ret0, _ := ret[0].(map[string]interface{})
+	ret0, _ := ret[0].(*types.GetTxResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

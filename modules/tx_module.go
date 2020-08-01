@@ -16,6 +16,12 @@ import (
 	"github.com/themakeos/lobe/util"
 )
 
+const (
+	TxStatusInMempool  = "in_mempool"
+	TxStatusInPushpool = "in_pushpool"
+	TxStatusInBlock    = "in_block"
+)
+
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	modulestypes.ModuleCommon
@@ -71,6 +77,13 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 }
 
 // Get returns a tx by hash
+//
+// ARGS:
+// hash: The transaction hash
+//
+// RETURNS object 	<map>
+// object.status 	<string>: 		The status of the transaction (in_block, in_mempool or in_pushpool).
+// object.data		<object>: 		The transaction object.
 func (m *TxModule) Get(hash string) util.Map {
 
 	if m.InAttachMode() {
@@ -78,7 +91,7 @@ func (m *TxModule) Get(hash string) util.Map {
 		if err != nil {
 			panic(err)
 		}
-		return tx
+		return util.ToMap(tx)
 	}
 
 	bz, err := util.FromHex(hash)
@@ -86,15 +99,25 @@ func (m *TxModule) Get(hash string) util.Map {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
+	// Check tx in transaction index (finalized check)
 	tx, err := m.logic.TxKeeper().GetTx(bz)
-	if err != nil {
-		if err == types.ErrTxNotFound {
-			panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
-		}
+	if err != nil && err != types.ErrTxNotFound {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	} else if tx != nil {
+		return map[string]interface{}{"status": TxStatusInBlock, "data": util.ToMap(tx)}
 	}
 
-	return util.ToMap(tx)
+	// Check tx in the mempool
+	if tx := m.logic.GetMempoolReactor().GetTx(hash); tx != nil {
+		return map[string]interface{}{"status": TxStatusInMempool, "data": util.ToMap(tx)}
+	}
+
+	// Check tx in push pool
+	if note := m.logic.GetRemoteServer().GetPushPool().Get(hash); note != nil {
+		return map[string]interface{}{"status": TxStatusInPushpool, "data": note.ToMap()}
+	}
+
+	panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 }
 
 // sendPayload sends an already signed transaction object to the network

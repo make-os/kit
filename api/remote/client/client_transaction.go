@@ -25,7 +25,7 @@ func (c *ClientV1) SendTxPayload(data map[string]interface{}) (*types.HashRespon
 }
 
 // GetTransaction gets a transaction by hash
-func (c *ClientV1) GetTransaction(hash string) (map[string]interface{}, error) {
+func (c *ClientV1) GetTransaction(hash string) (*types.GetTxResponse, error) {
 
 	path := remote.V1Path(constants.NamespaceTx, types.MethodNameGetTx)
 	resp, err := c.get(path, M{"hash": hash})
@@ -33,10 +33,10 @@ func (c *ClientV1) GetTransaction(hash string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var res map[string]interface{}
+	var res types.GetTxResponse
 	if err = resp.ToJSON(&res); err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	return &res, nil
 }

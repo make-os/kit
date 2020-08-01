@@ -30,10 +30,13 @@ var txGetCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		status, _ := cmd.Flags().GetBool("status")
+
 		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := txcmd.GetCmd(&txcmd.GetArgs{
 			Hash:           args[0],
 			RPCClient:      client,
+			Status:         status,
 			RemoteClients:  remoteClients,
 			GetTransaction: utils.GetTransaction,
 			Stdout:         os.Stdout,
@@ -46,6 +49,8 @@ var txGetCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(txCmd)
 	txCmd.AddCommand(txGetCmd)
+
+	txGetCmd.Flags().BoolP("status", "s", false, "Show only status information")
 
 	// API connection config flags
 	addAPIConnectionFlags(txCmd.PersistentFlags())
