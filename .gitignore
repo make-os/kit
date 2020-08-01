@@ -5,3 +5,4 @@ play
 *.coverprofile
 *.local
 .DS_Store
+gomock_*
