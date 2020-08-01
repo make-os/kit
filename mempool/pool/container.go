@@ -367,7 +367,7 @@ func (q *TxContainer) Sort() {
 // Find calls the given function once for every transaction and
 // returns the transaction for which the function returns true for.
 // Not safe for concurrent use.
-func (q *TxContainer) Find(iteratee func(types.BaseTx, util.String) bool) types.BaseTx {
+func (q *TxContainer) find(iteratee func(types.BaseTx, util.String) bool) types.BaseTx {
 	_, res := q.container.Find(func(index int, value interface{}) bool {
 		return iteratee(value.(*containerItem).Tx, value.(*containerItem).FeeRate)
 	})
@@ -423,19 +423,19 @@ func (q *TxContainer) Remove(txs ...types.BaseTx) {
 
 // GetByHash get a transaction by its hash from the pool
 func (q *TxContainer) GetByHash(hash string) types.BaseTx {
-	q.lck.Lock()
-	defer q.lck.Unlock()
-	return q.Find(func(tx types.BaseTx, feeRate util.String) bool {
+	q.lck.RLock()
+	defer q.lck.RUnlock()
+	return q.find(func(tx types.BaseTx, feeRate util.String) bool {
 		return tx.GetHash().String() == hash
 	})
 }
 
 // GetFeeRateByHash get a transaction's fee rate by its hash
 func (q *TxContainer) GetFeeRateByHash(hash string) util.String {
-	q.lck.Lock()
-	defer q.lck.Unlock()
+	q.lck.RLock()
+	defer q.lck.RUnlock()
 	var res util.String
-	item := q.Find(func(tx types.BaseTx, feeRate util.String) bool {
+	item := q.find(func(tx types.BaseTx, feeRate util.String) bool {
 		res = feeRate
 		return tx.GetHash().String() == hash
 	})

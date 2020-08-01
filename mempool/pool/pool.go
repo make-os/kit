@@ -59,7 +59,7 @@ func (tp *Pool) isExpired(tx types.BaseTx) bool {
 // to how long they have existed themselves.
 // Not safe for current use.
 func (tp *Pool) clean() {
-	tp.container.Find(func(tx types.BaseTx, feeRate util.String) bool {
+	tp.container.find(func(tx types.BaseTx, feeRate util.String) bool {
 		if tp.isExpired(tx) {
 			tp.container.remove(tx)
 		}
@@ -99,7 +99,7 @@ func (tp *Pool) HasByHash(hash string) bool {
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.
 func (tp *Pool) Find(iteratee func(types.BaseTx, util.String) bool) types.BaseTx {
-	return tp.container.Find(iteratee)
+	return tp.container.find(iteratee)
 }
 
 // ByteSize gets the total byte size of all transactions in the pool.

@@ -122,6 +122,11 @@ func (r *Reactor) AddTx(tx types.BaseTx) (hash util.HexBytes, err error) {
 	return tx.GetHash(), nil
 }
 
+// GetTx finds and returns a transaction by hash
+func (r *Reactor) GetTx(hash string) types.BaseTx {
+	return r.mempool.pool.GetByHash(hash)
+}
+
 // broadcastTx sends a valid transaction to all known peers.
 // It will not resend the transaction to peers that have previously
 // sent the same transaction

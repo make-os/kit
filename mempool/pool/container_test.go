@@ -320,7 +320,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should stop iterating when predicate returns true", func() {
 			var iterated []types.BaseTx
-			result := q.Find(func(tx types.BaseTx, feeRate util.String) bool {
+			result := q.find(func(tx types.BaseTx, feeRate util.String) bool {
 				iterated = append(iterated, tx)
 				return tx.GetNonce() == 2
 			})
@@ -337,7 +337,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should return nil when predicate did not return true", func() {
 			var iterated []types.BaseTx
-			result := q.Find(func(tx types.BaseTx, feeRate util.String) bool {
+			result := q.find(func(tx types.BaseTx, feeRate util.String) bool {
 				iterated = append(iterated, tx)
 				return false
 			})
