@@ -111,6 +111,13 @@ var _ = Describe("PackHelpers", func() {
 	})
 
 	Describe(".GetSizeOfObjects", func() {
+		It("should return error when note does not contain a non-nil repo reference", func() {
+			note := &types.Note{}
+			_, err := GetSizeOfObjects(note)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("repo is required"))
+		})
+
 		It("should return expected size", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commit1Hash := testutil2.GetRecentCommitHash(path, "refs/heads/master")

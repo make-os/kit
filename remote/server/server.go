@@ -92,6 +92,7 @@ type Server struct {
 	makePushHandler            PushHandlerFunc                      // Function for creating a push handler
 	noteAndEndorserBroadcaster PushNoteAndEndorsementBroadcaster    // Function for broadcasting a push note and its endorsement
 	makePushTx                 PushTxCreator                        // Function for creating a push transaction and adding it to the mempool
+	processPushNote            PushNoteProcessor                    // Function for processing a push note
 	checkEndorsement           validation.EndorsementChecker        // Function for checking push endorsement
 	endorsementBroadcaster     EndorsementBroadcaster               // Function for broadcasting an endorsement
 	noteBroadcaster            NoteBroadcaster                      // Function for broadcasting a push note
@@ -150,6 +151,7 @@ func NewRemoteServer(
 	server.endorsementBroadcaster = server.broadcastEndorsement
 	server.noteBroadcaster = server.broadcastPushNote
 	server.endorsementCreator = createEndorsement
+	server.processPushNote = server.maybeProcessPushNote
 
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)

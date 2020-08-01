@@ -97,7 +97,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// Reconstruct references transaction details from push note
 	txDetails := validation.GetTxDetailsFromNote(&note)
 
-	// Perform authorization check
+	// Perform authentication check
 	polEnforcer, err := sv.authenticate(txDetails, repoState, namespace, sv.logic, validation.CheckTxDetail)
 	if err != nil {
 		return errors.Wrap(err, "authorization failed")
@@ -125,33 +125,61 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	})
 
 	// Fetch the objects for each references in the push note.
-	// The call back is called when all objects have been fetched successfully.
-	// The hashes of the objects are returned
+	// The callback is called when all objects have been fetched successfully.
 	sv.objfetcher.Fetch(&note, func(err error) {
-		if err != nil {
-			sv.log.Error("Failed to fetch all objects of push note",
-				"ID", note.ID().String(), "Err", err.Error())
-			return
-		}
-
-		// Get the size of the pushed update objects. This is the size of the objects required
-		// to bring the local reference up to the state of the note's pushed reference.
-		note.LocalSize, err = push.GetSizeOfObjects(&note)
-		if err != nil {
-			sv.log.Error("Failed to get size of pushed references objects",
-				"ID", note.ID().String(), "Err", err.Error())
-			return
-		}
-
-		// Attempt to process the push note
-		if err = sv.maybeProcessPushNote(&note, txDetails, polEnforcer); err != nil {
-			sv.log.Debug("Failed to process push note",
-				"ID", note.ID().String(), "Err", err.Error())
-		}
+		sv.onFetch(err, &note, txDetails, polEnforcer)
 	})
 
 	return nil
 }
+
+// onFetch is called after a objects of the push note have been
+// completely fetched or an error occurred while fetching.
+func (sv *Server) onFetch(
+	err error,
+	note pushtypes.PushNote,
+	txDetails []*remotetypes.TxDetail,
+	polEnforcer policy.EnforcerFunc) error {
+
+	if err != nil {
+		sv.log.Error("Failed to fetch all note objects", "ID", note.ID().String(), "Err", err.Error())
+		return err
+	}
+
+	noteID := note.ID().String()
+
+	// Get the size of the pushed update objects. This is the size of the objects required
+	// to bring the local reference up to the state of the note's pushed reference.
+	localSize, err := push.GetSizeOfObjects(note)
+	if err != nil {
+		sv.log.Error("Failed to get size of pushed refs objects", "ID", noteID, "Err", err.Error())
+		return errors.Wrapf(err, "failed to get pushed refs objects size")
+	}
+	note.SetLocalSize(localSize)
+
+	// Verify the note's size ensuring it matches the local size
+	// TODO: Penalize remote node for the inconsistency
+	noteSize := note.GetSize()
+	if note.IsFromRemotePeer() && noteSize != localSize {
+		sv.log.Error("Note's size does not match local size", "ID",
+			noteID, "Size", noteSize, "LocalSize", localSize)
+		return fmt.Errorf("note's objects size and local size differs")
+	}
+
+	// Attempt to process the push note
+	if err = sv.processPushNote(note, txDetails, polEnforcer); err != nil {
+		sv.log.Debug("Failed to process push note", "ID", noteID, "Err", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// PushNoteProcessor is a function for processing a push note
+type PushNoteProcessor func(
+	note pushtypes.PushNote,
+	txDetails []*remotetypes.TxDetail,
+	polEnforcer policy.EnforcerFunc) error
 
 // maybeProcessPushNote validates and dry-run the push note.
 // It expects the pushed objects to be present in the target repository.

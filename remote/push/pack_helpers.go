@@ -2,6 +2,7 @@ package push
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -75,10 +76,14 @@ func MakeReferenceUpdateRequestPack(note pushtypes.PushNote) (io.ReadSeeker, err
 
 // GetSizeOfObjects returns the size of objects required to fulfil the push note.
 func GetSizeOfObjects(note pushtypes.PushNote) (uint64, error) {
+	repo := note.GetTargetRepo()
+	if repo == nil {
+		return 0, fmt.Errorf("repo is required")
+	}
+
 	var total uint64
 	for _, ref := range note.GetPushedReferences() {
-		repo := note.GetTargetRepo()
-		plumbing2.WalkBack(repo, ref.NewHash, ref.OldHash, func(hash string) error {
+		err := plumbing2.WalkBack(repo, ref.NewHash, ref.OldHash, func(hash string) error {
 			size, err := repo.GetObjectSize(hash)
 			if err != nil {
 				return err
@@ -86,6 +91,9 @@ func GetSizeOfObjects(note pushtypes.PushNote) (uint64, error) {
 			total += uint64(size)
 			return nil
 		})
+		if err != nil {
+			return 0, err
+		}
 	}
 	return total, nil
 }

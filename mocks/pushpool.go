@@ -574,6 +574,18 @@ func (mr *MockPushNoteMockRecorder) GetSize() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockPushNote)(nil).GetSize))
 }
 
+// SetLocalSize mocks base method
+func (m *MockPushNote) SetLocalSize(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetLocalSize", arg0)
+}
+
+// SetLocalSize indicates an expected call of SetLocalSize
+func (mr *MockPushNoteMockRecorder) SetLocalSize(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLocalSize", reflect.TypeOf((*MockPushNote)(nil).SetLocalSize), arg0)
+}
+
 // GetFee mocks base method
 func (m *MockPushNote) GetFee() util.String {
 	m.ctrl.T.Helper()

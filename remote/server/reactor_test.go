@@ -196,7 +196,7 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("push note validation fail", func() {
+		When("push note validation passes", func() {
 			var pn *types.Note
 
 			BeforeEach(func() {
@@ -228,6 +228,72 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
+	})
+
+	Describe(".onFetch", func() {
+		It("should return error when err is passed", func() {
+			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
+			err := svr.onFetch(fmt.Errorf("error"), &types.Note{}, []*remotetypes.TxDetail{}, polEnforcer)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return error when unable to get pushed objects size", func() {
+			mockNote := mocks.NewMockPushNote(ctrl)
+			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetTargetRepo().Return(nil)
+			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
+			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get pushed refs objects size: repo is required"))
+		})
+
+		It("should return error when note object size and local size don't match", func() {
+			mockNote := mocks.NewMockPushNote(ctrl)
+			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
+			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
+			mockNote.EXPECT().SetLocalSize(uint64(0))
+			mockNote.EXPECT().IsFromRemotePeer().Return(true)
+			mockNote.EXPECT().GetSize().Return(uint64(100))
+			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
+			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("note's objects size and local size differs"))
+		})
+
+		It("should return error when unable to process push note", func() {
+			mockNote := mocks.NewMockPushNote(ctrl)
+			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
+			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
+			mockNote.EXPECT().SetLocalSize(uint64(0))
+			mockNote.EXPECT().IsFromRemotePeer().Return(true)
+			mockNote.EXPECT().GetSize().Return(uint64(0))
+			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
+			svr.processPushNote = func(note types.PushNote, txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc) error {
+				return fmt.Errorf("error")
+			}
+			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return no error when able to process push note", func() {
+			mockNote := mocks.NewMockPushNote(ctrl)
+			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
+			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
+			mockNote.EXPECT().SetLocalSize(uint64(0))
+			mockNote.EXPECT().IsFromRemotePeer().Return(true)
+			mockNote.EXPECT().GetSize().Return(uint64(0))
+			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
+			svr.processPushNote = func(note types.PushNote, txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc) error {
+				return nil
+			}
+			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Describe(".createEndorsement", func() {

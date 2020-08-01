@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -11,7 +12,12 @@ import (
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/commands/repocmd"
 	"github.com/themakeos/lobe/commands/signcmd"
+	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/remote/server"
+	"github.com/themakeos/lobe/util"
+	"github.com/themakeos/lobe/util/colorfmt"
+	"github.com/themakeos/lobe/util/identifier"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 // repoCmd represents the repo command
@@ -42,7 +48,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client, remoteClients := getRepoAndClients(cmd)
+		_, client, remoteClients := getRepoAndClients("", cmd)
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
@@ -64,14 +70,17 @@ var repoCreateCmd = &cobra.Command{
 	},
 }
 
-func initRepoCreateCmd() {
-	sp := repoCreateCmd.Flags().StringP
-	fp := repoCreateCmd.Flags().Float64P
-	fp("value", "v", 0, "The amount of coins to transfer to the repository")
-	sp("config", "c", "", "Path to a file containing a repository configuration")
-	addCommonTxFlags(repoCreateCmd.Flags())
-	repoCreateCmd.MarkFlagRequired("fee")
-	repoCreateCmd.MarkFlagRequired("signing-key")
+func setupRepoCreateCmd(cmd *cobra.Command) {
+	sp := cmd.Flags().StringP
+	fp := cmd.Flags().Float64P
+
+	if cmd.Flags().Lookup("value") == nil {
+		fp("value", "v", 0, "The amount of coins to transfer to the repository")
+	}
+	sp("config", "c", "", "Specify repository settings or a file containing it")
+	addCommonTxFlags(cmd.Flags())
+	cmd.MarkFlagRequired("fee")
+	cmd.MarkFlagRequired("signing-key")
 }
 
 // repoVoteCmd represents a sub-command for voting on a repository's proposal
@@ -91,7 +100,7 @@ var repoVoteCmd = &cobra.Command{
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 
-		_, client, remoteClients := getRepoAndClients(cmd)
+		_, client, remoteClients := getRepoAndClients("", cmd)
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          args[0],
@@ -112,18 +121,18 @@ var repoVoteCmd = &cobra.Command{
 	},
 }
 
-func initRepoVoteCmd() {
-	sp := repoVoteCmd.Flags().StringP
+func setupRepoVoteCmd(cmd *cobra.Command) {
+	sp := cmd.Flags().StringP
 	sp("repo", "r", "", "The name of the repository")
 	sp("id", "i", "", "The unique ID of the proposal")
-	addCommonTxFlags(repoVoteCmd.Flags())
-	repoVoteCmd.MarkFlagRequired("fee")
-	repoVoteCmd.MarkFlagRequired("signing-key")
+	addCommonTxFlags(cmd.Flags())
+	cmd.MarkFlagRequired("fee")
+	cmd.MarkFlagRequired("signing-key")
 }
 
 // repoConfigCmd represents a command for configuring a repository
 var repoConfigCmd = &cobra.Command{
-	Use:     "config [flags]",
+	Use:     "config [flags] [<directory>]",
 	Aliases: []string{"set"},
 	Short:   "Configure repository settings",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -137,7 +146,16 @@ var repoConfigCmd = &cobra.Command{
 		remotes, _ := cmd.Flags().GetStringSlice("remote")
 		evalPrintOut, _ := cmd.Flags().GetBool("print-out")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		var targetRepoDir string
+		var err error
+		if len(args) > 0 {
+			targetRepoDir, err = filepath.Abs(args[0])
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		}
+
+		targetRepo, client, remoteClients := getRepoAndClients(targetRepoDir, cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -198,17 +216,21 @@ var repoConfigCmd = &cobra.Command{
 	},
 }
 
-func initRepoConfigCmd() {
-	ssp := repoConfigCmd.Flags().StringSliceP
-	bf := repoConfigCmd.Flags().Bool
-	bfp := repoConfigCmd.Flags().BoolP
-	fp := repoConfigCmd.Flags().Float64P
+func setupRepoConfigCmd(cmd *cobra.Command) {
+	ssp := cmd.Flags().StringSliceP
+	bf := cmd.Flags().Bool
+	bfp := cmd.Flags().BoolP
+	fp := cmd.Flags().Float64P
 	ssp("remote", "r", []string{}, "Set one or more remotes")
-	bf("no-sign", false, "Disable automatic signing")
+	bf("no-sign", false, "Do not enable automatic signing hook")
 	bf("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
 	bfp("print-out", "o", false, "Print out more config to pass to eval()")
-	fp("value", "v", 0, "Set transaction value")
-	addCommonTxFlags(repoConfigCmd.Flags())
+
+	if cmd.Flags().Lookup("value") == nil {
+		fp("value", "v", 0, "Set transaction value")
+	}
+
+	addCommonTxFlags(cmd.Flags())
 }
 
 // repoHookCmd is a command handles git hooks
@@ -218,7 +240,7 @@ var repoHookCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		authMode, _ := cmd.Flags().GetBool("askpass")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -243,9 +265,77 @@ var repoHookCmd = &cobra.Command{
 	},
 }
 
-func initRepoHookCmd() {
+func setupRepoHookCmd(cmd *cobra.Command) {
 	bf := repoHookCmd.Flags().Bool
 	bf("askpass", false, "Mode for outputting credentials to git")
+}
+
+// repoInitCmd represents a sub-command to initialize a new repository
+var repoInitCmd = &cobra.Command{
+	Use:   "init [flags] <name>",
+	Short: "Create and configure an empty Git repository and register it on the network",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return fmt.Errorf("repository name is required")
+		}
+
+		if identifier.IsValidResourceName(args[0]) != nil {
+			return fmt.Errorf("name (%s) is not valid", args[0])
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+
+		// Ensure no matching file or directory exist in the current directory
+		repoPath, err := filepath.Abs(args[0])
+		if err != nil {
+			log.Fatal(err.Error())
+		} else if util.IsPathOk(repoPath) {
+			log.Fatal(fmt.Sprintf("a file or directory matching the name (%s) already exists", args[0]))
+		}
+
+		// Try to create the repo on the network
+		fmt.Println(colorfmt.YellowString("Step 1:"), "Registering repository on the network")
+		repoCreateCmd.Run(cmd, args)
+
+		// Git initialize the repository
+		fmt.Println(colorfmt.YellowString("Step 2:"), "Initialized repository")
+		_, err = git.PlainInit(repoPath, false)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		// Configure the repository
+		fmt.Println(colorfmt.YellowString("Step 3:"), "Configured repository")
+		repoConfigCmd.Run(cmd, args)
+
+		fmt.Printf(`
+
+Success! Created a new repository %s:
+Enter the repository by typing:
+
+  `+colorfmt.CyanString("cd "+args[0])+`
+
+Inside that repository, you can run the following commands:
+
+  `+colorfmt.CyanString("git push")+`:
+    To push your commits, tags and notes with automatic signing.
+
+  `+colorfmt.CyanString(config.CLIName+" config")+`:
+    To reset network and repository configurations (e.g fees, nonce, remotes etc)
+
+  `+colorfmt.CyanString(config.CLIName+" sign")+`:
+    To manually sign your commit, tags and nodes.
+
+Happy hacking!
+`, colorfmt.CyanString(args[0]))
+	},
+}
+
+func setupRepoInitCmd(cmd *cobra.Command) {
+	setupRepoCreateCmd(cmd)
+	setupRepoConfigCmd(cmd)
 }
 
 func init() {
@@ -254,11 +344,13 @@ func init() {
 	repoCmd.AddCommand(repoVoteCmd)
 	rootCmd.AddCommand(repoConfigCmd)
 	repoCmd.AddCommand(repoHookCmd)
+	repoCmd.AddCommand(repoInitCmd)
 
-	initRepoCreateCmd()
-	initRepoVoteCmd()
-	initRepoConfigCmd()
-	initRepoHookCmd()
+	setupRepoCreateCmd(repoCreateCmd)
+	setupRepoVoteCmd(repoVoteCmd)
+	setupRepoConfigCmd(repoConfigCmd)
+	setupRepoHookCmd(repoHookCmd)
+	setupRepoInitCmd(repoInitCmd)
 
 	// API connection config flags
 	addAPIConnectionFlags(repoCmd.PersistentFlags())

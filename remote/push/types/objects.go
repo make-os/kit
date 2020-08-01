@@ -217,6 +217,11 @@ func (pt *Note) SizeForFeeCal() uint64 {
 	return pt.GetEcoSize() + pt.Size
 }
 
+// SetLocalSize sets the actual local size of the pushed objects
+func (pt *Note) SetLocalSize(val uint64) {
+	pt.LocalSize = val
+}
+
 // GetSize returns the total pushed objects size
 func (pt *Note) GetSize() uint64 {
 	return pt.Size
@@ -426,6 +431,7 @@ type PushNote interface {
 	TxSize() uint
 	SizeForFeeCal() uint64
 	GetSize() uint64
+	SetLocalSize(uint64)
 	GetFee() util.String
 	GetValue() util.String
 	IsFromRemotePeer() bool

@@ -180,10 +180,6 @@ func CheckPushNoteSanity(note types.PushNote) error {
 		}
 	}
 
-	if note.IsFromRemotePeer() && note.GetSize() != note.GetLocalSize() {
-		return util.FieldError("size", "size does not match local size")
-	}
-
 	if len(note.GetPusherKeyID()) == 0 {
 		return util.FieldError("pusherKeyId", "push key id is required")
 	}

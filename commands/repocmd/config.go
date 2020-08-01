@@ -167,6 +167,7 @@ func addHooks(path string) error {
 			cmd = fmt.Sprintf("%s repo hook --askpass $1", config.CLIName)
 		}
 
+		os.Mkdir(filepath.Join(path, "hooks"), 0700)
 		prePushFile := filepath.Join(path, "hooks", hook)
 		if !util.IsFileOk(prePushFile) {
 			err := ioutil.WriteFile(prePushFile, []byte(fmt.Sprintf("#!/bin/sh\n%s", cmd)), 0644)

@@ -84,13 +84,18 @@ func getRemoteAPIClientsFromRepo(cmd *cobra.Command, repo types.LocalRepo) (clie
 // If a repository is found on the current working directory,
 // its remote urls are collected and converted to remote clients.
 // If `api.address` is set, another remote client is created for it.
-func getRepoAndClients(cmd *cobra.Command) (types.LocalRepo, client.Client, []remote.Client) {
+func getRepoAndClients(repoDir string, cmd *cobra.Command) (types.LocalRepo, client.Client, []remote.Client) {
 
 	var err error
 	var targetRepo types.LocalRepo
 	var remoteClients []remote.Client
 
-	targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
+	if repoDir == "" {
+		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
+	} else {
+		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
+	}
+
 	if targetRepo != nil {
 		remoteClients = getRemoteAPIClientsFromRepo(cmd, targetRepo)
 	}
