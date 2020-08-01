@@ -19,7 +19,7 @@ import (
 	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/util"
-	config2 "gopkg.in/src-d/go-git.v4/config"
+	gocfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 type Remote struct {
@@ -116,9 +116,15 @@ func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 	// Set lobe as `gpg.program`
 	rcfg.Raw.Section("gpg").SetOption("program", config.CLIName)
 
-	// Add remotes
+	// Add user-defined remotes
 	for _, remote := range args.Remotes {
-		rcfg.Remotes[remote.Name] = &config2.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
+		rcfg.Remotes[remote.Name] = &gocfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
+	}
+
+	// If no remote was set, add default remote pointing to the local remote.
+	if len(rcfg.Remotes) == 0 {
+		url := fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, repo.GetName())
+		rcfg.Remotes["origin"] = &gocfg.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
 	// Add hooks if allowed

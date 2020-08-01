@@ -43,6 +43,10 @@ var _ = Describe("ConfigCmd", func() {
 	})
 
 	Describe(".ConfigCmd", func() {
+		BeforeEach(func() {
+			mockRepo.EXPECT().GetName().Return("repo1").AnyTimes()
+		})
+
 		It("should return error when unable to get repo config", func() {
 			mockRepo = mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
@@ -123,6 +127,16 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Remotes["r1"].URLs).To(And(ContainElement("remote.com"), ContainElement("remote2.com")))
 			Expect(repoCfg.Remotes["r2"].Name).To(Equal("r2"))
 			Expect(repoCfg.Remotes["r2"].URLs).To(ContainElement("remote3.com"))
+		})
+
+		It("should set default remote if no user-defined remote", func() {
+			args := &ConfigArgs{Remotes: []Remote{}}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Remotes).To(HaveLen(1))
+			Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
+			Expect(repoCfg.Remotes["origin"].URLs).To(ContainElement(fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, "repo1")))
 		})
 
 		It("should add pre-push hook and askpass hook files", func() {
