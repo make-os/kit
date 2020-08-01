@@ -2,6 +2,7 @@ package pkcmd
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -138,8 +139,33 @@ var _ = Describe("SignCommit", func() {
 				Expect(req.Nonce).To(Equal(uint64(10)))
 				return "0x123", nil
 			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return nil
+			}
 			err := RegisterCmd(cfg, args)
 			Expect(err).To(BeNil())
+		})
+
+		It("should return error when tx tracker returns error", func() {
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
+			mockSigningKey := mocks.NewMockStoredKey(ctrl)
+			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetKey().Return(key)
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
+				return mockSigningKey, nil
+			}
+			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				return "10", nil
+			}
+			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				return "0x123", nil
+			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return fmt.Errorf("error")
+			}
+			err := RegisterCmd(cfg, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
 		})
 	})
 })

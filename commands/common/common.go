@@ -6,12 +6,19 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/pkg/errors"
+	client2 "github.com/themakeos/lobe/api/remote/client"
+	"github.com/themakeos/lobe/api/rpc/client"
+	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/keystore"
 	"github.com/themakeos/lobe/keystore/types"
+	"github.com/themakeos/lobe/modules"
 	remotetypes "github.com/themakeos/lobe/remote/types"
+	"github.com/themakeos/lobe/util/colorfmt"
 )
 
 var (
@@ -115,4 +122,38 @@ func MakeRepoScopedPassEnvVar(appName, repoName string) string {
 // MakePassEnvVar is the name of the env variable expected to contain a key's passphrase.
 func MakePassEnvVar(appName string) string {
 	return strings.ToUpper(fmt.Sprintf("%s_PASS", appName))
+}
+
+type TxStatusTrackerFunc func(stdout io.Writer, hash string, rpcClient client.Client,
+	remoteClients []client2.Client) error
+
+// ShowTxStatusTracker tracks transaction status and displays updates to stdout.
+func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []client2.Client) error {
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Writer = stdout
+	s.Prefix = " "
+	s.Start()
+	lastStatus := ""
+	for {
+		time.Sleep(1 * time.Second)
+		resp, err := utils.GetTransaction(hash, rpcClient, remoteClients)
+		if err != nil {
+			s.Stop()
+			return err
+		}
+		if lastStatus == resp.Status {
+			continue
+		}
+		lastStatus = resp.Status
+		if resp.Status == modules.TxStatusInMempool {
+			s.Suffix = colorfmt.YellowString(" In mempool")
+		} else if resp.Status == modules.TxStatusInPushpool {
+			s.Suffix = colorfmt.YellowString(" In pushpool")
+		} else {
+			s.FinalMSG = colorfmt.GreenString("   Confirmed!\n")
+			s.Stop()
+			break
+		}
+	}
+	return nil
 }

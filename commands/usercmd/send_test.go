@@ -2,6 +2,8 @@ package contribcmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/golang/mock/gomock"
@@ -105,6 +107,34 @@ var _ = Describe("UserCmd", func() {
 
 			It("should return nil error", func() {
 				Expect(err).To(BeNil())
+			})
+		})
+
+		When("transaction tracker returns error", func() {
+			var err error
+			args := &SendArgs{SigningKey: "sk", SigningKeyPass: "sk_pass", Stdout: ioutil.Discard}
+			BeforeEach(func() {
+				mockKey := mocks.NewMockStoredKey(ctrl)
+				mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
+				mockKey.EXPECT().GetKey().Return(key)
+				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
+					return mockKey, nil
+				}
+				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+					return "10", nil
+				}
+				args.SendCoin = func(req *types.SendCoinBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+					return "0x123", nil
+				}
+				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+					return fmt.Errorf("error")
+				}
+				err = SendCmd(cfg, args)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
 			})
 		})
 	})

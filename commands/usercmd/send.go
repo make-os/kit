@@ -54,6 +54,9 @@ type SendArgs struct {
 	// SendCoin is a function for sending coins
 	SendCoin utils.CoinSender
 
+	// ShowTxStatusTracker is a function tracking and displaying tx status
+	ShowTxStatusTracker common.TxStatusTrackerFunc
+
 	Stdout io.Writer
 }
 
@@ -98,11 +101,15 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 		return errors.Wrap(err, "failed to send coins")
 	}
 
+	// Display transaction info and track status
 	if args.Stdout != nil {
 		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, " - To:", fmt2.CyanString(args.Recipient))
 		fmt.Fprintln(args.Stdout, " - Amount:", fmt2.CyanString(cast.ToString(args.Value)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -65,6 +65,9 @@ type RegisterArgs struct {
 	// CreatRegisterPushKey is a function for creating a transaction for registering a push key
 	RegisterPushKey utils.PushKeyRegister
 
+	// ShowTxStatusTracker is a function tracking and displaying tx status
+	ShowTxStatusTracker common.TxStatusTrackerFunc
+
 	Stdout io.Writer
 }
 
@@ -129,10 +132,14 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 		return errors.Wrap(err, "failed to register push key")
 	}
 
+	// Display transaction info and track status
 	if args.Stdout != nil {
 		ff(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		ff(args.Stdout, fs(" - Address: %s", fmt2.CyanString("r/"+pubKeyToReg.MustPushKeyAddress().String())))
 		ff(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+			return err
+		}
 	}
 
 	return nil

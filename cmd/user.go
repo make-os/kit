@@ -39,18 +39,19 @@ var userSend = &cobra.Command{
 
 		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := usercmd.SendCmd(cfg, &usercmd.SendArgs{
-			Recipient:      args[0],
-			Value:          value,
-			Nonce:          nonce,
-			Fee:            fee,
-			SigningKey:     signingKey,
-			SigningKeyPass: signingKeyPass,
-			RPCClient:      client,
-			RemoteClients:  remoteClients,
-			KeyUnlocker:    common.UnlockKey,
-			GetNextNonce:   utils.GetNextNonceOfAccount,
-			SendCoin:       utils.SendCoin,
-			Stdout:         os.Stdout,
+			Recipient:           args[0],
+			Value:               value,
+			Nonce:               nonce,
+			Fee:                 fee,
+			SigningKey:          signingKey,
+			SigningKeyPass:      signingKeyPass,
+			RPCClient:           client,
+			RemoteClients:       remoteClients,
+			KeyUnlocker:         common.UnlockKey,
+			GetNextNonce:        utils.GetNextNonceOfAccount,
+			SendCoin:            utils.SendCoin,
+			ShowTxStatusTracker: common.ShowTxStatusTracker,
+			Stdout:              os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}

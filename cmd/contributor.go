@@ -73,6 +73,7 @@ var contribAddCmd = &cobra.Command{
 			KeyUnlocker:         common.UnlockKey,
 			GetNextNonce:        utils.GetNextNonceOfAccount,
 			AddRepoContributors: utils.AddRepoContributors,
+			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())

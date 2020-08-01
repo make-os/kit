@@ -2,6 +2,7 @@ package repocmd
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -106,8 +107,33 @@ var _ = Describe("VoteCmd", func() {
 			args.VoteCreator = func(req *types2.RepoVoteBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "0x123", nil
 			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return nil
+			}
 			err := VoteCmd(cfg, args)
 			Expect(err).To(BeNil())
+		})
+
+		It("should return error when tx tracker returns error", func() {
+			args := &VoteArgs{RepoName: "repo1", Vote: 1, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Stdout: ioutil.Discard}
+			mockKey := mocks.NewMockStoredKey(ctrl)
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetKey().Return(key)
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
+				return mockKey, nil
+			}
+			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				return "2", nil
+			}
+			args.VoteCreator = func(req *types2.RepoVoteBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				return "0x123", nil
+			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return fmt.Errorf("error")
+			}
+			err := VoteCmd(cfg, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
 		})
 	})
 })

@@ -60,6 +60,9 @@ type CreateArgs struct {
 	// CreateRepo is a function for generating a transaction for creating a repository
 	CreateRepo utils.RepoCreator
 
+	// ShowTxStatusTracker is a function tracking and displaying tx status
+	ShowTxStatusTracker common.TxStatusTrackerFunc
+
 	Stdout io.Writer
 }
 
@@ -128,10 +131,14 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 		return errors.Wrap(err, "failed to create repo")
 	}
 
+	// Display transaction info and track status
 	if args.Stdout != nil {
 		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+			return err
+		}
 	}
 
 	return nil

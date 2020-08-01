@@ -44,19 +44,20 @@ var repoCreateCmd = &cobra.Command{
 
 		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
-			Name:           args[0],
-			Fee:            fee,
-			Value:          value,
-			SigningKey:     signingKey,
-			SigningKeyPass: signingKeyPass,
-			Nonce:          nonce,
-			Config:         configPath,
-			RPCClient:      client,
-			RemoteClients:  remoteClients,
-			KeyUnlocker:    common.UnlockKey,
-			GetNextNonce:   utils.GetNextNonceOfAccount,
-			CreateRepo:     utils.CreateRepo,
-			Stdout:         os.Stdout,
+			Name:                args[0],
+			Fee:                 fee,
+			Value:               value,
+			SigningKey:          signingKey,
+			SigningKeyPass:      signingKeyPass,
+			Nonce:               nonce,
+			Config:              configPath,
+			RPCClient:           client,
+			RemoteClients:       remoteClients,
+			KeyUnlocker:         common.UnlockKey,
+			GetNextNonce:        utils.GetNextNonceOfAccount,
+			CreateRepo:          utils.CreateRepo,
+			ShowTxStatusTracker: common.ShowTxStatusTracker,
+			Stdout:              os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -92,18 +93,19 @@ var repoVoteCmd = &cobra.Command{
 
 		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
-			RepoName:       repoName,
-			ProposalID:     args[0],
-			Fee:            fee,
-			SigningKey:     signingKey,
-			SigningKeyPass: signingKeyPass,
-			Nonce:          nonce,
-			RPCClient:      client,
-			RemoteClients:  remoteClients,
-			KeyUnlocker:    common.UnlockKey,
-			GetNextNonce:   utils.GetNextNonceOfAccount,
-			VoteCreator:    utils.VoteRepoProposal,
-			Stdout:         os.Stdout,
+			RepoName:            repoName,
+			ProposalID:          args[0],
+			Fee:                 fee,
+			SigningKey:          signingKey,
+			SigningKeyPass:      signingKeyPass,
+			Nonce:               nonce,
+			RPCClient:           client,
+			RemoteClients:       remoteClients,
+			KeyUnlocker:         common.UnlockKey,
+			GetNextNonce:        utils.GetNextNonceOfAccount,
+			VoteCreator:         utils.VoteRepoProposal,
+			ShowTxStatusTracker: common.ShowTxStatusTracker,
+			Stdout:              os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}

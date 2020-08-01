@@ -2,6 +2,7 @@ package repocmd
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -130,8 +131,33 @@ var _ = Describe("CreateCmd", func() {
 				Expect(req.Fee).To(Equal(1.2))
 				return "0x123", nil
 			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return nil
+			}
 			err := CreateCmd(cfg, args)
 			Expect(err).To(BeNil())
+		})
+
+		It("should return error when tx tracker returns error", func() {
+			args := &CreateArgs{Name: "repo1", Value: 12.2, Fee: 1.2, SigningKey: "1", SigningKeyPass: "pass", Config: `{"governance": {"propFee": "100"}}`, Stdout: ioutil.Discard}
+			mockKey := mocks.NewMockStoredKey(ctrl)
+			mockKey.EXPECT().GetUserAddress().Return(key.Addr().String())
+			mockKey.EXPECT().GetKey().Return(key)
+			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
+				return mockKey, nil
+			}
+			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				return "2", nil
+			}
+			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				return "0x123", nil
+			}
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				return fmt.Errorf("error")
+			}
+			err := CreateCmd(cfg, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
 		})
 	})
 })

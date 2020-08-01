@@ -55,6 +55,9 @@ type VoteArgs struct {
 	// CreateRepo is a function for generating a transaction for creating a repository
 	VoteCreator utils.RepoProposalVoter
 
+	// ShowTxStatusTracker is a function tracking and displaying tx status
+	ShowTxStatusTracker common.TxStatusTrackerFunc
+
 	Stdout io.Writer
 }
 
@@ -96,9 +99,13 @@ func VoteCmd(cfg *config.AppConfig, args *VoteArgs) error {
 		return errors.Wrap(err, "failed to cast vote")
 	}
 
+	// Display transaction info and track status
 	if args.Stdout != nil {
 		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+			return err
+		}
 	}
 
 	return nil

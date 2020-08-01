@@ -42,20 +42,21 @@ var pushKeyRegCmd = &cobra.Command{
 
 		_, client, remoteClients := getRepoAndClients(cmd)
 		if err := pkcmd.RegisterCmd(cfg, &pkcmd.RegisterArgs{
-			Target:          target,
-			TargetPass:      targetPass,
-			Fee:             fee,
-			SigningKey:      signingKey,
-			SigningKeyPass:  signingKeyPass,
-			Nonce:           nonce,
-			RPCClient:       client,
-			RemoteClients:   remoteClients,
-			Scopes:          scopes,
-			FeeCap:          feeCap,
-			KeyUnlocker:     common.UnlockKey,
-			GetNextNonce:    utils.GetNextNonceOfAccount,
-			RegisterPushKey: utils.RegisterPushKey,
-			Stdout:          os.Stdout,
+			Target:              target,
+			TargetPass:          targetPass,
+			Fee:                 fee,
+			SigningKey:          signingKey,
+			SigningKeyPass:      signingKeyPass,
+			Nonce:               nonce,
+			RPCClient:           client,
+			RemoteClients:       remoteClients,
+			Scopes:              scopes,
+			FeeCap:              feeCap,
+			KeyUnlocker:         common.UnlockKey,
+			GetNextNonce:        utils.GetNextNonceOfAccount,
+			RegisterPushKey:     utils.RegisterPushKey,
+			ShowTxStatusTracker: common.ShowTxStatusTracker,
+			Stdout:              os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
