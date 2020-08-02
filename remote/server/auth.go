@@ -69,7 +69,7 @@ func authenticate(
 
 		// Validate the transaction detail
 		if err := checkTxDetail(detail, keepers, i); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("token error"))
+			return nil, errors.Wrap(err, fmt.Sprintf("token error (%s)", detail.Reference))
 		}
 
 		lastPushKeyID, lastRepoName, lastRepoNamespace, lastAcctNonce = pushKeyID, detail.RepoName,
@@ -92,10 +92,7 @@ func isPullRequest(r *http.Request) bool {
 // - r: The http request
 // - repo: The target repository
 // - namespace: The namespace object. Nil means default namespace.
-func (sv *Server) handleAuth(
-	r *http.Request,
-	w http.ResponseWriter,
-	repo *state.Repository,
+func (sv *Server) handleAuth(r *http.Request, w http.ResponseWriter, repo *state.Repository,
 	namespace *state.Namespace) (txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc, err error) {
 
 	// Do not require auth for pull request (yet)
@@ -117,7 +114,6 @@ func (sv *Server) handleAuth(
 		txDetail, err := DecodePushToken(token)
 		if err != nil {
 			err = fmt.Errorf("malformed push token at index %d. Unable to decode", i)
-			w.Header().Set("Err", fmt2.RedString(err.Error()))
 			return nil, nil, err
 		}
 		txDetails = append(txDetails, txDetail)
@@ -126,7 +122,6 @@ func (sv *Server) handleAuth(
 	// Perform authorization checks
 	polEnforcer, err = sv.authenticate(txDetails, repo, namespace, sv.logic, validation.CheckTxDetail)
 	if err != nil {
-		w.Header().Set("Err", fmt2.RedString(err.Error()))
 		return nil, nil, err
 	}
 

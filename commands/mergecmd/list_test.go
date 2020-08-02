@@ -76,7 +76,7 @@ var _ = Describe("MergeRequestList", func() {
 			out := bytes.NewBuffer(nil)
 			args := &mergecmd.MergeRequestListArgs{
 				StdErr: out, StdOut: out,
-				Format: "%H%",
+				Format: "%H",
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
@@ -115,7 +115,7 @@ var _ = Describe("MergeRequestList", func() {
 			out := bytes.NewBuffer(nil)
 			args := &mergecmd.MergeRequestListArgs{
 				StdErr: out, StdOut: out,
-				Format:  "%H%",
+				Format:  "%H",
 				Reverse: true,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
@@ -155,7 +155,7 @@ var _ = Describe("MergeRequestList", func() {
 			out := bytes.NewBuffer(nil)
 			args := &mergecmd.MergeRequestListArgs{
 				StdErr: out, StdOut: out,
-				Format: "%H%",
+				Format: "%H",
 				Limit:  1,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil

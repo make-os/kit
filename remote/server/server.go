@@ -30,6 +30,7 @@ import (
 	"github.com/themakeos/lobe/types/state"
 	crypto2 "github.com/themakeos/lobe/util/crypto"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/tendermint/tendermint/p2p"
@@ -392,16 +393,26 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	repoState := sv.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		w.WriteHeader(http.StatusNotFound)
-		sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
-			"Status", http.StatusText(http.StatusNotFound))
+		sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound)
 		return
 	}
 
 	// Authenticate pusher
 	txDetails, polEnforcer, err := sv.handleAuth(r, w, repoState, namespace)
 	if err != nil {
-		w.Header().Set("WWW-Authenticate", "Basic")
-		w.WriteHeader(http.StatusUnauthorized)
+		if err == ErrPushTokenRequired {
+			w.Header().Set("WWW-Authenticate", "Basic")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// Output sideband error message. We are adopting status 205 as
+		// the preferred response code since `git push` will not show the error
+		// if it is not within 200-209 range.
+		w.WriteHeader(http.StatusResetContent)
+		pktEnc := pktline.NewEncoder(w)
+		pktEnc.Encode(sidebandErr(err.Error()))
+		pktEnc.Flush()
 		return
 	}
 
@@ -413,10 +424,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			statusCode = http.StatusNotFound
 		}
 		w.WriteHeader(statusCode)
-		sv.log.Debug("Failed to open target repository",
-			"Name", repoName,
-			"Code", statusCode,
-			"Status", http.StatusText(statusCode))
+		sv.log.Debug("Failed to open target repository", "Name", repoName, "Code", statusCode)
 		return
 	}
 

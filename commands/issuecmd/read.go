@@ -41,22 +41,22 @@ type IssueReadArgs struct {
 
 	// Format specifies a format to use for generating each comment output to Stdout.
 	// The following place holders are supported:
-	// - %i%    - Index of the comment
-	// - %a% 	- Author of the comment
-	// - %e% 	- Author email
-	// - %t% 	- Title of the comment
-	// - %c% 	- The body of the comment
-	// - %d% 	- Date of creation
-	// - %H%    - The full hash of the comment
-	// - %h%    - The short hash of the comment
-	// - %n%  	- The reference name of the issue
-	// - %l% 	- The label attached to the comment
-	// - %as% 	- The assignees attached to the comment
-	// - %r% 	- The short commit hash the current comment is replying to.
-	// - %R% 	- The full commit hash the current comment is replying to.
-	// - %rs% 	- The comment's reactions.
-	// - %pk% 	- The pushers push key ID
-	// - %cl% 	- Flag for close status of the post (true/false)
+	// - %i    	- Index of the comment
+	// - %a 	- Author of the comment
+	// - %e 	- Author email
+	// - %t 	- Title of the comment
+	// - %c 	- The body of the comment
+	// - %d 	- Date of creation
+	// - %H    	- The full hash of the comment
+	// - %h    	- The short hash of the comment
+	// - %n  	- The reference name of the issue
+	// - %l 	- The label attached to the comment
+	// - %as 	- The assignees attached to the comment
+	// - %r 	- The short commit hash the current comment is replying to.
+	// - %R 	- The full commit hash the current comment is replying to.
+	// - %rs 	- The comment's reactions.
+	// - %pk 	- The pushers push key ID
+	// - %cl 	- Flag for close status of the post (true/false)
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -154,7 +154,7 @@ func formatAndPrintIssueComments(
 
 		var replyToFmt, replyTo string
 		if comment.Body.ReplyTo != "" {
-			replyToFmt = "\nReplyTo:    %R%"
+			replyToFmt = "\nReplyTo:    %R"
 			replyTo = comment.Body.ReplyTo
 		}
 
@@ -163,7 +163,7 @@ func formatAndPrintIssueComments(
 			assignees = strings.Join(*comment.Body.Assignees, ",")
 		}
 		if assignees != "" {
-			assigneeFmt = "\nAssignees:  %as%"
+			assigneeFmt = "\nAssignees:  %as"
 		}
 
 		var labels, labelsFmt string
@@ -171,7 +171,7 @@ func formatAndPrintIssueComments(
 			labels = strings.Join(*comment.Body.Labels, ",")
 		}
 		if labels != "" {
-			labelsFmt = "\nLabels:     %l%"
+			labelsFmt = "\nLabels:     %l"
 		}
 
 		var reactions, reactionsFmt string
@@ -187,12 +187,12 @@ func formatAndPrintIssueComments(
 			reactions = strings.Join(reactionsCountMap, ", ")
 		}
 		if reactions != "" {
-			reactionsFmt = "\nReactions:  %rs%"
+			reactionsFmt = "\nReactions:  %rs"
 		}
 
 		pusherKeyFmt := ""
 		if comment.Pusher != "" {
-			pusherKeyFmt = "\nPusher:     %pk%"
+			pusherKeyFmt = "\nPusher:     %pk"
 		}
 
 		// Define the data for format parsing
@@ -218,22 +218,16 @@ func formatAndPrintIssueComments(
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + fmt2.YellowString("comments %H% #%i%") + `
-Author:     %a% <%e%>` + pusherKeyFmt + `
-Title:      %t%
-Date:       %d%` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reactionsFmt + `
+			format = `` + fmt2.YellowString("comments %H #%i") + `
+Author:     %a <%e>` + pusherKeyFmt + `
+Title:      %t
+Date:       %d` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reactionsFmt + `
 
-%c%
+%c
 `
 		}
 
-		str, err := util.MustacheParseString(format, data, util.MustacheParserOpt{
-			ForceRaw: true, StartTag: "%", EndTag: "%"})
-		if err != nil {
-			return errors.Wrap(err, "failed to parse format")
-		}
-
-		buf.WriteString(str)
+		buf.WriteString(util.ParseTemplate(format, data))
 		buf.WriteString("\n")
 	}
 

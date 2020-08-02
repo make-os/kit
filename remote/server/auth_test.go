@@ -139,13 +139,13 @@ var _ = Describe("Auth", func() {
 		})
 
 		It("should return error when a reference transaction detail failed validation", func() {
-			txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+			txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/m", Nonce: 1, PushKeyID: key.PushAddr().String()}
 			txDetails := []*types.TxDetail{txD}
 			repoState := state.BareRepository()
 			repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 			_, err := authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(fmt.Errorf("bad error")))
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("token error: bad error"))
+			Expect(err.Error()).To(Equal("token error (refs/heads/m): bad error"))
 		})
 
 		Context("on success", func() {

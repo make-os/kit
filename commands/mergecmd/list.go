@@ -34,20 +34,20 @@ type MergeRequestListArgs struct {
 
 	// Format specifies a format to use for generating each post output to Stdout.
 	// The following place holders are supported:
-	// - %i%    - Index of the post
-	// - %bb%	- Base branch name
-	// - %bh%	- Base branch hash
-	// - %tb%	- Target branch name
-	// - %th%	- Target branch hash
-	// - %a% 	- Author of the post
-	// - %e% 	- Author email
-	// - %t% 	- Title of the post
-	// - %c% 	- The body/preview of the post
-	// - %d% 	- Date of creation
-	// - %H%    - The full hash of the first comment
-	// - %h%    - The short hash of the first comment
-	// - %n%  	- The reference name of the post
-	// - %pk% 	- The pushers push key ID
+	// - %i    	- Index of the post
+	// - %bb	- Base branch name
+	// - %bh	- Base branch hash
+	// - %tb	- Target branch name
+	// - %th	- Target branch hash
+	// - %a 	- Author of the post
+	// - %e 	- Author email
+	// - %t 	- Title of the post
+	// - %c 	- The body/preview of the post
+	// - %d 	- Date of creation
+	// - %H    	- The full hash of the first comment
+	// - %h    	- The short hash of the first comment
+	// - %n  	- The reference name of the post
+	// - %pk 	- The pushers push key ID
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -107,27 +107,27 @@ func formatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 
 		var baseFmt string
 		if mr.Comment().Body.BaseBranch != "" {
-			baseFmt = "\nBase Branch:    %bb%"
+			baseFmt = "\nBase Branch:    %bb"
 		}
 
 		var baseHashFmt string
 		if mr.Comment().Body.BaseBranchHash != "" {
-			baseHashFmt = "\nBase Hash:      %bh%"
+			baseHashFmt = "\nBase Hash:      %bh"
 		}
 
 		var targetFmt string
 		if mr.Comment().Body.TargetBranch != "" {
-			targetFmt = "\nTarget Branch:  %tb%"
+			targetFmt = "\nTarget Branch:  %tb"
 		}
 
 		var targetHashFmt string
 		if mr.Comment().Body.TargetBranchHash != "" {
-			targetHashFmt = "\nTarget Hash:    %th%"
+			targetHashFmt = "\nTarget Hash:    %th"
 		}
 
 		pusherKeyFmt := ""
 		if mr.Comment().Pusher != "" {
-			pusherKeyFmt = "\nPusher:         %pk%"
+			pusherKeyFmt = "\nPusher:         %pk"
 		}
 
 		// Extract preview
@@ -136,11 +136,11 @@ func formatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + fmt2.YellowString("merge-request %H% %n%") + `
-Title:          %t%` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
-Author:         %a% <%e%>` + pusherKeyFmt + `
-Date:           %d%
-%c%
+			format = `` + fmt2.YellowString("merge-request %H %n") + `
+Title:          %t` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
+Author:         %a <%e>` + pusherKeyFmt + `
+Date:           %d
+%c
 `
 		}
 
@@ -166,13 +166,7 @@ Date:           %d%
 			buf.WriteString("\n")
 		}
 
-		str, err := util.MustacheParseString(format, data, util.MustacheParserOpt{
-			ForceRaw: true, StartTag: "%", EndTag: "%"})
-		if err != nil {
-			return errors.Wrap(err, "failed to parse format")
-		}
-
-		_, err = buf.WriteString(str)
+		_, err := buf.WriteString(util.ParseTemplate(format, data))
 		if err != nil {
 			return err
 		}

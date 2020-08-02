@@ -41,27 +41,27 @@ type MergeRequestReadArgs struct {
 
 	// Format specifies a format to use for generating each comment output to Stdout.
 	// The following place holders are supported:
-	// - %i%    - Index of the comment
-	// - %i%    - Index of the post
-	// - %bb%	- Base branch name
-	// - %bh%	- Base branch hash
-	// - %tb%	- Target branch name
-	// - %th%	- Target branch hash
-	// - %a% 	- Author of the comment
-	// - %e% 	- Author email
-	// - %t% 	- Title of the comment
-	// - %c% 	- The body of the comment
-	// - %d% 	- Date of creation
-	// - %H%    - The full hash of the comment
-	// - %h%    - The short hash of the comment
-	// - %n%  	- The reference name of the merge request post
-	// - %l% 	- The label attached to the comment
-	// - %as% 	- The assignees attached to the comment
-	// - %r% 	- The short commit hash the current comment is replying to.
-	// - %R% 	- The full commit hash the current comment is replying to.
-	// - %rs% 	- The comment's reactions.
-	// - %pk% 	- The pushers push key ID
-	// - %cl% 	- Flag for close status of the post (true/false)
+	// - %i    	- Index of the comment
+	// - %i    	- Index of the post
+	// - %bb	- Base branch name
+	// - %bh	- Base branch hash
+	// - %tb	- Target branch name
+	// - %th	- Target branch hash
+	// - %a 	- Author of the comment
+	// - %e 	- Author email
+	// - %t 	- Title of the comment
+	// - %c 	- The body of the comment
+	// - %d 	- Date of creation
+	// - %H    	- The full hash of the comment
+	// - %h    	- The short hash of the comment
+	// - %n  	- The reference name of the merge request post
+	// - %l 	- The label attached to the comment
+	// - %as 	- The assignees attached to the comment
+	// - %r 	- The short commit hash the current comment is replying to.
+	// - %R 	- The full commit hash the current comment is replying to.
+	// - %rs 	- The comment's reactions.
+	// - %pk 	- The pushers push key ID
+	// - %cl 	- Flag for close status of the post (true/false)
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -159,28 +159,28 @@ func formatAndPrintMergeRequestComments(
 
 		var replyToFmt, replyTo string
 		if comment.Body.ReplyTo != "" {
-			replyToFmt = "\nReplyTo:    %R%"
+			replyToFmt = "\nReplyTo:    %R"
 			replyTo = comment.Body.ReplyTo
 		}
 
 		var baseFmt string
 		if comment.Body.BaseBranch != "" {
-			baseFmt = "\nBase Branch:    %bb%"
+			baseFmt = "\nBase Branch:    %bb"
 		}
 
 		var baseHashFmt string
 		if comment.Body.BaseBranchHash != "" {
-			baseHashFmt = "\nBase Hash:      %bh%"
+			baseHashFmt = "\nBase Hash:      %bh"
 		}
 
 		var targetFmt string
 		if comment.Body.TargetBranch != "" {
-			targetFmt = "\nTarget Branch:  %tb%"
+			targetFmt = "\nTarget Branch:  %tb"
 		}
 
 		var targetHashFmt string
 		if comment.Body.TargetBranchHash != "" {
-			targetHashFmt = "\nTarget Hash:    %th%"
+			targetHashFmt = "\nTarget Hash:    %th"
 		}
 
 		var reactions, reactionsFmt string
@@ -196,12 +196,12 @@ func formatAndPrintMergeRequestComments(
 			reactions = strings.Join(reactionsCountMap, ", ")
 		}
 		if reactions != "" {
-			reactionsFmt = "\nReactions:  %rs%"
+			reactionsFmt = "\nReactions:  %rs"
 		}
 
 		pusherKeyFmt := ""
 		if comment.Pusher != "" {
-			pusherKeyFmt = "\nPusher:         %pk%"
+			pusherKeyFmt = "\nPusher:         %pk"
 		}
 
 		// Define the data for format parsing
@@ -229,22 +229,16 @@ func formatAndPrintMergeRequestComments(
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + fmt2.YellowString("comments %H% #%i%") + `
-Title:          %t%` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
-Author:         %a% <%e%>` + pusherKeyFmt + ` 
-Date:           %d%` + replyToFmt + `` + reactionsFmt + `
+			format = `` + fmt2.YellowString("comments %H #%i") + `
+Title:          %t` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
+Author:         %a <%e>` + pusherKeyFmt + ` 
+Date:           %d` + replyToFmt + `` + reactionsFmt + `
 
-%c%
+%c
 `
 		}
 
-		str, err := util.MustacheParseString(format, data, util.MustacheParserOpt{
-			ForceRaw: true, StartTag: "%", EndTag: "%"})
-		if err != nil {
-			return errors.Wrap(err, "failed to parse format")
-		}
-
-		buf.WriteString(str)
+		buf.WriteString(util.ParseTemplate(format, data))
 		buf.WriteString("\n")
 	}
 

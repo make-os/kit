@@ -7,8 +7,12 @@ import (
 	"github.com/themakeos/lobe/config"
 )
 
-func colorStr(format string, attr []color.Attribute, a ...interface{}) string {
+func colorSprintf(format string, attr []color.Attribute, a ...interface{}) string {
 	return NewColor(attr...).Sprintf(format, a...)
+}
+
+func colorSprint(format string, attr []color.Attribute) string {
+	return NewColor(attr...).Sprint(format)
 }
 
 // ColorFmt wraps fatih's Color providing a way to turn color off
@@ -37,37 +41,40 @@ func (c *ColorFmt) Sprintf(format string, a ...interface{}) string {
 }
 
 func RedString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgRed}, a...)
+	return colorSprintf(format, []color.Attribute{color.FgRed}, a...)
 }
 
 func YellowString(fmt string, a ...interface{}) string {
-	return colorStr(fmt, []color.Attribute{color.FgYellow}, a...)
+	if len(a) == 0 {
+		return colorSprint(fmt, []color.Attribute{color.FgYellow})
+	}
+	return colorSprintf(fmt, []color.Attribute{color.FgYellow}, a...)
 }
 
 func GreenString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgGreen}, a...)
+	return colorSprintf(format, []color.Attribute{color.FgGreen}, a...)
 }
 
 func CyanString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgCyan}, a...)
+	return colorSprintf(format, []color.Attribute{color.FgCyan}, a...)
 }
 
 func HiCyanString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgHiCyan}, a...)
+	return colorSprintf(format, []color.Attribute{color.FgHiCyan}, a...)
 }
 
 func BoldString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.Bold}, a...)
+	return colorSprintf(format, []color.Attribute{color.Bold}, a...)
 }
 
 func WhiteBoldString(format string, a ...interface{}) string {
-	return colorStr(format, []color.Attribute{color.FgWhite, color.Bold}, a...)
+	return colorSprintf(format, []color.Attribute{color.FgWhite, color.Bold}, a...)
 }
 
 func Red(format string, a ...interface{}) {
-	fmt.Print(colorStr(format, []color.Attribute{color.FgRed}, a...))
+	fmt.Print(colorSprintf(format, []color.Attribute{color.FgRed}, a...))
 }
 
 func Magenta(format string, a ...interface{}) {
-	fmt.Print(colorStr(format, []color.Attribute{color.FgMagenta}, a...))
+	fmt.Print(colorSprintf(format, []color.Attribute{color.FgMagenta}, a...))
 }

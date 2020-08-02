@@ -34,16 +34,16 @@ type IssueListArgs struct {
 
 	// Format specifies a format to use for generating each post output to Stdout.
 	// The following place holders are supported:
-	// - %i%    - Index of the post
-	// - %a% 	- Author of the post
-	// - %e% 	- Author email
-	// - %t% 	- Title of the post
-	// - %c% 	- The body/preview of the post
-	// - %d% 	- Date of creation
-	// - %H%    - The full hash of the first comment
-	// - %h%    - The short hash of the first comment
-	// - %n%  	- The reference name of the post
-	// - %pk% 	- The pushers push key ID
+	// - %i    	- Index of the post
+	// - %a 	- Author of the post
+	// - %e 	- Author email
+	// - %t 	- Title of the post
+	// - %c 	- The body/preview of the post
+	// - %d 	- Date of creation
+	// - %H    	- The full hash of the first comment
+	// - %h    	- The short hash of the first comment
+	// - %n  	- The reference name of the post
+	// - %pk 	- The pushers push key ID
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -103,7 +103,7 @@ func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 
 		pusherKeyFmt := ""
 		if issue.Comment().Pusher != "" {
-			pusherKeyFmt = "\nPusher: %pk%"
+			pusherKeyFmt = "\nPusher: %pk"
 		}
 
 		// Extract preview
@@ -112,11 +112,11 @@ func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + cf.YellowString("issue %H% %n%") + `
-Title:  %t%
-Author: %a% <%e%>` + pusherKeyFmt + `
-Date:   %d%
-%c%
+			format = `` + cf.YellowString("issue %H %n") + `
+Title:  %t
+Author: %a <%e>` + pusherKeyFmt + `
+Date:   %d
+%c
 `
 		}
 
@@ -138,13 +138,7 @@ Date:   %d%
 			buf.WriteString("\n")
 		}
 
-		str, err := util.MustacheParseString(format, data, util.MustacheParserOpt{
-			ForceRaw: true, StartTag: "%", EndTag: "%"})
-		if err != nil {
-			return errors.Wrap(err, "failed to parse format")
-		}
-
-		_, err = buf.WriteString(str)
+		_, err := buf.WriteString(util.ParseTemplate(format, data))
 		if err != nil {
 			return err
 		}

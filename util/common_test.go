@@ -38,6 +38,17 @@ var _ = Describe("Common", func() {
 		})
 	})
 
+	Describe(".ParseTemplate", func() {
+		It("should test cases correctly", func() {
+			out := ParseTemplate("We have %d by %d planks. My friend %T will sell them", map[string]interface{}{"d": 2, "T": "Odion"})
+			Expect(out).To(Equal("We have 2 by 2 planks. My friend Odion will sell them"))
+			out = ParseTemplate("%th by %th, %t", map[string]interface{}{"th": 2, "t": "Odion"})
+			Expect(out).To(Equal("2 by 2, Odion"))
+			out = ParseTemplate("%t by %t, %th", map[string]interface{}{"th": 2, "t": "Odion"})
+			Expect(out).To(Equal("Odion by Odion, 2"))
+		})
+	})
+
 	Describe(".ToObject", func() {
 
 		var bs []byte
@@ -550,21 +561,6 @@ var _ = Describe("Common", func() {
 				Expect(ns).To(Equal("coinfiddle"))
 				Expect(domain).To(Equal("payment"))
 			})
-		})
-	})
-
-	Describe(".MustacheParseString", func() {
-		It("should return error if template is invalid", func() {
-			_, err := MustacheParseString("{{ stuff", map[string]interface{}{}, MustacheParserOpt{StartTag: "{{"})
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("runtime error: index out of range [0] with length 0"))
-		})
-
-		It("should return no error if template is valid", func() {
-			str, err := MustacheParseString("<stuff>", map[string]interface{}{"stuff": "123"},
-				MustacheParserOpt{StartTag: "<", EndTag: ">"})
-			Expect(err).To(BeNil())
-			Expect(str).To(Equal("123"))
 		})
 	})
 

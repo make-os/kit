@@ -15,11 +15,11 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cbroglie/mustache"
 	"github.com/gen2brain/beeep"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
@@ -549,19 +549,19 @@ type MustacheParserOpt struct {
 	EndTag   string
 }
 
-// MustacheParseString passes a given string format.
-func MustacheParseString(format string, ctx map[string]interface{}, opt MustacheParserOpt) (str string, err error) {
-	defer func() {
-		if rcv, ok := recover().(error); ok {
-			err = rcv
-		}
-	}()
-	tpl, err := mustache.ParseStringPartialsRawWithDelims(format, nil,
-		opt.StartTag, opt.EndTag, opt.ForceRaw)
-	if err != nil {
-		return "", err
+// ParseTemplate parses a template using the given context
+func ParseTemplate(tmp string, ctx map[string]interface{}) string {
+
+	// Get the keys and sort them in descending order
+	var ctxKeys = funk.Keys(ctx).([]string)
+	sort.Strings(ctxKeys)
+	ctxKeys = funk.ReverseStrings(ctxKeys)
+
+	for _, k := range ctxKeys {
+		tmp = strings.Replace(tmp, "%"+k, fmt.Sprintf("%v", ctx[k]), -1)
 	}
-	return tpl.Render(ctx)
+
+	return tmp
 }
 
 // IsString checks whether the interface is a string
