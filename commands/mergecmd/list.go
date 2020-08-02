@@ -166,7 +166,7 @@ Date:           %d
 			buf.WriteString("\n")
 		}
 
-		_, err := buf.WriteString(util.ParseTemplate(format, data))
+		_, err := buf.WriteString(util.ParseVerbs(format, data))
 		if err != nil {
 			return err
 		}

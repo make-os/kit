@@ -38,13 +38,13 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".ParseTemplate", func() {
+	Describe(".ParseVerbs", func() {
 		It("should test cases correctly", func() {
-			out := ParseTemplate("We have %d by %d planks. My friend %T will sell them", map[string]interface{}{"d": 2, "T": "Odion"})
+			out := ParseVerbs("We have %d by %d planks. My friend %T will sell them", map[string]interface{}{"d": 2, "T": "Odion"})
 			Expect(out).To(Equal("We have 2 by 2 planks. My friend Odion will sell them"))
-			out = ParseTemplate("%th by %th, %t", map[string]interface{}{"th": 2, "t": "Odion"})
+			out = ParseVerbs("%th by %th, %t", map[string]interface{}{"th": 2, "t": "Odion"})
 			Expect(out).To(Equal("2 by 2, Odion"))
-			out = ParseTemplate("%t by %t, %th", map[string]interface{}{"th": 2, "t": "Odion"})
+			out = ParseVerbs("%t by %t, %th", map[string]interface{}{"th": 2, "t": "Odion"})
 			Expect(out).To(Equal("Odion by Odion, 2"))
 		})
 	})

@@ -542,23 +542,16 @@ func ReadFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (s
 	return string(bz), nil
 }
 
-// MustacheParserOpt are options for MustacheParseString
-type MustacheParserOpt struct {
-	ForceRaw bool
-	StartTag string
-	EndTag   string
-}
-
-// ParseTemplate parses a template using the given context
-func ParseTemplate(tmp string, ctx map[string]interface{}) string {
+// ParseVerbs parses a template containing verbs prefixed with %.
+func ParseVerbs(tmp string, verbsValue map[string]interface{}) string {
 
 	// Get the keys and sort them in descending order
-	var ctxKeys = funk.Keys(ctx).([]string)
-	sort.Strings(ctxKeys)
-	ctxKeys = funk.ReverseStrings(ctxKeys)
+	var verbs = funk.Keys(verbsValue).([]string)
+	sort.Strings(verbs)
+	verbs = funk.ReverseStrings(verbs)
 
-	for _, k := range ctxKeys {
-		tmp = strings.Replace(tmp, "%"+k, fmt.Sprintf("%v", ctx[k]), -1)
+	for _, k := range verbs {
+		tmp = strings.Replace(tmp, "%"+k, fmt.Sprintf("%v", verbsValue[k]), -1)
 	}
 
 	return tmp

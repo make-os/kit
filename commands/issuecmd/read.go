@@ -227,7 +227,7 @@ Date:       %d` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reaction
 `
 		}
 
-		buf.WriteString(util.ParseTemplate(format, data))
+		buf.WriteString(util.ParseVerbs(format, data))
 		buf.WriteString("\n")
 	}
 
