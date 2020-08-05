@@ -367,7 +367,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if namespaceName != remotetypes.DefaultNS {
 
 		// Get the namespace, return 404 if not found
-		namespace = sv.logic.NamespaceKeeper().Get(crypto2.HashNamespace(namespaceName))
+		namespace = sv.logic.NamespaceKeeper().Get(crypto2.MakeNamespaceHash(namespaceName))
 		if namespace.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,

@@ -107,22 +107,22 @@ var _ = Describe("Key", func() {
 	})
 
 	Describe(".Addr", func() {
-		It("should return 'maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5'", func() {
+		It("should return 'os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8'", func() {
 			seed := int64(1)
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.Addr()
-			Expect(addr).To(Equal(identifier.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
+			Expect(addr).To(Equal(identifier.Address("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")))
 		})
 	})
 
 	Describe(".PushAddr", func() {
-		It("should return 'push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm'", func() {
+		It("should return 'pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw'", func() {
 			seed := int64(1)
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.PushAddr()
-			Expect(addr).To(Equal(identifier.Address("push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm")))
+			Expect(addr).To(Equal(identifier.Address("pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw")))
 		})
 	})
 
@@ -287,7 +287,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return nil when address is ok", func() {
-			err := IsValidUserAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
+			err := IsValidUserAddr("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")
 			Expect(err).To(BeNil())
 		})
 
@@ -325,7 +325,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return nil when address is ok", func() {
-			err := IsValidPushAddr("push12xuf6f8qeux402da4vea2ds8ssvzqjg8quhrrg")
+			err := IsValidPushAddr("pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			Expect(err).To(BeNil())
 		})
 
@@ -353,7 +353,7 @@ var _ = Describe("Key", func() {
 
 		It("should return 20 bytes address", func() {
 			key := NewKeyFromIntSeed(1)
-			addrBs, err := DecodeAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
+			addrBs, err := DecodeAddr("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")
 			Expect(err).To(BeNil())
 			Expect(addrBs).To(HaveLen(20))
 			Expect(addrBs[:]).To(Equal(key.PubKey().AddrRaw()))

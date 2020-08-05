@@ -138,7 +138,7 @@ var _ = Describe("Crypto", func() {
 
 	Describe(".MustDecodePushKeyID", func() {
 		It("should return a 20 bytes slice when successful", func() {
-			bz := MustDecodePushKeyID("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			bz := MustDecodePushKeyID("pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw")
 			Expect(bz).To(HaveLen(20))
 		})
 
@@ -170,9 +170,9 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".HashNamespace", func() {
+	Describe(".MakeNamespaceHash", func() {
 		It("should produce a 40 byte string", func() {
-			Expect(HashNamespace("name1")).To(HaveLen(40))
+			Expect(MakeNamespaceHash("name1")).To(HaveLen(40))
 		})
 	})
 })

@@ -40,7 +40,7 @@ var _ = Describe("SignCommit", func() {
 
 	Describe(".RegisterCmd", func() {
 		It("should return error when target key ID is a public key but signing key failed to be unlocked", func() {
-			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc"}
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				Expect(a.KeyAddrOrIdx).To(Equal(args.SigningKey))
 				Expect(a.Passphrase).To(Equal(args.SigningKeyPass))
@@ -53,7 +53,7 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when target key ID is a local account but unable to unlock the local account", func() {
-			args := &RegisterArgs{Target: "maker1", SigningKey: "maker1abc", SigningKeyPass: "abc"}
+			args := &RegisterArgs{Target: "os1", SigningKey: "os1abc", SigningKeyPass: "abc"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				Expect(a.KeyAddrOrIdx).To(Equal(args.Target))
 				Expect(a.Passphrase).To(Equal(args.TargetPass))
@@ -66,7 +66,7 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when target key ID is a local account but unable to unlock the signing account", func() {
-			args := &RegisterArgs{Target: "maker1", SigningKey: "maker1abc", SigningKeyPass: "abc"}
+			args := &RegisterArgs{Target: "os1", SigningKey: "os1abc", SigningKeyPass: "abc"}
 			mockLocalKey := mocks.NewMockStoredKey(ctrl)
 			mockLocalKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
@@ -84,14 +84,14 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when unable get next nonce of signer", func() {
-			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc"}
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc"}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("os1abc")
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
-				Expect(address).To(Equal("maker1abc"))
+				Expect(address).To(Equal("os1abc"))
 				return "", fmt.Errorf("error")
 			}
 			err := RegisterCmd(cfg, args)
@@ -100,15 +100,15 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when unable create registration transaction", func() {
-			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc"}
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc"}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("os1abc")
 			mockSigningKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
-				Expect(address).To(Equal("maker1abc"))
+				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
 			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
@@ -120,15 +120,15 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return no error on successful transaction creation", func() {
-			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("os1abc")
 			mockSigningKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
-				Expect(address).To(Equal("maker1abc"))
+				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
 			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
@@ -147,9 +147,9 @@ var _ = Describe("SignCommit", func() {
 		})
 
 		It("should return error when tx tracker returns error", func() {
-			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "maker1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
+			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc", Stdout: ioutil.Discard}
 			mockSigningKey := mocks.NewMockStoredKey(ctrl)
-			mockSigningKey.EXPECT().GetUserAddress().Return("maker1abc")
+			mockSigningKey.EXPECT().GetUserAddress().Return("os1abc")
 			mockSigningKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil

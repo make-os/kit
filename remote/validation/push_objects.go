@@ -232,7 +232,7 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 
 	// If namespace is provide, ensure it exists
 	if note.GetNamespace() != "" {
-		ns := logic.NamespaceKeeper().Get(crypto2.HashNamespace(note.GetNamespace()))
+		ns := logic.NamespaceKeeper().Get(crypto2.MakeNamespaceHash(note.GetNamespace()))
 		if ns.IsNil() {
 			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}

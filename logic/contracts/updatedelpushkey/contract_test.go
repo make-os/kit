@@ -60,7 +60,7 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 		})
 
 		When("delete is set to true", func() {
-			var pushKeyID = "push1_abc"
+			var pushKeyID = "pk1_abc"
 			BeforeEach(func() {
 				key := state.BarePushKey()
 				key.Address = "addr1"
@@ -86,7 +86,7 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 		})
 
 		When("removeScope includes indices 0,2", func() {
-			var pushKeyID = "push1_abc"
+			var pushKeyID = "pk1_abc"
 			BeforeEach(func() {
 				key := state.BarePushKey()
 				key.Address = "addr1"
@@ -112,7 +112,7 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 		})
 
 		When("removeScope includes indices 0,5,2 or 0,2,5", func() {
-			var pushKeyID = "push1_abc"
+			var pushKeyID = "pk1_abc"
 			for _, indicesSlice := range [][]int{{0, 5, 2}, {0, 2, 5}} {
 				BeforeEach(func() {
 					key := state.BarePushKey()
@@ -142,7 +142,7 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 		})
 
 		When("addScopes includes scope10, scope11", func() {
-			var pushKeyID = "push1_abc"
+			var pushKeyID = "pk1_abc"
 			BeforeEach(func() {
 				key := state.BarePushKey()
 				key.Address = "addr1"
@@ -169,7 +169,7 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 		})
 
 		When("feeCap is set", func() {
-			var pushKeyID = "push1_abc"
+			var pushKeyID = "pk1_abc"
 			BeforeEach(func() {
 				key := state.BarePushKey()
 				key.Address = "addr1"

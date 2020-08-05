@@ -324,7 +324,7 @@ content`, "commit 2")
 					"replyTo":   "12345",
 					"reactions": []interface{}{"smile"},
 					"labels":    []interface{}{"help"},
-					"assignees": []interface{}{"push1abc"},
+					"assignees": []interface{}{"pk1abc"},
 					"close":     true,
 				},
 				FrontMatterFormat: "",
@@ -336,7 +336,7 @@ content`, "commit 2")
 			Expect(issue.ReplyTo).To(Equal("12345"))
 			Expect(issue.Reactions).To(Equal([]string{"smile"}))
 			Expect(*issue.Labels).To(Equal([]string{"help"}))
-			Expect(*issue.Assignees).To(Equal([]string{"push1abc"}))
+			Expect(*issue.Assignees).To(Equal([]string{"pk1abc"}))
 		})
 
 		It("case 2 - when close, labels, assignees are unset, it should be nil", func() {
@@ -427,7 +427,7 @@ content`, "commit 2")
 		It("case 1", func() {
 			reactions := plumbing.ReactionMap{
 				"hash1": map[string]map[string]int{
-					"smile": {"push1": 1, "push2": 1},
+					"smile": {"pk1": 1, "push2": 1},
 					"anger": {"push2": 1},
 				},
 			}
@@ -438,7 +438,7 @@ content`, "commit 2")
 		It("should return zero (0) for a reaction whose total count is below zero", func() {
 			reactions := plumbing.ReactionMap{
 				"hash1": map[string]map[string]int{
-					"smile": {"push1": -2, "push2": 1},
+					"smile": {"pk1": -2, "push2": 1},
 					"anger": {"push2": 1},
 				},
 			}

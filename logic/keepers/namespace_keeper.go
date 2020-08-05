@@ -75,7 +75,7 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 		return "", err
 	}
 
-	actualName := crypto.HashNamespace(namespace)
+	actualName := crypto.MakeNamespaceHash(namespace)
 	ns := a.Get(actualName, version)
 	if ns.IsNil() {
 		return "", fmt.Errorf("namespace not found")

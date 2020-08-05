@@ -125,7 +125,7 @@ func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error
 		targetNS = namespaceOnly
 	}
 	if targetNS != "" {
-		ns = args.Keepers.NamespaceKeeper().Get(crypto2.HashNamespace(targetNS))
+		ns = args.Keepers.NamespaceKeeper().Get(crypto2.MakeNamespaceHash(targetNS))
 		if ns.IsNil() {
 			panic("namespace must exist")
 		}
@@ -157,7 +157,7 @@ func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error
 	}
 
 	if ns != nil {
-		args.Keepers.NamespaceKeeper().Update(crypto2.HashNamespace(targetNS), ns)
+		args.Keepers.NamespaceKeeper().Update(crypto2.MakeNamespaceHash(targetNS), ns)
 	}
 
 	return nil

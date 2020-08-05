@@ -70,8 +70,8 @@ func Hash20Hex(v []byte) string {
 	return hex.EncodeToString(Hash20(v))
 }
 
-// HashNamespace creates a hash of a namespace name
-func HashNamespace(ns string) string {
+// MakeNamespaceHash creates a hash of a namespace name
+func MakeNamespaceHash(ns string) string {
 	return Hash20Hex([]byte(ns))
 }
 

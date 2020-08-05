@@ -58,7 +58,7 @@ var _ = Describe("NamespaceModule", func() {
 
 	Describe(".Lookup", func() {
 		It("should return nil if namespace does not exist", func() {
-			mockNSKeeper.EXPECT().Get(crypto.HashNamespace("name"), uint64(0)).Return(state.BareNamespace())
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(state.BareNamespace())
 			res := m.Lookup("name", 0)
 			Expect(res).To(BeNil())
 		})
@@ -66,7 +66,7 @@ var _ = Describe("NamespaceModule", func() {
 		It("should panic if unable to get latest block info", func() {
 			ns := state.BareNamespace()
 			ns.Owner = "r/repo"
-			mockNSKeeper.EXPECT().Get(crypto.HashNamespace("name"), uint64(0)).Return(ns)
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(ns)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -79,7 +79,7 @@ var _ = Describe("NamespaceModule", func() {
 			ns.Owner = "r/repo"
 			ns.ExpiresAt = 100
 			ns.GraceEndAt = 200
-			mockNSKeeper.EXPECT().Get(crypto.HashNamespace("name"), uint64(0)).Return(ns)
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(ns)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 101}, nil)
 			res := m.Lookup("name", 0)
 			Expect(res).ToNot(BeNil())
@@ -92,7 +92,7 @@ var _ = Describe("NamespaceModule", func() {
 			ns.Owner = "r/repo"
 			ns.ExpiresAt = 100
 			ns.GraceEndAt = 200
-			mockNSKeeper.EXPECT().Get(crypto.HashNamespace("name"), uint64(0)).Return(ns)
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(ns)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 200}, nil)
 			res := m.Lookup("name", 0)
 			Expect(res).ToNot(BeNil())
@@ -132,7 +132,7 @@ var _ = Describe("NamespaceModule", func() {
 			params := map[string]interface{}{"name": "ns1"}
 			res := m.Register(params, key, payloadOnly)
 			Expect(res).To(HaveKey("name"))
-			Expect(res["name"]).To(Equal(crypto.HashNamespace("ns1")))
+			Expect(res["name"]).To(Equal(crypto.MakeNamespaceHash("ns1")))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeNamespaceRegister)))
 			Expect(res).To(And(
@@ -181,7 +181,7 @@ var _ = Describe("NamespaceModule", func() {
 			params := map[string]interface{}{"name": "ns1"}
 			res := m.UpdateDomain(params, key, payloadOnly)
 			Expect(res).To(HaveKey("name"))
-			Expect(res["name"]).To(Equal(crypto.HashNamespace("ns1")))
+			Expect(res["name"]).To(Equal(crypto.MakeNamespaceHash("ns1")))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeNamespaceDomainUpdate)))
 			Expect(res).To(And(

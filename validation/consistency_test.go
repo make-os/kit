@@ -466,7 +466,7 @@ var _ = Describe("TxValidator", func() {
 		When("push key does not exist", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
-				tx.ID = "push1_abc"
+				tx.ID = "pk1_abc"
 				mockPushKeyKeeper.EXPECT().Get(tx.ID).Return(state.BarePushKey())
 				err = validation.CheckTxUpDelPushKeyConsistency(tx, -1, mockLogic)
 			})
@@ -480,7 +480,7 @@ var _ = Describe("TxValidator", func() {
 		When("sender is not the owner of the target push key", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
-				tx.ID = "push1_abc"
+				tx.ID = "pk1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 
 				pushKey := state.BarePushKey()
@@ -499,7 +499,7 @@ var _ = Describe("TxValidator", func() {
 		When("an index in removeScopes is out of bound/range", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
-				tx.ID = "push1_abc"
+				tx.ID = "pk1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{1}
 
@@ -520,7 +520,7 @@ var _ = Describe("TxValidator", func() {
 		When("balance sufficiency dry-run fails", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
-				tx.ID = "push1_abc"
+				tx.ID = "pk1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{0}
 
@@ -542,7 +542,7 @@ var _ = Describe("TxValidator", func() {
 		When("balance sufficiency dry-run passes", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
-				tx.ID = "push1_abc"
+				tx.ID = "pk1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{0}
 
@@ -620,7 +620,7 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
-				tx.TransferTo = "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"
+				tx.TransferTo = "os1m4aaslnzmdp4k3g52tk6eh94ghr547exvtcrkd"
 
 				bi := &core.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -1509,7 +1509,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.Namespace = "ns1"
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.Namespace)).Return(state.BareNamespace())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1523,7 +1523,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.NamespaceOnly = "ns1"
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.NamespaceOnly)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.NamespaceOnly)).Return(state.BareNamespace())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1540,7 +1540,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
 				ns.Owner = "repo2"
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.Namespace)).Return(ns)
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1557,7 +1557,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
 				ns.Owner = "repo1"
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.Namespace)).Return(ns)
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(state.BareRepository())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})

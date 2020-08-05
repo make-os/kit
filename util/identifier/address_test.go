@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("Address", func() {
-	var bech32Addr = "maker1xshwn62y6074qdvqyldkevdqgnht9lh4jvs4lc"
+	var bech32Addr = "os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8"
 
 	Describe(".GetNativeNamespaceTarget", func() {
 		It("should return resource unique name without prefix", func() {
@@ -131,9 +131,9 @@ var _ = Describe("Address", func() {
 		})
 
 		It("should return nil when address is valid", func() {
-			err := IsValidUserAddr("push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz")
+			err := IsValidUserAddr("pk1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz")
 			Expect(err).ToNot(BeNil())
-			err = IsValidUserAddr("maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w")
+			err = IsValidUserAddr("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")
 			Expect(err).To(BeNil())
 		})
 	})

@@ -885,7 +885,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid scopes", func() {
 				scopes := []string{
 					"repo_&*",
-					"a/maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
+					"a/os13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
 				}
 				for _, s := range scopes {
 					tx.Scopes = []string{s}
@@ -972,7 +972,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = txns.NewBareTxUpDelPushKey()
 			tx.Fee = "2"
-			tx.ID = "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
+			tx.ID = "pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw"
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -1558,7 +1558,7 @@ var _ = Describe("TxValidator", func() {
 			tx = txns.NewBareRepoProposalRegisterPushKey()
 			tx.Timestamp = time.Now().Unix()
 			tx.ID = "123"
-			tx.PushKeys = []string{"push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"}
+			tx.PushKeys = []string{"pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw"}
 		})
 
 		It("should return error='type is invalid'", func() {
@@ -1634,27 +1634,27 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when a push key id is not valid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1_abc")
+			tx.PushKeys = append(tx.PushKeys, "pk1_abc")
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:keys, msg:push key id (push1_abc) is not valid"))
+			Expect(err).To(MatchError("field:keys, msg:push key id (pk1_abc) is not valid"))
 		})
 
 		It("should return error when a push id is a duplicate", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw")
+			tx.PushKeys = append(tx.PushKeys, "pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw")
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:keys, msg:push key id " +
-				"(push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t) is a duplicate"))
+				"(pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw) is a duplicate"))
 		})
 
 		It("should return error when fee mode is unknown", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = 100
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
@@ -1664,7 +1664,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is unset", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = ""
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1675,7 +1675,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not numeric", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = "ten"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1686,7 +1686,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not a positive number", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPaysCapped
 			tx.FeeCap = "-1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1697,7 +1697,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when fee mode is not FeeModeRepoCapped but fee cap is set", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.FeeCap = "1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1708,7 +1708,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespace value format is invalid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.Namespace = "inv&alid"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
@@ -1719,7 +1719,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespace is set but namespaceOnly is also set", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.Namespace = "ns1"
 			tx.NamespaceOnly = "ns2"
@@ -1731,7 +1731,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when namespaceOnly value format is invalid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "10"
-			tx.PushKeys = append(tx.PushKeys, "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
+			tx.PushKeys = append(tx.PushKeys, "pk1yydtesdlq6p5smejz2gpzlmsxyx2um9rd9qqvp")
 			tx.FeeMode = state.FeeModeRepoPays
 			tx.NamespaceOnly = "inv&alid"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)

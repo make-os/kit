@@ -260,19 +260,19 @@ var _ = Describe("UserModule", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetAccount("maker1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
+			mockClient.EXPECT().GetAccount("os1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetAccount("maker1abc", 1)
+				m.GetAccount("os1abc", 1)
 			})
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetAccount("maker1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
+			mockClient.EXPECT().GetAccount("os1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
-				m.GetAccount("maker1abc", 1)
+				m.GetAccount("os1abc", 1)
 			})
 		})
 

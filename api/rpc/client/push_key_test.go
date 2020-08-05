@@ -31,7 +31,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("pk_getOwner"))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.GetPushKeyOwner("push1_abc", 100)
+			_, err := client.GetPushKeyOwner("pk1_abc", 100)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
@@ -46,7 +46,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("pk_getOwner"))
 				return util.Map{"balance": 1000}, 0, nil
 			}
-			_, err := client.GetPushKeyOwner("push1_abc", 100)
+			_, err := client.GetPushKeyOwner("pk1_abc", 100)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     "decode_error",
@@ -61,7 +61,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("pk_getOwner"))
 				return util.Map{"balance": "1000"}, 0, nil
 			}
-			acct, err := client.GetPushKeyOwner("push1_abc", 100)
+			acct, err := client.GetPushKeyOwner("pk1_abc", 100)
 			Expect(err).To(BeNil())
 			Expect(acct.Balance).To(Equal(util.String("1000")))
 		})
@@ -116,7 +116,7 @@ var _ = Describe("Client", func() {
 		It("should return expected address and transaction hash on success", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("pk_register"))
-				return util.Map{"address": "push1abc", "hash": "0x123"}, 0, nil
+				return util.Map{"address": "pk1abc", "hash": "0x123"}, 0, nil
 			}
 			resp, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
 				Nonce:      100,
@@ -124,7 +124,7 @@ var _ = Describe("Client", func() {
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Address).To(Equal("push1abc"))
+			Expect(resp.Address).To(Equal("pk1abc"))
 			Expect(resp.Hash).To(Equal("0x123"))
 		})
 	})

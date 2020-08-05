@@ -31,8 +31,8 @@ var _ = Describe("PushPool", func() {
 	var tx2 *types.Note
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var pushKeyID = "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
-	var pushKeyID2 = "push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"
+	var pushKeyID = crypto.NewKeyFromIntSeed(1).PushAddr().String()
+	var pushKeyID2 = crypto.NewKeyFromIntSeed(2).PushAddr().String()
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -584,7 +584,7 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
-	var pushKeyID = crypto.BytesToPushKeyID([]byte("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"))
+	var pushKeyID = crypto.BytesToPushKeyID([]byte("pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"))
 
 	Describe(".add", func() {
 		var idx repoNotesIndex

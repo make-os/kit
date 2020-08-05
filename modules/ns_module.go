@@ -104,7 +104,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 		targetHeight = height[0]
 	}
 
-	ns := m.logic.NamespaceKeeper().Get(crypto.HashNamespace(name), targetHeight)
+	ns := m.logic.NamespaceKeeper().Get(crypto.MakeNamespaceHash(name), targetHeight)
 	if ns.IsNil() {
 		return nil
 	}
@@ -179,7 +179,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 	}
 
 	// Hash the name
-	tx.Name = crypto.HashNamespace(tx.Name)
+	tx.Name = crypto.MakeNamespaceHash(tx.Name)
 
 	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()
@@ -220,7 +220,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 	}
 
 	// Hash the name
-	tx.Name = crypto.HashNamespace(tx.Name)
+	tx.Name = crypto.MakeNamespaceHash(tx.Name)
 
 	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
 		return tx.ToMap()

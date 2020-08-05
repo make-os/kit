@@ -22,7 +22,7 @@ var _ = Describe("TxDetail", func() {
 				"repo":      "r1",
 				"namespace": "ns1",
 				"reference": "refs/heads/master",
-				"pkID":      "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
+				"pkID":      "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 				"fee":       "10",
 			}
 			txDetail, err := TxDetailFromPEMHeader(hdr)
@@ -31,7 +31,7 @@ var _ = Describe("TxDetail", func() {
 			Expect(txDetail.RepoName).To(Equal("r1"))
 			Expect(txDetail.RepoNamespace).To(Equal("ns1"))
 			Expect(txDetail.Reference).To(Equal("refs/heads/master"))
-			Expect(txDetail.PushKeyID).To(Equal("push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
+			Expect(txDetail.PushKeyID).To(Equal("pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
 			Expect(txDetail.Fee).To(Equal(util.String("10")))
 		})
 	})

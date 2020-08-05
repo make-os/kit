@@ -249,7 +249,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should panic if unable to get push key", func() {
-			id := "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
+			id := "pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
 			err := &util.ReqError{Code: "push_key_not_found", HttpCode: 404, Msg: "push key not found", Field: ""}
 			mockPushKeyKeeper.EXPECT().Get(id, uint64(0)).Return(state.BarePushKey())
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {

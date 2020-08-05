@@ -80,7 +80,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 					TxProposalCommon: &txns.TxProposalCommon{RepoName: repoName, Value: proposalFee, ID: propID},
 					FeeMode:          state.FeeModePusherPays,
 					FeeCap:           "0",
-					PushKeys:         []string{"push1_abc"},
+					PushKeys:         []string{"pk1_abc"},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -123,7 +123,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc", "push1_xyz"}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"pk1_abc", "pk1_xyz"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
 				}}
 				err = registerrepopushkeys.NewContract(nil).Apply(&core.ProposalApplyArgs{
@@ -136,7 +136,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 			It("should add 2 contributors with same policies, feeMode, feeCap, feeUsed fields", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(2))
-				Expect(repoUpd.Contributors["push1_abc"]).To(Equal(repoUpd.Contributors["push1_xyz"]))
+				Expect(repoUpd.Contributors["pk1_abc"]).To(Equal(repoUpd.Contributors["pk1_xyz"]))
 			})
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"pk1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
@@ -158,7 +158,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 			It("should set feeCap field", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(1))
-				Expect(repoUpd.Contributors["push1_abc"].FeeCap).To(Equal(util.String("100")))
+				Expect(repoUpd.Contributors["pk1_abc"].FeeCap).To(Equal(util.String("100")))
 			})
 		})
 
@@ -166,7 +166,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"pk1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
@@ -180,7 +180,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 			Specify("that feeCap field is zero", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(1))
-				Expect(repoUpd.Contributors["push1_abc"].FeeCap).To(Equal(util.String("0")))
+				Expect(repoUpd.Contributors["pk1_abc"].FeeCap).To(Equal(util.String("0")))
 			})
 		})
 
@@ -193,7 +193,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
-						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyIDs:       util.ToBytes([]string{"pk1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyFeeCap:    util.ToBytes(util.String("100")),
 						constants.ActionDataKeyNamespace: util.ToBytes("other_namespace"),
@@ -216,10 +216,10 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
+					logic.NamespaceKeeper().Update(crypto2.MakeNamespaceHash(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
-						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyIDs:       util.ToBytes([]string{"pk1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespace: util.ToBytes(ns),
 					}}
@@ -237,10 +237,10 @@ var _ = Describe("UpsertOwnerContract", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := crypto2.HashNamespace(ns)
+					nsKey := crypto2.MakeNamespaceHash(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
-					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())
+					Expect(nsObj.Contributors["pk1_abc"]).ToNot(BeNil())
 				})
 			})
 		})
@@ -254,7 +254,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
-						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyIDs:           util.ToBytes([]string{"pk1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyFeeCap:        util.ToBytes(util.String("100")),
 						constants.ActionDataKeyNamespaceOnly: util.ToBytes("other_namespace"),
@@ -278,10 +278,10 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
+					logic.NamespaceKeeper().Update(crypto2.MakeNamespaceHash(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
-						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyIDs:           util.ToBytes([]string{"pk1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespaceOnly: util.ToBytes(ns),
 					}}
@@ -299,10 +299,10 @@ var _ = Describe("UpsertOwnerContract", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := crypto2.HashNamespace(ns)
+					nsKey := crypto2.MakeNamespaceHash(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
-					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())
+					Expect(nsObj.Contributors["pk1_abc"]).ToNot(BeNil())
 				})
 			})
 		})

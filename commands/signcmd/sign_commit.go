@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/k0kubun/pp"
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
@@ -228,8 +227,6 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	} else if args.Message == "" {
 		args.Message = commit.Message
 	}
-
-	pp.Println("Recent", hash, commit.Message)
 
 	// Update the recent commit message.
 	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID

@@ -35,8 +35,7 @@ const (
 	ActionDataKeyNamespaceOnly = "nso"
 )
 
-// Constants
 const (
-	AddrHRP     = "maker"
-	PushAddrHRP = "push"
+	AddrHRP     = "os"
+	PushAddrHRP = "pk"
 )

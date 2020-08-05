@@ -125,7 +125,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockNS.EXPECT().Get(crypto2.HashNamespace("ns1")).Return(state.BareNamespace())
+				mockNS.EXPECT().Get(crypto2.MakeNamespaceHash("ns1")).Return(state.BareNamespace())
 				pn := &types.Note{RepoName: "repo1", Namespace: "ns1"}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})

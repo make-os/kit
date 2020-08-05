@@ -112,7 +112,7 @@ var _ = Describe("GitSign", func() {
 			Expect(lines).To(ContainElement("fee: 1.2"))
 			Expect(lines).To(ContainElement("namespace: namespace"))
 			Expect(lines).To(ContainElement("nonce: 1"))
-			Expect(lines).To(ContainElement("pkID: push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm"))
+			Expect(lines).To(ContainElement("pkID: pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw"))
 			Expect(lines).To(ContainElement("reference: refs/heads/master"))
 			Expect(lines).To(ContainElement("repo: repo1"))
 			Expect(lines).To(ContainElement("-----END PGP SIGNATURE-----"))

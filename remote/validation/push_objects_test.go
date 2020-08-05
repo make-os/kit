@@ -317,7 +317,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &types.Note{Namespace: "ns1"}
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.Namespace)).Return(state.BareNamespace())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -333,7 +333,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
 				ns := state.BareNamespace()
 				ns.Domains["domain1"] = "r/some_repo"
-				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.MakeNamespaceHash(tx.Namespace)).Return(ns)
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 

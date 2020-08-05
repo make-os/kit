@@ -557,7 +557,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 	}
 
 	if ns != "" {
-		ns = crypto2.HashNamespace(ns)
+		ns = crypto2.MakeNamespaceHash(ns)
 		found := logic.NamespaceKeeper().Get(ns)
 		if found.IsNil() {
 			return feI(index, nsField, "namespace not found")

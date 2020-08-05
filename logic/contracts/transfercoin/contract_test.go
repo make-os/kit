@@ -170,7 +170,7 @@ var _ = Describe("CoinTransferContract", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
 				nsObj := &state.Namespace{Domains: map[string]string{"domain": "a/" + sender.Addr().String()}}
-				logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
+				logic.NamespaceKeeper().Update(crypto2.MakeNamespaceHash(ns), nsObj)
 			})
 
 			Context("sender creates a tx with value=10, fee=1", func() {
@@ -223,7 +223,7 @@ var _ = Describe("CoinTransferContract", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
 				nsObj := &state.Namespace{Domains: map[string]string{"domain": "r/" + repoName}}
-				logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
+				logic.NamespaceKeeper().Update(crypto2.MakeNamespaceHash(ns), nsObj)
 			})
 
 			Context("sender creates a tx with value=10, fee=1", func() {

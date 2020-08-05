@@ -72,7 +72,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// If namespace is set, get it and ensure it exists
 	var namespace *state.Namespace
 	if note.Namespace != "" {
-		namespace = sv.logic.NamespaceKeeper().Get(crypto.HashNamespace(note.Namespace))
+		namespace = sv.logic.NamespaceKeeper().Get(crypto.MakeNamespaceHash(note.Namespace))
 		if namespace.IsNil() {
 			return fmt.Errorf("namespace '%s' not found", note.Namespace)
 		}

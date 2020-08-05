@@ -173,7 +173,7 @@ var _ = Describe("Client", func() {
 			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{
 				RepoName:      "repo1",
 				ProposalID:    "1",
-				PushKeys:      []string{"push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
+				PushKeys:      []string{"pk1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
 				FeeCap:        13.2,
 				FeeMode:       12,
 				Nonce:         1,

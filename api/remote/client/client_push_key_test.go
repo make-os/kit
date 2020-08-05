@@ -104,7 +104,7 @@ var _ = Describe("Account", func() {
 					HaveKey("type"),
 				))
 				mockReqHandler := func(w http.ResponseWriter, r *http.Request) {
-					data, _ := json.Marshal(util.Map{"address": "push1abc", "hash": "0x12345"})
+					data, _ := json.Marshal(util.Map{"address": "pk1abc", "hash": "0x12345"})
 					w.WriteHeader(201)
 					w.Write(data)
 				}
@@ -121,7 +121,7 @@ var _ = Describe("Account", func() {
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Address).To(Equal("push1abc"))
+			Expect(resp.Address).To(Equal("pk1abc"))
 			Expect(resp.Hash).To(Equal("0x12345"))
 		})
 

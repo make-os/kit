@@ -28,14 +28,14 @@ var _ = Describe("PushKey", func() {
 		api := &PushKeyAPI{mods}
 		testCases(map[string]*TestCase{
 			"when push key is successfully returned": {
-				params: map[string]interface{}{"id": "push1_abc"},
+				params: map[string]interface{}{"id": "pk1_abc"},
 				result: util.Map{
 					"pubKey":  key.PubKey().ToPublicKey(),
 					"address": "addr1",
 				},
 				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
-					mockPushKeyMod.EXPECT().Get("push1_abc", uint64(0)).Return(util.Map{
+					mockPushKeyMod.EXPECT().Get("pk1_abc", uint64(0)).Return(util.Map{
 						"pubKey":  key.PubKey().ToPublicKey(),
 						"address": "addr1",
 					})
@@ -50,11 +50,11 @@ var _ = Describe("PushKey", func() {
 		api := &PushKeyAPI{mods}
 		testCases(map[string]*TestCase{
 			"when account is successfully returned": {
-				params: map[string]interface{}{"id": "push1_abc"},
+				params: map[string]interface{}{"id": "pk1_abc"},
 				result: util.Map{"balance": "100", "nonce": 10, "delegatorCommission": 23},
 				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
-					mockPushKeyMod.EXPECT().GetAccountOfOwner("push1_abc", uint64(0)).Return(util.Map{
+					mockPushKeyMod.EXPECT().GetAccountOfOwner("pk1_abc", uint64(0)).Return(util.Map{
 						"balance":             "100",
 						"nonce":               10,
 						"delegatorCommission": 23,
@@ -76,11 +76,11 @@ var _ = Describe("PushKey", func() {
 			},
 			"should return code=200 on success": {
 				params:     map[string]interface{}{"key": "value"},
-				result:     util.Map{"address": "push1abc", "hash": "0x123"},
+				result:     util.Map{"address": "pk1abc", "hash": "0x123"},
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
 					mockPushKeyModule := mocks.NewMockPushKeyModule(ctrl)
-					mockPushKeyModule.EXPECT().Register(tc.params).Return(util.Map{"address": "push1abc", "hash": "0x123"})
+					mockPushKeyModule.EXPECT().Register(tc.params).Return(util.Map{"address": "pk1abc", "hash": "0x123"})
 					mods.PushKey = mockPushKeyModule
 				},
 			},
