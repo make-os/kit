@@ -514,7 +514,7 @@ func IsZeroString(str string) bool {
 	return str == "" || str == "0"
 }
 
-// EditorReaderFunc describes a function that collects input from an editor program
+// EditorReaderFunc describes a function that reads input from an editor program
 type EditorReaderFunc func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error)
 
 // ReadFromEditor reads input from the specified editor program

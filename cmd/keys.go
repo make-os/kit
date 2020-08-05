@@ -152,7 +152,7 @@ You can skip the interactive mode by providing your password via the '--pass' fl
 Also, the flag accepts a path to a file containing a password.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		showKey, _ := cmd.Flags().GetBool("showKey")
+		showKey, _ := cmd.Flags().GetBool("show-key")
 
 		var address string
 		if len(args) >= 1 {
@@ -209,5 +209,5 @@ func init() {
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
 	keyCreateCmd.Flags().Bool("push", false, "Mark as Push Key")
 	keyImportCmd.Flags().Bool("push", false, "Mark as Push Key")
-	keyGetCmd.Flags().Bool("showKey", false, "Show the private key")
+	keyGetCmd.Flags().Bool("show-key", false, "Show the private key")
 }

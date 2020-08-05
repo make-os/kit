@@ -119,7 +119,7 @@ func (sv *Server) handleAuth(r *http.Request, w http.ResponseWriter, repo *state
 		txDetails = append(txDetails, txDetail)
 	}
 
-	// Perform authorization checks
+	// Perform authentication checks
 	polEnforcer, err = sv.authenticate(txDetails, repo, namespace, sv.logic, validation.CheckTxDetail)
 	if err != nil {
 		return nil, nil, err
