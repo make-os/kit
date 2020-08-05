@@ -91,6 +91,26 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
 
+		It("should set user.signingKey to args.PushKey if args.PushKey is set", func() {
+			signingKey := "key"
+			pushKey := "push_key"
+			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal(pushKey))
+		})
+
+		It("should set user.signingKey if args.SigningKey is set and args.PushKey is empty", func() {
+			signingKey := "key"
+			pushKey := ""
+			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
+		})
+
 		It("should set user.passphrase if args.SigningKey is set", func() {
 			passphrase := "pass"
 			args := &ConfigArgs{SigningKeyPass: &passphrase}

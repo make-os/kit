@@ -138,6 +138,7 @@ var repoConfigCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetFloat64("value")
+		pushKey, _ := cmd.Flags().GetString("push-key")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
@@ -175,6 +176,7 @@ var repoConfigCmd = &cobra.Command{
 			Fee:             &fee,
 			AmendCommit:     &amendCommit,
 			RPCClient:       client,
+			PushKey:         &pushKey,
 			SigningKey:      &signingKey,
 			SigningKeyPass:  &signingKeyPass,
 			NoHook:          noSign,
@@ -218,6 +220,7 @@ var repoConfigCmd = &cobra.Command{
 
 func setupRepoConfigCmd(cmd *cobra.Command) {
 	ssp := cmd.Flags().StringSliceP
+	sp := cmd.Flags().StringP
 	bf := cmd.Flags().Bool
 	bfp := cmd.Flags().BoolP
 	fp := cmd.Flags().Float64P
@@ -225,6 +228,7 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 	bf("no-sign", false, "Do not enable automatic signing hook")
 	bf("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
 	bfp("print-out", "o", false, "Print out more config to pass to eval()")
+	sp("push-key", "k", "", "Specify the push key (defaults to signing key)")
 
 	if cmd.Flags().Lookup("value") == nil {
 		fp("value", "v", 0, "Set transaction value")

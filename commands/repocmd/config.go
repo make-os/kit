@@ -45,11 +45,14 @@ type ConfigArgs struct {
 	// PrintOutForEval indicates that extra config for evaluation should be printed
 	PrintOutForEval bool
 
-	// SigningKey is the account whose key will be used to sign the transaction.
+	// SigningKey is the key that will be used to sign the transaction.
 	SigningKey *string
 
 	// SigningKeyPass is the passphrase for unlocking the signing key.
 	SigningKeyPass *string
+
+	// PushKey is the key that will be used sign push request
+	PushKey *string
 
 	// NoHook indicates that hooks should not be added
 	NoHook bool
@@ -98,9 +101,11 @@ func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 		rcfg.Raw.Section("user").SetOption("nonce", cast.ToString(*args.Nonce))
 	}
 
-	// Set signing key at `user.signingKey`
-	if args.SigningKey != nil {
+	// Set signing key at `user.signingKey` only if args.PushKey is unset, otherwise use args.PushKey.
+	if args.SigningKey != nil && (args.PushKey == nil || *args.PushKey == "") {
 		rcfg.Raw.Section("user").SetOption("signingKey", *args.SigningKey)
+	} else if args.PushKey != nil {
+		rcfg.Raw.Section("user").SetOption("signingKey", *args.PushKey)
 	}
 
 	// Set signing key passphrase at `user.passphrase`
