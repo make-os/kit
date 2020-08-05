@@ -64,8 +64,6 @@ var mergeReqCreateCmd = &cobra.Command{
 			} else if plumbing.IsMergeRequestReference(HEAD) {
 				id := plumbing.GetReferenceShortName(HEAD)
 				targetPostID, _ = strconv.Atoi(id)
-			} else {
-				log.Fatal("HEAD is not a merge request reference")
 			}
 		}
 

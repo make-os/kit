@@ -63,8 +63,6 @@ var issueCreateCmd = &cobra.Command{
 			} else if plumbing.IsIssueReference(head) {
 				id := plumbing.GetReferenceShortName(head)
 				targetID, _ = strconv.Atoi(id)
-			} else {
-				log.Fatal("HEAD is not an issue reference")
 			}
 		}
 
