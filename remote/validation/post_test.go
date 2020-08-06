@@ -91,27 +91,33 @@ var _ = Describe("Validation", func() {
 			Expect(err).To(MatchError("check error"))
 		})
 
-		It("should return error when unable to get ancestors", func() {
-			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
-			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-			detail := &types.TxDetail{
-				Reference: "refs/heads/issues/1",
-			}
+		When("target reference already exists", func() {
+			It("should return error when unable to get ancestors", func() {
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
+				mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
+				detail := &types.TxDetail{
+					Reference: "refs/heads/issues/1",
+				}
 
-			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return(nil, fmt.Errorf("ancestor get error"))
-			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
-				TxDetail: detail,
-				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-					return nil
-				},
-				CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-					return nil, nil
-				},
-			}
-			err := validation.ValidatePostCommit(mockRepo, commit, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("ancestor get error"))
+				mockRepoState := state.BareRepository()
+				mockRepoState.References["refs/heads/issues/1"] = &state.Reference{Nonce: 1}
+				mockRepo.EXPECT().GetState().Return(mockRepoState)
+
+				mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return(nil, fmt.Errorf("ancestor get error"))
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+						return nil, nil
+					},
+				}
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("ancestor get error"))
+			})
 		})
 
 		It("should return error when commit failed issue commit validation ", func() {
@@ -119,7 +125,7 @@ var _ = Describe("Validation", func() {
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 			detail := &types.TxDetail{Reference: "refs/heads/issues/1"}
-			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return([]*object.Commit{}, nil)
+
 			mockRepoState := state.BareRepository()
 			mockRepo.EXPECT().GetState().Return(mockRepoState)
 
@@ -150,60 +156,70 @@ var _ = Describe("Validation", func() {
 				commitObj = &object.Commit{}
 				commit.EXPECT().UnWrap().Return(commitObj)
 				mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-				mockRepo.EXPECT().GetAncestors(commitObj, args.OldHash, true).Return([]*object.Commit{}, nil)
 				mockRepoState = state.BareRepository()
-				mockRepo.EXPECT().GetState().Return(mockRepoState)
 			})
 
-			It("should return no error when issue commit check is passed and"+
-				"issue checker func must be called once", func() {
+			It("should not return error when issue commit check is passed and issue checker func must be called once", func() {
+				mockRepo.EXPECT().GetState().Return(mockRepoState)
+
 				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
 					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-						callCount++
-						Expect(commit).To(Equal(commit))
-						Expect(args.Reference).To(Equal(detail.Reference))
 						return &plumbing2.PostBody{}, nil
 					},
 				}
 				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
-				Expect(callCount).To(Equal(1))
 			})
 
-			It("should return error if post body updates admin fields like 'labels'", func() {
-				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
-				callCount := 0
-				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
-					TxDetail: detail,
-					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return nil
-					},
-					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-						callCount++
-						Expect(commit).To(Equal(commit))
-						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.PostBody{
-							IssueFields: types.IssueFields{
-								Labels: &[]string{"label_update"},
-							},
-						}, nil
-					},
-				}
-				err := validation.ValidatePostCommit(mockRepo, commit, args)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("non-tip commit (.*) cannot update any field that requires admin permission"))
-				Expect(callCount).To(Equal(1))
-				Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
+			When("ancestor commit post body included an admin field", func() {
+				It("should return error", func() {
+					mockRepoState.References["refs/heads/issues/1"] = &state.Reference{Nonce: 1}
+					mockRepo.EXPECT().GetState().Return(mockRepoState)
+					mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
+
+					detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
+					change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+					args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+						TxDetail:    detail,
+						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+							return &plumbing2.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"label_update"}}}, nil
+						},
+					}
+					err := validation.ValidatePostCommit(mockRepo, commit, args)
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(MatchRegexp("ancestor commit (.*) cannot include fields that require admin permission"))
+					Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
+				})
+			})
+
+			When("ancestor commit post body included an admin field but the reference is new (does not already exist)", func() {
+				It("should not return error", func() {
+					mockRepo.EXPECT().GetState().Return(mockRepoState)
+
+					change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+					detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
+					args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+						TxDetail:    detail,
+						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+							return &plumbing2.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"label_update"}}}, nil
+						},
+					}
+					err := validation.ValidatePostCommit(mockRepo, commit, args)
+					Expect(err).To(BeNil())
+					Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
+				})
 			})
 
 			It("should populate tx detail reference data fields from post body", func() {
+				mockRepo.EXPECT().GetState().Return(mockRepoState)
+
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
@@ -237,22 +253,19 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {
+				mockRepo.EXPECT().GetState().Return(mockRepoState)
+				mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
+
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
-				mockRepoState.References[detail.Reference] = &state.Reference{
-					Hash: []byte("hash"),
-					Data: &state.ReferenceData{Closed: true},
-				}
-				callCount := 0
+				mockRepoState.References[detail.Reference] = &state.Reference{Hash: []byte("hash"), Data: &state.ReferenceData{Closed: true}}
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
 					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-						callCount++
-						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
 						return &plumbing2.PostBody{}, nil
 					},
@@ -264,18 +277,19 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return no error when issue reference has been previously closed and new issue commit set close=2", func() {
+				mockRepo.EXPECT().GetState().Return(mockRepoState)
+				mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
+
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				mockRepoState.References[detail.Reference] = &state.Reference{Data: &state.ReferenceData{Closed: true}, Hash: []byte("hash")}
-				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
 					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
 						cls := false
@@ -296,37 +310,71 @@ var _ = Describe("Validation", func() {
 				commit.EXPECT().UnWrap().Return(child)
 				mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 				ancestor = &object.Commit{Hash: plumbing.NewHash("c045fafe22ae2ef4d7c2390704e9b7a73c12bd43")}
-				mockRepo.EXPECT().GetAncestors(child, args.OldHash, true).Return([]*object.Commit{ancestor}, nil)
-				mockRepoState := state.BareRepository()
-				mockRepo.EXPECT().GetState().Return(mockRepoState).Times(1)
 			})
 
-			Specify("that issue checker is called twice for both the commit and its ancestor", func() {
-				change := &types.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
-				callCount := 0
-				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
-					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},
-					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return nil
-					},
-					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-						callCount++
+			When("target reference already exist", func() {
+				BeforeEach(func() {
+					mockRepoState := state.BareRepository()
+					mockRepoState.References["refs/heads/issues/1"] = &state.Reference{Nonce: 1, Data: &state.ReferenceData{}}
+					mockRepo.EXPECT().GetState().Return(mockRepoState)
+					mockRepo.EXPECT().GetAncestors(child, args.OldHash, true).Return([]*object.Commit{ancestor}, nil)
+				})
 
-						if callCount == 1 {
-							Expect(commit.UnWrap()).To(Equal(ancestor))
-							Expect(args.IsNew).To(BeTrue())
-						} else {
-							Expect(commit.UnWrap()).To(Equal(child))
-							Expect(args.IsNew).To(BeFalse())
-						}
+				Specify("that post checker is called twice for both the commit and its ancestor", func() {
+					change := &types.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
+					callCount := 0
+					args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+						TxDetail:    &types.TxDetail{Reference: "refs/heads/issues/1"},
+						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+							callCount++
 
-						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.PostBody{}, nil
-					},
-				}
-				err := validation.ValidatePostCommit(mockRepo, commit, args)
-				Expect(err).To(BeNil())
-				Expect(callCount).To(Equal(2))
+							if callCount == 1 {
+								Expect(commit.UnWrap()).To(Equal(ancestor))
+								Expect(args.IsNew).To(BeFalse())
+							} else {
+								Expect(commit.UnWrap()).To(Equal(child))
+								Expect(args.IsNew).To(BeFalse())
+							}
+
+							Expect(args.Reference).To(Equal(detail.Reference))
+							return &plumbing2.PostBody{}, nil
+						},
+					}
+					err := validation.ValidatePostCommit(mockRepo, commit, args)
+					Expect(err).To(BeNil())
+					Expect(callCount).To(Equal(2))
+				})
+			})
+
+			When("target reference does not already exist", func() {
+				BeforeEach(func() {
+					mockRepoState := state.BareRepository()
+					mockRepo.EXPECT().GetState().Return(mockRepoState)
+				})
+
+				Specify("that post checker is called once for only the commit", func() {
+					change := &types.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
+					callCount := 0
+					args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+						TxDetail:    &types.TxDetail{Reference: "refs/heads/issues/1"},
+						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+							callCount++
+
+							if callCount == 1 {
+								Expect(commit.UnWrap()).To(Equal(child))
+								Expect(args.IsNew).To(BeTrue())
+							}
+
+							Expect(args.Reference).To(Equal(detail.Reference))
+							return &plumbing2.PostBody{}, nil
+						},
+					}
+					err := validation.ValidatePostCommit(mockRepo, commit, args)
+					Expect(err).To(BeNil())
+					Expect(callCount).To(Equal(1))
+				})
 			})
 		})
 	})
@@ -346,15 +394,6 @@ var _ = Describe("Validation", func() {
 			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("post commit cannot have more than one parent"))
-		})
-
-		It("should return error when the reference of the issue commit is new but the issue commit has multiple parents ", func() {
-			issueBranch := plumbing2.MakeIssueReference(1)
-			commit.EXPECT().NumParents().Return(1).Times(2)
-			args := &validation.CheckPostCommitArgs{Reference: issueBranch, IsNew: true}
-			_, err := validation.CheckPostCommit(mockRepo, commit, args)
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("first commit of a new post must have no parent"))
 		})
 
 		It("should return error when the issue commit alters history", func() {
@@ -476,26 +515,11 @@ var _ = Describe("Validation", func() {
 					"msg:not expected in a new post commit"))
 			})
 
-			It("should return error when 'title' is set in a reply", func() {
-				fm := map[string]interface{}{"replyTo": "0x123", "title": "a title"}
-				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, " +
-					"msg:title is not required when replying"))
-			})
-
 			It("should return error when 'title' is not provided in new reference", func() {
 				fm := map[string]interface{}{}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, nil)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is required"))
-			})
-
-			It("should return error when 'title' is provided but reference is not new", func() {
-				fm := map[string]interface{}{"title": "a title"}
-				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required when replying"))
 			})
 
 			It("should return error when 'title' exceeds max. characters", func() {

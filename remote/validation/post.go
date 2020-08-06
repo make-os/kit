@@ -18,6 +18,7 @@ import (
 	"github.com/themakeos/lobe/util/identifier"
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (
@@ -55,24 +56,28 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 		return err
 	}
 
-	// Collect the ancestors of the latest commit that were pushed along and
-	// not part of the post history prior to the current push
-	ancestors, err := repo.GetAncestors(unwrapped, args.OldHash, true)
-	if err != nil {
-		return err
+	// Collect pushed commit ancestors if the target reference exists.
+	var ancestors []*object.Commit
+	reference := repo.GetState().References.Get(args.TxDetail.Reference)
+	if !reference.IsNil() {
+		ancestors, err = repo.GetAncestors(unwrapped, args.OldHash, true)
+		if err != nil {
+			return err
+		}
 	}
+
+	// Add the pushed commit as the last ancestor
+	ancestors = append(ancestors, unwrapped)
 
 	// Validate the new post commits by replaying the commits individually
 	// beginning from the first ancestor.
-	postCommits := append(ancestors, unwrapped)
-	refState := repo.GetState().References.Get(args.TxDetail.Reference)
-	for i, postCommit := range postCommits {
+	for i, ancestor := range ancestors {
 
 		// Define the post commit checker arguments
-		icArgs := &CheckPostCommitArgs{
+		pcArgs := &CheckPostCommitArgs{
 			Reference: args.TxDetail.Reference,
 			OldHash:   args.OldHash,
-			IsNew:     refState.IsNil(),
+			IsNew:     reference.IsNil(),
 		}
 
 		// If there are ancestors, set IsNew to false at index > 0.
@@ -80,21 +85,22 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 		// a new one. Also, set OldHash to the previous ancestor to mimic
 		// an already persisted post reference history.
 		if i > 0 {
-			icArgs.IsNew = false
-			icArgs.OldHash = postCommits[i-1].Hash.String()
+			pcArgs.IsNew = false
+			pcArgs.OldHash = ancestors[i-1].Hash.String()
 		}
 
-		post, err := args.CheckPostCommit(repo, rr.WrapCommit(postCommit), icArgs)
+		post, err := args.CheckPostCommit(repo, rr.WrapCommit(ancestor), pcArgs)
 		if err != nil {
 			return err
 		}
 
 		// Set flag for the authorizer function to check for admin update policy
-		if post.IsAdminUpdate() {
+		includesAdminFields := post.IncludesAdminFields()
+		if includesAdminFields {
 			args.TxDetail.FlagCheckAdminUpdatePolicy = true
 		}
 
-		isTip := postCommit.Hash.String() == args.Change.Item.GetData()
+		isTip := ancestor.Hash.String() == args.Change.Item.GetData()
 		if isTip {
 
 			// Update reference data in tx detail with post data from tip commit.
@@ -102,16 +108,21 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 
 			// When a reference exist and it is closed, the next pushed commit is expected
 			// to reopen it by setting the 'close' field to 'open'.
-			if refState.Data.Closed && !post.WantOpen() {
+			if reference.Data.Closed && !post.WantOpen() {
 				return ErrCannotWriteToClosedRef
 			}
-		}
 
-		// When the current commit is not the tip but it includes admin updates, we need
-		// to reject it as only the tip can carry updates that require admin privileges
-		if !isTip && post.IsAdminUpdate() {
-			return fmt.Errorf("non-tip commit (%s) cannot update any field "+
-				"that requires admin permission", postCommit.Hash.String()[:7])
+		} else {
+
+			// When the current commit is not the tip, not a new reference and it
+			// includes admin fields, we must reject it as only the tip can carry
+			// admin fields updates. The rationale here is that if non-tip commits
+			// set admin fields, it will take additional checks for UI clients to
+			// tell if they have commit creator has permission to update the field.
+			if !reference.IsNil() && includesAdminFields {
+				msg := "ancestor commit (%s) cannot include fields that require admin permission"
+				return fmt.Errorf(msg, ancestor.Hash.String()[:7])
+			}
 		}
 	}
 
@@ -143,11 +154,6 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 	// Post commits can't have multiple parents (merge commit not permitted)
 	if commit.NumParents() > 1 {
 		return nil, fmt.Errorf("post commit cannot have more than one parent")
-	}
-
-	// Post's first commit must have zero hash parent (orphan commit)
-	if args.IsNew && commit.NumParents() != 0 {
-		return nil, fmt.Errorf("first commit of a new post must have no parent")
 	}
 
 	// Post commit history must not alter the current history (rebasing not permitted)
@@ -227,16 +233,9 @@ func CheckCommonPostBody(
 		return fe(-1, makeField("replyTo", commitHash), "not expected in a new post commit")
 	}
 
-	// Ensure title is unset when replyTo is set
-	if len(replyTo.String()) > 0 && len(title.String()) > 0 {
-		return fe(-1, makeField("title", commitHash), "title is not required when replying")
-	}
-
 	// Ensure title is provided if the post reference is new
 	if isNewRef && len(title.String()) == 0 {
 		return fe(-1, makeField("title", commitHash), "title is required")
-	} else if !isNewRef && len(title.String()) > 0 {
-		return fe(-1, makeField("title", commitHash), "title is not required when replying")
 	}
 
 	// Title cannot exceed max.

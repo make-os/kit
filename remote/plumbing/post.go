@@ -366,8 +366,8 @@ func (b *PostBody) WantOpen() bool {
 	return b.Close != nil && *b.Close == false
 }
 
-// IsAdminUpdate checks whether administrative fields where set
-func (b *PostBody) IsAdminUpdate() bool {
+// IncludesAdminFields checks whether administrative fields where set
+func (b *PostBody) IncludesAdminFields() bool {
 	return b.Labels != nil || b.Assignees != nil || b.Close != nil || b.MergeRequestFields != (types.MergeRequestFields{})
 }
 

@@ -411,15 +411,15 @@ content`, "commit 2")
 		})
 	})
 
-	Describe("PostBody.IsAdminUpdate", func() {
+	Describe("PostBody.IncludesAdminFields", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{}).IsAdminUpdate()).To(BeFalse())
-			Expect((&plumbing.PostBody{Close: &cls}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{Close: &dontClose}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{}}).IsAdminUpdate()).To(BeFalse())
-			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{BaseBranch: "base1"}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: &[]string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{}).IncludesAdminFields()).To(BeFalse())
+			Expect((&plumbing.PostBody{Close: &cls}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{Close: &dontClose}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{}}).IncludesAdminFields()).To(BeFalse())
+			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{BaseBranch: "base1"}}).IncludesAdminFields()).To(BeTrue())
 		})
 	})
 
