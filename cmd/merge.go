@@ -386,7 +386,7 @@ func init() {
 
 	var commonFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {
-			cmd.Flags().IntP("limit", "n", 0, "Limit the number of records to returned")
+			cmd.Flags().IntP("limit", "n", 0, "Limit the number of merge requests to returned")
 			cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
 			cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
 			cmd.Flags().StringP("format", "f", "", "Set output format")

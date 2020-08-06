@@ -28,7 +28,7 @@ var issueCmd = &cobra.Command{
 
 // issueCreateCmd represents a sub-command to create an issue
 var issueCreateCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create [flags]",
 	Short: "Create an issue or add a comment to an existing issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -121,7 +121,7 @@ var issueCreateCmd = &cobra.Command{
 
 // issueListCmd represents a sub-command to list all issues
 var issueListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list [flags]",
 	Short: "List issues",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -154,7 +154,7 @@ var issueListCmd = &cobra.Command{
 
 // issueReadCmd represents a sub-command to read an issue
 var issueReadCmd = &cobra.Command{
-	Use:   "read",
+	Use:   "read [flags] [<issue-id>]",
 	Short: "Read an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -190,7 +190,7 @@ var issueReadCmd = &cobra.Command{
 
 // issueCloseCmd represents a sub-command to close an issue
 var issueCloseCmd = &cobra.Command{
-	Use:   "close",
+	Use:   "close [flags]",
 	Short: "Close an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -288,7 +288,7 @@ func init() {
 
 	var commonIssueFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {
-			cmd.Flags().IntP("limit", "n", 0, "Limit the number of records to returned")
+			cmd.Flags().IntP("limit", "n", 0, "Limit the number of issues to returned")
 			cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
 			cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
 			cmd.Flags().StringP("format", "f", "", "Set output format")

@@ -229,7 +229,7 @@ func formatAndPrintMergeRequestComments(
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + fmt2.YellowString("comments %H #%i") + `
+			format = `` + fmt2.YellowString("comment %H #%i") + `
 Title:          %t` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
 Author:         %a <%e>` + pusherKeyFmt + ` 
 Date:           %d` + replyToFmt + `` + reactionsFmt + `
