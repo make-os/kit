@@ -17,6 +17,7 @@ import (
 	"github.com/themakeos/lobe/util/crypto"
 	"github.com/themakeos/lobe/util/identifier"
 	"github.com/thoas/go-funk"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -30,6 +31,7 @@ var (
 
 // ValidatePostCommitArg contains arguments for ValidatePostCommit
 type ValidatePostCommitArg struct {
+	Keepers         core.Keepers
 	OldHash         string
 	Change          *types.ItemChange
 	TxDetail        *types.TxDetail
@@ -75,6 +77,7 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 
 		// Define the post commit checker arguments
 		pcArgs := &CheckPostCommitArgs{
+			Keepers:   args.Keepers,
 			Reference: args.TxDetail.Reference,
 			OldHash:   args.OldHash,
 			IsNew:     reference.IsNil(),
@@ -131,6 +134,7 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 
 // CheckPostCommitArgs includes arguments for CheckPostCommit function
 type CheckPostCommitArgs struct {
+	Keepers   core.Keepers
 	Reference string
 	OldHash   string
 	IsNew     bool
@@ -195,11 +199,67 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 	}
 
 	// Validate extracted front matter
-	if err = CheckPostBody(repo, args.Reference, commit, args.IsNew, cfm.FrontMatter, cfm.Content); err != nil {
+	if err = CheckPostBody(args.Keepers, repo, args.Reference, commit, args.IsNew, cfm.FrontMatter, cfm.Content); err != nil {
 		return nil, err
 	}
 
 	return plumbing2.PostBodyFromContentFrontMatter(&cfm), nil
+}
+
+// CheckPostBody checks whether the front matter and content extracted from a post body is ok.
+// keepers: The application state keepers
+// repo: The target repo
+// commit: The commit whose content needs to be checked.
+// isNewRef: indicates that the post reference is new.
+// fm: The front matter data.
+// content: The content from the post commit.
+func CheckPostBody(
+	keepers core.Keepers,
+	repo types.LocalRepo,
+	reference string,
+	commit types.Commit,
+	isNewRef bool,
+	fm map[string]interface{},
+	content []byte) error {
+
+	var commonFields = []string{"title", "reactions", "replyTo", "close"}
+	var issueFields = []string{"labels", "assignees"}
+	var allowedFields []string
+	var isIssuePost = plumbing2.IsIssueReference(reference)
+	var isMergeReqPost = plumbing2.IsMergeRequestReference(reference)
+
+	// Check whether the fields are allowed for the type of post reference
+	if isIssuePost {
+		allowedFields = append(allowedFields, append(commonFields, issueFields...)...)
+	} else if isMergeReqPost {
+		allowedFields = append(allowedFields, append(commonFields, mergeReqFields...)...)
+	} else {
+		return fmt.Errorf("unsupported post type")
+	}
+
+	// Ensure only valid fields are included
+	for k := range fm {
+		if !funk.ContainsString(allowedFields, k) {
+			return fe(-1, makeField(k, commit.GetHash().String()), "unexpected field")
+		}
+	}
+
+	// Perform common checks
+	if err := CheckCommonPostBody(repo, commit, isNewRef, fm, content); err != nil {
+		return err
+	}
+
+	// Perform checks for issue post
+	if isIssuePost {
+		return CheckIssuePostBody(commit, fm)
+	}
+
+	// Perform checks for merge request post
+	if isMergeReqPost {
+		return CheckMergeRequestPostBody(keepers, repo, commit, reference, isNewRef, fm)
+	}
+
+	return nil
 }
 
 // CheckCommonPostBody performs sanity checks on common fields of a post body
@@ -335,9 +395,10 @@ func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
 	return nil
 }
 
-// CheckMergeRequestPostBody performs sanity and consistency checks on
-// fields of a merge request post body
+// CheckMergeRequestPostBody performs sanity and consistency
+// checks on post fields specific to a merge request
 func CheckMergeRequestPostBody(
+	keepers core.Keepers,
 	repo types.LocalRepo,
 	commit types.Commit,
 	reference string,
@@ -346,7 +407,7 @@ func CheckMergeRequestPostBody(
 	if err := checkMergeRequestPostBodySanity(commit, body, isNewRef); err != nil {
 		return err
 	}
-	if err := CheckMergeRequestPostBodyConsistency(repo, reference, isNewRef, body); err != nil {
+	if err := CheckMergeRequestPostBodyConsistency(keepers, repo, reference, isNewRef, body); err != nil {
 		return err
 	}
 	return nil
@@ -355,17 +416,20 @@ func CheckMergeRequestPostBody(
 // CheckMergeRequestPostBodyConsistency performs consistency checks on
 // fields of a merge request post body against the network state
 func CheckMergeRequestPostBodyConsistency(
+	keepers core.Keepers,
 	repo types.LocalRepo,
 	reference string,
 	isNewRef bool,
 	body map[string]interface{}) error {
+
+	repoState := repo.GetState()
 
 	// For a non-new reference, get the merge request proposal and check if
 	// it has been finalized; if it has, ensure the body does not include
 	// merge request fields since a finalized merge request cannot be changed.
 	if !isNewRef {
 		id := mergerequest.MakeMergeRequestProposalID(plumbing2.GetReferenceShortName(reference))
-		proposal := repo.GetState().Proposals.Get(id)
+		proposal := repoState.Proposals.Get(id)
 		if proposal == nil {
 			return fmt.Errorf("merge request proposal not found") // should not happen
 		} else if proposal.IsFinalized() {
@@ -377,14 +441,38 @@ func CheckMergeRequestPostBodyConsistency(
 		}
 	}
 
+	obj := objx.New(body)
+
+	// Ensure the base branch exist in the repository
+	base := obj.Get("base").Str()
+	if base != "" && !repoState.References.Has(plumbing.NewBranchReferenceName(base).String()) {
+		return fmt.Errorf("base branch (%s) is unknown", base)
+	}
+
+	// Ensure the target branch exist.
+	// The target branch might be a path in the format <repo_name/branch>, in
+	// this case, check if the branch exist in the repository named 'repo_name'
+	target := obj.Get("target").Str()
+	parts := strings.SplitN(target, "/", 2)
+	if len(parts) == 1 {
+		if !repoState.References.Has(plumbing.NewBranchReferenceName(target).String()) {
+			return fmt.Errorf("target branch (%s) is unknown", target)
+		}
+	} else {
+		targetRepo := keepers.RepoKeeper().GetNoPopulate(parts[0])
+		if targetRepo.IsNil() {
+			return fmt.Errorf("target branch's repository (%s) does not exist", parts[0])
+		}
+		if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
+			return fmt.Errorf("target branch (%s) of (%s) is unknown", parts[1], parts[0])
+		}
+	}
+
 	return nil
 }
 
-// CheckMergeRequestPostBody performs sanity checks on fields of an merge request post body
-func checkMergeRequestPostBodySanity(
-	commit types.Commit,
-	body map[string]interface{},
-	isNewRef bool) error {
+// checkMergeRequestPostBodySanity performs sanity checks on fields of an merge request post body
+func checkMergeRequestPostBodySanity(commit types.Commit, body map[string]interface{}, isNewRef bool) error {
 
 	var commitHash = commit.GetHash().String()
 
@@ -437,58 +525,4 @@ func checkMergeRequestPostBodySanity(
 
 var makeField = func(name, commitHash string) string {
 	return fmt.Sprintf("<commit#%s>.%s", commitHash[:7], name)
-}
-
-// CheckPostBody checks whether the front matter and content extracted from a post body is ok.
-// repo: The target repo
-// commit: The commit whose content needs to be checked.
-// isNewRef: indicates that the post reference is new.
-// fm: The front matter data.
-// content: The content from the post commit.
-func CheckPostBody(
-	repo types.LocalRepo,
-	reference string,
-	commit types.Commit,
-	isNewRef bool,
-	fm map[string]interface{},
-	content []byte) error {
-
-	var commonFields = []string{"title", "reactions", "replyTo", "close"}
-	var issueFields = []string{"labels", "assignees"}
-	var allowedFields []string
-	var isIssuePost = plumbing2.IsIssueReference(reference)
-	var isMergeReqPost = plumbing2.IsMergeRequestReference(reference)
-
-	// Check whether the fields are allowed for the type of post reference
-	if isIssuePost {
-		allowedFields = append(allowedFields, append(commonFields, issueFields...)...)
-	} else if isMergeReqPost {
-		allowedFields = append(allowedFields, append(commonFields, mergeReqFields...)...)
-	} else {
-		return fmt.Errorf("unsupported post type")
-	}
-
-	// Ensure only valid fields are included
-	for k := range fm {
-		if !funk.ContainsString(allowedFields, k) {
-			return fe(-1, makeField(k, commit.GetHash().String()), "unexpected field")
-		}
-	}
-
-	// Perform common checks
-	if err := CheckCommonPostBody(repo, commit, isNewRef, fm, content); err != nil {
-		return err
-	}
-
-	// Perform checks for issue post
-	if isIssuePost {
-		return CheckIssuePostBody(commit, fm)
-	}
-
-	// Perform checks for merge request post
-	if isMergeReqPost {
-		return CheckMergeRequestPostBody(repo, commit, reference, isNewRef, fm)
-	}
-
-	return nil
 }

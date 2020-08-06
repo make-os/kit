@@ -373,7 +373,7 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
-	return r.Balance.Empty() || r.Balance.Equal("0") &&
+	return r.Balance.IsZero() &&
 		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&

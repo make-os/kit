@@ -402,7 +402,7 @@ func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 	// Here, we need to validate the change for non-delete request
 	if !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
 		oldHash := h.PushReader.References[ref].OldHash
-		err = h.ChangeValidator(h.Repo, oldHash, change, detail, h.Server.GetPushKeyGetter())
+		err = h.ChangeValidator(h.Server.GetLogic(), h.Repo, oldHash, change, detail, h.Server.GetPushKeyGetter())
 		if err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}

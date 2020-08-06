@@ -449,7 +449,7 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				handler.Server = svr
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-				handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return fmt.Errorf("bad reference change")
 				}
 
@@ -474,7 +474,7 @@ var _ = Describe("BasicHandler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return fmt.Errorf("bad reference change")
 					}
 					handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
@@ -498,7 +498,7 @@ var _ = Describe("BasicHandler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -523,7 +523,7 @@ var _ = Describe("BasicHandler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -548,7 +548,7 @@ var _ = Describe("BasicHandler", func() {
 					handler.Server = svr
 					handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					}
 
@@ -577,7 +577,7 @@ var _ = Describe("BasicHandler", func() {
 					handler.Repo.SetState(state.BareRepository())
 					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					}
 
@@ -609,7 +609,7 @@ var _ = Describe("BasicHandler", func() {
 					handler.Repo.SetState(state.BareRepository())
 					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					}
 
@@ -642,7 +642,7 @@ var _ = Describe("BasicHandler", func() {
 				handler.Server = svr
 				handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {MergeProposalID: "001"}}
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: strings.Repeat("0", 40)}}
-				handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				}
 				handler.MergeChecker = func(repo types.LocalRepo, change *types.ItemChange, oldRef types.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {

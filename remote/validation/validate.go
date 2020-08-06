@@ -26,6 +26,7 @@ var (
 )
 
 type ChangeValidatorFunc func(
+	keepers core.Keepers,
 	repo types.LocalRepo,
 	oldHash string,
 	change *types.ItemChange,
@@ -39,6 +40,7 @@ type ChangeValidatorFunc func(
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func ValidateChange(
+	keepers core.Keepers,
 	localRepo types.LocalRepo,
 	oldHash string,
 	change *types.ItemChange,
@@ -56,6 +58,7 @@ func ValidateChange(
 			return errors.Wrap(err, "unable to get commit object")
 		}
 		return ValidatePostCommit(localRepo, commit, &ValidatePostCommitArg{
+			Keepers:         keepers,
 			OldHash:         oldHash,
 			Change:          change,
 			TxDetail:        detail,
