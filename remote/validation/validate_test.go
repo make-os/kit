@@ -143,7 +143,7 @@ var _ = Describe("Validation", func() {
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
-					Headers: txDetail.GetPEMHeader(),
+					Headers: txDetail.GetGitSigPEMHeader(),
 					Type:    "SIGNATURE"}))
 				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
 			})
@@ -164,7 +164,7 @@ var _ = Describe("Validation", func() {
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				pemHeader := txDetail.GetPEMHeader()
+				pemHeader := txDetail.GetGitSigPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
 				Expect(err).To(BeNil())
@@ -189,7 +189,7 @@ var _ = Describe("Validation", func() {
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				pemHeader := txDetail.GetPEMHeader()
+				pemHeader := txDetail.GetGitSigPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
 				Expect(err).To(BeNil())
@@ -259,7 +259,7 @@ var _ = Describe("Validation", func() {
 				tob, _ = mockRepo.TagObject(tagRef.Hash())
 
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.GetPEMHeader(), Type: "SIGNATURE"})
+				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(sig)
 
 				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
@@ -280,7 +280,7 @@ var _ = Describe("Validation", func() {
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
-				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetPEMHeader(), Type: "SIGNATURE"})
+				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(pemData)
 
 				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
@@ -301,7 +301,7 @@ var _ = Describe("Validation", func() {
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
-				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetPEMHeader(), Type: "SIGNATURE"})
+				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(pemData)
 
 				err = validation.CheckAnnotatedTag(tob, txDetail, testPushKeyGetter(pubKey, nil))

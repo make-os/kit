@@ -184,7 +184,13 @@ func EmptyAppConfig() AppConfig {
 	}
 }
 
-// EmptyAppConfigWithGlobals is like EmptyAppConfig but sets the globals with g
+// GetExecName returns the app's executable name
+func (c *AppConfig) GetExecName() string {
+	if c.IsProd() {
+		return ExecName
+	}
+	return AppName
+}
 
 // GetConsoleHistoryPath returns the filepath where the console
 // input history is stored
@@ -265,4 +271,9 @@ func (c *AppConfig) GetStateTreeDBDir() string {
 // IsDev checks whether the current environment is 'development'
 func (c *AppConfig) IsDev() bool {
 	return c.Node.Mode == ModeDev
+}
+
+// IsProd checks whether the current environment is 'production'
+func (c *AppConfig) IsProd() bool {
+	return c.Node.Mode == ModeProd
 }

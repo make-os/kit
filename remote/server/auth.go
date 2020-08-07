@@ -151,7 +151,8 @@ func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
 }
 
 // RemotePushTokenSetter describes a function for setting push tokens on a remote config
-type RemotePushTokenSetter func(targetRepo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error)
+type RemotePushTokenSetter func(cfg *config.AppConfig, targetRepo remotetypes.LocalRepo,
+	args *SetRemotePushTokenArgs) (string, error)
 
 // SetRemotePushTokenArgs contains arguments for SetRemotePushToken
 type SetRemotePushTokenArgs struct {
@@ -178,7 +179,7 @@ type SetRemotePushTokenArgs struct {
 // the new token to the existing tokens or clear the existing tokens
 // if ResetTokens is true. If TargetRemote is not set, all remotes
 // will be updated with the new token.
-func SetRemotePushToken(repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
+func SetRemotePushToken(cfg *config.AppConfig, repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
 
 	repoCfg, err := repo.Config()
 	if err != nil {
@@ -270,7 +271,7 @@ func SetRemotePushToken(repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs
 	// Set the push token to the env so that other processes can use it.
 	// E.g the signing command called by git needs it for creating a signature.
 	if token != "" {
-		os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName), token)
+		os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()), token)
 	}
 
 	if err := repo.SetConfig(repoCfg); err != nil {

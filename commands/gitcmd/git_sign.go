@@ -58,7 +58,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 	}
 
 	// Get the push request token
-	token := os.Getenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName))
+	token := os.Getenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()))
 	if token == "" {
 		return fmt.Errorf("push request token not set")
 	}
@@ -72,7 +72,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 	// Construct the message
 	// git sig message + msgpack(tx parameters)
 	msg, _ := ioutil.ReadAll(data)
-	msg = append(msg, txDetail.BytesNoSig()...)
+	msg = append(msg, txDetail.BytesNoMergeIDAndSig()...)
 
 	// Sign the message
 	sig, err := key.GetKey().PrivKey().Sign(msg)
@@ -82,7 +82,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 
 	// Write output
 	w := bytes.NewBuffer(nil)
-	pem.Encode(w, &pem.Block{Bytes: sig, Type: "PGP SIGNATURE", Headers: txDetail.GetPEMHeader()})
+	pem.Encode(w, &pem.Block{Bytes: sig, Type: "PGP SIGNATURE", Headers: txDetail.GetGitSigPEMHeader()})
 	fmt.Fprintf(args.StdErr, "[GNUPG:] BEGIN_SIGNING\n")
 	fmt.Fprintf(args.StdErr, "[GNUPG:] SIG_CREATED C\n")
 	fmt.Fprintf(args.StdOut, "%s", w.Bytes())

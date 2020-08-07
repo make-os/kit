@@ -178,18 +178,18 @@ func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
 
 	// Populate Governance config
 	gov.CreatorAsContributor = toBool(o.Get("creatorAsContrib").Inter(gov.CreatorAsContributor))
-	gov.Voter = VoterType(toInt(o.Get("propVoter").Inter(gov.Voter)))
-	gov.PropCreator = ProposalCreatorType(toInt(o.Get("propCreator").Inter(gov.PropCreator)))
+	gov.Voter = VoterType(toInt(o.Get("propVoter").Inter(int(gov.Voter))))
+	gov.PropCreator = ProposalCreatorType(toInt(o.Get("propCreator").Inter(int(gov.PropCreator))))
 	gov.ReqVoterJoinHeight = toBool(o.Get("requireVoterJoinHeight").Inter(gov.ReqVoterJoinHeight))
-	gov.PropDuration = util.UInt64(toUint64(o.Get("propDur").Inter(gov.PropDuration)))
-	gov.PropFeeDepositDur = util.UInt64(toUint64(o.Get("propFeeDepDur").Inter(gov.PropFeeDepositDur)))
-	gov.PropTallyMethod = ProposalTallyMethod(toInt(o.Get("propTallyMethod").Inter(gov.PropTallyMethod)))
+	gov.PropDuration = util.UInt64(toUint64(o.Get("propDur").Inter(gov.PropDuration.UInt64())))
+	gov.PropFeeDepositDur = util.UInt64(toUint64(o.Get("propFeeDepDur").Inter(gov.PropFeeDepositDur.UInt64())))
+	gov.PropTallyMethod = ProposalTallyMethod(toInt(o.Get("propTallyMethod").Inter(int(gov.PropTallyMethod))))
 	gov.PropQuorum = toFlo(o.Get("propQuorum").Inter(gov.PropQuorum))
 	gov.PropThreshold = toFlo(o.Get("propThreshold").Inter(gov.PropThreshold))
 	gov.PropVetoQuorum = toFlo(o.Get("propVetoQuorum").Inter(gov.PropVetoQuorum))
 	gov.PropVetoOwnersQuorum = toFlo(o.Get("propVetoOwnersQuorum").Inter(gov.PropVetoOwnersQuorum))
 	gov.PropFee = toFlo(o.Get("propFee").Inter(gov.PropFee))
-	gov.PropFeeRefundType = PropFeeRefundType(toInt(o.Get("propFeeRefundType").Inter(gov.PropFeeRefundType)))
+	gov.PropFeeRefundType = PropFeeRefundType(toInt(o.Get("propFeeRefundType").Inter(int(gov.PropFeeRefundType))))
 	gov.NoPropFeeForMergeReq = toBool(o.Get("noPropFeeForMergeReq").Inter(gov.NoPropFeeForMergeReq))
 
 	// Populate Policies
@@ -262,8 +262,7 @@ var (
 
 // NewDefaultRepoConfigFromMap creates a repo config composed of default values + m
 func NewDefaultRepoConfigFromMap(m map[string]interface{}) *RepoConfig {
-	r := MakeDefaultRepoConfig()
-	return r.FromMap(m)
+	return MakeDefaultRepoConfig().FromMap(m)
 }
 
 // MakeDefaultRepoConfig returns sane defaults for repository configurations

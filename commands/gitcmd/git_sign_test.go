@@ -83,7 +83,7 @@ var _ = Describe("GitSign", func() {
 				return mockStoredKey, nil
 			}
 			config.AppName = "MY_TEST_APP"
-			os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName), "token")
+			os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()), "token")
 			err := GitSignCmd(cfg, strings.NewReader("data"), args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to decode token: malformed token"))
@@ -104,7 +104,7 @@ var _ = Describe("GitSign", func() {
 			token := server.MakePushToken(mockStoredKey, txDetail)
 
 			config.AppName = "MY_TEST_APP"
-			os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName), token)
+			os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()), token)
 			err := GitSignCmd(cfg, strings.NewReader("data"), args)
 			Expect(err).To(BeNil())
 			lines := strings.Split(out.String(), "\n")

@@ -212,7 +212,7 @@ var repoConfigCmd = &cobra.Command{
 			configArgs.AmendCommit = nil
 		}
 
-		if err := repocmd.ConfigCmd(targetRepo, configArgs); err != nil {
+		if err := repocmd.ConfigCmd(cfg, targetRepo, configArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -326,10 +326,10 @@ Inside that repository, you can run the following commands:
   `+colorfmt.CyanString("git push")+`:
     To push your commits, tags and notes with automatic signing.
 
-  `+colorfmt.CyanString(config.CLIName+" config")+`:
-    To reset network and repository configurations (e.g fees, nonce, remotes etc)
+  `+colorfmt.CyanString(config.ExecName+" config")+`:
+    To change network and repository configurations (e.g fees, nonce, remotes etc)
 
-  `+colorfmt.CyanString(config.CLIName+" sign")+`:
+  `+colorfmt.CyanString(config.ExecName+" sign")+`:
     To manually sign your commit, tags and nodes.
 
 Happy hacking!

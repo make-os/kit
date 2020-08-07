@@ -182,7 +182,7 @@ var _ = Describe("GitVerify", func() {
 			args.PemDecoder = func(data []byte) (p *pem.Block, rest []byte) {
 				return &pem.Block{
 					Bytes:   sig,
-					Headers: txDetail.GetPEMHeader(),
+					Headers: txDetail.GetGitSigPEMHeader(),
 				}, nil
 			}
 

@@ -202,7 +202,7 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*ty
 	}
 
 	// Re-construct the transaction parameters
-	txDetail, err := types.TxDetailFromPEMHeader(pemBlock.Headers)
+	txDetail, err := types.TxDetailFromGitSigPEMHeader(pemBlock.Headers)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode PEM header")
 	}

@@ -71,15 +71,25 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 		references = append(references, plumbing.ReferenceName(refname))
 	}
 
-	// Set hook.origin config var to be used
-	// by HandleAskPass to determine which remote tokens to use
 	rcfg, err := repo.Config()
 	if err != nil {
 		return err
 	}
+
+	// Set hook.origin config var to be used
+	// by HandleAskPass to determine which remote tokens to use
 	rcfg.Raw.Section("hook").SetOption("curRemote", args.Args[0])
 	if err = repo.SetConfig(rcfg); err != nil {
 		return errors.Wrap(err, "failed to set `hook.curRemote` value")
+	}
+
+	// If the target remote tokens are already set, do not sign. Return.
+	// Rationale: The askpass hook usually removes the token after handover to git.
+	// but it the sign command was used directly, askpass hook is never called; Whenever
+	// sign command is used directly, the intent is to override signing via the hook.
+	tokens := rcfg.Raw.Section("remote").Subsection(args.Args[0]).Option("tokens")
+	if tokens != "" {
+		return nil
 	}
 
 	// Sign each reference
@@ -129,7 +139,9 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	return nil
 }
 
-// HandleAskPass handles git's askpass request
+// HandleAskPass handles git's askpass request. It collects the push token
+// created by SignCmd and passes it to git as the password. It also resets
+// fields
 func HandleAskPass(stdout, stderr io.Writer, repo types.LocalRepo, args []string) error {
 
 	// Output nothing for password request
@@ -147,9 +159,6 @@ func HandleAskPass(stdout, stderr io.Writer, repo types.LocalRepo, args []string
 	}
 	curRemote := rcfg.Raw.Section("hook").Option("curRemote")
 	rcfg.Raw.RemoveSection("hook")
-	if err = repo.SetConfig(rcfg); err != nil {
-		return errors.Wrap(err, "failed to update config")
-	}
 
 	// Get the remote's push token
 	tokens := rcfg.Raw.Section("remote").Subsection(curRemote).Option("tokens")
@@ -161,5 +170,9 @@ func HandleAskPass(stdout, stderr io.Writer, repo types.LocalRepo, args []string
 	// Output push token as username
 	fmt.Fprintf(stdout, tokens)
 
-	return nil
+	// Clear the remote.*.tokens and sign.mergeID fields since these
+	// fields' values are supposed to be for one-time use
+	rcfg.Raw.Section("remote").Subsection(curRemote).RemoveOption("tokens")
+	rcfg.Raw.Section("sign").RemoveOption("mergeID")
+	return repo.SetConfig(rcfg)
 }

@@ -87,14 +87,14 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 
 		// If we still don't have a passphrase, get it from the repo scoped env variable.
 		if args.Passphrase == "" {
-			args.Passphrase = os.Getenv(MakeRepoScopedPassEnvVar(config.AppName, args.TargetRepo.GetName()))
+			args.Passphrase = os.Getenv(MakeRepoScopedPassEnvVar(cfg.GetExecName(), args.TargetRepo.GetName()))
 		}
 	}
 
 	// If key is protected and still no passphrase,
 	// try to get it from the general passphrase env variable
 	if !unprotected && args.Passphrase == "" {
-		args.Passphrase = os.Getenv(MakePassEnvVar(config.AppName))
+		args.Passphrase = os.Getenv(MakePassEnvVar(cfg.GetExecName()))
 	}
 
 	// If key is protected and still no passphrase, exit with error

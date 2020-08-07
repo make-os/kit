@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -93,6 +94,11 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	populateSignCommitArgsFromRepoConfig(repo, args)
 
+	// Set merge ID from env if unset
+	if args.MergeID == "" {
+		args.MergeID = strings.ToUpper(os.Getenv(fmt.Sprintf("%s_MR_ID", cfg.GetExecName())))
+	}
+
 	// Signing key is required
 	if args.SigningKey == "" {
 		return ErrMissingPushKeyID
@@ -180,7 +186,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	}
 
 	// Create & set push request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
+	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		TxDetail:                      txDetail,
 		PushKey:                       key,
@@ -193,7 +199,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, repo.GetName())
+	passVar := common.MakeRepoScopedPassEnvVar(cfg.GetExecName(), repo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		_ = os.Setenv(passVar, args.PushKeyPass)
 		defer func() { _ = os.Setenv(passVar, "") }()
@@ -261,5 +267,8 @@ func populateSignCommitArgsFromRepoConfig(repo types.LocalRepo, args *SignCommit
 	}
 	if args.SetRemotePushTokensOptionOnly == false {
 		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetConfig("sign.noUsername"))
+	}
+	if args.MergeID == "" {
+		args.MergeID = repo.GetConfig("sign.mergeID")
 	}
 }

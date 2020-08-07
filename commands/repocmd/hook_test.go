@@ -65,6 +65,19 @@ var _ = Describe(".HookCmd", func() {
 			Expect(err).To(MatchError("failed to set `hook.curRemote` value: error"))
 		})
 
+		When("the target remote already has tokens field set", func() {
+			It("should return nil", func() {
+				in := testutil.Reader{Data: []byte{}}
+				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
+				repoCfg := config2.NewConfig()
+				mockRepo.EXPECT().Config().Return(repoCfg, nil)
+				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+				repoCfg.Raw.Section("remote").Subsection("remote_name").SetOption("tokens", "abc")
+				err := HookCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
 		When("no reference was received from stdin", func() {
 			It("should return nil and set `hook.curRemote` config option", func() {
 				in := testutil.Reader{Data: []byte{}}
@@ -179,6 +192,12 @@ var _ = Describe(".HookCmd", func() {
 		})
 
 		When("Username is requested", func() {
+			var repoCfg *config2.Config
+
+			BeforeEach(func() {
+				repoCfg = config2.NewConfig()
+			})
+
 			It("should return err when unable to get config", func() {
 				out := bytes.NewBuffer(nil)
 				mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
@@ -187,36 +206,38 @@ var _ = Describe(".HookCmd", func() {
 				Expect(err).To(MatchError("failed to get repo config: error"))
 			})
 
-			It("should return err when unable to update config", func() {
-				out := bytes.NewBuffer(nil)
-				repoCfg := config2.NewConfig()
-				mockRepo.EXPECT().Config().Return(repoCfg, nil)
-				mockRepo.EXPECT().SetConfig(repoCfg).Return(fmt.Errorf("error"))
-				err := HandleAskPass(out, ioutil.Discard, mockRepo, []string{"Username"})
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("failed to update config: error"))
-			})
-
 			It("should return err when token was not set in 'hook.curRemote'", func() {
 				out := bytes.NewBuffer(nil)
-				repoCfg := config2.NewConfig()
 				mockRepo.EXPECT().Config().Return(repoCfg, nil)
-				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
 				err := HandleAskPass(out, ioutil.Discard, mockRepo, []string{"Username"})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("push token was not found"))
 			})
 
-			It("should return no error and print token on success", func() {
-				out := bytes.NewBuffer(nil)
-				repoCfg := config2.NewConfig()
-				mockRepo.EXPECT().Config().Return(repoCfg, nil)
-				repoCfg.Raw.Section("hook").SetOption("curRemote", "origin")
-				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-				repoCfg.Raw.Section("remote").Subsection("origin").SetOption("tokens", "abc")
-				err := HandleAskPass(out, ioutil.Discard, mockRepo, []string{"Username"})
-				Expect(err).To(BeNil())
-				Expect(out.String()).To(Equal("abc"))
+			When("finished with no error", func() {
+				var out *bytes.Buffer
+				BeforeEach(func() {
+					out = bytes.NewBuffer(nil)
+					mockRepo.EXPECT().Config().Return(repoCfg, nil)
+					repoCfg.Raw.Section("hook").SetOption("curRemote", "origin")
+					mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+					repoCfg.Raw.Section("remote").Subsection("origin").SetOption("tokens", "abc")
+				})
+
+				It("should return no error and print token on success", func() {
+					err := HandleAskPass(out, ioutil.Discard, mockRepo, []string{"Username"})
+					Expect(err).To(BeNil())
+					Expect(out.String()).To(Equal("abc"))
+				})
+
+				It("should remove config fields", func() {
+					repoCfg.Raw.Section("sign").SetOption("mergeID", "12")
+					err := HandleAskPass(out, ioutil.Discard, mockRepo, []string{"Username"})
+					Expect(err).To(BeNil())
+					Expect(repoCfg.Raw.Section("hook").Options).To(BeNil())
+					Expect(repoCfg.Raw.Section("remote").Subsection("origin").Options).To(BeEmpty())
+					Expect(repoCfg.Raw.Section("sign").Option("mergeID")).To(BeEmpty())
+				})
 			})
 		})
 	})

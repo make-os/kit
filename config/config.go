@@ -26,8 +26,8 @@ var (
 	// AppName is the name of the application
 	AppName = "lobe"
 
-	// CLIName is the short name for the executable
-	CLIName = "lob"
+	// ExecName is the short name for the executable
+	ExecName = "lob"
 
 	// DefaultDataDir is the path to the data directory
 	DefaultDataDir = os.ExpandEnv("$HOME/." + AppName)
@@ -143,7 +143,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	// In development mode, use the development data directory.
 	if devMode {
 		c.Node.Mode = ModeDev
-		CLIName = AppName
+		ExecName = AppName
 		if devDataDirPrefix == "" {
 			dataDir = DefaultDevDataDir
 		}

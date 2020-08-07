@@ -58,7 +58,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	}
 
 	// Get tx parameters from the header
-	txDetail, err := types.TxDetailFromPEMHeader(decSig.Headers)
+	txDetail, err := types.TxDetailFromGitSigPEMHeader(decSig.Headers)
 	if err != nil {
 		fmt.Fprintf(args.StdOut, "[GNUPG:] BADSIG 0\n")
 		err = fmt.Errorf("invalid header: %s", err)

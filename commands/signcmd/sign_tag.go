@@ -159,7 +159,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
+	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		TxDetail:                      txDetail,
 		PushKey:                       key,
@@ -172,7 +172,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase for unlocking the push key.
 	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(config.AppName, repo.GetName())
+	passVar := common.MakeRepoScopedPassEnvVar(cfg.GetExecName(), repo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
 		defer func() { os.Setenv(passVar, "") }()

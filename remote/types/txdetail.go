@@ -181,13 +181,14 @@ func (tp *TxDetail) MustSignatureAsBytes() []byte {
 	return sig
 }
 
-// Equal checks whether this object is equal to the give object
+// Equal checks whether this object is equal to the give object.
+// Signature and MergeProposalID fields are excluded from equality check.
 func (tp *TxDetail) Equal(o *TxDetail) bool {
-	return bytes.Equal(tp.BytesNoSig(), o.BytesNoSig())
+	return bytes.Equal(tp.BytesNoMergeIDAndSig(), o.BytesNoMergeIDAndSig())
 }
 
-// GetPEMHeader returns a map version of the object suitable for use in a PEM header
-func (tp *TxDetail) GetPEMHeader() map[string]string {
+// GetGitSigPEMHeader returns headers to be used as git signature PEM headers
+func (tp *TxDetail) GetGitSigPEMHeader() map[string]string {
 	hdr := map[string]string{
 		"repo":      tp.RepoName,
 		"namespace": tp.RepoNamespace,
@@ -199,14 +200,11 @@ func (tp *TxDetail) GetPEMHeader() map[string]string {
 	if tp.Value != "" {
 		hdr["value"] = tp.Value.String()
 	}
-	if tp.MergeProposalID != "" {
-		hdr["mergeID"] = tp.MergeProposalID
-	}
 	return hdr
 }
 
-// TxDetailFromPEMHeader constructs a TxDetail instance from a PEM header
-func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
+// TxDetailFromGitSigPEMHeader constructs a TxDetail instance from a git signature PEM header
+func TxDetailFromGitSigPEMHeader(hdr map[string]string) (*TxDetail, error) {
 	var params = &TxDetail{
 		RepoName:      hdr["repo"],
 		RepoNamespace: hdr["namespace"],
@@ -225,10 +223,6 @@ func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
 		params.Value = util.String(value)
 	}
 
-	if mergeID, ok := hdr["mergeID"]; ok {
-		params.MergeProposalID = mergeID
-	}
-
 	return params, nil
 }
 
@@ -237,12 +231,21 @@ func (tp *TxDetail) Bytes() []byte {
 	return util.ToBytes(tp)
 }
 
-// Bytes returns the serialized equivalent of tp
+// BytesNoSig returns bytes version of tp excluding the signature
 func (tp *TxDetail) BytesNoSig() []byte {
 	sig := tp.Signature
 	tp.Signature = ""
 	bz := util.ToBytes(tp)
 	tp.Signature = sig
+	return bz
+}
+
+// BytesNoMergeIDAndSig returns bytes version of tp excluding the signature and merge ID
+func (tp *TxDetail) BytesNoMergeIDAndSig() []byte {
+	sig, mergeID := tp.Signature, tp.MergeProposalID
+	tp.Signature, tp.MergeProposalID = "", ""
+	bz := util.ToBytes(tp)
+	tp.Signature, tp.MergeProposalID = sig, mergeID
 	return bz
 }
 

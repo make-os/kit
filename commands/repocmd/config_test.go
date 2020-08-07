@@ -51,7 +51,7 @@ var _ = Describe("ConfigCmd", func() {
 			mockRepo = mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
 			args := &ConfigArgs{}
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(MatchError("error"))
 		})
 
@@ -59,7 +59,7 @@ var _ = Describe("ConfigCmd", func() {
 			fee := 12.3
 			args := &ConfigArgs{Fee: &fee}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("fee")).To(Equal("12.3"))
 		})
@@ -68,7 +68,7 @@ var _ = Describe("ConfigCmd", func() {
 			value := 12.3
 			args := &ConfigArgs{Value: &value}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("value")).To(Equal("12.3"))
 		})
@@ -77,7 +77,7 @@ var _ = Describe("ConfigCmd", func() {
 			nonce := uint64(23)
 			args := &ConfigArgs{Nonce: &nonce}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("nonce")).To(Equal("23"))
 		})
@@ -86,7 +86,7 @@ var _ = Describe("ConfigCmd", func() {
 			signingKey := "key"
 			args := &ConfigArgs{SigningKey: &signingKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
@@ -96,7 +96,7 @@ var _ = Describe("ConfigCmd", func() {
 			pushKey := "push_key"
 			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal(pushKey))
 		})
@@ -106,7 +106,7 @@ var _ = Describe("ConfigCmd", func() {
 			pushKey := ""
 			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
@@ -115,7 +115,7 @@ var _ = Describe("ConfigCmd", func() {
 			passphrase := "pass"
 			args := &ConfigArgs{SigningKeyPass: &passphrase}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("passphrase")).To(Equal("pass"))
 		})
@@ -124,7 +124,7 @@ var _ = Describe("ConfigCmd", func() {
 			amend := true
 			args := &ConfigArgs{AmendCommit: &amend}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("commit").Option("amend")).To(Equal("true"))
 		})
@@ -132,15 +132,15 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set gpg.program", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("gpg").Option("program")).To(Equal(config.CLIName))
+			Expect(repoCfg.Raw.Section("gpg").Option("program")).To(Equal(config.ExecName))
 		})
 
 		It("should set remotes", func() {
 			args := &ConfigArgs{Remotes: []Remote{{Name: "r1", URL: "remote.com,remote2.com"}, {Name: "r2", URL: "remote3.com"}}}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Remotes).To(HaveLen(2))
 			Expect(repoCfg.Remotes["r1"].Name).To(Equal("r1"))
@@ -152,7 +152,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set default remote if no user-defined remote", func() {
 			args := &ConfigArgs{Remotes: []Remote{}}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Remotes).To(HaveLen(1))
 			Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
@@ -162,7 +162,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should add pre-push hook and askpass hook files", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
@@ -175,7 +175,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set sign.noUsername", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("sign").Option("noUsername")).To(Equal("true"))
 		})
@@ -183,7 +183,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set core.askPass", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(mockRepo, args)
+			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("core").Option("askPass")).To(Equal(".git/hooks/askpass"))
 		})
@@ -191,7 +191,7 @@ var _ = Describe("ConfigCmd", func() {
 
 	Describe(".addHooks", func() {
 		It("should add hook files if they don't already exist", func() {
-			err := addHooks(gitDir)
+			err := addHooks("", gitDir)
 			Expect(err).To(BeNil())
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
@@ -207,33 +207,33 @@ var _ = Describe("ConfigCmd", func() {
 				Expect(err).To(BeNil())
 				err = ioutil.WriteFile(filepath.Join(hooksDir, "askpass"), []byte("line 1"), 0700)
 				Expect(err).To(BeNil())
-				err = addHooks(gitDir)
+				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.CLIName))
+				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
 				askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
 				Expect(err).To(BeNil())
-				Expect(string(askPass)).To(ContainSubstring(config.CLIName))
+				Expect(string(askPass)).To(ContainSubstring(config.ExecName))
 			})
 		})
 
 		When("hook files already exist and have a CLIName command", func() {
 			It("should not re-add CLIName command to the files", func() {
-				err = addHooks(gitDir)
+				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.CLIName))
+				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
 				askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
 				Expect(err).To(BeNil())
-				Expect(string(askPass)).To(ContainSubstring(config.CLIName))
+				Expect(string(askPass)).To(ContainSubstring(config.ExecName))
 
-				err = addHooks(gitDir)
+				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush2, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.CLIName))
+				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
 				askPass2, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
 				Expect(err).To(BeNil())
 				Expect(prePush).To(Equal(prePush2))

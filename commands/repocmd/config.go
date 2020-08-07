@@ -79,7 +79,7 @@ type ConfigArgs struct {
 }
 
 // ConfigCmd configures a repository
-func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
+func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) error {
 
 	rcfg, err := repo.Config()
 	if err != nil {
@@ -119,7 +119,7 @@ func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 	}
 
 	// Set lobe as `gpg.program`
-	rcfg.Raw.Section("gpg").SetOption("program", config.CLIName)
+	rcfg.Raw.Section("gpg").SetOption("program", config.ExecName)
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
@@ -135,7 +135,7 @@ func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 	// Add hooks if allowed
 	dotGitPath := filepath.Join(repo.GetPath(), ".git")
 	if !args.NoHook {
-		if err = addHooks(dotGitPath); err != nil {
+		if err = addHooks(cfg.GetExecName(), dotGitPath); err != nil {
 			return err
 		}
 	}
@@ -164,12 +164,12 @@ func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 // addHook adds hooks to git repo at the given path.
 // If not already added the hook command already exist, it will not be re-added.
 // If the hook file does not exist, create it and make it an executable on non-windows system.
-func addHooks(path string) error {
+func addHooks(appExecName string, path string) error {
 	for _, hook := range []string{"pre-push", "askpass"} {
-		cmd := fmt.Sprintf("%s repo hook $1", config.CLIName)
+		cmd := fmt.Sprintf("%s repo hook $1", config.ExecName)
 
 		if hook == "askpass" {
-			cmd = fmt.Sprintf("%s repo hook --askpass $1", config.CLIName)
+			cmd = fmt.Sprintf("%s repo hook --askpass $1", config.ExecName)
 		}
 
 		os.Mkdir(filepath.Join(path, "hooks"), 0700)
@@ -203,7 +203,7 @@ func addHooks(path string) error {
 			if line := scanner.Text(); line != "" && line[:1] == "#" {
 				continue
 			}
-			if strings.Contains(scanner.Text(), config.CLIName+" repo hook") {
+			if strings.Contains(scanner.Text(), appExecName+" repo hook") {
 				goto end
 			}
 		}
