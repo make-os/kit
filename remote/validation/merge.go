@@ -19,8 +19,7 @@ type MergeComplianceCheckFunc func(
 	pushKeyID string,
 	keepers core.Keepers) error
 
-// CheckMergeCompliance checks whether push to a branch satisfied
-// an accepted merge proposal
+// CheckMergeCompliance checks whether push to a branch satisfied an accepted merge proposal
 func CheckMergeCompliance(
 	repo types.LocalRepo,
 	change *types.ItemChange,
@@ -34,8 +33,8 @@ func CheckMergeCompliance(
 		return fmt.Errorf("merge error: pushed reference must be a branch")
 	}
 
-	fullMergePropID := mergerequest.MakeMergeRequestProposalID(mergeProposalID)
-	prop := repo.GetState().Proposals.Get(fullMergePropID)
+	propID := mergerequest.MakeMergeRequestProposalID(mergeProposalID)
+	prop := repo.GetState().Proposals.Get(propID)
 	if prop == nil {
 		return fmt.Errorf("merge error: target merge proposal was not found")
 	}
@@ -47,7 +46,7 @@ func CheckMergeCompliance(
 	}
 
 	// Check if the merge proposal has been closed
-	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), fullMergePropID)
+	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), propID)
 	if err != nil {
 		return fmt.Errorf("merge error: %s", err)
 	} else if closed {
