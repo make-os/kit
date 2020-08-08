@@ -67,20 +67,6 @@ var _ = Describe("GitVerify", func() {
 
 			args := &GitVerifyArgs{Args: []string{"", "", "", "", f.Name()}, StdErr: ioutil.Discard, StdOut: ioutil.Discard}
 			args.PemDecoder = func(data []byte) (p *pem.Block, rest []byte) {
-				return &pem.Block{Headers: map[string]string{"nonce": "invalid_value"}}, nil
-			}
-
-			err := GitVerifyCmd(cfg, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid header: nonce must be numeric"))
-		})
-
-		It("should return err when push key ID is not included in signature header", func() {
-			f, _ := ioutil.TempFile(os.TempDir(), "")
-			f.Close()
-
-			args := &GitVerifyArgs{Args: []string{"", "", "", "", f.Name()}, StdErr: ioutil.Discard, StdOut: ioutil.Discard}
-			args.PemDecoder = func(data []byte) (p *pem.Block, rest []byte) {
 				return &pem.Block{Headers: map[string]string{}}, nil
 			}
 
@@ -174,9 +160,8 @@ var _ = Describe("GitVerify", func() {
 			}
 
 			// Create signature
-			txDetail := &types2.TxDetail{RepoName: "repo1", RepoNamespace: "namespace", Fee: "1.2", PushKeyID: key.PushAddr().String(), Reference: "refs/heads/master", Nonce: 1}
-			msg := append(gitObjectData, txDetail.BytesNoSig()...)
-			sig, err := key.PrivKey().Sign(msg)
+			txDetail := &types2.TxDetail{PushKeyID: key.PushAddr().String()}
+			sig, err := key.PrivKey().Sign(gitObjectData)
 			Expect(err).To(BeNil())
 
 			args.PemDecoder = func(data []byte) (p *pem.Block, rest []byte) {

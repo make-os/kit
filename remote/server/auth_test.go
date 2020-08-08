@@ -690,11 +690,6 @@ var _ = Describe("Auth", func() {
 				Expect(err).To(BeNil())
 				Expect(token).ToNot(BeEmpty())
 			})
-
-			It("should set token to *_LAST_PUSH_TOKEN env var", func() {
-				envToken := os.Getenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()))
-				Expect(envToken).To(Equal(token))
-			})
 		})
 
 		When("no target remote is specified", func() {

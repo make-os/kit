@@ -3,10 +3,8 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"strconv"
 	"strings"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cast"
 	"github.com/themakeos/lobe/util"
@@ -150,7 +148,7 @@ type TxDetail struct {
 	PushKeyID       string      `json:"pkID" msgpack:"pkID,omitempty" mapstructure:"pkID"`                // The pusher public key ID.
 	Signature       string      `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`                   // The signature of the tx parameter
 	MergeProposalID string      `json:"mergeID" msgpack:"mergeID,omitempty" mapstructure:"mergeID"`       // Specifies a merge proposal that the push is meant to fulfil
-	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                // Indicates the HEAD hash of the target reference
+	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                // Indicates the [tip] hash of the target reference
 
 	// FlagCheckAdminUpdatePolicy indicate the pusher's intention to perform admin update
 	// operation that will require an admin update policy specific to the reference
@@ -189,41 +187,19 @@ func (tp *TxDetail) Equal(o *TxDetail) bool {
 
 // GetGitSigPEMHeader returns headers to be used as git signature PEM headers
 func (tp *TxDetail) GetGitSigPEMHeader() map[string]string {
-	hdr := map[string]string{
-		"repo":      tp.RepoName,
-		"namespace": tp.RepoNamespace,
-		"reference": tp.Reference,
-		"pkID":      tp.PushKeyID,
-		"nonce":     fmt.Sprintf("%d", tp.Nonce),
-		"fee":       tp.Fee.String(),
+	return map[string]string{
+		"pkID": tp.PushKeyID,
 	}
-	if tp.Value != "" {
-		hdr["value"] = tp.Value.String()
-	}
-	return hdr
 }
 
 // TxDetailFromGitSigPEMHeader constructs a TxDetail instance from a git signature PEM header
 func TxDetailFromGitSigPEMHeader(hdr map[string]string) (*TxDetail, error) {
-	var params = &TxDetail{
-		RepoName:      hdr["repo"],
-		RepoNamespace: hdr["namespace"],
-		Reference:     hdr["reference"],
-		PushKeyID:     hdr["pkID"],
-		Fee:           util.String(hdr["fee"]),
+	if hdr["pkID"] == "" {
+		return nil, fmt.Errorf("'pkID' is required")
 	}
-
-	if !govalidator.IsNumeric(hdr["nonce"]) {
-		return nil, fmt.Errorf("nonce must be numeric")
-	} else {
-		params.Nonce, _ = strconv.ParseUint(hdr["nonce"], 10, 64)
-	}
-
-	if value, ok := hdr["value"]; ok {
-		params.Value = util.String(value)
-	}
-
-	return params, nil
+	return &TxDetail{
+		PushKeyID: hdr["pkID"],
+	}, nil
 }
 
 // Bytes returns the serialized equivalent of tp

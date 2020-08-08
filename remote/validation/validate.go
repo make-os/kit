@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	fe                               = util.FieldErrorWithIndex
-	ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request data and signature data mismatched")
+	fe                             = util.FieldErrorWithIndex
+	ErrPushedAndSignedHeadMismatch = fmt.Errorf("pushed object hash differs from signed reference hash")
 )
 
 type ChangeValidatorFunc func(
@@ -126,9 +126,9 @@ func CheckNote(
 		return errors.Wrap(err, "failed to get note")
 	}
 
-	// Ensure the hash referenced in the tx detail matches the current note hash
+	// Ensure the reference hash in the tx detail matches the current object hash
 	if noteHash != txDetail.Head {
-		return fmt.Errorf("current note hash differs from signed note hash")
+		return ErrPushedAndSignedHeadMismatch
 	}
 
 	return nil
@@ -150,15 +150,14 @@ func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey cor
 			txDetail.PushKeyID, tag.Hash.String())
 	}
 
-	tagTxDetail, err := VerifyCommitOrTagSignature(tag, pubKey)
+	_, err = VerifyCommitOrTagSignature(tag, pubKey)
 	if err != nil {
 		return err
 	}
 
-	// Ensure the transaction detail from request matches the transaction
-	// detail extracted from the signature header
-	if !txDetail.Equal(tagTxDetail) {
-		return ErrSigHeaderAndReqParamsMismatch
+	// Ensure the reference hash in the tx detail matches the current object hash
+	if tag.Hash.String() != txDetail.Head {
+		return ErrPushedAndSignedHeadMismatch
 	}
 
 	return nil
@@ -201,7 +200,7 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*ty
 		return nil, fmt.Errorf("signature is malformed")
 	}
 
-	// Re-construct the transaction parameters
+	// Re-create TxDetail from signature PEM header
 	txDetail, err := types.TxDetailFromGitSigPEMHeader(pemBlock.Headers)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode PEM header")
@@ -210,7 +209,6 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*ty
 	// Re-create the signature message
 	rdr, _ := encoded.Reader()
 	msg, _ := ioutil.ReadAll(rdr)
-	msg = append(msg, txDetail.BytesNoSig()...)
 
 	// Verify the signature
 	pk := crypto.MustPubKeyFromBytes(pubKey.Bytes())
@@ -243,15 +241,14 @@ func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey cor
 	}
 
 	// Verify the signature
-	commitTxDetail, err := VerifyCommitOrTagSignature(commit, pubKey)
+	_, err = VerifyCommitOrTagSignature(commit, pubKey)
 	if err != nil {
 		return err
 	}
 
-	// Ensure the transaction detail from request matches the transaction
-	// detail extracted from the signature header
-	if !txDetail.Equal(commitTxDetail) {
-		return ErrSigHeaderAndReqParamsMismatch
+	// Ensure the reference hash in the tx detail matches the current object hash
+	if commit.Hash.String() != txDetail.Head {
+		return ErrPushedAndSignedHeadMismatch
 	}
 
 	return nil

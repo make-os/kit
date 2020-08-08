@@ -37,12 +37,12 @@ var testPushKeyGetter = func(pubKey *crypto.PubKey, err error) func(pushKeyID st
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var mockRepo types.LocalRepo
+	var testRepo types.LocalRepo
 	var path string
 	var pubKey *crypto.PubKey
 	var privKey *crypto.Key
 	var ctrl *gomock.Controller
-	var baseTxDetail *types.TxDetail
+	var testTxDetail *types.TxDetail
 	var mockKeepers *mocks.MockKeepers
 
 	BeforeEach(func() {
@@ -52,13 +52,13 @@ var _ = Describe("Validation", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = crypto.NewKeyFromIntSeed(1)
-		baseTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+		testTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
 		pubKey = privKey.PubKey()
 
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		mockRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 		mockKeepers = mocks.NewMockKeepers(ctrl)
 	})
@@ -76,9 +76,9 @@ var _ = Describe("Validation", func() {
 		When("commit was not signed", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
@@ -90,10 +90,10 @@ var _ = Describe("Validation", func() {
 		When("commit is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(nil, fmt.Errorf("not found")))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(nil, fmt.Errorf("not found")))
 			})
 
 			It("should return err", func() {
@@ -105,10 +105,10 @@ var _ = Describe("Validation", func() {
 		When("commit has a signature but the signature is malformed", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
@@ -120,32 +120,32 @@ var _ = Describe("Validation", func() {
 		When("commit signature header could not be decoded", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
 					Headers: map[string]string{"nonce": "invalid"},
 					Type:    "SIGNATURE"}))
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: nonce must be numeric"))
+				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: 'pkID' is required"))
 			})
 		})
 
 		When("commit has a signature but the signature is not valid", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
 					Headers: txDetail.GetGitSigPEMHeader(),
 					Type:    "SIGNATURE"}))
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
@@ -154,51 +154,46 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("commit has a valid signature but its decoded header did not match the request transaction info", func() {
+		When("commit has a valid signature but its hash and the signed head did not match", func() {
 			var err error
 			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(commitHash))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
-
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.GetGitSigPEMHeader()
-
-				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
+				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
 				Expect(err).To(BeNil())
-
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
-				err = validation.CheckCommit(commit, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(validation.ErrSigHeaderAndReqParamsMismatch))
+				Expect(err).To(Equal(validation.ErrPushedAndSignedHeadMismatch))
 			})
 		})
 
-		When("commit has a valid signature and the decoded signature header matches the request transaction info", func() {
+		When("commit has a valid signature and its hash and the signed head match", func() {
 			var err error
 			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := mockRepo.GetRecentCommitHash()
-				commit, _ = mockRepo.CommitObject(plumbing.NewHash(commitHash))
+				commitHash, _ := testRepo.GetRecentCommitHash()
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
-
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.GetGitSigPEMHeader()
-
-				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
+				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
 				Expect(err).To(BeNil())
-
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
-				err = validation.CheckCommit(commit, txDetail, testPushKeyGetter(pubKey, nil))
+				testTxDetail.Head = commitHash
+				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
-			It("should return err", func() {
+			It("should not return err", func() {
 				Expect(err).To(BeNil())
 			})
 		})
@@ -211,9 +206,9 @@ var _ = Describe("Validation", func() {
 		When("tag is not signed", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 1", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
-				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err='txDetail was not set'", func() {
@@ -225,10 +220,10 @@ var _ = Describe("Validation", func() {
 		When("tag is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(nil, fmt.Errorf("bad error")))
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(nil, fmt.Errorf("bad error")))
 			})
 
 			It("should return err", func() {
@@ -240,10 +235,10 @@ var _ = Describe("Validation", func() {
 		When("tag has a signature but the signature is malformed", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
@@ -255,14 +250,14 @@ var _ = Describe("Validation", func() {
 		When("tag has a signature but the signature is invalid", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
 
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(sig)
 
-				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
@@ -271,40 +266,37 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("tag has a valid signature but the signature header does not match the request transaction info", func() {
+		When("tag has a valid signature but its hash and the signed head did not match", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
-
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
-				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
+				sig, _ := privKey.PrivKey().Sign([]byte(msg))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(pemData)
-
-				err = validation.CheckAnnotatedTag(tob, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(validation.ErrSigHeaderAndReqParamsMismatch))
+				Expect(err).To(Equal(validation.ErrPushedAndSignedHeadMismatch))
 			})
 		})
 
-		When("tag has signature and header are valid", func() {
+		When("tag has valid signature and its hash and the signed head match", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := mockRepo.Tag("v1")
-				tob, _ = mockRepo.TagObject(tagRef.Hash())
-
+				tagRef, _ := testRepo.Tag("v1")
+				tob, _ = testRepo.TagObject(tagRef.Hash())
 				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
-				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
+				sig, _ := privKey.PrivKey().Sign([]byte(msg))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(pemData)
-
-				err = validation.CheckAnnotatedTag(tob, txDetail, testPushKeyGetter(pubKey, nil))
+				testTxDetail.Head = tagRef.Hash().String()
+				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return nil", func() {
@@ -342,7 +334,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("current note hash differs from signed note hash"))
+				Expect(err.Error()).To(Equal("pushed object hash differs from signed reference hash"))
 			})
 		})
 	})
@@ -353,7 +345,7 @@ var _ = Describe("Validation", func() {
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
 				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
-				err = validation.ValidateChange(mockKeepers, mockRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err='unrecognised change item'", func() {
@@ -365,7 +357,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
 				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
-				err = validation.ValidateChange(mockKeepers, mockRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err='unable to get commit object: object not found'", func() {
@@ -377,7 +369,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
 				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
-				err = validation.ValidateChange(mockKeepers, mockRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
+				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
 			It("should return err='unable to get tag object: tag not found'", func() {

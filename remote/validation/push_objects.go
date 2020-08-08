@@ -118,6 +118,7 @@ func GetTxDetailsFromNote(note types.PushNote, targetRefs ...string) (details []
 			PushKeyID:       crypto.BytesToPushKeyID(note.GetPusherKeyID()),
 			Signature:       base58.Encode(ref.PushSig),
 			MergeProposalID: ref.MergeProposalID,
+			Head:            ref.NewHash,
 		}
 		if plumbing2.IsNote(detail.Reference) {
 			detail.Head = ref.NewHash
@@ -220,7 +221,7 @@ func CheckPushNoteSanity(note types.PushNote) error {
 
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
-// local reference hash comparision is not performed.
+// local reference hash comparison is not performed.
 func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
@@ -309,11 +310,9 @@ func CheckPushNote(note types.PushNote, logic core.Logic) error {
 // push endorsement object against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckEndorsementSanity
 func CheckEndorsementConsistencyUsingHost(
-	logic core.Logic,
 	hosts tickettypes.SelectedTickets,
 	end *types.PushEndorsement,
-	noBLSSigCheck bool,
-	index int) error {
+	noBLSSigCheck bool, index int) error {
 
 	// Check if the sender is one of the top hosts.
 	// Ensure that the signers of the Endorsement are part of the hosts
@@ -345,7 +344,7 @@ func CheckEndorsementConsistency(end *types.PushEndorsement, logic core.Logic, n
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
 	}
-	return CheckEndorsementConsistencyUsingHost(logic, hosts, end, noBLSSigCheck, index)
+	return CheckEndorsementConsistencyUsingHost(hosts, end, noBLSSigCheck, index)
 }
 
 // CheckEndorsementSanity performs sanity checks on the given Endorsement object.

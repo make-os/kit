@@ -11,7 +11,6 @@ import (
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
@@ -78,9 +77,8 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	}
 
 	// Get and unlock the pusher key
-	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: pushKeyID,
+		KeyAddrOrIdx: args.SigningKey,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
 		TargetRepo:   repo,
@@ -88,9 +86,10 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
-	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		pushKeyID = key.GetKey().PushAddr().String()
 	}
+
+	// Get push key from key (args.SigningKey may not be push key address)
+	pushKeyID := key.GetPushKeyAddress()
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
@@ -116,23 +115,20 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
 
-	// Make the transaction parameter object
-	txDetail := &types.TxDetail{
-		Fee:       util.String(args.Fee),
-		Value:     util.String(args.Value),
-		Nonce:     args.Nonce,
-		PushKeyID: pushKeyID,
-		Reference: noteRef.Name().String(),
-		Head:      noteRef.Hash().String(),
-	}
-
 	// Create & set push request token to remote URLs in config
 	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
-		TxDetail:                      txDetail,
 		PushKey:                       key,
 		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
 		ResetTokens:                   args.ResetTokens,
+		TxDetail: &types.TxDetail{
+			Fee:       util.String(args.Fee),
+			Value:     util.String(args.Value),
+			Nonce:     args.Nonce,
+			PushKeyID: pushKeyID,
+			Reference: noteRef.Name().String(),
+			Head:      noteRef.Hash().String(),
+		},
 	}); err != nil {
 		return err
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
 )
 
@@ -41,7 +40,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 
 	// Get the target repo
 	repoDir, _ := os.Getwd()
-	targetRepo, err := args.RepoGetter(repoDir)
+	repo, err := args.RepoGetter(repoDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get repo")
 	}
@@ -51,28 +50,15 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 		KeyAddrOrIdx: pushKeyID,
 		Passphrase:   "",
 		AskPass:      false,
-		TargetRepo:   targetRepo,
+		TargetRepo:   repo,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get push key")
 	}
 
-	// Get the push request token
-	token := os.Getenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()))
-	if token == "" {
-		return fmt.Errorf("push request token not set")
-	}
-
-	// Decode the push request token
-	txDetail, err := server.DecodePushToken(token)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode token")
-	}
-
 	// Construct the message
-	// git sig message + msgpack(tx parameters)
+	// git sig message
 	msg, _ := ioutil.ReadAll(data)
-	msg = append(msg, txDetail.BytesNoMergeIDAndSig()...)
 
 	// Sign the message
 	sig, err := key.GetKey().PrivKey().Sign(msg)
@@ -82,6 +68,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 
 	// Write output
 	w := bytes.NewBuffer(nil)
+	txDetail := &types.TxDetail{PushKeyID: pushKeyID}
 	pem.Encode(w, &pem.Block{Bytes: sig, Type: "PGP SIGNATURE", Headers: txDetail.GetGitSigPEMHeader()})
 	fmt.Fprintf(args.StdErr, "[GNUPG:] BEGIN_SIGNING\n")
 	fmt.Fprintf(args.StdErr, "[GNUPG:] SIG_CREATED C\n")

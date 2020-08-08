@@ -6,10 +6,6 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-// DefaultRemovalInterval is the duration when expired cache
-// items are checked and remove.
-var DefaultRemovalInterval = 5 * time.Second
-
 // Sec returns current time + sec
 func Sec(sec int) time.Time {
 	return time.Now().Add(time.Duration(sec) * time.Second)
@@ -36,12 +32,17 @@ func NewCache(capacity int) *Cache {
 // NewCacheWithExpiringEntry creates a new Cache instance that removes expired entries
 // periodically and during insertions. This cache is useful for when an item
 // needs to be removed even before it is evicted by the LRU logic.
-func NewCacheWithExpiringEntry(capacity int) *Cache {
+// cleanupInt sets the interval between clean up operations.
+func NewCacheWithExpiringEntry(capacity int, cleanupInt ...time.Duration) *Cache {
 	cache := NewCache(capacity)
 	cache.rmExpired = true
+	dur := 30 * time.Second
+	if len(cleanupInt) > 0 {
+		dur = cleanupInt[0]
+	}
 	go func() {
 		for {
-			<-time.NewTicker(DefaultRemovalInterval).C
+			<-time.NewTicker(dur).C
 			cache.removeExpired()
 		}
 	}()

@@ -231,7 +231,7 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 		// Perform consistency checks but don't check the BLS signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
 		// about checking the aggregated BLS signature.
-		err := validation.CheckEndorsementConsistencyUsingHost(logic, hosts, end, true, index)
+		err := validation.CheckEndorsementConsistencyUsingHost(hosts, end, true, index)
 		if err != nil {
 			return err
 		}

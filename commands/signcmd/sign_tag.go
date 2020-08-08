@@ -13,10 +13,10 @@ import (
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/util"
+	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -99,9 +99,8 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	// Get and unlock the pusher key
-	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: pushKeyID,
+		KeyAddrOrIdx: args.SigningKey,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
 		TargetRepo:   repo,
@@ -109,27 +108,29 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
-	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		pushKeyID = key.GetKey().PushAddr().String()
 	}
+
+	// Get push key from key (args.SigningKey may not be push key address)
+	pushKeyID := key.GetPushKeyAddress()
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
 	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
-	// Get the tag object
-	tagRef, err := repo.Tag(gitArgs[0])
-	if err != nil && err != plumbing.ErrReferenceNotFound {
-		return err
-	}
-	tag, err := repo.TagObject(tagRef.Hash())
-	if err != nil {
-		return err
-	}
-
-	// Use the existing tag's message as default if the tag already exist.
-	if args.Message == "" && tag != nil {
-		args.Message = tag.Message
+	// If message is unset, use the tag's message if the tag already exists
+	if args.Message == "" {
+		tagRef, err := repo.Tag(gitArgs[0])
+		if err != nil && err != git.ErrTagNotFound {
+			return err
+		} else if tagRef != nil {
+			tag, err := repo.TagObject(tagRef.Hash())
+			if err != nil {
+				return err
+			}
+			if args.Message == "" && tag != nil {
+				args.Message = tag.Message
+			}
+		}
 	}
 
 	// If --message (-m) flag is provided, use the value as the message
@@ -149,40 +150,34 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
 
-	// Make the transaction parameter object
-	txDetail := &types.TxDetail{
-		Fee:       util.String(args.Fee),
-		Value:     util.String(args.Value),
-		Nonce:     args.Nonce,
-		PushKeyID: pushKeyID,
-		Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),
-	}
-
-	// Create & set request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
-		TargetRemote:                  args.Remote,
-		TxDetail:                      txDetail,
-		PushKey:                       key,
-		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
-		ResetTokens:                   args.ResetTokens,
-	}); err != nil {
-		return err
-	}
-
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
-	// This is required to allow git-sign learn the passphrase for unlocking the push key.
-	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(cfg.GetExecName(), repo.GetName())
+	// This is required to allow git-sign learn the passphrase to unlock the push key.
+	passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), repo.GetName(), "PASS")
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
-		defer func() { os.Setenv(passVar, "") }()
 	}
 
 	// Create the signed tag.
-	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
-	// may contain push key id derived from a user key specified in args.SigningKey.
-	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
-	if err = repo.CreateTagWithMsg(gitArgs, args.Message, args.SigningKey); err != nil {
+	if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
+		return err
+	}
+
+	// Create & set request token to remote URLs in config
+	tagRef, _ := repo.Tag(gitArgs[0])
+	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
+		TargetRemote:                  args.Remote,
+		PushKey:                       key,
+		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		ResetTokens:                   args.ResetTokens,
+		TxDetail: &types.TxDetail{
+			Fee:       util.String(args.Fee),
+			Value:     util.String(args.Value),
+			Nonce:     args.Nonce,
+			PushKeyID: pushKeyID,
+			Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),
+			Head:      tagRef.Hash().String(),
+		},
+	}); err != nil {
 		return err
 	}
 

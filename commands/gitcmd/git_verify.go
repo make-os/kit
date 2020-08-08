@@ -98,7 +98,6 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 
 	// Construct the signature message
 	msg, _ := ioutil.ReadAll(args.StdIn)
-	msg = append(msg, txDetail.BytesNoSig()...)
 
 	// Verify the signature
 	if ok, err := key.GetKey().PubKey().Verify(msg, decSig.Bytes); err != nil || !ok {
@@ -113,11 +112,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	fmt.Fprintf(args.StdOut, "[GNUPG:] GOODSIG 0\n")
 	fmt.Fprintf(args.StdOut, "[GNUPG:] TRUST_FULLY 0 shell\n")
 	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signature is ok"))
-	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signed by %s (nonce: %d)", txDetail.PushKeyID, txDetail.Nonce))
-	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: fee: %s", txDetail.Fee))
-	if txDetail.MergeProposalID != "" {
-		fmt.Fprintf(args.StdErr, "%s\n", cg("sig: fulfilling merge proposal: %s", txDetail.MergeProposalID))
-	}
+	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signed by %s", txDetail.PushKeyID))
 
 	return nil
 }

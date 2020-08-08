@@ -10,10 +10,9 @@ import (
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/types/state"
+	"gopkg.in/src-d/go-git.v4/config"
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-
-	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
 	"github.com/pkg/errors"

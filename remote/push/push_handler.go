@@ -264,7 +264,7 @@ func (h *BasicHandler) HandleReferences() error {
 		return fmt.Errorf("expected old state to have been captured")
 	}
 
-	var errs = []error{}
+	var errs []error
 	for _, ref := range h.PushReader.References.Names() {
 		// When the previous reference handling returned errors, the only handling operation
 		// to perform on the current and future references is a revert operation only
@@ -368,9 +368,8 @@ func (h *BasicHandler) createPushNote() (*types.Note, error) {
 // RefHandler describes a function for processing a reference
 type RefHandler func(ref string, revertOnly bool) []error
 
-// HandleReference performs validation and update reversion for a single
-// pushed reference. When revertOnly is true, only reversion operation
-// is performed.
+// HandleReference performs validation and update reversion for a single pushed reference.
+// When revertOnly is true, only reversion operation is performed.
 func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 
 	var errs []error
@@ -395,11 +394,12 @@ func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 		change = changes.References.Changes[0]
 	}
 
+	// Jump to revert label if only reversion is requested.
 	if revertOnly {
 		goto revert
 	}
 
-	// Here, we need to validate the change for non-delete request
+	// Here, we need to validate the change for non-delete request.
 	if !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
 		oldHash := h.PushReader.References[ref].OldHash
 		err = h.ChangeValidator(h.Server.GetLogic(), h.Repo, oldHash, change, detail, h.Server.GetPushKeyGetter())

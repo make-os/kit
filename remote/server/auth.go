@@ -268,12 +268,6 @@ func SetRemotePushToken(cfg *config.AppConfig, repo remotetypes.LocalRepo, args 
 		}
 	}
 
-	// Set the push token to the env so that other processes can use it.
-	// E.g the signing command called by git needs it for creating a signature.
-	if token != "" {
-		os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", cfg.GetExecName()), token)
-	}
-
 	if err := repo.SetConfig(repoCfg); err != nil {
 		return "", errors.Wrap(err, "failed to update config")
 	}

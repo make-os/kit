@@ -13,7 +13,6 @@ var _ = Describe("Cache", func() {
 	var expEntryCache *Cache
 
 	BeforeEach(func() {
-		DefaultRemovalInterval = 5 * time.Second
 		cache = NewCache(10)
 		expEntryCache = NewCacheWithExpiringEntry(10)
 	})
@@ -48,8 +47,7 @@ var _ = Describe("Cache", func() {
 
 			Context("periodic removal test", func() {
 				It("should remove expired entry", func() {
-					DefaultRemovalInterval = 1 * time.Millisecond
-					expEntryCache = NewCacheWithExpiringEntry(10)
+					expEntryCache = NewCacheWithExpiringEntry(10, 1*time.Millisecond)
 					expAt := time.Now().Add(1 * time.Millisecond)
 					expEntryCache.Add("key", "val", expAt)
 					Expect(expEntryCache.container.Len()).To(Equal(1))

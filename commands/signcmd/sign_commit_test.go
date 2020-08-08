@@ -122,8 +122,7 @@ var _ = Describe("SignCommit", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
-			mockStoredKey.EXPECT().GetKey().Return(key)
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.Addr().String())
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 				return "", fmt.Errorf("error")
 			}
@@ -139,7 +138,7 @@ var _ = Describe("SignCommit", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
-			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String()).Times(2)
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String()).Times(2)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
@@ -160,7 +159,7 @@ var _ = Describe("SignCommit", func() {
 			}}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
-			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
@@ -175,7 +174,7 @@ var _ = Describe("SignCommit", func() {
 			mockRepo.EXPECT().Head().Return("", fmt.Errorf("error"))
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
-			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
@@ -191,7 +190,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().Checkout("dev", false, args.ForceCheckout).Return(fmt.Errorf("error"))
 				err := SignCommitCmd(cfg, mockRepo, args)
@@ -207,27 +206,13 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().Checkout("dev", false, args.ForceCheckout).Return(fmt.Errorf("error"))
 				err := SignCommitCmd(cfg, mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to checkout branch (refs/heads/dev): error"))
 			})
-		})
-
-		It("should return error when unable to create and set push tokens to remote URLs", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
-			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), GetNextNonce: testGetNextNonce}
-			args.SetRemotePushToken = testSetRemotePushToken("", fmt.Errorf("error"))
-			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
-			mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
-			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
-			err := SignCommitCmd(cfg, mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("error"))
 		})
 
 		When("previous commit amendment is not required (AmendCommit=false", func() {
@@ -242,7 +227,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(fmt.Errorf("error"))
 				err := SignCommitCmd(cfg, mockRepo, args)
@@ -257,15 +242,16 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
 				err := SignCommitCmd(cfg, mockRepo, args)
 				Expect(err).To(BeNil())
 			})
 
 			When("args.SigningKey is a user address", func() {
-				It(`should pass the user address to CreateSignedEmptyCommit, pass push key to TxDetail object and GetNextNonce`, func() {
+				It(`should pass push key to CreateSignedEmptyCommit, TxDetail object and GetNextNonce`, func() {
 					mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
 					args := &SignCommitArgs{Fee: "1", SigningKey: key.Addr().String(), Message: "some message", AmendCommit: false}
 					args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
@@ -280,18 +266,101 @@ var _ = Describe("SignCommit", func() {
 					mockStoredKey := mocks.NewMockStoredKey(ctrl)
 					mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 					args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-					mockStoredKey.EXPECT().GetUserAddress().Return(key.Addr().String())
-					mockStoredKey.EXPECT().GetKey().Return(key)
+					mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 					mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 					mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+					mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
 					err := SignCommitCmd(cfg, mockRepo, args)
 					Expect(err).To(BeNil())
 				})
 			})
 		})
 
-		When("args.Head is set to 'refs/heads/some_branch'", func() {
-			It("the generated tx detail should set Reference to 'refs/heads/some_branch'", func() {
+		When("args.Head is set'", func() {
+			Specify("that TxDetail.Reference is set to 'refs/heads/some_branch' when args.Head is 'refs/heads/some_branch'", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "refs/heads/some_branch"}
+				args.SetRemotePushToken = func(cfg *config.AppConfig, targetRepo remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+					Expect(args.TxDetail.Reference).To(Equal("refs/heads/some_branch"))
+					return "", nil
+				}
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that TxDetail.Reference is set to 'refs/heads/some_branch' when args.Head is 'some_branch'", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "some_branch"}
+				args.SetRemotePushToken = func(cfg *config.AppConfig, targetRepo remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+					Expect(args.TxDetail.Reference).To(Equal("refs/heads/some_branch"))
+					return "", nil
+				}
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("checkout args.Branch", func() {
+			It("should return error if args.Branch is set and checkout failed", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
+					Message: "some message", GetNextNonce: testGetNextNonce,
+					AmendCommit: false, Head: "refs/heads/some_branch",
+					Branch: "some_branch"}
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().Checkout("some_branch", false, args.ForceCheckout).Return(fmt.Errorf("error"))
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to checkout branch (refs/heads/some_branch): error"))
+			})
+
+			It("should return no error and revert checkout to HEAD if args.Branch is set and different from HEAD", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
+					Message: "some message", GetNextNonce: testGetNextNonce,
+					AmendCommit: false, Head: "refs/heads/some_branch",
+					Branch: "some_branch"}
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().Checkout("some_branch", false, args.ForceCheckout).Return(nil)
+				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
+				mockRepo.EXPECT().Checkout("master", false, args.ForceCheckout).Return(nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("unable to create and set push token", func() {
+			It("should return error", func() {
 				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
 				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "refs/heads/some_branch"}
 				args.SetRemotePushToken = func(cfg *config.AppConfig, r remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
@@ -302,12 +371,15 @@ var _ = Describe("SignCommit", func() {
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
+				args.SetRemotePushToken = testSetRemotePushToken("", fmt.Errorf("error"))
 				err := SignCommitCmd(cfg, mockRepo, args)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
 			})
 		})
 
@@ -324,7 +396,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("", fmt.Errorf("error"))
 				err := SignCommitCmd(cfg, mockRepo, args)
@@ -338,7 +410,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("", fmt.Errorf("error"))
@@ -353,7 +425,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("", plumbing2.ErrNoCommits)
@@ -368,13 +440,14 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("8975220bda0eb48354c5868f8a1b310758eb4591", nil)
 				recentCommit := &object.Commit{Message: "This is a commit"}
 				mockRepo.EXPECT().CommitObject(plumbing.NewHash("8975220bda0eb48354c5868f8a1b310758eb4591")).Return(recentCommit, nil)
 				mockRepo.EXPECT().UpdateRecentCommitMsg(recentCommit.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("8975220bda0eb48354c5868f8a1b310758eb0000", nil)
 				err := SignCommitCmd(cfg, mockRepo, args)
 				Expect(err).To(BeNil())
 				Expect(args.Message).To(Equal(recentCommit.Message))
@@ -386,7 +459,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("8975220bda0eb48354c5868f8a1b310758eb4591", nil)
@@ -402,7 +475,7 @@ var _ = Describe("SignCommit", func() {
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetUserAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				mockRepo.EXPECT().GetName().Return("repo_name")
 				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
 				mockRepo.EXPECT().GetRecentCommitHash().Return("8975220bda0eb48354c5868f8a1b310758eb4591", nil)
@@ -412,6 +485,33 @@ var _ = Describe("SignCommit", func() {
 				err := SignCommitCmd(cfg, mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error"))
+			})
+		})
+
+		When("APPNAME_REPONAME_PASS is not set", func() {
+			It("should set it to the value of args.PushKeyPass", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
+					Message: "some message", GetNextNonce: testGetNextNonce,
+					AmendCommit: false, Head: "refs/heads/some_branch",
+					Branch: "some_branch", PushKeyPass: "password"}
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().Checkout("some_branch", false, args.ForceCheckout).Return(nil)
+				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("hash1", nil)
+				mockRepo.EXPECT().Checkout("master", false, args.ForceCheckout).Return(nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+
+				passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), "repo_name", "PASS")
+				Expect(os.Getenv(passVar)).To(Equal(args.PushKeyPass))
 			})
 		})
 	})

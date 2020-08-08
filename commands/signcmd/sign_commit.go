@@ -15,13 +15,13 @@ import (
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
 	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/remote/validation"
 	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 type SignCommitArgs struct {
@@ -89,7 +89,8 @@ type SignCommitFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *Sign
 
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
-// targetRepo: The target repository at the working directory
+// repo: The target repository at the working directory
+// args: Arguments
 func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommitArgs) error {
 
 	populateSignCommitArgsFromRepoConfig(repo, args)
@@ -105,9 +106,8 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	}
 
 	// Get and unlock the signing key
-	pushKeyID := args.SigningKey
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: pushKeyID,
+		KeyAddrOrIdx: args.SigningKey,
 		Passphrase:   args.PushKeyPass,
 		AskPass:      true,
 		TargetRepo:   repo,
@@ -115,9 +115,10 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	})
 	if err != nil {
 		return errors2.Wrap(err, "failed to unlock the signing key")
-	} else if crypto.IsValidUserAddr(key.GetUserAddress()) == nil {
-		pushKeyID = key.GetKey().PushAddr().String()
 	}
+
+	// Get push key from key (args.SigningKey may not be push key address)
+	pushKeyID := key.GetPushKeyAddress()
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
@@ -157,8 +158,8 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	// If an explicit branch was provided via flag, check it out.
 	// Then set a deferred function to revert back the the original branch.
 	if repoHead != curHead {
-		if err := repo.Checkout(plumbing.ReferenceName(repoHead).Short(),
-			false, args.ForceCheckout); err != nil {
+		if err := repo.Checkout(plumbing.ReferenceName(repoHead).Short(), false,
+			args.ForceCheckout); err != nil {
 			return fmt.Errorf("failed to checkout branch (%s): %s", repoHead, err)
 		}
 		defer func() {
@@ -166,7 +167,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		}()
 	}
 
-	// Use active branch as the tx reference only if HEAD arg. was not explicitly provided
+	// Use active branch as the tx reference only if args.HEAD was not explicitly provided
 	var reference = repoHead
 	if args.Head != "" {
 		reference = args.Head
@@ -175,50 +176,27 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		}
 	}
 
-	// Make the transaction parameter object
-	txDetail := &types.TxDetail{
-		Fee:             util.String(args.Fee),
-		Value:           util.String(args.Value),
-		Nonce:           args.Nonce,
-		PushKeyID:       pushKeyID,
-		MergeProposalID: args.MergeID,
-		Reference:       reference,
-	}
-
-	// Create & set push request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
-		TargetRemote:                  args.Remote,
-		TxDetail:                      txDetail,
-		PushKey:                       key,
-		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
-		ResetTokens:                   args.ResetTokens,
-	}); err != nil {
-		return err
-	}
-
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
-	// This is required to allow git-sign learn the passphrase for unlocking the push key.
-	// If we met it unset, set a deferred function to unset the var once done.
-	passVar := common.MakeRepoScopedPassEnvVar(cfg.GetExecName(), repo.GetName())
+	// This is required to allow git-sign learn the passphrase to unlock the push key.
+	passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), repo.GetName(), "PASS")
 	if len(os.Getenv(passVar)) == 0 {
-		_ = os.Setenv(passVar, args.PushKeyPass)
-		defer func() { _ = os.Setenv(passVar, "") }()
+		os.Setenv(passVar, args.PushKeyPass)
 	}
 
-	// Create a new quiet commit if recent commit amendment is not desired.
-	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
-	// may contain push key id derived from a user key specified in args.SigningKey.
-	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
+	var commit *object.Commit
+	var hash string
+
+	// Create a new commit if recent commit amendment is not desired.
 	if !args.AmendCommit {
 		if err := repo.CreateSignedEmptyCommit(args.Message, args.SigningKey); err != nil {
 			return err
 		}
-		return nil
+		goto create_token
 	}
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err := repo.GetRecentCommitHash()
+	hash, err = repo.GetRecentCommitHash()
 	if err != nil {
 		if err == plumbing2.ErrNoCommits {
 			return errors.New("no commits have been created yet")
@@ -227,7 +205,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	}
 
 	// Use previous commit message as default
-	commit, err := repo.CommitObject(plumbing.NewHash(hash))
+	commit, err = repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return err
 	} else if args.Message == "" {
@@ -235,10 +213,29 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	}
 
 	// Update the recent commit message.
-	// NOTE: We are using args.SigningKey instead of pushKeyID because pushKeyID
-	// may contain push key id derived from a user key specified in args.SigningKey.
-	// If this is the case, the derived push key in pushKeyID may not be found by git-sign.
 	if err = repo.UpdateRecentCommitMsg(args.Message, args.SigningKey); err != nil {
+		return err
+	}
+
+	// Create & set push request token on the remote in config.
+	// Also get the post-sign hash of the current branch.
+create_token:
+	hash, _ = repo.GetRecentCommitHash()
+	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
+		TargetRemote:                  args.Remote,
+		PushKey:                       key,
+		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		ResetTokens:                   args.ResetTokens,
+		TxDetail: &types.TxDetail{
+			Fee:             util.String(args.Fee),
+			Value:           util.String(args.Value),
+			Nonce:           args.Nonce,
+			PushKeyID:       pushKeyID,
+			MergeProposalID: args.MergeID,
+			Reference:       reference,
+			Head:            hash,
+		},
+	}); err != nil {
 		return err
 	}
 

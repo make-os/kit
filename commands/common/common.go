@@ -87,7 +87,7 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 
 		// If we still don't have a passphrase, get it from the repo scoped env variable.
 		if args.Passphrase == "" {
-			args.Passphrase = os.Getenv(MakeRepoScopedPassEnvVar(cfg.GetExecName(), args.TargetRepo.GetName()))
+			args.Passphrase = os.Getenv(MakeRepoScopedEnvVar(cfg.GetExecName(), args.TargetRepo.GetName(), "PASS"))
 		}
 	}
 
@@ -113,10 +113,9 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 	return key, nil
 }
 
-// MakeRepoScopedPassEnvVar returns a repo-specific env variable
-// expected to contain passphrase for unlocking an account.
-func MakeRepoScopedPassEnvVar(appName, repoName string) string {
-	return strings.ToUpper(fmt.Sprintf("%s_%s_PASS", appName, repoName))
+// MakeRepoScopedEnvVar returns a repo-specific env variable
+func MakeRepoScopedEnvVar(appName, repoName, varName string) string {
+	return strings.ToUpper(fmt.Sprintf("%s_%s_%s", appName, repoName, varName))
 }
 
 // MakePassEnvVar is the name of the env variable expected to contain a key's passphrase.
