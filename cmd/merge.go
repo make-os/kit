@@ -55,14 +55,16 @@ var mergeReqCreateCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
+		head, err := r.Head()
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+		}
+
 		// When target post ID is unset and the current HEAD is a post reference,
 		// use the reference short name as the post ID
 		if !forceNew && targetPostID == 0 {
-			HEAD, err := r.Head()
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			} else if plumbing.IsMergeRequestReference(HEAD) {
-				id := plumbing.GetReferenceShortName(HEAD)
+			if plumbing.IsMergeRequestReference(head) {
+				id := plumbing.GetReferenceShortName(head)
 				targetPostID, _ = strconv.Atoi(id)
 			}
 		}
@@ -71,28 +73,34 @@ var mergeReqCreateCmd = &cobra.Command{
 			useEditor = true
 		}
 
-		// When target branch hash is equal to '.', read the latest reference
-		// hash of the target branch.
-		if targetBranchHash == "." {
+		// When target branch hash is equal to '.', use the hash of the HEAD reference.
+		// but when it is "~", read the hash from the target branch.
+		if targetBranchHash == "." || targetBranch == "~" {
 			if targetBranch == "" {
 				log.Fatal("flag (--target) is required")
 			}
-			ref, err := r.RefGet(targetBranch)
+			targetRef := targetBranch
+			if targetBranchHash == "." {
+				targetRef = head
+			}
+			ref, err := r.RefGet(targetRef)
 			if err != nil {
 				log.Fatal(errors.Wrap(err, "failed to get target branch").Error())
 			}
 			targetBranchHash = ref
 		}
 
-		// When base branch hash is '.', we take this to mean the user wants us to
-		// automatically read the latest reference hash of the base branch. We chose solely
-		// this convention over an empty value because an empty base hash is interpreted
-		// as zero hash value by the network.
-		if baseBranchHash == "." {
+		// When base branch hash is equal to '.', use the hash of the HEAD reference.
+		// but when it is "~", read the hash from the base branch.
+		if baseBranchHash == "." || baseBranchHash == "~" {
 			if baseBranch == "" {
 				log.Fatal("flag (--base) is required")
 			}
-			ref, err := r.RefGet(baseBranch)
+			targetRef := baseBranch
+			if baseBranchHash == "." {
+				targetRef = head
+			}
+			ref, err := r.RefGet(targetRef)
 			if err != nil {
 				log.Fatal(errors.Wrap(err, "failed to get base branch").Error())
 			}
