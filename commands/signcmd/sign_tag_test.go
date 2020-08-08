@@ -54,7 +54,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when failed to unlock the signing key", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			args := &SignTagArgs{Force: true}
 			args.KeyUnlocker = testPushKeyUnlocker(nil, fmt.Errorf("error"))
 
@@ -64,7 +67,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to get tag", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -78,7 +84,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to get existing tag object", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -95,7 +104,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should use existing tag's message if none was provided and return error if unable to get nonce", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -115,7 +127,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to create tag", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
@@ -138,7 +153,9 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return no error when tag is created", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -161,8 +178,10 @@ var _ = Describe("SignTag", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should return no error when unable to create and set push token", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+		It("should return error when unable to create and set push token", func() {
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -188,7 +207,9 @@ var _ = Describe("SignTag", func() {
 
 		When("args.SigningKey is a user address", func() {
 			It("should pass push key id to CreateTagWithMsg, TxDetail object and GetNextNonce", func() {
-				mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+					"user.signingKey": key.PushAddr().String(),
+				})).AnyTimes()
 
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
@@ -219,7 +240,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should set args.PushKeyID to value of git flag --local-user", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{}
@@ -243,7 +267,10 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should set args.Message to value of git flag --message", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).Return(key.PushAddr().String()).AnyTimes()
+			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				"user.signingKey": key.PushAddr().String(),
+			})).AnyTimes()
+
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args := &SignTagArgs{SigningKey: key.PushAddr().String()}
@@ -265,6 +292,59 @@ var _ = Describe("SignTag", func() {
 			err := SignTagCmd(cfg, []string{"tag1", "--message", msg}, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(args.Message).To(Equal(msg))
+		})
+
+		When(".SignRefOnly is set to true", func() {
+			It("should skip code for push token creation and signing", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+					"user.signingKey": key.PushAddr().String(),
+				})).AnyTimes()
+
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
+				args := &SignTagArgs{SigningKey: key.PushAddr().String(), SignRefOnly: true}
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+
+				ref := plumbing.NewReferenceFromStrings("", util.RandString(40))
+				mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+				tag := &object.Tag{Message: "tag1 message"}
+				mockRepo.EXPECT().TagObject(ref.Hash()).Return(tag, nil)
+
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockRepo.EXPECT().CreateTagWithMsg(gomock.Any(), tag.Message, args.SigningKey).Return(nil)
+				args.GetNextNonce = testGetNextNonce2("1", nil)
+
+				err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When(".CreatePushTokenOnly is set to true", func() {
+			It("should skip code for reference signing", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+					"user.signingKey": key.PushAddr().String(),
+				})).AnyTimes()
+
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
+				args := &SignTagArgs{SigningKey: key.PushAddr().String(), CreatePushTokenOnly: true}
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+
+				ref := plumbing.NewReferenceFromStrings("", util.RandString(40))
+				mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+				tag := &object.Tag{Message: "tag1 message"}
+				mockRepo.EXPECT().TagObject(ref.Hash()).Return(tag, nil)
+
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+				args.GetNextNonce = testGetNextNonce2("1", nil)
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+				err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
 		})
 	})
 })

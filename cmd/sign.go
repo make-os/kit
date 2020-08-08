@@ -24,6 +24,8 @@ var signCommitCmd = &cobra.Command{
 	Short: "Sign or amend current commit",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		rejectFlagCombo(cmd, "ref-only", "token-only")
+
 		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
@@ -38,6 +40,8 @@ var signCommitCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
+		refOnly, _ := cmd.Flags().GetBool("ref-only")
+		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 
 		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
 		if targetRepo == nil {
@@ -59,6 +63,8 @@ var signCommitCmd = &cobra.Command{
 			Remote:                        targetRemotes,
 			ResetTokens:                   resetRemoteTokens,
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			CreatePushTokenOnly:           tokenOnly,
+			SignRefOnly:                   refOnly,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
 			KeyUnlocker:                   common.UnlockKey,
@@ -75,6 +81,8 @@ var signTagCmd = &cobra.Command{
 	Short: "Create and sign an annotated tag",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		rejectFlagCombo(cmd, "ref-only", "token-only")
+
 		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
@@ -85,6 +93,8 @@ var signTagCmd = &cobra.Command{
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 		force, _ := cmd.Flags().GetBool("force")
 		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
+		refOnly, _ := cmd.Flags().GetBool("ref-only")
+		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 
 		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
 		if targetRepo == nil {
@@ -103,6 +113,8 @@ var signTagCmd = &cobra.Command{
 			Remote:                        targetRemotes,
 			ResetTokens:                   resetRemoteTokens,
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			CreatePushTokenOnly:           tokenOnly,
+			SignRefOnly:                   refOnly,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
 			KeyUnlocker:                   common.UnlockKey,
@@ -175,7 +187,11 @@ func init() {
 	signCommitCmd.Flags().StringP("branch", "b", "", "Specify a target branch to sign (default: HEAD)")
 	signCommitCmd.Flags().Bool("force", false, "Forcefully checkout the target branch to sign")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
+	signCommitCmd.Flags().Bool("ref-only", false, "Only sign the commit object")
+	signCommitCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
 	signTagCmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
+	signTagCmd.Flags().Bool("ref-only", false, "Only sign the tag object")
+	signTagCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
 
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")

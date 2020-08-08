@@ -181,6 +181,7 @@ var _ = Describe("GitVerify", func() {
 				return mockStoredKey, nil
 			}
 
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			err = GitVerifyCmd(cfg, args)
 			Expect(err).To(BeNil())
 		})

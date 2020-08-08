@@ -48,6 +48,12 @@ type SignTagArgs struct {
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
+	// SignRefOnly indicates that only the target reference should be signed.
+	SignRefOnly bool
+
+	// CreatePushTokenOnly indicates that only the remote token should be created and signed.
+	CreatePushTokenOnly bool
+
 	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
 	SetRemotePushTokensOptionOnly bool
 
@@ -74,7 +80,6 @@ type SignTagFunc func(cfg *config.AppConfig, gitArgs []string, repo types.LocalR
 func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error {
 
 	populateSignTagArgsFromRepoConfig(repo, args)
-
 	if args.Force {
 		gitArgs = append(gitArgs, "-f")
 	}
@@ -157,9 +162,16 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 		os.Setenv(passVar, args.PushKeyPass)
 	}
 
-	// Create the signed tag.
-	if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
-		return err
+	// Create the signed tag if only reference signing was requested
+	if !args.CreatePushTokenOnly {
+		if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
+			return err
+		}
+	}
+
+	// Skip push token creation if only reference signing was requested
+	if args.SignRefOnly {
+		return nil
 	}
 
 	// Create & set request token to remote URLs in config

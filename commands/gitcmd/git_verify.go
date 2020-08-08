@@ -112,7 +112,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	fmt.Fprintf(args.StdOut, "[GNUPG:] GOODSIG 0\n")
 	fmt.Fprintf(args.StdOut, "[GNUPG:] TRUST_FULLY 0 shell\n")
 	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signature is ok"))
-	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signed by %s", txDetail.PushKeyID))
+	fmt.Fprintf(args.StdErr, "%s\n", cg("sig: signed by %s", key.GetPushKeyAddress()))
 
 	return nil
 }

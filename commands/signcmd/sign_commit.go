@@ -61,6 +61,12 @@ type SignCommitArgs struct {
 	// Remote specifies the remote name whose URL we will attach the push token to
 	Remote string
 
+	// SignRefOnly indicates that only the target reference should be signed.
+	SignRefOnly bool
+
+	// CreatePushTokenOnly indicates that only the remote token should be created and signed.
+	CreatePushTokenOnly bool
+
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
@@ -186,6 +192,11 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	var commit *object.Commit
 	var hash string
 
+	// Skip signing if CreatePushTokenOnly is true
+	if args.CreatePushTokenOnly {
+		goto create_token
+	}
+
 	// Create a new commit if recent commit amendment is not desired.
 	if !args.AmendCommit {
 		if err := repo.CreateSignedEmptyCommit(args.Message, args.SigningKey); err != nil {
@@ -220,6 +231,12 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	// Create & set push request token on the remote in config.
 	// Also get the post-sign hash of the current branch.
 create_token:
+
+	// Skip token creation if only the reference needs to be signed
+	if args.SignRefOnly {
+		return nil
+	}
+
 	hash, _ = repo.GetRecentCommitHash()
 	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,

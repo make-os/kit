@@ -38,6 +38,12 @@ func testSetRemotePushToken(token string, err error) func(cfg *config.AppConfig,
 	}
 }
 
+func mockGetConfig(kv map[string]string) func(path string) string {
+	return func(path string) string {
+		return kv[path]
+	}
+}
+
 var _ = Describe("SignCommit", func() {
 	var err error
 	var cfg *config.AppConfig
@@ -83,12 +89,6 @@ var _ = Describe("SignCommit", func() {
 	})
 
 	Describe(".SignCommitCmd", func() {
-
-		mockGetConfig := func(kv map[string]string) func(path string) string {
-			return func(path string) string {
-				return kv[path]
-			}
-		}
 
 		It("should return error when push key ID is not provided and set args.MergeID if set in config", func() {
 			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
@@ -512,6 +512,41 @@ var _ = Describe("SignCommit", func() {
 
 				passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), "repo_name", "PASS")
 				Expect(os.Getenv(passVar)).To(Equal(args.PushKeyPass))
+			})
+		})
+
+		When(".CreatePushTokenOnly is set to true", func() {
+			It("should skip code for reference signing", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
+					Message: "", GetNextNonce: testGetNextNonce, CreatePushTokenOnly: true}
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().GetRecentCommitHash().Return("8975220bda0eb48354c5868f8a1b310758eb0000", nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When(".SignRefOnly is set to true", func() {
+			It("should skip code for push token creation and signing", func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
+					Message: "", GetNextNonce: testGetNextNonce, SignRefOnly: true}
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockRepo.EXPECT().Head().Return("refs/heads/master", nil)
+				mockRepo.EXPECT().CreateSignedEmptyCommit(args.Message, args.SigningKey).Return(nil)
+				err := SignCommitCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
 			})
 		})
 	})
