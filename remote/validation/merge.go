@@ -3,7 +3,6 @@ package validation
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/themakeos/lobe/logic/contracts/mergerequest"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/types/constants"
@@ -14,18 +13,15 @@ import (
 type MergeComplianceCheckFunc func(
 	repo types.LocalRepo,
 	change *types.ItemChange,
-	oldRef types.Item,
 	mergeProposalID,
 	pushKeyID string,
 	keepers core.Keepers) error
 
-// CheckMergeCompliance checks whether push to a branch satisfied an accepted merge proposal
+// CheckMergeCompliance checks whether the change satisfies the given merge proposal
 func CheckMergeCompliance(
 	repo types.LocalRepo,
 	change *types.ItemChange,
-	oldRef types.Item,
-	mergeProposalID,
-	pushKeyID string,
+	mergeProposalID, pushKeyID string,
 	keepers core.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
@@ -68,67 +64,10 @@ func CheckMergeCompliance(
 		}
 	}
 
-	// Get the commit that initiated the merge operation (a.k.a "pushed commit").
-	// Since by convention, its parent is considered the actual merge target.
-	// As such, we need to perform some validation before we compare it with
-	// the merge proposal target hash.
-	commit, err := repo.WrappedCommitObject(plumbing.NewHash(change.Item.GetData()))
-	if err != nil {
-		return errors.Wrap(err, "unable to get commit object")
-	}
-
-	// By default, the parent of the merge commit is target commit...
-	targetCommit, _ := commit.Parent(0)
-
-	// ...unless the merge commit is the proposal target, in which case
-	// we use the commit as the target hash.
+	// Ensure the new commit and the proposal target match
 	var propTargetHash = string(prop.ActionData[constants.ActionDataKeyTargetHash])
-	if propTargetHash == commit.GetHash().String() {
-		targetCommit = commit
-	}
-
-	// When the merge commit has parents, ensure the proposal target is a parent.
-	// Extract it and use as the target commit.
-	if commit.NumParents() > 1 {
-		_, targetCommit = commit.IsParent(propTargetHash)
-		if targetCommit == nil {
-			return fmt.Errorf("merge error: target hash is not a parent of the merge commit")
-		}
-	}
-
-	// Ensure the difference between the target commit and the pushed commit
-	// only exist in the commit hash and not the tree, author and committer information.
-	// By convention, the pushed commit can only modify its commit object (time,
-	// message and signature).
-	if commit.GetTreeHash() != targetCommit.GetTreeHash() ||
-		commit.GetAuthor().String() != targetCommit.GetAuthor().String() ||
-		commit.GetCommitter().String() != targetCommit.GetCommitter().String() {
-		return fmt.Errorf("merge error: pushed commit must not modify target branch history")
-	}
-
-	// When no older reference (ex. a new/first branch),
-	// set default hash value to zero hash.
-	oldRefHash := plumbing.ZeroHash.String()
-	if oldRef != nil {
-		oldRefHash = oldRef.GetData()
-	}
-
-	// When no base hash is given, set default hash value to zero hash
-	var propBaseHash = string(prop.ActionData[constants.ActionDataKeyBaseHash])
-	propBaseHashStr := plumbing.ZeroHash.String()
-	if propBaseHash != "" {
-		propBaseHashStr = propBaseHash
-	}
-
-	// Ensure the proposals base branch hash matches the hash of the current
-	// branch before this current push/change.
-	if propBaseHashStr != oldRefHash {
-		return fmt.Errorf("merge error: target merge proposal base branch hash is stale or invalid")
-	}
-
-	// Ensure the target commit and the proposal target match
-	if targetCommit.GetHash().String() != propTargetHash {
-		return fmt.Errorf("merge error: target commit hash and the merge proposal target hash must match")
+	if change.Item.GetData() != propTargetHash {
+		return fmt.Errorf("merge error: pushed commit did not match merge proposal target hash")
 	}
 
 	return nil

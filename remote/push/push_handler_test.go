@@ -645,7 +645,7 @@ var _ = Describe("BasicHandler", func() {
 				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				}
-				handler.MergeChecker = func(repo types.LocalRepo, change *types.ItemChange, oldRef types.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
+				handler.MergeChecker = func(repo types.LocalRepo, change *types.ItemChange, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
 					return fmt.Errorf("failed merge check")
 				}
 

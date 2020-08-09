@@ -414,7 +414,6 @@ func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 		if err := h.MergeChecker(
 			h.Repo,
 			change,
-			oldRef,
 			h.TxDetails.Get(ref).MergeProposalID,
 			h.TxDetails.GetPushKeyID(),
 			h.Server.GetLogic()); err != nil {

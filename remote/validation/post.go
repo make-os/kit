@@ -424,10 +424,11 @@ func CheckMergeRequestPostBodyConsistency(
 
 	repoState := repo.GetState()
 
-	// For a non-new reference, get the merge request proposal and check if
-	// it has been finalized; if it has, ensure the body does not include
-	// merge request fields since a finalized merge request cannot be changed.
+	// For old merge request reference:
 	if !isNewRef {
+		// Get the merge request proposal and check if
+		// it has been finalized; if it has, ensure the body does not include
+		// merge request fields since a finalized merge request cannot be changed.
 		id := mergerequest.MakeMergeRequestProposalID(plumbing2.GetReferenceShortName(reference))
 		proposal := repoState.Proposals.Get(id)
 		if proposal == nil {
@@ -441,30 +442,32 @@ func CheckMergeRequestPostBodyConsistency(
 		}
 	}
 
-	obj := objx.New(body)
-
-	// Ensure the base branch exist in the repository
-	base := obj.Get("base").Str()
-	if base != "" && !repoState.References.Has(plumbing.NewBranchReferenceName(base).String()) {
-		return fmt.Errorf("base branch (%s) is unknown", base)
-	}
-
-	// Ensure the target branch exist.
-	// The target branch might be a path in the format <repo_name/branch>, in
-	// this case, check if the branch exist in the repository named 'repo_name'
-	target := obj.Get("target").Str()
-	parts := strings.SplitN(target, "/", 2)
-	if len(parts) == 1 {
-		if !repoState.References.Has(plumbing.NewBranchReferenceName(target).String()) {
-			return fmt.Errorf("target branch (%s) is unknown", target)
+	// For new merge requests reference:
+	if isNewRef {
+		// Ensure the base branch exist in the repository
+		obj := objx.New(body)
+		base := obj.Get("base").Str()
+		if base != "" && !repoState.References.Has(plumbing.NewBranchReferenceName(base).String()) {
+			return fmt.Errorf("base branch (%s) is unknown", base)
 		}
-	} else {
-		targetRepo := keepers.RepoKeeper().GetNoPopulate(parts[0])
-		if targetRepo.IsNil() {
-			return fmt.Errorf("target branch's repository (%s) does not exist", parts[0])
-		}
-		if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
-			return fmt.Errorf("target branch (%s) of (%s) is unknown", parts[1], parts[0])
+
+		// Ensure the target branch exist.
+		// The target branch might be a path in the format <repo_name/branch>, in
+		// this case, check if the branch exist in the repository named 'repo_name'
+		target := obj.Get("target").Str()
+		parts := strings.SplitN(target, "/", 2)
+		if len(parts) == 1 {
+			if !repoState.References.Has(plumbing.NewBranchReferenceName(target).String()) {
+				return fmt.Errorf("target branch (%s) is unknown", target)
+			}
+		} else {
+			targetRepo := keepers.RepoKeeper().GetNoPopulate(parts[0])
+			if targetRepo.IsNil() {
+				return fmt.Errorf("target branch's repository (%s) does not exist", parts[0])
+			}
+			if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
+				return fmt.Errorf("target branch (%s) of (%s) is unknown", parts[1], parts[0])
+			}
 		}
 	}
 

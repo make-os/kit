@@ -83,15 +83,6 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 		return errors.Wrap(err, "failed to set `hook.curRemote` value")
 	}
 
-	// If the target remote tokens are already set, do not sign. Return.
-	// Rationale: The askpass hook usually removes the token after handover to git.
-	// but it the sign command was used directly, askpass hook is never called; Whenever
-	// sign command is used directly, the intent is to override signing via the hook.
-	tokens := rcfg.Raw.Section("remote").Subsection(args.Args[0]).Option("tokens")
-	if tokens != "" {
-		return nil
-	}
-
 	// Sign each reference
 	for _, ref := range references {
 		if ref.IsBranch() {
