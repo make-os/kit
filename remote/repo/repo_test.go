@@ -10,6 +10,7 @@ import (
 	rr "github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/remote/types"
 	state2 "github.com/themakeos/lobe/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -99,6 +100,21 @@ var _ = Describe("RepoContext", func() {
 			Expect(refs[0].String()).To(Equal("refs/heads/issues/1"))
 			Expect(refs[1].String()).To(Equal("refs/heads/master"))
 			Expect(refs[2].String()).To(Equal("HEAD"))
+		})
+	})
+
+	Describe(".HeadObject", func() {
+		It("should return ErrReferenceNotFound when HEAD is unknown", func() {
+			_, err := r.HeadObject()
+			Expect(err).To(Equal(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return ErrReferenceNotFound when HEAD is unknown", func() {
+			testutil2.AppendCommit(path, "body", "content", "m1")
+			tipHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+			o, err := r.HeadObject()
+			Expect(err).To(BeNil())
+			Expect(o.(*object.Commit).Hash.String()).To(Equal(tipHash))
 		})
 	})
 

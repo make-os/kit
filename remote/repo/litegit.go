@@ -125,11 +125,11 @@ func (lg *LiteGit) GetHEAD(short bool) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// CreateSignedEmptyCommit creates and optionally sign a quiet commit.
+// CreateEmptyCommit creates a quiet commit.
 // msg: The commit message.
 // signingKey: The optional signing key. If provided, the commit is signed
 // env: Optional environment variables to pass to the command.
-func (lg *LiteGit) CreateSignedEmptyCommit(msg, signingKey string, env ...string) error {
+func (lg *LiteGit) CreateEmptyCommit(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--quiet", "--allow-empty", "--allow-empty-message", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
@@ -258,11 +258,11 @@ func (lg *LiteGit) CreateBlob(content string) (string, error) {
 	return strings.TrimSpace(out.String()), nil
 }
 
-// UpdateRecentCommitMsg updates the recent commit message
-// msg: The commit message which is passed to the command's stdin.
-// signingKey: The signing key
+// AmendRecentCommitWithMsg amends the recent commit
+// msg: The commit message.
+// signingKey: An optional signing key
 // env: Optional environment variables to pass to the command.
-func (lg *LiteGit) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+func (lg *LiteGit) AmendRecentCommitWithMsg(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message",
 		"--allow-empty", "--file", "-"}
 	if signingKey != "" {

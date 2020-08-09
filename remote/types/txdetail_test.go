@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/pem"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -42,6 +44,31 @@ var _ = Describe("TxDetail", func() {
 			txDetail, err := TxDetailFromGitSigPEMHeader(hdr)
 			Expect(err).To(BeNil())
 			Expect(txDetail.PushKeyID).To(Equal("pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
+		})
+	})
+
+	Describe(".DecodeSignatureHeader", func() {
+		It("should return error when unable to parse PEM data", func() {
+			_, err := DecodeSignatureHeader(nil)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to decode signature"))
+		})
+
+		It("should return error when unable to parse PEM header", func() {
+			pemData := string(pem.EncodeToMemory(&pem.Block{Headers: map[string]string{}}))
+			_, err := DecodeSignatureHeader([]byte(pemData))
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unable to parse PEM header: 'pkID' is required"))
+		})
+
+		It("should return TxDetail if successful", func() {
+			pkID := "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
+			pemData := string(pem.EncodeToMemory(&pem.Block{Headers: map[string]string{
+				"pkID": pkID,
+			}}))
+			txd, err := DecodeSignatureHeader([]byte(pemData))
+			Expect(err).To(BeNil())
+			Expect(txd.PushKeyID).To(Equal(pkID))
 		})
 	})
 })

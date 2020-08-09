@@ -117,6 +117,16 @@ func (r *Repo) Head() (string, error) {
 	return ref.Name().String(), nil
 }
 
+// HeadObject returns the object of the HEAD reference.
+// Returns plumbing.ErrReferenceNotFound if HEAD was not found.
+func (r *Repo) HeadObject() (object.Object, error) {
+	ref, err := r.Repository.Head()
+	if err != nil {
+		return nil, err
+	}
+	return r.Repository.Object(plumbing.AnyObject, ref.Hash())
+}
+
 // GetPath returns the bare repository path.
 func (r *Repo) GetPath() string {
 	return r.Path

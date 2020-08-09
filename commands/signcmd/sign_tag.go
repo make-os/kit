@@ -18,6 +18,7 @@ import (
 	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 type SignTagArgs struct {
@@ -44,6 +45,9 @@ type SignTagArgs struct {
 
 	// Force force git-tag to overwrite existing tag
 	Force bool
+
+	// ForceSign forcefully signs a tag when signing is supposed to be skipped
+	ForceSign bool
 
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
@@ -80,7 +84,9 @@ type SignTagFunc func(cfg *config.AppConfig, gitArgs []string, repo types.LocalR
 func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error {
 
 	populateSignTagArgsFromRepoConfig(repo, args)
-	if args.Force {
+
+	// Set -f flag if Force or ForceSign is true
+	if args.Force || args.ForceSign {
 		gitArgs = append(gitArgs, "-f")
 	}
 
@@ -122,20 +128,21 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	// This is required when the passphrase was gotten via an interactive prompt.
 	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
-	// If message is unset, use the tag's message if the tag already exists
-	if args.Message == "" {
-		tagRef, err := repo.Tag(gitArgs[0])
-		if err != nil && err != git.ErrTagNotFound {
+	// Get the tag object if it already exists
+	var tag *object.Tag
+	tagRef, err := repo.Tag(gitArgs[0])
+	if err != nil && err != git.ErrTagNotFound {
+		return err
+	} else if tagRef != nil {
+		tag, err = repo.TagObject(tagRef.Hash())
+		if err != nil {
 			return err
-		} else if tagRef != nil {
-			tag, err := repo.TagObject(tagRef.Hash())
-			if err != nil {
-				return err
-			}
-			if args.Message == "" && tag != nil {
-				args.Message = tag.Message
-			}
 		}
+	}
+
+	// If message is unset, use the tag's message if the tag already exists
+	if args.Message == "" && tag != nil {
+		args.Message = tag.Message
 	}
 
 	// If --message (-m) flag is provided, use the value as the message
@@ -162,12 +169,27 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 		os.Setenv(passVar, args.PushKeyPass)
 	}
 
-	// Create the signed tag if only reference signing was requested
-	if !args.CreatePushTokenOnly {
-		if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
-			return err
+	// Check if the tag already exists and has previously been signed:
+	// Skip resigning if push key of current attempt didn't change and only if args.ForceSign is false.
+	if tag != nil && tag.PGPSignature != "" && !args.ForceSign {
+		txd, _ := types.DecodeSignatureHeader([]byte(tag.PGPSignature))
+		if txd != nil && txd.PushKeyID == pushKeyID {
+			goto create_token
 		}
 	}
+
+	// Skip signing if CreatePushTokenOnly is true
+	if args.CreatePushTokenOnly {
+		goto create_token
+	}
+
+	// Create the signed tag
+	if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
+		return err
+	}
+
+	// Create & set push request token on the remote in config.
+create_token:
 
 	// Skip push token creation if only reference signing was requested
 	if args.SignRefOnly {
@@ -175,7 +197,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	// Create & set request token to remote URLs in config
-	tagRef, _ := repo.Tag(gitArgs[0])
+	tagRef, _ = repo.Tag(gitArgs[0])
 	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		PushKey:                       key,

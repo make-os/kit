@@ -42,6 +42,7 @@ var signCommitCmd = &cobra.Command{
 		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
 		refOnly, _ := cmd.Flags().GetBool("ref-only")
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
+		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
 		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
 		if targetRepo == nil {
@@ -65,6 +66,7 @@ var signCommitCmd = &cobra.Command{
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
 			CreatePushTokenOnly:           tokenOnly,
 			SignRefOnly:                   refOnly,
+			ForceSign:                     forceSign,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
 			KeyUnlocker:                   common.UnlockKey,
@@ -95,6 +97,7 @@ var signTagCmd = &cobra.Command{
 		setRemoteTokenOnly, _ := cmd.Flags().GetBool("no-username")
 		refOnly, _ := cmd.Flags().GetBool("ref-only")
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
+		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
 		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
 		if targetRepo == nil {
@@ -115,6 +118,7 @@ var signTagCmd = &cobra.Command{
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
 			CreatePushTokenOnly:           tokenOnly,
 			SignRefOnly:                   refOnly,
+			ForceSign:                     forceSign,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
 			KeyUnlocker:                   common.UnlockKey,
@@ -189,9 +193,11 @@ func init() {
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 	signCommitCmd.Flags().Bool("ref-only", false, "Only sign the commit object")
 	signCommitCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
+	signCommitCmd.Flags().Bool("force-sign", false, "Forcefully sign the commit even when it has already been signed")
 	signTagCmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
 	signTagCmd.Flags().Bool("ref-only", false, "Only sign the tag object")
 	signTagCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
+	signTagCmd.Flags().Bool("force-sign", false, "Forcefully sign the tag even when it has already been signed")
 
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")

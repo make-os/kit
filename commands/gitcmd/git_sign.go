@@ -68,7 +68,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 
 	// Write output
 	w := bytes.NewBuffer(nil)
-	txDetail := &types.TxDetail{PushKeyID: pushKeyID}
+	txDetail := &types.TxDetail{PushKeyID: key.GetPushKeyAddress()}
 	pem.Encode(w, &pem.Block{Bytes: sig, Type: "PGP SIGNATURE", Headers: txDetail.GetGitSigPEMHeader()})
 	fmt.Fprintf(args.StdErr, "[GNUPG:] BEGIN_SIGNING\n")
 	fmt.Fprintf(args.StdErr, "[GNUPG:] SIG_CREATED C\n")

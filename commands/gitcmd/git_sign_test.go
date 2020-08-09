@@ -71,6 +71,7 @@ var _ = Describe("GitSign", func() {
 			}
 
 			mockStoredKey.EXPECT().GetKey().Return(key)
+			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 
 			config.AppName = "MY_TEST_APP"
 			err := GitSignCmd(cfg, strings.NewReader("data"), args)

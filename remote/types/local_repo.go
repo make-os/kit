@@ -103,6 +103,10 @@ type LocalRepo interface {
 	// Head returns the reference where HEAD is pointing to.
 	Head() (string, error)
 
+	// HeadObject returns the object of the HEAD reference.
+	// Returns plumbing.ErrReferenceNotFound if HEAD was not found.
+	HeadObject() (object.Object, error)
+
 	// ObjectExist checks whether an object exist in the target repository
 	ObjectExist(objHash string) bool
 
@@ -147,14 +151,14 @@ type LiteGit interface {
 	GetRecentCommitHash() (string, error)
 	GetHEAD(short bool) (string, error)
 	NumCommits(branch string, noMerges bool) (int, error)
-	CreateSignedEmptyCommit(msg, signingKey string, env ...string) error
+	CreateEmptyCommit(msg, signingKey string, env ...string) error
 	CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error
 	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)
 	ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error)
 	RemoveEntryFromNote(notename, objectHash string, env ...string) error
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
 	CreateBlob(content string) (string, error)
-	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
+	AmendRecentCommitWithMsg(msg, signingKey string, env ...string) error
 	HasMergeCommits(reference string, env ...string) (bool, error)
 	GetMergeCommits(reference string, env ...string) ([]string, error)
 	CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error)

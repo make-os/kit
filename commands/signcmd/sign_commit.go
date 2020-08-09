@@ -1,6 +1,7 @@
 package signcmd
 
 import (
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -52,6 +53,9 @@ type SignCommitArgs struct {
 	// ForceCheckout forcefully checks out the target branch (clears unsaved work)
 	ForceCheckout bool
 
+	// ForceSign forcefully signs a commit when signing is supposed to be skipped
+	ForceSign bool
+
 	// PushKeyID is the signers push key ID
 	SigningKey string
 
@@ -87,6 +91,9 @@ type SignCommitArgs struct {
 
 	// SetRemotePushToken is a function for setting push tokens on a git remote config
 	SetRemotePushToken server.RemotePushTokenSetter
+
+	// PemDecoder is a function for decoding PEM data
+	PemDecoder func(data []byte) (p *pem.Block, rest []byte)
 }
 
 var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
@@ -164,13 +171,11 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	// If an explicit branch was provided via flag, check it out.
 	// Then set a deferred function to revert back the the original branch.
 	if repoHead != curHead {
-		if err := repo.Checkout(plumbing.ReferenceName(repoHead).Short(), false,
-			args.ForceCheckout); err != nil {
+		err := repo.Checkout(plumbing.ReferenceName(repoHead).Short(), false, args.ForceCheckout)
+		if err != nil {
 			return fmt.Errorf("failed to checkout branch (%s): %s", repoHead, err)
 		}
-		defer func() {
-			_ = repo.Checkout(plumbing.ReferenceName(curHead).Short(), false, false)
-		}()
+		defer repo.Checkout(plumbing.ReferenceName(curHead).Short(), false, false)
 	}
 
 	// Use active branch as the tx reference only if args.HEAD was not explicitly provided
@@ -189,42 +194,42 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		os.Setenv(passVar, args.PushKeyPass)
 	}
 
-	var commit *object.Commit
-	var hash string
+	// Check if current commit has previously been signed. If yes:
+	// Skip resigning if push key of current attempt didn't change and only if args.ForceSign is false.
+	headObj, _ := repo.HeadObject()
+	if headObj != nil && headObj.(*object.Commit).PGPSignature != "" && !args.ForceSign {
+		txd, _ := types.DecodeSignatureHeader([]byte(headObj.(*object.Commit).PGPSignature))
+		if txd != nil && txd.PushKeyID == pushKeyID {
+			goto create_token
+		}
+	}
 
 	// Skip signing if CreatePushTokenOnly is true
 	if args.CreatePushTokenOnly {
 		goto create_token
 	}
 
-	// Create a new commit if recent commit amendment is not desired.
+	// If commit amendment is not required, create and sign a new commit instead
 	if !args.AmendCommit {
-		if err := repo.CreateSignedEmptyCommit(args.Message, args.SigningKey); err != nil {
+		if err := repo.CreateEmptyCommit(args.Message, args.SigningKey); err != nil {
 			return err
 		}
 		goto create_token
 	}
 
-	// Otherwise, amend the recent commit.
-	// Get recent commit hash of the current branch.
-	hash, err = repo.GetRecentCommitHash()
-	if err != nil {
-		if err == plumbing2.ErrNoCommits {
-			return errors.New("no commits have been created yet")
-		}
-		return err
+	// At this point, recent commit amendment is required.
+	// Ensure there is a commit to amend
+	if headObj == nil {
+		return errors.New("no commit found; empty branch")
 	}
 
-	// Use previous commit message as default
-	commit, err = repo.CommitObject(plumbing.NewHash(hash))
-	if err != nil {
-		return err
-	} else if args.Message == "" {
-		args.Message = commit.Message
+	// Use recent commit message as default if none was provided
+	if args.Message == "" {
+		args.Message = headObj.(*object.Commit).Message
 	}
 
 	// Update the recent commit message.
-	if err = repo.UpdateRecentCommitMsg(args.Message, args.SigningKey); err != nil {
+	if err = repo.AmendRecentCommitWithMsg(args.Message, args.SigningKey); err != nil {
 		return err
 	}
 
@@ -237,7 +242,7 @@ create_token:
 		return nil
 	}
 
-	hash, _ = repo.GetRecentCommitHash()
+	hash, _ := repo.GetRecentCommitHash()
 	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		PushKey:                       key,

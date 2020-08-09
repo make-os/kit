@@ -1,6 +1,7 @@
 package signcmd
 
 import (
+	"encoding/pem"
 	"fmt"
 	"os"
 
@@ -344,6 +345,63 @@ var _ = Describe("SignTag", func() {
 
 				err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
 				Expect(err).To(BeNil())
+			})
+		})
+
+		When("tag already exist and it is signed", func() {
+			BeforeEach(func() {
+				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+					"user.signingKey": key.PushAddr().String(),
+				})).AnyTimes()
+			})
+
+			It("should skip signing tag", func() {
+
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
+				args := &SignTagArgs{SigningKey: key.PushAddr().String(), CreatePushTokenOnly: true}
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+
+				ref := plumbing.NewReferenceFromStrings("", util.RandString(40))
+				mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+				pemData := pem.EncodeToMemory(&pem.Block{Headers: map[string]string{"pkID": key.PushAddr().String()}})
+				tag := &object.Tag{Message: "tag1 message", PGPSignature: string(pemData)}
+				mockRepo.EXPECT().TagObject(ref.Hash()).Return(tag, nil)
+
+				mockRepo.EXPECT().GetName().Return("repo_name")
+				mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+				args.GetNextNonce = testGetNextNonce2("1", nil)
+				args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+				err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+
+			When("ForceSign is true", func() {
+				It("should not skip signing the tag object", func() {
+					mockStoredKey := mocks.NewMockStoredKey(ctrl)
+					mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
+					args := &SignTagArgs{SigningKey: key.PushAddr().String(), ForceSign: true}
+					args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+					mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+
+					ref := plumbing.NewReferenceFromStrings("", util.RandString(40))
+					mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+					pemData := pem.EncodeToMemory(&pem.Block{Headers: map[string]string{"pkID": key.PushAddr().String()}})
+					tag := &object.Tag{Message: "tag1 message", PGPSignature: string(pemData)}
+					mockRepo.EXPECT().TagObject(ref.Hash()).Return(tag, nil)
+					mockRepo.EXPECT().GetName().Return("repo_name")
+
+					mockRepo.EXPECT().CreateTagWithMsg(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+					mockRepo.EXPECT().Tag("tag1").Return(ref, nil)
+					args.GetNextNonce = testGetNextNonce2("1", nil)
+					args.SetRemotePushToken = testSetRemotePushToken("", nil)
+
+					err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
+					Expect(err).To(BeNil())
+				})
 			})
 		})
 	})

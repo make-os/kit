@@ -2,10 +2,12 @@ package types
 
 import (
 	"bytes"
+	"encoding/pem"
 	"fmt"
 	"strings"
 
 	"github.com/mr-tron/base58"
+	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
@@ -255,4 +257,17 @@ func (tp *TxDetail) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 		&tp.Head)
 	tp.Signature = base58.Encode(sig)
 	return
+}
+
+// DecodeSignatureHeader decodes the given commit/tag signature and returns a TxDetail
+func DecodeSignatureHeader(sig []byte) (*TxDetail, error) {
+	decSig, _ := pem.Decode(sig)
+	if decSig == nil {
+		return nil, fmt.Errorf("failed to decode signature")
+	}
+	txDetail, err := TxDetailFromGitSigPEMHeader(decSig.Headers)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse PEM header")
+	}
+	return txDetail, nil
 }
