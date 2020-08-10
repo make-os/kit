@@ -75,13 +75,15 @@ var mergeReqCreateCmd = &cobra.Command{
 
 		// When target branch hash is equal to '.', use the hash of the HEAD reference.
 		// but when it is "~", read the hash from the target branch.
-		if targetBranchHash == "." || targetBranch == "~" {
+		if targetBranchHash == "." || targetBranchHash == "~" {
 			if targetBranch == "" {
 				log.Fatal("flag (--target) is required")
 			}
 			targetRef := targetBranch
 			if targetBranchHash == "." {
 				targetRef = head
+			} else {
+				targetRef = targetBranch
 			}
 			ref, err := r.RefGet(targetRef)
 			if err != nil {
@@ -99,6 +101,8 @@ var mergeReqCreateCmd = &cobra.Command{
 			targetRef := baseBranch
 			if baseBranchHash == "." {
 				targetRef = head
+			} else {
+				targetRef = targetBranch
 			}
 			ref, err := r.RefGet(targetRef)
 			if err != nil {
