@@ -59,6 +59,25 @@ func (mr *MockLiteGitMockRecorder) AddEntryToNote(arg0, arg1, arg2 interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockLiteGit)(nil).AddEntryToNote), varargs...)
 }
 
+// AmendRecentCommitWithMsg mocks base method
+func (m *MockLiteGit) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AmendRecentCommitWithMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AmendRecentCommitWithMsg indicates an expected call of AmendRecentCommitWithMsg
+func (mr *MockLiteGitMockRecorder) AmendRecentCommitWithMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockLiteGit)(nil).AmendRecentCommitWithMsg), varargs...)
+}
+
 // Checkout mocks base method
 func (m *MockLiteGit) Checkout(arg0 string, arg1, arg2 bool) error {
 	m.ctrl.T.Helper()
@@ -88,7 +107,7 @@ func (mr *MockLiteGitMockRecorder) CreateBlob(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockLiteGit)(nil).CreateBlob), arg0)
 }
 
-// CreateSignedEmptyCommit mocks base method
+// CreateEmptyCommit mocks base method
 func (m *MockLiteGit) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -100,8 +119,8 @@ func (m *MockLiteGit) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error
 	return ret0
 }
 
-// CreateSignedEmptyCommit indicates an expected call of CreateSignedEmptyCommit
-func (mr *MockLiteGitMockRecorder) CreateSignedEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// CreateEmptyCommit indicates an expected call of CreateEmptyCommit
+func (mr *MockLiteGitMockRecorder) CreateEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmptyCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateEmptyCommit), varargs...)
@@ -401,25 +420,6 @@ func (mr *MockLiteGitMockRecorder) TagDelete(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockLiteGit)(nil).TagDelete), arg0)
 }
 
-// UpdateRecentCommitMsg mocks base method
-func (m *MockLiteGit) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AmendRecentCommitWithMsg", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
-func (mr *MockLiteGitMockRecorder) UpdateRecentCommitMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockLiteGit)(nil).AmendRecentCommitWithMsg), varargs...)
-}
-
 // Var mocks base method
 func (m *MockLiteGit) Var(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
@@ -475,6 +475,25 @@ func (mr *MockLocalRepoMockRecorder) AddEntryToNote(arg0, arg1, arg2 interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockLocalRepo)(nil).AddEntryToNote), varargs...)
+}
+
+// AmendRecentCommitWithMsg mocks base method
+func (m *MockLocalRepo) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AmendRecentCommitWithMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AmendRecentCommitWithMsg indicates an expected call of AmendRecentCommitWithMsg
+func (mr *MockLocalRepoMockRecorder) AmendRecentCommitWithMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockLocalRepo)(nil).AmendRecentCommitWithMsg), varargs...)
 }
 
 // BlobObject mocks base method
@@ -566,7 +585,7 @@ func (mr *MockLocalRepoMockRecorder) CreateBlob(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockLocalRepo)(nil).CreateBlob), arg0)
 }
 
-// CreateSignedEmptyCommit mocks base method
+// CreateEmptyCommit mocks base method
 func (m *MockLocalRepo) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -578,8 +597,8 @@ func (m *MockLocalRepo) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) err
 	return ret0
 }
 
-// CreateSignedEmptyCommit indicates an expected call of CreateSignedEmptyCommit
-func (mr *MockLocalRepoMockRecorder) CreateSignedEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// CreateEmptyCommit indicates an expected call of CreateEmptyCommit
+func (mr *MockLocalRepoMockRecorder) CreateEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmptyCommit", reflect.TypeOf((*MockLocalRepo)(nil).CreateEmptyCommit), varargs...)
@@ -1337,25 +1356,6 @@ func (m *MockLocalRepo) Tags() (storer.ReferenceIter, error) {
 func (mr *MockLocalRepoMockRecorder) Tags() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tags", reflect.TypeOf((*MockLocalRepo)(nil).Tags))
-}
-
-// UpdateRecentCommitMsg mocks base method
-func (m *MockLocalRepo) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AmendRecentCommitWithMsg", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
-func (mr *MockLocalRepoMockRecorder) UpdateRecentCommitMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockLocalRepo)(nil).AmendRecentCommitWithMsg), varargs...)
 }
 
 // Var mocks base method

@@ -197,6 +197,21 @@ func (mr *MockRemoteServerMockRecorder) GetLogic() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogic", reflect.TypeOf((*MockRemoteServer)(nil).GetLogic))
 }
 
+// GetRepo mocks base method
+func (m *MockRemoteServer) GetRepo(name string) (types2.LocalRepo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepo", name)
+	ret0, _ := ret[0].(types2.LocalRepo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepo indicates an expected call of GetRepo
+func (mr *MockRemoteServerMockRecorder) GetRepo(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRemoteServer)(nil).GetRepo), name)
+}
+
 // GetPrivateValidatorKey mocks base method
 func (m *MockRemoteServer) GetPrivateValidatorKey() *crypto.Key {
 	m.ctrl.T.Helper()

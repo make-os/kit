@@ -13,6 +13,7 @@ import (
 	rr "github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/types/core"
+	"github.com/themakeos/lobe/types/state"
 	"github.com/themakeos/lobe/util"
 	"github.com/themakeos/lobe/util/crypto"
 	"github.com/themakeos/lobe/util/identifier"
@@ -98,33 +99,18 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 		}
 
 		// Set flag for the authorizer function to check for admin update policy
-		includesAdminFields := post.IncludesAdminFields()
-		if includesAdminFields {
-			args.TxDetail.FlagCheckAdminUpdatePolicy = true
-		}
+		// if post includes admin fields
+		args.TxDetail.FlagCheckAdminUpdatePolicy = post.IncludesAdminFields()
 
-		isTip := ancestor.Hash.String() == args.Change.Item.GetData()
-		if isTip {
-
-			// Update reference data in tx detail with post data from tip commit.
+		// If ancestor is the tip (the pushed commit):
+		// - Update reference data in tx detail with post data from tip commit.
+		// - When a reference exist and it is closed, the next pushed commit is expected
+		// 	 to reopen it by setting the 'close' field to 'open'. Return error if
+		//   this is not the case.
+		if ancestor.Hash.String() == args.Change.Item.GetData() {
 			copier.Copy(args.TxDetail.Data(), post)
-
-			// When a reference exist and it is closed, the next pushed commit is expected
-			// to reopen it by setting the 'close' field to 'open'.
 			if reference.Data.Closed && !post.WantOpen() {
 				return ErrCannotWriteToClosedRef
-			}
-
-		} else {
-
-			// When the current commit is not the tip, not a new reference and it
-			// includes admin fields, we must reject it as only the tip can carry
-			// admin fields updates. The rationale here is that if non-tip commits
-			// set admin fields, it will take additional checks for UI clients to
-			// tell if they have commit creator has permission to update the field.
-			if !reference.IsNil() && includesAdminFields {
-				msg := "ancestor commit (%s) cannot include fields that require admin permission"
-				return fmt.Errorf(msg, ancestor.Hash.String()[:7])
 			}
 		}
 	}
@@ -442,32 +428,52 @@ func CheckMergeRequestPostBodyConsistency(
 		}
 	}
 
-	// For new merge requests reference:
-	if isNewRef {
-		// Ensure the base branch exist in the repository
-		obj := objx.New(body)
-		base := obj.Get("base").Str()
-		if base != "" && !repoState.References.Has(plumbing.NewBranchReferenceName(base).String()) {
-			return fmt.Errorf("base branch (%s) is unknown", base)
-		}
+	// If base branch is set, ensure it exists as reference in the repo state
+	obj := objx.New(body)
+	base := obj.Get("base").Str()
+	fullBaseRef := plumbing.NewBranchReferenceName(base).String()
+	if base != "" && !repoState.References.Has(fullBaseRef) {
+		return fmt.Errorf("base branch (%s) is unknown", base)
+	}
 
-		// Ensure the target branch exist.
-		// The target branch might be a path in the format <repo_name/branch>, in
-		// this case, check if the branch exist in the repository named 'repo_name'
-		target := obj.Get("target").Str()
-		parts := strings.SplitN(target, "/", 2)
-		if len(parts) == 1 {
+	// If the base branch hash is set, ensure the base branch hash matches
+	// its equivalent reference hash in the repo state
+	baseHash := obj.Get("baseHash").Str()
+	curBaseHash := repoState.References.Get(fullBaseRef).Hash.HexStr(true)
+	if baseHash != "" && baseHash != curBaseHash {
+		return fmt.Errorf("base branch (%s) hash does not match upstream state", base)
+	}
+
+	// If target branch is set, ensure the target branch exist.
+	// The target branch might be a path with the format '/repo_name/branch', in
+	// this case, check if the branch exist in the repository named 'repo_name'
+	var targetRepo *state.Repository
+	target := obj.Get("target").Str()
+	if target != "" {
+		if target[:1] != "/" {
 			if !repoState.References.Has(plumbing.NewBranchReferenceName(target).String()) {
 				return fmt.Errorf("target branch (%s) is unknown", target)
 			}
 		} else {
-			targetRepo := keepers.RepoKeeper().GetNoPopulate(parts[0])
+			parts := strings.SplitN(target[1:], "/", 2)
+			targetRepo = keepers.RepoKeeper().GetNoPopulate(parts[0])
 			if targetRepo.IsNil() {
 				return fmt.Errorf("target branch's repository (%s) does not exist", parts[0])
 			}
 			if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
 				return fmt.Errorf("target branch (%s) of (%s) is unknown", parts[1], parts[0])
 			}
+		}
+	}
+
+	// If target hash is set, ensure the target branch hash matches
+	// its equivalent reference hash in the repo state
+	targetHash := obj.Get("targetHash").Str()
+	if targetHash != "" {
+		fullTargetRef := plumbing.NewBranchReferenceName(target).String()
+		curTargetHash := repoState.References.Get(fullTargetRef).Hash.HexStr(true)
+		if targetHash != curTargetHash {
+			return fmt.Errorf("target branch (%s) hash does not match upstream state", target)
 		}
 	}
 
@@ -505,7 +511,12 @@ func checkMergeRequestPostBodySanity(commit types.Commit, body map[string]interf
 		return fe(-1, makeField("base", commitHash), "base branch name is required")
 	}
 
-	if val := baseHash.String(); len(val) > 0 && len(val) != 40 {
+	// Base branch hash is required for only new merge request reference
+	bh := baseHash.String()
+	if bh == "" && isNewRef {
+		return fe(-1, makeField("baseHash", commitHash), "base branch hash is required")
+	}
+	if len(bh) > 0 && len(bh) != 40 {
 		return fe(-1, makeField("baseHash", commitHash), "base branch hash is not valid")
 	}
 

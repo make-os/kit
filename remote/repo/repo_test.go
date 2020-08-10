@@ -21,10 +21,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-var _ = Describe("RepoContext", func() {
+var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
-	var path, dotGitPath string
+	var path, dotGitPath, repoName string
 	var r types.LocalRepo
 	var key *crypto.Key
 
@@ -36,10 +36,9 @@ var _ = Describe("RepoContext", func() {
 	})
 
 	BeforeEach(func() {
-		repoName := util.RandString(5)
+		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		dotGitPath = filepath.Join(path, ".git")
-		_ = dotGitPath
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		r, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())

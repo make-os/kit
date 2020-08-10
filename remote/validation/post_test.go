@@ -19,6 +19,7 @@ import (
 	"github.com/themakeos/lobe/testutil"
 	"github.com/themakeos/lobe/types/core"
 	"github.com/themakeos/lobe/types/state"
+	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -176,28 +177,6 @@ var _ = Describe("Validation", func() {
 				}
 				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
-			})
-
-			When("ancestor commit post body included an admin field", func() {
-				It("should return error", func() {
-					mockRepoState.References["refs/heads/issues/1"] = &state.Reference{Nonce: 1}
-					mockRepo.EXPECT().GetState().Return(mockRepoState)
-					mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
-
-					detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
-					change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-					args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
-						TxDetail:    detail,
-						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-							return &plumbing2.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"label_update"}}}, nil
-						},
-					}
-					err := validation.ValidatePostCommit(mockRepo, commit, args)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(MatchRegexp("ancestor commit (.*) cannot include fields that require admin permission"))
-					Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
-				})
 			})
 
 			When("ancestor commit post body included an admin field but the reference is new (does not already exist)", func() {
@@ -692,6 +671,13 @@ var _ = Describe("Validation", func() {
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.base, msg:base branch name is required"))
 			})
 
+			It("should return error when 'baseHash' is unset and merge request reference is new", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master"}
+				err := validation.CheckPostBody(mockKeepers, nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.baseHash, msg:base branch hash is required"))
+			})
+
 			It("should return error when 'baseHash' is set but invalid and merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "0x_invalid"}
 				err := validation.CheckPostBody(mockKeepers, nil, ref, wc, true, fm, []byte{1})
@@ -700,21 +686,21 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return error when 'target' branch is unset and merge request reference is new", func() {
-				fm := map[string]interface{}{"title": "title", "base": "master", "target": ""}
+				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310", "target": ""}
 				err := validation.CheckPostBody(mockKeepers, nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.target, msg:target branch name is required"))
 			})
 
 			It("should return error when 'targetHash' is unsetand merge request reference is new", func() {
-				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": ""}
+				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310", "target": "dev", "targetHash": ""}
 				err := validation.CheckPostBody(mockKeepers, nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:target branch hash is required"))
 			})
 
 			It("should return error when 'targetHash' is not valid and merge request reference is new", func() {
-				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "0x_invalid"}
+				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310", "target": "dev", "targetHash": "0x_invalid"}
 				err := validation.CheckPostBody(mockKeepers, nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:target branch hash is not valid"))
@@ -722,10 +708,10 @@ var _ = Describe("Validation", func() {
 
 			It("should return no error when successful", func() {
 				repoState := state.BareRepository()
-				repoState.References["refs/heads/master"] = &state.Reference{}
-				repoState.References["refs/heads/dev"] = &state.Reference{}
+				repoState.References["refs/heads/master"] = &state.Reference{Hash: util.MustFromHex("7f92315bdc59a859aefd0d932173cd00fd1ec310")}
+				repoState.References["refs/heads/dev"] = &state.Reference{Hash: util.MustFromHex("519cca1e9aad6dda3db6b7c1b31a7d733a199ef4")}
 				mockRepo.EXPECT().GetState().Return(repoState)
-				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310"}
+				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310", "target": "dev", "targetHash": "519cca1e9aad6dda3db6b7c1b31a7d733a199ef4"}
 				err := validation.CheckPostBody(mockKeepers, mockRepo, ref, wc, true, fm, []byte{1})
 				Expect(err).To(BeNil())
 			})
@@ -755,72 +741,98 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("merge request reference is new", func() {
-			It("should return error if base branch does not exist as a reference", func() {
-				repoState := &state.Repository{}
-				mockRepo.EXPECT().GetState().Return(repoState)
+		It("should return error if base branch does not exist as a reference", func() {
+			repoState := &state.Repository{}
+			mockRepo.EXPECT().GetState().Return(repoState)
+			ref := plumbing2.MakeMergeRequestReference(1)
+			err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
+				"base": "major",
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("base branch (major) is unknown"))
+		})
+
+		It("should return error if base branch hash is set but does not match base reference hash on repo state", func() {
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/major": {Hash: util.MustFromHex("519cca1e9aad6dda3db6b7c1b31a7d733a199ef4")}}}
+			mockRepo.EXPECT().GetState().Return(repoState)
+			ref := plumbing2.MakeMergeRequestReference(1)
+			err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
+				"base":     "major",
+				"baseHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310",
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("base branch (major) hash does not match upstream state"))
+		})
+
+		It("should return error if target branch does not exist as a reference", func() {
+			repoState := &state.Repository{}
+			mockRepo.EXPECT().GetState().Return(repoState)
+			ref := plumbing2.MakeMergeRequestReference(1)
+			err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
+				"target": "dev",
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("target branch (dev) is unknown"))
+		})
+
+		When("target branch has a path (/repo/branch)", func() {
+			It("should return error if repo does not exist", func() {
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				repo1 := state.BareRepository()
+				mockRepo.EXPECT().GetState().Return(repo1)
+				mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				ref := plumbing2.MakeMergeRequestReference(1)
 				err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
-					"base": "major",
+					"target": "/repo1/dev",
 				})
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("base branch (major) is unknown"))
+				Expect(err).To(MatchError("target branch's repository (repo1) does not exist"))
 			})
 
-			It("should return error if target branch does not exist as a reference", func() {
-				repoState := &state.Repository{}
-				mockRepo.EXPECT().GetState().Return(repoState)
+			It("should return error if repo exists but the branch does not exist", func() {
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				repo1 := state.BareRepository()
+				repo1.Balance = "20.3"
+				mockRepo.EXPECT().GetState().Return(repo1)
+				mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				ref := plumbing2.MakeMergeRequestReference(1)
 				err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
-					"target": "dev",
+					"target": "/repo1/dev",
 				})
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("target branch (dev) is unknown"))
+				Expect(err).To(MatchError("target branch (dev) of (repo1) is unknown"))
 			})
 
-			When("target branch has a path (repo/branch)", func() {
-				It("should return error if repo does not exist", func() {
-					mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-					repo1 := state.BareRepository()
-					mockRepo.EXPECT().GetState().Return(repo1)
-					mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
-					mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-					ref := plumbing2.MakeMergeRequestReference(1)
-					err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
-						"target": "repo1/dev",
-					})
-					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("target branch's repository (repo1) does not exist"))
+			It("should return no error if repo exists and the branch also exists", func() {
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				repo1 := state.BareRepository()
+				repo1.References = map[string]*state.Reference{"refs/heads/dev/testing": {}}
+				mockRepo.EXPECT().GetState().Return(repo1)
+				mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				ref := plumbing2.MakeMergeRequestReference(1)
+				err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
+					"target": "/repo1/dev/testing",
 				})
+				Expect(err).To(BeNil())
+			})
 
-				It("should return error if repo exists but the branch does not exist", func() {
-					mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-					repo1 := state.BareRepository()
-					repo1.Balance = "20.3"
-					mockRepo.EXPECT().GetState().Return(repo1)
-					mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
-					mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-					ref := plumbing2.MakeMergeRequestReference(1)
-					err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
-						"target": "repo1/dev",
-					})
-					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("target branch (dev) of (repo1) is unknown"))
+			It("should return error if target branch hash is set but does not match target reference hash on repo state", func() {
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				repo1 := state.BareRepository()
+				repo1.References = map[string]*state.Reference{"refs/heads/dev/testing": {Hash: util.MustFromHex("519cca1e9aad6dda3db6b7c1b31a7d733a199ef4")}}
+				mockRepo.EXPECT().GetState().Return(repo1)
+				mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				ref := plumbing2.MakeMergeRequestReference(1)
+				err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
+					"target":     "/repo1/dev/testing",
+					"targetHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310",
 				})
-
-				It("should return no error if repo exists and the branch also exists", func() {
-					mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-					repo1 := state.BareRepository()
-					repo1.References = map[string]*state.Reference{"refs/heads/dev/testing": {}}
-					mockRepo.EXPECT().GetState().Return(repo1)
-					mockRepoKeeper.EXPECT().GetNoPopulate("repo1").Return(repo1)
-					mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-					ref := plumbing2.MakeMergeRequestReference(1)
-					err := validation.CheckMergeRequestPostBodyConsistency(mockKeepers, mockRepo, ref, true, map[string]interface{}{
-						"target": "repo1/dev/testing",
-					})
-					Expect(err).To(BeNil())
-				})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("target branch (/repo1/dev/testing) hash does not match upstream state"))
 			})
 		})
 	})

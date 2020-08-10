@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -75,6 +76,7 @@ var mergeReqCreateCmd = &cobra.Command{
 
 		// When target branch hash is equal to '.', use the hash of the HEAD reference.
 		// but when it is "~", read the hash from the target branch.
+		// If target branch is of the format /repo/branch_name, use `branch_name` as target
 		if targetBranchHash == "." || targetBranchHash == "~" {
 			if targetBranch == "" {
 				log.Fatal("flag (--target) is required")
@@ -84,6 +86,14 @@ var mergeReqCreateCmd = &cobra.Command{
 				targetRef = head
 			} else {
 				targetRef = targetBranch
+			}
+			if targetRef[:1] == "/" {
+				parts := strings.SplitN(targetRef[1:], "/", 2)
+				if len(parts) == 1 {
+					targetRef = parts[0]
+				} else {
+					targetRef = parts[1]
+				}
 			}
 			ref, err := r.RefGet(targetRef)
 			if err != nil {

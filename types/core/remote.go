@@ -46,6 +46,9 @@ type RemoteServer interface {
 	// GetLogic returns the application logic provider
 	GetLogic() Logic
 
+	// GetRepo get a local repository
+	GetRepo(name string) (remotetypes.LocalRepo, error)
+
 	// GetPrivateValidatorKey returns the node's private key
 	GetPrivateValidatorKey() *crypto.Key
 

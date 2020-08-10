@@ -265,6 +265,15 @@ func (sv *Server) GetLogic() core.Logic {
 	return sv.logic
 }
 
+// GetRepo get a local repository
+func (sv *Server) GetRepo(name string) (remotetypes.LocalRepo, error) {
+	repo, err := rr.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get local repo")
+	}
+	return repo, nil
+}
+
 // GetPrivateValidatorKey implements RepositoryManager
 func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
 	return sv.validatorKey
@@ -313,9 +322,9 @@ func (sv *Server) AnnounceObject(hash []byte, doneCB func(error)) {
 func (sv *Server) AnnounceRepoObjects(repoName string) error {
 
 	// Get the repo
-	repo, err := rr.Get(sv.getRepoPath(repoName))
+	repo, err := sv.GetRepo(repoName)
 	if err != nil {
-		return errors.Wrap(err, "failed to get local repo")
+		return err
 	}
 
 	// Announce commit objects
@@ -389,7 +398,6 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the repository exist
-	fullRepoDir := sv.getRepoPath(repoName)
 	repoState := sv.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		w.WriteHeader(http.StatusNotFound)
@@ -417,7 +425,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Attempt to load the repository at the given path
-	repo, err := git.PlainOpen(fullRepoDir)
+	repo, err := sv.GetRepo(repoName)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
 		if err == git.ErrRepositoryNotExists {
@@ -435,14 +443,14 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		TxDetails:   txDetails,
 		PolEnforcer: polEnforcer,
 		Repo: &rr.Repo{
-			Repository:    repo,
-			LiteGit:       rr.NewLiteGit(sv.gitBinPath, fullRepoDir),
-			Path:          fullRepoDir,
+			Repository:    repo.(*rr.Repo).Repository,
+			LiteGit:       repo.(*rr.Repo).LiteGit,
+			Path:          repo.GetPath(),
 			State:         repoState,
 			NamespaceName: namespaceName,
 			Namespace:     namespace,
 		},
-		RepoDir:     fullRepoDir,
+		RepoDir:     repo.GetPath(),
 		ServiceName: getService(r),
 		GitBinPath:  sv.gitBinPath,
 	}

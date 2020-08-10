@@ -15,14 +15,15 @@ type MergeComplianceCheckFunc func(
 	change *types.ItemChange,
 	mergeProposalID,
 	pushKeyID string,
-	keepers core.Keepers) error
+	keepers core.Logic) error
 
 // CheckMergeCompliance checks whether the change satisfies the given merge proposal
 func CheckMergeCompliance(
 	repo types.LocalRepo,
 	change *types.ItemChange,
-	mergeProposalID, pushKeyID string,
-	keepers core.Keepers) error {
+	mergeProposalID,
+	pushKeyID string,
+	keepers core.Logic) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
 	if !ref.IsBranch() {
@@ -64,7 +65,6 @@ func CheckMergeCompliance(
 		}
 	}
 
-	// Ensure the new commit and the proposal target match
 	var propTargetHash = string(prop.ActionData[constants.ActionDataKeyTargetHash])
 	if change.Item.GetData() != propTargetHash {
 		return fmt.Errorf("merge error: pushed commit did not match merge proposal target hash")
