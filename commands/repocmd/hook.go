@@ -13,6 +13,7 @@ import (
 	"github.com/themakeos/lobe/commands/common"
 	"github.com/themakeos/lobe/commands/signcmd"
 	"github.com/themakeos/lobe/config"
+	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/server"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/util/colorfmt"
@@ -87,8 +88,10 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	for _, ref := range references {
 		if ref.IsBranch() {
 			return args.CommitSigner(cfg, repo, &signcmd.SignCommitArgs{
-				Branch:             ref.String(),
-				ForceCheckout:      false,
+				Branch:        ref.String(),
+				ForceCheckout: false,
+				AmendCommit: plumbing2.IsMergeRequestReference(ref.String()) ||
+					plumbing2.IsIssueReference(ref.String()),
 				Remote:             args.Args[0],
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,

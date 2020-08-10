@@ -12,6 +12,7 @@ import (
 	"github.com/themakeos/lobe/commands/signcmd"
 	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/mocks"
+	"github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/testutil"
 	config2 "gopkg.in/src-d/go-git.v4/config"
@@ -110,6 +111,38 @@ var _ = Describe(".HookCmd", func() {
 				in := bytes.NewBuffer([]byte("refs/heads/master 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/heads/master 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
 				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+					return nil
+				}
+				repoCfg := config2.NewConfig()
+				mockRepo.EXPECT().Config().Return(repoCfg, nil)
+				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+				err := HookCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("reference is a merge or issue branch", func() {
+			It("should set AmendCommit argument to true (merge request branch)", func() {
+				refName := plumbing.MakeMergeRequestReference("1")
+				in := bytes.NewBuffer([]byte(refName + " 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 " + refName + " 0000000000000000000000000000000000000000\n"))
+				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+					Expect(args.AmendCommit).To(BeTrue())
+					return nil
+				}
+				repoCfg := config2.NewConfig()
+				mockRepo.EXPECT().Config().Return(repoCfg, nil)
+				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+				err := HookCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
+
+			It("should set AmendCommit argument to true (issue branch)", func() {
+				refName := plumbing.MakeIssueReference("1")
+				in := bytes.NewBuffer([]byte(refName + " 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 " + refName + " 0000000000000000000000000000000000000000\n"))
+				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+					Expect(args.AmendCommit).To(BeTrue())
 					return nil
 				}
 				repoCfg := config2.NewConfig()
