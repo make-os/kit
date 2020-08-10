@@ -55,6 +55,8 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 
 	// Set issue data for issue reference
 	if plumbing.IsIssueReference(ref.Name) {
+
+		// Set close status if set in reference payload
 		if ref.Data.Close != nil {
 			r.Data.Closed = *ref.Data.Close
 		}
@@ -88,6 +90,13 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 
 	// For only new merge request reference, call the merge request contract to handle it
 	if plumbing.IsMergeRequestReference(ref.Name) {
+
+		// Set close status if set in reference payload
+		if ref.Data.Close != nil {
+			r.Data.Closed = *ref.Data.Close
+		}
+
+		// Execute merge request contract
 		if err := mergerequest.NewContract(&mergerequest.MergeRequestData{
 			Repo:             repo,
 			RepoName:         repoName,

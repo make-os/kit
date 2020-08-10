@@ -253,13 +253,9 @@ var _ = Describe("GitPush", func() {
 
 				BeforeEach(func() {
 					logic.RepoKeeper().Update(repo, &state.Repository{
-						Config: state.DefaultRepoConfig,
-						References: map[string]*state.Reference{
-							ref: {Nonce: 1, Creator: creator},
-						},
+						Config: state.DefaultRepoConfig, References: map[string]*state.Reference{ref: {Nonce: 1, Creator: creator}},
 					})
 
-					ref := plumbing.MakeMergeRequestReference(1)
 					mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
 					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr}, Fee: "1", Value: "1"}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
@@ -272,6 +268,31 @@ var _ = Describe("GitPush", func() {
 				It("should not deduct value (proposer fee)", func() {
 					acct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(acct.Balance).To(Equal(util.String("9")))
+				})
+			})
+
+			When("pushed reference payload as Close=true", func() {
+				ref := plumbing.MakeMergeRequestReference(1)
+
+				BeforeEach(func() {
+					logic.RepoKeeper().Update(repo, &state.Repository{
+						Config:     state.DefaultRepoConfig,
+						References: map[string]*state.Reference{ref: {Nonce: 1, Creator: creator, Data: &state.ReferenceData{}}},
+					})
+
+					mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
+					cls := true
+					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr, Close: &cls}, Fee: "1", Value: "1"}}
+					err = gitpush.NewContract().Init(logic, &txns.TxPush{
+						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
+						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
+					}, 0).Exec()
+					Expect(err).To(BeNil())
+				})
+
+				It("should set reference as closed", func() {
+					rep := logic.RepoKeeper().Get(repo)
+					Expect(rep.References.Get(ref).Data.Closed).To(BeTrue())
 				})
 			})
 		})
