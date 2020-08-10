@@ -227,7 +227,7 @@ var _ = Describe("SignTag", func() {
 					Expect(address).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}
-				args.SetRemotePushToken = func(cfg *config.AppConfig, targetRepo types.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+				args.SetRemotePushToken = func(targetRepo types.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
 					Expect(args.TxDetail.PushKeyID).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}

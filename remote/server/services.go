@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -68,12 +69,15 @@ func endNotFound(w http.ResponseWriter) {
 func execGitCmd(gitBinDir, repoDir string, args ...string) ([]byte, error) {
 	cmd := exec.Command(gitBinDir, args...)
 	cmd.Dir = repoDir
-	out, err := cmd.CombinedOutput()
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
 	if err != nil {
-		return out, errors.Wrap(err, fmt.Sprintf("exec error: cmd=%s, output=%s",
-			cmd.String(), string(out)))
+		return out.Bytes(), errors.Wrap(err, fmt.Sprintf("exec error: cmd=%s, output=%s",
+			cmd.String(), out.String()))
 	}
-	return out, nil
+	return out.Bytes(), nil
 }
 
 // getService returns the requested service

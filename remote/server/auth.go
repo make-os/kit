@@ -2,14 +2,14 @@ package server
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/config"
 	"github.com/themakeos/lobe/keystore/types"
 	"github.com/themakeos/lobe/remote/policy"
 	remotetypes "github.com/themakeos/lobe/remote/types"
@@ -151,7 +151,7 @@ func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
 }
 
 // RemotePushTokenSetter describes a function for setting push tokens on a remote config
-type RemotePushTokenSetter func(cfg *config.AppConfig, targetRepo remotetypes.LocalRepo,
+type RemotePushTokenSetter func(targetRepo remotetypes.LocalRepo,
 	args *SetRemotePushTokenArgs) (string, error)
 
 // SetRemotePushTokenArgs contains arguments for SetRemotePushToken
@@ -172,6 +172,8 @@ type SetRemotePushTokenArgs struct {
 
 	// ResetTokens forces removes all tokens from all URLS before updating.
 	ResetTokens bool
+
+	Stderr io.Writer
 }
 
 // SetRemotePushToken creates and sets a push request token for
@@ -179,7 +181,11 @@ type SetRemotePushTokenArgs struct {
 // the new token to the existing tokens or clear the existing tokens
 // if ResetTokens is true. If TargetRemote is not set, all remotes
 // will be updated with the new token.
-func SetRemotePushToken(cfg *config.AppConfig, repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
+func SetRemotePushToken(repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
+
+	if args.Stderr == nil {
+		args.Stderr = ioutil.Discard
+	}
 
 	repoCfg, err := repo.Config()
 	if err != nil {
@@ -221,7 +227,7 @@ func SetRemotePushToken(cfg *config.AppConfig, repo remotetypes.LocalRepo, args 
 		for i, v := range remote.URLs {
 			rawURL, err := url.Parse(v)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, fmt2.RedString("Bad remote url (%s) found and skipped"), v)
+				fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote url (%s) found and skipped", v))
 				continue
 			}
 

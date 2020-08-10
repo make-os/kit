@@ -24,7 +24,7 @@ import (
 var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
-	var path, dotGitPath, repoName string
+	var path, repoName string
 	var r types.LocalRepo
 	var key *crypto.Key
 
@@ -38,7 +38,6 @@ var _ = Describe("Repo", func() {
 	BeforeEach(func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
-		dotGitPath = filepath.Join(path, ".git")
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		r, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())

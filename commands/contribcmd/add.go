@@ -87,12 +87,12 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 
 	// Get and unlock the signing key
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.SigningKey,
-		Passphrase:   args.SigningKeyPass,
-		AskPass:      true,
-		TargetRepo:   nil,
-		Prompt:       "Enter passphrase to unlock signing key:\n",
-		Stdout:       args.Stdout,
+		KeyStoreID: args.SigningKey,
+		Passphrase: args.SigningKeyPass,
+		NoPrompt:   true,
+		TargetRepo: nil,
+		Prompt:     "Enter passphrase to unlock signing key:\n",
+		Stdout:     args.Stdout,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")

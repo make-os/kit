@@ -359,14 +359,15 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockStream.EXPECT().Close()
 
 				key := dht.MakeObjectKey(hash[:])
-				err := cs.OnSend(dht.MakeWantMsg("repo1", key), mockStream)
+				repoName := "repo1"
+				err := cs.OnSend(dht.MakeWantMsg(repoName, key), mockStream)
 				Expect(err).To(BeNil())
 
 				// It should add packed objects to the peer's HaveCache.
 				cache := cs.HaveCache.GetCache(peerID.Pretty())
 				Expect(cache.Has(hash))
 				for _, obj := range objs {
-					Expect(cache.Has(obj)).To(BeTrue())
+					Expect(cache.Has(streamer.MakeHaveCacheKey(repoName, obj))).To(BeTrue())
 				}
 			})
 		})

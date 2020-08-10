@@ -4,6 +4,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -77,6 +78,9 @@ type SignCommitArgs struct {
 	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
 	SetRemotePushTokensOptionOnly bool
 
+	// NoPrompt prevents key unlocker prompt
+	NoPrompt bool
+
 	// RpcClient is the RPC client
 	RPCClient client.Client
 
@@ -94,6 +98,9 @@ type SignCommitArgs struct {
 
 	// PemDecoder is a function for decoding PEM data
 	PemDecoder func(data []byte) (p *pem.Block, rest []byte)
+
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
@@ -120,11 +127,12 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Get and unlock the signing key
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.SigningKey,
-		Passphrase:   args.PushKeyPass,
-		AskPass:      true,
-		TargetRepo:   repo,
-		Prompt:       "Enter passphrase to unlock the signing key\n",
+		KeyStoreID: args.SigningKey,
+		Passphrase: args.PushKeyPass,
+		NoPrompt:   args.NoPrompt,
+		TargetRepo: repo,
+		Stdout:     args.Stdout,
+		Prompt:     "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors2.Wrap(err, "failed to unlock the signing key")
@@ -243,10 +251,11 @@ create_token:
 	}
 
 	hash, _ := repo.GetRecentCommitHash()
-	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		PushKey:                       key,
 		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
+		Stderr:                        args.Stderr,
 		ResetTokens:                   args.ResetTokens,
 		TxDetail: &types.TxDetail{
 			Fee:             util.String(args.Fee),

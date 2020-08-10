@@ -832,7 +832,7 @@ var _ = Describe("Validation", func() {
 					"targetHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310",
 				})
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("target branch (/repo1/dev/testing) hash does not match upstream state"))
+				Expect(err).To(MatchError("target branch (dev/testing) hash does not match upstream state"))
 			})
 		})
 	})

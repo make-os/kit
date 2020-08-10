@@ -241,6 +241,7 @@ var _ = Describe("Reactor", func() {
 		It("should return error when unable to get pushed objects size", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
 			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(nil)
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
 			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
@@ -251,6 +252,7 @@ var _ = Describe("Reactor", func() {
 		It("should return error when note object size and local size don't match", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
 			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
 			mockNote.EXPECT().SetLocalSize(uint64(0))
@@ -265,6 +267,7 @@ var _ = Describe("Reactor", func() {
 		It("should return error when unable to process push note", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
 			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
 			mockNote.EXPECT().SetLocalSize(uint64(0))
@@ -282,6 +285,7 @@ var _ = Describe("Reactor", func() {
 		It("should return no error when able to process push note", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
 			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
+			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
 			mockNote.EXPECT().SetLocalSize(uint64(0))

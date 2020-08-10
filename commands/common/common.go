@@ -45,12 +45,24 @@ func WriteToPager(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) 
 
 // UnlockKeyArgs contains arguments for UnlockKey
 type UnlockKeyArgs struct {
-	KeyAddrOrIdx string
-	AskPass      bool
-	Passphrase   string
-	TargetRepo   remotetypes.LocalRepo
-	Prompt       string
-	Stdout       io.Writer
+
+	// KeyStoreID is the index or address of the key on the keystore
+	KeyStoreID string
+
+	// Passphrase is the passphrase to use for unlocking the key
+	Passphrase string
+
+	// TargetRepo is the target repository in the current working directory.
+	// It's config `user.passphrase` is checked for the passphrase.
+	TargetRepo remotetypes.LocalRepo
+
+	// NoPrompt if true, will launch a prompt if passphrase was not gotten from other means
+	NoPrompt bool
+
+	// Prompt is a message to print out when launching a prompt.
+	Prompt string
+
+	Stdout io.Writer
 }
 
 // KeyUnlocker describes a function for unlocking a keystore key.
@@ -70,9 +82,9 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 	}
 
 	// Get the key by address or index
-	key, err := ks.GetByIndexOrAddress(args.KeyAddrOrIdx)
+	key, err := ks.GetByIndexOrAddress(args.KeyStoreID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to find key (%s)", args.KeyAddrOrIdx)
+		return nil, errors.Wrapf(err, "failed to find key (%s)", args.KeyStoreID)
 	}
 
 	// If passphrase is unset and target repo is set, attempt to get the
@@ -97,14 +109,14 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 		args.Passphrase = os.Getenv(MakePassEnvVar(cfg.GetExecName()))
 	}
 
-	// If key is protected and still no passphrase, exit with error
-	if !unprotected && args.Passphrase == "" && !args.AskPass {
+	// If key is protected, still no passphrase and prompting is not allowed -> exit with error
+	if !unprotected && args.Passphrase == "" && args.NoPrompt {
 		return nil, fmt.Errorf("passphrase of signing key is required")
 	}
 
-	key, passphrase, err := ks.UnlockKeyUI(args.KeyAddrOrIdx, args.Passphrase, args.Prompt)
+	key, passphrase, err := ks.UnlockKeyUI(args.KeyStoreID, args.Passphrase, args.Prompt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unlock key (%s)", args.KeyAddrOrIdx)
+		return nil, errors.Wrapf(err, "failed to unlock key (%s)", args.KeyStoreID)
 	}
 
 	// Index the passphrase used to unlock the key.

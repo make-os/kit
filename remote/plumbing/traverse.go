@@ -11,13 +11,12 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-// WalkBack traverses the history of a commit and returns all objects discovered up til
-// the given end object.
-// If start object is not a commit, no traversing operation happens
+// WalkBack traverses the history of a commit and returns all objects discovered up til the given end object.
+// If start object is not a commit, no traversing operation happens.
 // but the object, along with its related objects (trees, blobs or target) are returned.
 // End object must exist locally; If it is a tag, its target must be a commit.
 func WalkBack(localRepo types.LocalRepo, startHash, endHash string, cb func(hash string) error) error {
-start_hash_check:
+startHashCheck:
 
 	// Unset end hash if it is a zero hash.
 	if IsZeroHash(endHash) {
@@ -51,7 +50,7 @@ start_hash_check:
 		switch tag.TargetType {
 		case plumbing.TagObject, plumbing.CommitObject:
 			startHash = tag.Target.String()
-			goto start_hash_check
+			goto startHashCheck
 		default:
 			target, err := localRepo.GetObject(tag.Target.String())
 			if err != nil {
@@ -103,7 +102,7 @@ start_hash_check:
 	//   walk back to such objects.
 	var end object.Object
 	if endHash != "" {
-	end_hash_check:
+	endHashCheck:
 		end, err = localRepo.GetObject(endHash)
 		if err != nil {
 			return errors.Wrap(err, "failed to get end object")
@@ -113,7 +112,7 @@ start_hash_check:
 			switch tag.TargetType {
 			case plumbing.TagObject, plumbing.CommitObject:
 				endHash = tag.Target.String()
-				goto end_hash_check
+				goto endHashCheck
 			default:
 				return fmt.Errorf("end object must be a tag or a commit")
 			}

@@ -1,6 +1,7 @@
 package signcmd
 
 import (
+	"io"
 	"os"
 	"strconv"
 
@@ -61,6 +62,9 @@ type SignTagArgs struct {
 	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
 	SetRemotePushTokensOptionOnly bool
 
+	// NoPrompt prevents key unlocker prompt
+	NoPrompt bool
+
 	// RpcClient is the RPC client
 	RPCClient client.Client
 
@@ -75,6 +79,9 @@ type SignTagArgs struct {
 
 	// SetRemotePushToken is a function for setting push tokens on a git remote config
 	SetRemotePushToken server.RemotePushTokenSetter
+
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 type SignTagFunc func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error
@@ -111,11 +118,12 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 
 	// Get and unlock the pusher key
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.SigningKey,
-		Passphrase:   args.PushKeyPass,
-		AskPass:      true,
-		TargetRepo:   repo,
-		Prompt:       "Enter passphrase to unlock the signing key\n",
+		KeyStoreID: args.SigningKey,
+		Passphrase: args.PushKeyPass,
+		NoPrompt:   args.NoPrompt,
+		TargetRepo: repo,
+		Stdout:     args.Stdout,
+		Prompt:     "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
@@ -198,11 +206,12 @@ create_token:
 
 	// Create & set request token to remote URLs in config
 	tagRef, _ = repo.Tag(gitArgs[0])
-	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		PushKey:                       key,
 		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
 		ResetTokens:                   args.ResetTokens,
+		Stderr:                        args.Stderr,
 		TxDetail: &types.TxDetail{
 			Fee:       util.String(args.Fee),
 			Value:     util.String(args.Value),

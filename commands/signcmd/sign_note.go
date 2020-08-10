@@ -1,6 +1,7 @@
 package signcmd
 
 import (
+	"io"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -46,6 +47,9 @@ type SignNoteArgs struct {
 	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
 	SetRemotePushTokensOptionOnly bool
 
+	// NoPrompt prevents key unlocker prompt
+	NoPrompt bool
+
 	// RpcClient is the RPC client
 	RPCClient client.Client
 
@@ -59,6 +63,9 @@ type SignNoteArgs struct {
 	GetNextNonce utils.NextNonceGetter
 
 	SetRemotePushToken server.RemotePushTokenSetter
+
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 type SignNoteFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error
@@ -78,11 +85,12 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 
 	// Get and unlock the pusher key
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
-		KeyAddrOrIdx: args.SigningKey,
-		Passphrase:   args.PushKeyPass,
-		AskPass:      true,
-		TargetRepo:   repo,
-		Prompt:       "Enter passphrase to unlock the signing key\n",
+		KeyStoreID: args.SigningKey,
+		Passphrase: args.PushKeyPass,
+		NoPrompt:   args.NoPrompt,
+		TargetRepo: repo,
+		Stdout:     args.Stdout,
+		Prompt:     "Enter passphrase to unlock the signing key\n",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock push key")
@@ -116,11 +124,12 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	}
 
 	// Create & set push request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(cfg, repo, &server.SetRemotePushTokenArgs{
+	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
 		TargetRemote:                  args.Remote,
 		PushKey:                       key,
 		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
 		ResetTokens:                   args.ResetTokens,
+		Stderr:                        args.Stderr,
 		TxDetail: &types.TxDetail{
 			Fee:       util.String(args.Fee),
 			Value:     util.String(args.Value),

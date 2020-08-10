@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
 	"github.com/themakeos/lobe/commands/common"
@@ -89,21 +91,35 @@ var repoVoteCmd = &cobra.Command{
 	Short: "Vote for or against a proposal",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return fmt.Errorf("vote choice is required (0 - No, 1 - Yes, 2 - NoWithVeto, 3 - Abstain")
+			return fmt.Errorf("vote choice is required (0 - No, 1 - Yes, 2 - NoWithVeto, 3 - Abstain)")
+		}
+		if !govalidator.IsNumeric(args[0]) {
+			return fmt.Errorf("vote choice is invalid. Epected: 0 - No, 1 - Yes, 2 - NoWithVeto, 3 - Abstain")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		rejectFlagCombo(cmd, "id", "mr")
+
 		repoName, _ := cmd.Flags().GetString("repo")
 		fee, _ := cmd.Flags().GetFloat64("fee")
+		id, _ := cmd.Flags().GetString("id")
+		mrID, _ := cmd.Flags().GetString("mr")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 
+		// If --id is not set, use --mr with a 'MR' prefix.
+		proposalID := id
+		if mrID != "" {
+			proposalID = "MR" + mrID
+		}
+
 		_, client, remoteClients := getRepoAndClients("", cmd)
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
 			RepoName:            repoName,
-			ProposalID:          args[0],
+			ProposalID:          proposalID,
+			Vote:                cast.ToInt(args[0]),
 			Fee:                 fee,
 			SigningKey:          signingKey,
 			SigningKeyPass:      signingKeyPass,
@@ -125,6 +141,7 @@ func setupRepoVoteCmd(cmd *cobra.Command) {
 	sp := cmd.Flags().StringP
 	sp("repo", "r", "", "The name of the repository")
 	sp("id", "i", "", "The unique ID of the proposal")
+	sp("mr", "m", "", "The unique ID of a merge request") // Prepends `MR` to the id
 	addCommonTxFlags(cmd.Flags())
 	cmd.MarkFlagRequired("fee")
 	cmd.MarkFlagRequired("signing-key")

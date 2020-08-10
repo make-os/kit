@@ -42,7 +42,7 @@ var _ = Describe("VoteCmd", func() {
 		It("should return error when failed to unlock account", func() {
 			args := &VoteArgs{SigningKey: "1", SigningKeyPass: "pass"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
-				Expect(a.KeyAddrOrIdx).To(Equal(args.SigningKey))
+				Expect(a.KeyStoreID).To(Equal(args.SigningKey))
 				Expect(a.Passphrase).To(Equal(args.SigningKeyPass))
 				return nil, fmt.Errorf("error")
 			}

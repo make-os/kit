@@ -133,7 +133,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	return nil
 }
 
-// onFetch is called after a objects of the push note have been
+// onFetch is called after all objects of the push note have been
 // completely fetched or an error occurred while fetching.
 func (sv *Server) onFetch(
 	err error,
@@ -147,12 +147,13 @@ func (sv *Server) onFetch(
 	}
 
 	noteID := note.ID().String()
+	repoName := note.GetRepoName()
 
 	// Get the size of the pushed update objects. This is the size of the objects required
 	// to bring the local reference up to the state of the note's pushed reference.
 	localSize, err := push.GetSizeOfObjects(note)
 	if err != nil {
-		sv.log.Error("Failed to get size of pushed refs objects", "ID", noteID, "Err", err.Error())
+		sv.log.Error("Failed to get size of pushed refs objects", "Err", err.Error(), "Repo", repoName)
 		return errors.Wrapf(err, "failed to get pushed refs objects size")
 	}
 	note.SetLocalSize(localSize)
@@ -162,7 +163,7 @@ func (sv *Server) onFetch(
 	noteSize := note.GetSize()
 	if note.IsFromRemotePeer() && noteSize != localSize {
 		sv.log.Error("Note's size does not match local size", "ID",
-			noteID, "Size", noteSize, "LocalSize", localSize)
+			noteID, "Size", noteSize, "LocalSize", localSize, "Repo", repoName)
 		return fmt.Errorf("note's objects size and local size differs")
 	}
 

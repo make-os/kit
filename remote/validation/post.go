@@ -13,7 +13,6 @@ import (
 	rr "github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/remote/types"
 	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
 	"github.com/themakeos/lobe/util"
 	"github.com/themakeos/lobe/util/crypto"
 	"github.com/themakeos/lobe/util/identifier"
@@ -447,7 +446,7 @@ func CheckMergeRequestPostBodyConsistency(
 	// If target branch is set, ensure the target branch exist.
 	// The target branch might be a path with the format '/repo_name/branch', in
 	// this case, check if the branch exist in the repository named 'repo_name'
-	var targetRepo *state.Repository
+	var targetRepo = repoState
 	target := obj.Get("target").Str()
 	if target != "" {
 		if target[:1] != "/" {
@@ -463,15 +462,16 @@ func CheckMergeRequestPostBodyConsistency(
 			if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
 				return fmt.Errorf("target branch (%s) of (%s) is unknown", parts[1], parts[0])
 			}
+			target = parts[1]
 		}
 	}
 
 	// If target hash is set, ensure the target branch hash matches
-	// its equivalent reference hash in the repo state
+	// its equivalent reference hash in the target repo state
 	targetHash := obj.Get("targetHash").Str()
 	if targetHash != "" {
 		fullTargetRef := plumbing.NewBranchReferenceName(target).String()
-		curTargetHash := repoState.References.Get(fullTargetRef).Hash.HexStr(true)
+		curTargetHash := targetRepo.References.Get(fullTargetRef).Hash.HexStr(true)
 		if targetHash != curTargetHash {
 			return fmt.Errorf("target branch (%s) hash does not match upstream state", target)
 		}

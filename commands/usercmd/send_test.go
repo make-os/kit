@@ -42,7 +42,7 @@ var _ = Describe("UserCmd", func() {
 		It("should return error when unable to unlock signing key", func() {
 			args := &SendArgs{SigningKey: "sk", SigningKeyPass: "sk_pass"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
-				Expect(args2.KeyAddrOrIdx).To(Equal(args.SigningKey))
+				Expect(args2.KeyStoreID).To(Equal(args.SigningKey))
 				Expect(args2.Passphrase).To(Equal(args.SigningKeyPass))
 				return nil, fmt.Errorf("error")
 			}

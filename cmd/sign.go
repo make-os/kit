@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
@@ -69,6 +71,8 @@ var signCommitCmd = &cobra.Command{
 			ForceSign:                     forceSign,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
+			Stdout:                        os.Stdout,
+			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,
@@ -121,6 +125,8 @@ var signTagCmd = &cobra.Command{
 			ForceSign:                     forceSign,
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
+			Stdout:                        os.Stdout,
+			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,
@@ -165,6 +171,8 @@ var signNoteCmd = &cobra.Command{
 			RPCClient:                     client,
 			RemoteClients:                 remoteClients,
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
+			Stdout:                        os.Stdout,
+			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,

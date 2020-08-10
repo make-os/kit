@@ -157,7 +157,7 @@ func (c *BasicObjectStreamer) GetCommit(
 	}
 
 	// Get the commit from the packfile
-	// If the packfile could not be read, ban peer for sending a bad packfile.
+	// TODO: If the packfile could not be read, ban peer for sending a bad packfile.
 	commit, err := c.PackObjectGetter(res.Pack, plumbing.BytesToHex(hash))
 	if err != nil {
 		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
@@ -165,7 +165,7 @@ func (c *BasicObjectStreamer) GetCommit(
 	}
 
 	// Ensure the commit exist in the packfile.
-	// If commit is unset, ban peer for sending packfile that did not contain the queried object.
+	// TODO: If commit is unset, ban peer for sending packfile that did not contain the queried object.
 	if commit == nil {
 		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
 		return nil, nil, fmt.Errorf("target commit not found in the packfile")
@@ -670,7 +670,7 @@ func (c *BasicObjectStreamer) OnSend(msg []byte, s network.Stream) error {
 	pack, objs, err := c.PackObject(r, &plumbing.PackObjectArgs{
 		Obj: obj,
 		Filter: func(hash plumb.Hash) bool {
-			return !peerHaveCache.Has(hash)
+			return !peerHaveCache.Has(MakeHaveCacheKey(repoName, hash))
 		},
 	})
 	if err != nil {
@@ -691,9 +691,14 @@ func (c *BasicObjectStreamer) OnSend(msg []byte, s network.Stream) error {
 	// Add the packed object to the peer's have-cache
 	for _, obj := range objs {
 		if !peerHaveCache.Has(obj) {
-			peerHaveCache.Add(obj, struct{}{})
+			peerHaveCache.Add(MakeHaveCacheKey(repoName, obj), struct{}{})
 		}
 	}
 
 	return nil
+}
+
+// MakeHaveCacheKey returns a key for storing HaveCache entries.
+func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
+	return repoName + hash.String()
 }

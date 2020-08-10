@@ -86,7 +86,7 @@ func GetSizeOfObjects(note pushtypes.PushNote) (uint64, error) {
 		err := plumbing2.WalkBack(repo, ref.NewHash, ref.OldHash, func(hash string) error {
 			size, err := repo.GetObjectSize(hash)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %s", hash, err)
 			}
 			total += uint64(size)
 			return nil

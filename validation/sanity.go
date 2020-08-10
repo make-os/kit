@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/themakeos/lobe/remote/validation"
@@ -564,7 +565,7 @@ func CheckTxRepoProposalUpsertOwner(tx *txns.TxRepoProposalUpsertOwner, index in
 		return err
 	}
 
-	if err := checkProposalID(tx.ID, index); err != nil {
+	if err := CheckProposalID(tx.ID, false, index); err != nil {
 		return err
 	}
 
@@ -607,7 +608,7 @@ func CheckTxVote(tx *txns.TxRepoProposalVote, index int) error {
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := CheckProposalID(tx.ProposalID, true, index); err != nil {
 		return err
 	}
 
@@ -635,7 +636,7 @@ func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error
 		return err
 	}
 
-	if err := checkProposalID(tx.ID, index); err != nil {
+	if err := CheckProposalID(tx.ID, false, index); err != nil {
 		return err
 	}
 
@@ -650,8 +651,17 @@ func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error
 	return nil
 }
 
-// checkProposalID performs sanity checks of a proposal id
-func checkProposalID(id string, index int) error {
+// CheckProposalID performs sanity checks of a proposal id
+func CheckProposalID(id string, allowPrefix bool, index int) error {
+
+	// If allowPrefix is set to true, strip out system proposal prefixes
+	// like MR, which is used to namespace repo proposals
+	if allowPrefix {
+		if strings.HasPrefix(strings.ToUpper(id), "MR") {
+			id = id[2:]
+		}
+	}
+
 	if id == "" {
 		return feI(index, "id", "proposal id is required")
 	} else if !govalidator.IsNumeric(id) {
@@ -707,7 +717,7 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 		return err
 	}
 
-	if err := checkProposalID(tx.ID, index); err != nil {
+	if err := CheckProposalID(tx.ID, false, index); err != nil {
 		return err
 	}
 
@@ -737,7 +747,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 		return err
 	}
 
-	if err := checkProposalID(tx.ID, index); err != nil {
+	if err := CheckProposalID(tx.ID, false, index); err != nil {
 		return err
 	}
 

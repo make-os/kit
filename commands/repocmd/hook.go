@@ -88,11 +88,11 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	for _, ref := range references {
 		if ref.IsBranch() {
 			return args.CommitSigner(cfg, repo, &signcmd.SignCommitArgs{
-				Branch:        ref.String(),
-				ForceCheckout: false,
-				AmendCommit: plumbing2.IsMergeRequestReference(ref.String()) ||
-					plumbing2.IsIssueReference(ref.String()),
+				Branch:             ref.String(),
+				ForceCheckout:      false,
+				AmendCommit:        plumbing2.IsMergeRequestReference(ref.String()) || plumbing2.IsIssueReference(ref.String()),
 				Remote:             args.Args[0],
+				NoPrompt:           true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
 				RemoteClients:      args.RemoteClients,
@@ -106,6 +106,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 			name := strings.Replace(ref.String(), "refs/tags/", "", 1)
 			return args.TagSigner(cfg, []string{name}, repo, &signcmd.SignTagArgs{
 				Remote:             args.Args[0],
+				NoPrompt:           true,
 				Force:              true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
@@ -120,6 +121,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 			return args.NoteSigner(cfg, repo, &signcmd.SignNoteArgs{
 				Name:               strings.Replace(ref.String(), "refs/notes/", "", 1),
 				Remote:             args.Args[0],
+				NoPrompt:           true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
 				RemoteClients:      args.RemoteClients,

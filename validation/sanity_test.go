@@ -108,6 +108,30 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".CheckProposalID", func() {
+		It("should return error if ID is not numerical", func() {
+			err := validation.CheckProposalID("abc*", false, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
+		})
+
+		It("should return error if ID is numerical but more than 16 bytes", func() {
+			err := validation.CheckProposalID("12345678900000000", false, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, msg:proposal ID exceeded 16 characters limit"))
+		})
+
+		It("should return no error if ID contains only numerical characters with length less than 16", func() {
+			err := validation.CheckProposalID("1234", false, -1)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return no error if ID contains numerical characters with 'MR' as prefix and allowPrefix=true", func() {
+			err := validation.CheckProposalID("MR1234", true, -1)
+			Expect(err).To(BeNil())
+		})
+	})
+
 	Describe(".CheckTxCoinTransfer", func() {
 		var tx *txns.TxCoinTransfer
 		BeforeEach(func() {

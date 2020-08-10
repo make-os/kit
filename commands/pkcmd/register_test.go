@@ -42,7 +42,7 @@ var _ = Describe("SignCommit", func() {
 		It("should return error when target key ID is a public key but signing key failed to be unlocked", func() {
 			args := &RegisterArgs{Target: key.PubKey().Base58(), SigningKey: "os1abc", SigningKeyPass: "abc"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
-				Expect(a.KeyAddrOrIdx).To(Equal(args.SigningKey))
+				Expect(a.KeyStoreID).To(Equal(args.SigningKey))
 				Expect(a.Passphrase).To(Equal(args.SigningKeyPass))
 				Expect(a.TargetRepo).To(BeNil())
 				return nil, fmt.Errorf("error")
@@ -55,7 +55,7 @@ var _ = Describe("SignCommit", func() {
 		It("should return error when target key ID is a local account but unable to unlock the local account", func() {
 			args := &RegisterArgs{Target: "os1", SigningKey: "os1abc", SigningKeyPass: "abc"}
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
-				Expect(a.KeyAddrOrIdx).To(Equal(args.Target))
+				Expect(a.KeyStoreID).To(Equal(args.Target))
 				Expect(a.Passphrase).To(Equal(args.TargetPass))
 				Expect(a.TargetRepo).To(BeNil())
 				return nil, fmt.Errorf("error")
@@ -70,7 +70,7 @@ var _ = Describe("SignCommit", func() {
 			mockLocalKey := mocks.NewMockStoredKey(ctrl)
 			mockLocalKey.EXPECT().GetKey().Return(key)
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
-				Expect(a.KeyAddrOrIdx).To(Equal(args.Target))
+				Expect(a.KeyStoreID).To(Equal(args.Target))
 				Expect(a.Passphrase).To(Equal(args.TargetPass))
 				Expect(a.TargetRepo).To(BeNil())
 				args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
