@@ -14,6 +14,7 @@ import (
 	"github.com/themakeos/lobe/util"
 	"github.com/themakeos/lobe/util/io"
 	"github.com/thoas/go-funk"
+	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // mergeReqCmd represents the merge request command
@@ -119,6 +120,16 @@ var mergeReqCreateCmd = &cobra.Command{
 				log.Fatal(errors.Wrap(err, "failed to get base branch").Error())
 			}
 			baseBranchHash = ref
+		}
+
+		// If base branch is unset, use current HEAD
+		if baseBranch == "" {
+			baseBranch = plumb.ReferenceName(head).Short()
+		}
+
+		// If base hash is unset, use current hash of base branch
+		if baseBranchHash == "" {
+			baseBranchHash, _ = r.RefGet(baseBranch)
 		}
 
 		mrCreateArgs := &mergecmd.MergeRequestCreateArgs{

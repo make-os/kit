@@ -225,13 +225,6 @@ var _ = Describe("MergeRequestCreate", func() {
 					Expect(err).To(MatchError("base branch name is required"))
 				})
 
-				It("should return error when base branch hash is unset in a new merge request post", func() {
-					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Base: "master"}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
-					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("base branch hash is required"))
-				})
-
 				It("should return error when target branch is unset in a new merge request post", func() {
 					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Base: "master", BaseHash: "hash1"}
 					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)

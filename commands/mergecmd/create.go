@@ -123,9 +123,6 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 			if args.Base == "" {
 				return fmt.Errorf("base branch name is required")
 			}
-			if args.BaseHash == "" {
-				return fmt.Errorf("base branch hash is required")
-			}
 			if args.Target == "" {
 				return fmt.Errorf("target branch name is required")
 			}
