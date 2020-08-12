@@ -113,7 +113,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			if baseBranchHash == "." {
 				targetRef = head
 			} else {
-				targetRef = targetBranch
+				targetRef = baseBranch
 			}
 			ref, err := r.RefGet(targetRef)
 			if err != nil {
