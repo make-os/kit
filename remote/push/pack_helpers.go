@@ -81,19 +81,29 @@ func GetSizeOfObjects(note pushtypes.PushNote) (uint64, error) {
 		return 0, fmt.Errorf("repo is required")
 	}
 
+	var cache = make(map[string]int64)
 	var total uint64
 	for _, ref := range note.GetPushedReferences() {
 		err := plumbing2.WalkBack(repo, ref.NewHash, ref.OldHash, func(hash string) error {
+			size, ok := cache[hash]
+			if ok {
+				total += uint64(size)
+				return nil
+			}
+
 			size, err := repo.GetObjectSize(hash)
 			if err != nil {
 				return fmt.Errorf("%s: %s", hash, err)
 			}
 			total += uint64(size)
+			cache[hash] = size
+
 			return nil
 		})
 		if err != nil {
 			return 0, err
 		}
 	}
+
 	return total, nil
 }
