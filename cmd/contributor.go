@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/commands/common"
-	"github.com/themakeos/lobe/commands/contribcmd"
+	"github.com/themakeos/lobe/cmd/common"
+	"github.com/themakeos/lobe/cmd/contribcmd"
 	"github.com/themakeos/lobe/types/state"
 )
 

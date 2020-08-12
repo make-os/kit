@@ -8,8 +8,8 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/gen2brain/beeep"
-	"github.com/themakeos/lobe/commands/common"
-	"github.com/themakeos/lobe/commands/gitcmd"
+	"github.com/themakeos/lobe/cmd/common"
+	"github.com/themakeos/lobe/cmd/gitcmd"
 	"github.com/themakeos/lobe/pkgs/logger"
 	"github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/util"

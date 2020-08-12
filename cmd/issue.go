@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/commands/common"
-	"github.com/themakeos/lobe/commands/issuecmd"
+	"github.com/themakeos/lobe/cmd/common"
+	"github.com/themakeos/lobe/cmd/issuecmd"
 	"github.com/themakeos/lobe/remote/plumbing"
 	"github.com/themakeos/lobe/remote/repo"
 	"github.com/themakeos/lobe/util"

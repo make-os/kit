@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/commands/txcmd"
+	"github.com/themakeos/lobe/cmd/txcmd"
 )
 
 // txCmd represents the repo command

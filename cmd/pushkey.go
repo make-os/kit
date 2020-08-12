@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/commands/common"
-	"github.com/themakeos/lobe/commands/pkcmd"
+	"github.com/themakeos/lobe/cmd/common"
+	"github.com/themakeos/lobe/cmd/pkcmd"
 )
 
 // pushKeyCmd represents

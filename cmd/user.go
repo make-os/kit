@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/commands/common"
-	usercmd "github.com/themakeos/lobe/commands/usercmd"
+	"github.com/themakeos/lobe/cmd/common"
+	usercmd "github.com/themakeos/lobe/cmd/usercmd"
 )
 
 // userCmd represents the user command
