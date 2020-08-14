@@ -6,15 +6,10 @@ import (
 )
 
 const (
-	PolicyActionWrite              = "write"
-	PolicyActionDelete             = "delete"
-	PolicyActionDenyDelete         = "deny-delete"
-	PolicyActionIssueWrite         = "issue-write"
-	PolicyActionIssueDelete        = "issue-delete"
-	PolicyActionIssueUpdate        = "issue-update"
-	PolicyActionMergeRequestWrite  = "merge-write"
-	PolicyActionMergeRequestUpdate = "merge-update"
-	PolicyActionMergeRequestDelete = "merge-delete"
+	PolicyActionWrite      = "write"
+	PolicyActionDelete     = "delete"
+	PolicyActionUpdate     = "update"
+	PolicyActionDenyDelete = "deny-delete"
 )
 
 // AddDefaultPolicies adds default repo-level policies
@@ -25,8 +20,8 @@ func AddDefaultPolicies(config *state.RepoConfig) {
 		config.Policies,
 
 		// Everyone can create issues or merge request
-		&state.Policy{Subject: "all", Object: issueRefPath, Action: PolicyActionIssueWrite},
-		&state.Policy{Subject: "all", Object: mergeReqRefPath, Action: PolicyActionMergeRequestWrite},
+		&state.Policy{Subject: "all", Object: issueRefPath, Action: PolicyActionWrite},
+		&state.Policy{Subject: "all", Object: mergeReqRefPath, Action: PolicyActionWrite},
 
 		// Contributors default branch policies
 		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: PolicyActionWrite},             // can create branches
@@ -40,19 +35,19 @@ func AddDefaultPolicies(config *state.RepoConfig) {
 		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: PolicyActionDelete}, // can delete any notes
 
 		// Contributor default issue policies
-		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueDelete}, // can delete issues
-		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueUpdate}, // can update issue admin fields.
+		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionDelete}, // can delete issues
+		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionUpdate}, // can update issue admin fields.
 
 		// Creator default issue policies
-		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueDelete}, // can delete own issue
-		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueUpdate}, // can update own issue admin fields
+		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionDelete}, // can delete own issue
+		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionUpdate}, // can update own issue admin fields
 
 		// Creator default merge request policies
-		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete}, // can delete merge request
-		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate}, // can update own merge request admin fields
+		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionDelete}, // can delete merge request
+		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionUpdate}, // can update own merge request admin fields
 
 		// Contributor default merge request policies
-		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate}, // can update any merge requests
-		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete}, // can delete any merge requests
+		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionUpdate}, // can update any merge requests
+		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionDelete}, // can delete any merge requests
 	)
 }

@@ -219,7 +219,7 @@ var _ = Describe("BasicHandler", func() {
 
 		Specify("that for merge reference, with non-zero new hash, and "+
 			"tx detail has MergeProposalID set, "+
-			"policy is 'PolicyActionIssueWrite'", func() {
+			"policy is 'PolicyActionWrite'", func() {
 			ref := plumbing2.MakeMergeRequestReference(1)
 			handler.PushReader.References[ref] = &push.PackedReferenceObject{}
 			handler.TxDetails[ref] = &types.TxDetail{MergeProposalID: "123"}
@@ -227,14 +227,14 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(ref))
-				Expect(action).To(Equal(policy.PolicyActionMergeRequestWrite))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
-		Specify("that for issue reference with non-zero new hash, policy is 'PolicyActionIssueWrite'", func() {
+		Specify("that for issue reference with non-zero new hash, policy is 'PolicyActionWrite'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.PushReader.References[issueBranch] = &push.PackedReferenceObject{}
 			handler.TxDetails[issueBranch] = &types.TxDetail{MergeProposalID: ""}
@@ -242,21 +242,21 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Equal(policy.PolicyActionIssueWrite))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
-		Specify("that for issue reference with zero new hash, policy is 'PolicyActionIssueDelete'", func() {
+		Specify("that for issue reference with zero new hash, policy is 'PolicyActionDelete'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.PushReader.References = map[string]*push.PackedReferenceObject{issueBranch: {}}
 			handler.TxDetails[plumbing2.MakeIssueReference(1)] = &types.TxDetail{}
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: plumbing.ZeroHash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Equal(policy.PolicyActionIssueDelete))
+				Expect(action).To(Equal(policy.PolicyActionDelete))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
@@ -266,7 +266,7 @@ var _ = Describe("BasicHandler", func() {
 		Specify("that for issue reference with non-zero new hash and"+
 			"the reference previously exist and"+
 			"tx detail FlagCheckIssueUpdatePolicy is true, "+
-			"policy is 'PolicyActionIssueUpdate'", func() {
+			"policy is 'PolicyActionUpdate'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.Repo.GetState().References[issueBranch] = &state.Reference{Hash: []byte("hash")}
 			handler.PushReader.References = map[string]*push.PackedReferenceObject{issueBranch: {}}
@@ -275,14 +275,14 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Equal(policy.PolicyActionIssueUpdate))
+				Expect(action).To(Equal(policy.PolicyActionUpdate))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
-		Specify("that policy action is PolicyActionIssueWrite when command is "+
+		Specify("that policy action is PolicyActionWrite when command is "+
 			"an update request and"+
 			"reference is an issue reference and"+
 			"FlagCheckIssueUpdatePolicy is set in tx detail and"+
@@ -294,7 +294,7 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Equal(policy.PolicyActionIssueWrite))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
@@ -308,7 +308,7 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(ref))
-				Expect(action).To(Equal(policy.PolicyActionMergeRequestWrite))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
@@ -321,7 +321,7 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: plumbing.ZeroHash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(ref))
-				Expect(action).To(Equal(policy.PolicyActionMergeRequestDelete))
+				Expect(action).To(Equal(policy.PolicyActionDelete))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)
@@ -339,7 +339,7 @@ var _ = Describe("BasicHandler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(ref))
-				Expect(action).To(Equal(policy.PolicyActionMergeRequestUpdate))
+				Expect(action).To(Equal(policy.PolicyActionUpdate))
 				return nil
 			}
 			err = handler.DoAuth(ur, "", false)

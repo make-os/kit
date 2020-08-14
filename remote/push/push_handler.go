@@ -169,53 +169,29 @@ func (h *BasicHandler) enforcePolicy(cmd *packp.Command) error {
 		return nil
 	}
 
-	pusher := h.TxDetails.GetPushKeyID()
-	isContrib := h.Repo.IsContributor(pusher)
-	isIssueRef := plumbing.IsIssueReference(ref)
-	isMergeReqRef := plumbing.IsMergeRequestReference(ref)
-	deleteRef := cmd.New.IsZero()
-	refState := h.Repo.GetState().References.Get(ref)
-	isRefCreator := !refState.IsNil() && refState.Creator.String() == pusher
-
-	// Default action is set to 'write'
+	// Default action is 'write'
 	action := policy.PolicyActionWrite
 
 	// For delete command, set action to 'delete'.
-	if deleteRef {
+	if cmd.New.IsZero() {
 		action = policy.PolicyActionDelete
 	}
 
-	// For issue update, set default action to 'issue-write'.
-	if isIssueRef {
-		action = policy.PolicyActionIssueWrite
+	refState := h.Repo.GetState().References.Get(ref)
 
-		// But if reference to delete is an issue reference, set action to 'issue-delete'
-		if deleteRef {
-			action = policy.PolicyActionIssueDelete
-		}
-
-		// When the push updated an admin field, set action to 'issue-update'. Ignore if reference is new.
-		if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
-			action = policy.PolicyActionIssueUpdate
-		}
+	// When the push updated an admin field, set action to 'update'. Ignore if reference is new.
+	if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
+		action = policy.PolicyActionUpdate
 	}
 
-	// For merge request update, set default action to 'merge-write'.
-	if isMergeReqRef {
-		action = policy.PolicyActionMergeRequestWrite
-
-		// But if reference to delete is a merge request reference, set action to 'merge-delete'
-		if deleteRef {
-			action = policy.PolicyActionMergeRequestDelete
-		}
-
-		// When the push updated an admin field, set action to 'merge-update'. Ignore if reference is new.
-		if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
-			action = policy.PolicyActionMergeRequestUpdate
-		}
-	}
-
-	err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, action)
+	pusher := h.TxDetails.GetPushKeyID()
+	err := h.PolicyChecker(
+		h.polEnforcer,
+		ref,
+		!refState.IsNil() && refState.Creator.String() == pusher,
+		pusher,
+		h.Repo.IsContributor(pusher),
+		action)
 	if err != nil {
 		return err
 	}
