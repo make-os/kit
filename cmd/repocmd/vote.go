@@ -68,7 +68,6 @@ func VoteCmd(cfg *config.AppConfig, args *VoteArgs) error {
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
 		KeyStoreID: args.SigningKey,
 		Passphrase: args.SigningKeyPass,
-		NoPrompt:   true,
 		TargetRepo: nil,
 	})
 	if err != nil {

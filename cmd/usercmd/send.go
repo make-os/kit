@@ -68,7 +68,6 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
 		KeyStoreID: args.SigningKey,
 		Passphrase: args.SigningKeyPass,
-		NoPrompt:   true,
 		TargetRepo: nil,
 		Prompt:     "Enter passphrase to unlock signing key:\n",
 		Stdout:     args.Stdout,
