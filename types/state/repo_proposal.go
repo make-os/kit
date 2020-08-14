@@ -45,7 +45,7 @@ const (
 	ProposalTallyMethodIdentity ProposalTallyMethod = iota + 1
 	ProposalTallyMethodCoinWeighted
 	ProposalTallyMethodNetStake
-	ProposalTallyMethodNetStakeOfProposer
+	ProposalTallyMethodNetStakeNonDelegated
 	ProposalTallyMethodNetStakeOfDelegators
 )
 
@@ -93,7 +93,7 @@ const (
 type Proposal interface {
 	GetCreator() string
 	GetVoterType() VoterType
-	GetVoterMaxJoinHeight() uint64
+	GetPowerAge() uint64
 	GetEndAt() uint64
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
@@ -132,23 +132,23 @@ const (
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
-	util.CodecUtil        `json:"-" msgpack:"-"`
-	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
-	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
-	ActionData            map[string]util.Bytes `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
-	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
-	Height                util.UInt64           `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
-	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
-	EndAt                 util.UInt64           `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
-	FeeDepositEndAt       util.UInt64           `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
-	ProposerMaxJoinHeight util.UInt64           `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
-	Yes                   float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
-	No                    float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
-	NoWithVeto            float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
-	NoWithVetoByOwners    float64               `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
-	Abstain               float64               `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
-	Fees                  ProposalFees          `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
-	Outcome               ProposalOutcome       `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
+	util.CodecUtil     `json:"-" msgpack:"-"`
+	ID                 string                `json:"-" mapstructure:"-" msgpack:"-"`
+	Action             types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                     // The action type.
+	ActionData         map[string]util.Bytes `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                         // The data to use to perform the action.
+	Creator            string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                  // The creator is the address of the proposal creator.
+	Height             util.UInt64           `json:"height" mapstructure:"height" msgpack:"height"`                                     // The height of the block the proposal was added
+	Config             *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                          // The repo config to used to evaluate the proposal
+	EndAt              util.UInt64           `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                        // Used to close the proposal after the given height.
+	FeeDepositEndAt    util.UInt64           `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                      // Used to close the proposal after the given height.
+	PowerAge           util.UInt64           `json:"powerAge" mapstructure:"powerAge" msgpack:"powerAge"`                               // Used to set the age of a voter's power source.
+	Yes                float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                              // Count of "Yes" votes
+	No                 float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                 // Count of "No" votes
+	NoWithVeto         float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                         // Count of "No" votes from owners/stakeholders veto power
+	NoWithVetoByOwners float64               `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"` // Count of "No" votes specifically from owners veto power
+	Abstain            float64               `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                  // Count of explicit "abstain" votes
+	Fees               ProposalFees          `json:"fees" mapstructure:"fees" msgpack:"fees"`                                           // Count of explicit "abstain" votes
+	Outcome            ProposalOutcome       `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                  // The outcome of the proposal vote.
 }
 
 // ProposalActionData represents action data of a proposal
@@ -205,7 +205,7 @@ func (p *RepoProposal) EncodeMsgpack(enc *msgpack.Encoder) error {
 		p.Config,
 		p.EndAt,
 		p.FeeDepositEndAt,
-		p.ProposerMaxJoinHeight,
+		p.PowerAge,
 		p.Yes,
 		p.No,
 		p.NoWithVeto,
@@ -226,7 +226,7 @@ func (p *RepoProposal) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&p.Config,
 		&p.EndAt,
 		&p.FeeDepositEndAt,
-		&p.ProposerMaxJoinHeight,
+		&p.PowerAge,
 		&p.Yes,
 		&p.No,
 		&p.NoWithVeto,
@@ -261,9 +261,9 @@ func (p *RepoProposal) GetVoterType() VoterType {
 	return p.Config.Voter
 }
 
-// GetVoterMaxJoinHeight implements Proposal
-func (p *RepoProposal) GetVoterMaxJoinHeight() uint64 {
-	return uint64(p.ProposerMaxJoinHeight)
+// GetPowerAge implements Proposal
+func (p *RepoProposal) GetPowerAge() uint64 {
+	return uint64(p.PowerAge)
 }
 
 // GetEndAt implements Proposal

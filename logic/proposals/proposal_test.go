@@ -103,7 +103,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Gov}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.ProposerMaxJoinHeight = 100
+					proposal.PowerAge = 100
 					repo.Owners.Get("addr3").JoinedAt = 200
 					repo.Owners.Get("addr4").JoinedAt = 210
 				})

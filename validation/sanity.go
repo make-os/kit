@@ -246,7 +246,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	allowedTallyMethod := []state.ProposalTallyMethod{
 		state.ProposalTallyMethodIdentity,
 		state.ProposalTallyMethodCoinWeighted,
-		state.ProposalTallyMethodNetStakeOfProposer,
+		state.ProposalTallyMethodNetStakeNonDelegated,
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
 	}

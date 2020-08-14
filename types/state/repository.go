@@ -122,19 +122,19 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	CreatorAsContributor bool                `json:"creatorAsContrib" mapstructure:"creatorAsContrib" msgpack:"creatorAsContrib,omitempty"`
 	Voter                VoterType           `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
 	PropCreator          ProposalCreatorType `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
-	ReqVoterJoinHeight   bool                `json:"requireVoterJoinHeight" mapstructure:"requireVoterJoinHeight" msgpack:"requireVoterJoinHeight,omitempty"`
 	PropDuration         util.UInt64         `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
+	PropFee              float64             `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
 	PropFeeDepositDur    util.UInt64         `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
-	PropTallyMethod      ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
 	PropQuorum           float64             `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
-	PropThreshold        float64             `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
 	PropVetoQuorum       float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
 	PropVetoOwnersQuorum float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
-	PropFee              float64             `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
+	PropThreshold        float64             `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
 	PropFeeRefundType    PropFeeRefundType   `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType,omitempty"`
+	PropTallyMethod      ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
+	UsePowerAge          bool                `json:"usePowerAge" mapstructure:"usePowerAge" msgpack:"usePowerAge,omitempty"`
+	CreatorAsContributor bool                `json:"creatorAsContrib" mapstructure:"creatorAsContrib" msgpack:"creatorAsContrib,omitempty"`
 	NoPropFeeForMergeReq bool                `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq,omitempty"`
 }
 
@@ -180,7 +180,7 @@ func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
 	gov.CreatorAsContributor = toBool(o.Get("creatorAsContrib").Inter(gov.CreatorAsContributor))
 	gov.Voter = VoterType(toInt(o.Get("propVoter").Inter(int(gov.Voter))))
 	gov.PropCreator = ProposalCreatorType(toInt(o.Get("propCreator").Inter(int(gov.PropCreator))))
-	gov.ReqVoterJoinHeight = toBool(o.Get("requireVoterJoinHeight").Inter(gov.ReqVoterJoinHeight))
+	gov.UsePowerAge = toBool(o.Get("usePowerAge").Inter(gov.UsePowerAge))
 	gov.PropDuration = util.UInt64(toUint64(o.Get("propDur").Inter(gov.PropDuration.UInt64())))
 	gov.PropFeeDepositDur = util.UInt64(toUint64(o.Get("propFeeDepDur").Inter(gov.PropFeeDepositDur.UInt64())))
 	gov.PropTallyMethod = ProposalTallyMethod(toInt(o.Get("propTallyMethod").Inter(int(gov.PropTallyMethod))))
@@ -272,7 +272,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			CreatorAsContributor: true,
 			Voter:                VoterOwner,
 			PropCreator:          ProposalCreatorAny,
-			ReqVoterJoinHeight:   false,
+			UsePowerAge:          false,
 			PropDuration:         util.UInt64(params.RepoProposalDur),
 			PropTallyMethod:      ProposalTallyMethodIdentity,
 			PropQuorum:           params.RepoProposalQuorum,

@@ -7,7 +7,7 @@ import (
 )
 
 // TxRepoProposalSendFee implements BaseTx, it describes a transaction for
-// sending units of the native coin as proposal fee.
+// contributing to a proposal's deposit fee
 type TxRepoProposalSendFee struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`

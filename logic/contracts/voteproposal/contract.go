@@ -68,9 +68,9 @@ func (c *ProposalVoteContract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
+	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeNonDelegated {
 		increments, err = c.GetTicketManager().
-			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
+			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.PowerAge.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of non-delegated tickets of sender")
 		}
@@ -80,7 +80,7 @@ func (c *ProposalVoteContract) Exec() error {
 	// to the voter as their vote power
 	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = c.GetTicketManager().
-			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.ProposerMaxJoinHeight.UInt64())
+			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.PowerAge.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of delegated tickets of sender")
 		}
@@ -91,7 +91,7 @@ func (c *ProposalVoteContract) Exec() error {
 	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStake {
 
 		tickets, err := c.GetTicketManager().GetNonDecayedTickets(c.tx.SenderPubKey.ToBytes32(),
-			prop.ProposerMaxJoinHeight.UInt64())
+			prop.PowerAge.UInt64())
 		if err != nil {
 			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
 		}

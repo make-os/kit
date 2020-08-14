@@ -202,9 +202,9 @@ var _ = Describe("Repository", func() {
 		Context("Governance Merging", func() {
 			base := &RepoConfig{
 				Gov: &RepoConfigGovernance{
-					Voter:              1,
-					ReqVoterJoinHeight: true,
-					PropQuorum:         1,
+					Voter:       1,
+					UsePowerAge: true,
+					PropQuorum:  1,
 				},
 				Policies: []*Policy{
 					{Subject: "user1", Object: "dev", Action: "deny"},
@@ -214,13 +214,13 @@ var _ = Describe("Repository", func() {
 			It("should update base object", func() {
 				base.MergeMap(map[string]interface{}{
 					"governance": map[string]interface{}{
-						"propVoter":              13,
-						"requireVoterJoinHeight": false,
-						"propQuorum":             0,
+						"propVoter":   13,
+						"usePowerAge": false,
+						"propQuorum":  0,
 					},
 				})
 				Expect(int(base.Gov.Voter)).To(Equal(13))
-				Expect(base.Gov.ReqVoterJoinHeight).To(BeFalse())
+				Expect(base.Gov.UsePowerAge).To(BeFalse())
 				Expect(base.Gov.PropQuorum).To(BeZero())
 			})
 		})
@@ -261,8 +261,8 @@ var _ = Describe("Repository", func() {
 	Describe("RepoConfig.Clone", func() {
 		base := &RepoConfig{
 			Gov: &RepoConfigGovernance{
-				Voter:              1,
-				ReqVoterJoinHeight: true,
+				Voter:       1,
+				UsePowerAge: true,
 			},
 			Policies: []*Policy{},
 		}
@@ -280,7 +280,7 @@ var _ = Describe("Repository", func() {
 			Gov: &RepoConfigGovernance{
 				Voter:                1,
 				PropCreator:          1,
-				ReqVoterJoinHeight:   true,
+				UsePowerAge:          true,
 				PropDuration:         12,
 				PropFeeDepositDur:    122,
 				PropTallyMethod:      1,

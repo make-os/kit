@@ -162,7 +162,7 @@ var _ = Describe("ProposalVoteContract", func() {
 
 		When("proposal tally method is ProposalTallyMethodNetStakeOfProposer and the voter's non-delegated ticket value=100", func() {
 			BeforeEach(func() {
-				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
+				repoUpd.Config.Gov.PropTallyMethod = state.ProposalTallyMethodNetStakeNonDelegated
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
 					Config: repoUpd.Config.Gov,
