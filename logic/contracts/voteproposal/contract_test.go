@@ -236,7 +236,7 @@ var _ = Describe("ProposalVoteContract", func() {
 					ticketB := &tickettypes.Ticket{Value: "20"}
 					tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().MustBytes32(), uint64(0)).Return(tickets, nil)
+					mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().MustBytes32(), uint64(0)).Return(tickets, nil)
 					logic.SetTicketManager(mockTickMgr)
 				})
 
@@ -318,7 +318,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
@@ -360,7 +360,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
@@ -402,7 +402,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
@@ -447,7 +447,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
@@ -488,7 +488,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
@@ -533,7 +533,7 @@ var _ = Describe("ProposalVoteContract", func() {
 				ticketB := &tickettypes.Ticket{Value: "20"}
 				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
-				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+				mockTickMgr.EXPECT().GetUnExpiredTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 

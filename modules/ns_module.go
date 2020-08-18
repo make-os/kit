@@ -157,8 +157,7 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 // params <map>
 // params.name <string>:				The name of the namespace
 // params.value <string>:				The cost of the namespace.
-// [params.toAccount] <string>:			Set the account that will take ownership
-// [params.toRepo] <string>:			Set the repo that will take ownership
+// [params.to] <string>:				Set the account or repository that will take ownership
 // [params.domains] <map[string]string>:The initial domain->target mapping
 // params.nonce <number|string>: 		The senders next account nonce
 // params.fee <number|string>: 			The transaction fee to pay
@@ -200,7 +199,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 // ARGS:
 // params <map>
 // params.name <string>:				The name of the namespace
-// [params.domains] <map[string]string>:The initial domain->target mapping
+// params.domains <map[string]string>:	The domain->target mapping
 // params.nonce <number|string>: 		The senders next account nonce
 // params.fee <number|string>: 			The transaction fee to pay
 // params.timestamp <number>: 			The unix timestamp

@@ -160,18 +160,18 @@ func (mr *MockTicketManagerMockRecorder) GetByHash(hash interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHash", reflect.TypeOf((*MockTicketManager)(nil).GetByHash), hash)
 }
 
-// UpdateDecayBy mocks base method
-func (m *MockTicketManager) UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error {
+// UpdateExpireBy mocks base method
+func (m *MockTicketManager) UpdateExpireBy(hash util.HexBytes, newExpireHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateDecayBy", hash, newDecayHeight)
+	ret := m.ctrl.Call(m, "UpdateExpireBy", hash, newExpireHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateDecayBy indicates an expected call of UpdateDecayBy
-func (mr *MockTicketManagerMockRecorder) UpdateDecayBy(hash, newDecayHeight interface{}) *gomock.Call {
+// UpdateExpireBy indicates an expected call of UpdateExpireBy
+func (mr *MockTicketManagerMockRecorder) UpdateExpireBy(hash, newExpireHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDecayBy", reflect.TypeOf((*MockTicketManager)(nil).UpdateDecayBy), hash, newDecayHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateExpireBy", reflect.TypeOf((*MockTicketManager)(nil).UpdateExpireBy), hash, newExpireHeight)
 }
 
 // GetTopHosts mocks base method
@@ -264,19 +264,19 @@ func (mr *MockTicketManagerMockRecorder) ValueOfAllTickets(maturityHeight interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfAllTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfAllTickets), maturityHeight)
 }
 
-// GetNonDecayedTickets mocks base method
-func (m *MockTicketManager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
+// GetUnExpiredTickets mocks base method
+func (m *MockTicketManager) GetUnExpiredTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNonDecayedTickets", pubKey, maturityHeight)
+	ret := m.ctrl.Call(m, "GetUnExpiredTickets", pubKey, maturityHeight)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetNonDecayedTickets indicates an expected call of GetNonDecayedTickets
-func (mr *MockTicketManagerMockRecorder) GetNonDecayedTickets(pubKey, maturityHeight interface{}) *gomock.Call {
+// GetUnExpiredTickets indicates an expected call of GetUnExpiredTickets
+func (mr *MockTicketManagerMockRecorder) GetUnExpiredTickets(pubKey, maturityHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonDecayedTickets", reflect.TypeOf((*MockTicketManager)(nil).GetNonDecayedTickets), pubKey, maturityHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnExpiredTickets", reflect.TypeOf((*MockTicketManager)(nil).GetUnExpiredTickets), pubKey, maturityHeight)
 }
 
 // Stop mocks base method

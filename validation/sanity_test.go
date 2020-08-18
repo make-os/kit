@@ -244,11 +244,11 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxNamespaceAcquire", func() {
 		var tx *txns.TxNamespaceRegister
 		BeforeEach(func() {
-			params.CostOfNamespace = decimal.NewFromFloat(5)
+			params.NamespaceRegFee = decimal.NewFromFloat(5)
 			tx = txns.NewBareTxNamespaceRegister()
 			tx.Fee = "1"
 			tx.Name = "namespace"
-			tx.Value = util.String(params.CostOfNamespace.String())
+			tx.Value = util.String(params.NamespaceRegFee.String())
 			tx.Nonce = 1
 		})
 
@@ -282,10 +282,10 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			It("has invalid transfer destination", func() {
-				tx.TransferTo = "re&&^po"
+				tx.To = "re&&^po"
 				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, msg:invalid value. Expected an address or a repository name"))
+				Expect(err.Error()).To(Equal("field:to, msg:invalid value. Expected a user address or a repository name"))
 			})
 
 			It("has value not equal to namespace price", func() {

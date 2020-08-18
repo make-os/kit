@@ -74,19 +74,19 @@ var _ = Describe("UserModule", func() {
 		})
 	})
 
-	Describe(".ListLocalAccounts()", func() {
+	Describe(".GetKeys()", func() {
 		It("should panic when unable to get a list of local accounts", func() {
 			mockKeystore.EXPECT().List().Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListLocalAccounts()
+				m.GetKeys()
 			})
 		})
 
 		It("should return address of accounts on success", func() {
 			keys := []types.StoredKey{&keystore.StoredKey{UserAddress: "addr1"}, &keystore.StoredKey{UserAddress: "addr2"}}
 			mockKeystore.EXPECT().List().Return(keys, nil)
-			accts := m.ListLocalAccounts()
+			accts := m.GetKeys()
 			Expect(accts).To(HaveLen(2))
 			Expect(accts).To(And(ContainElement("addr1"), ContainElement("addr2")))
 		})
@@ -101,7 +101,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should panic when no key match the given address", func() {
-			mockKeystore.EXPECT().GetByAddress("addr1").Return(nil, types2.ErrAccountUnknown)
+			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetKey("addr1")
@@ -109,7 +109,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should panic when unable to fetch key matching the given address", func() {
-			mockKeystore.EXPECT().GetByAddress("addr1").Return(nil, fmt.Errorf("error"))
+			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetKey("addr1")
@@ -121,7 +121,7 @@ var _ = Describe("UserModule", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetKey("addr1")
@@ -133,7 +133,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				res := m.GetKey("addr1")
 				Expect(res).To(Equal(pk.PrivKey().Base58()))
 			})
@@ -143,7 +143,7 @@ var _ = Describe("UserModule", func() {
 			It("should ask for passphrase and panic when key unlock failed", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
@@ -158,7 +158,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
 				mockKey.EXPECT().Unlock("passphrase").Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				res := m.GetKey("addr1")
 				Expect(res).To(Equal(pk.PrivKey().Base58()))
 			})
@@ -174,7 +174,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should panic when no key match the given address", func() {
-			mockKeystore.EXPECT().GetByAddress("addr1").Return(nil, types2.ErrAccountUnknown)
+			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPublicKey("addr1")
@@ -182,7 +182,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should panic when unable to fetch key matching the given address", func() {
-			mockKeystore.EXPECT().GetByAddress("addr1").Return(nil, fmt.Errorf("error"))
+			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPublicKey("addr1")
@@ -194,7 +194,7 @@ var _ = Describe("UserModule", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetPublicKey("addr1")
@@ -206,7 +206,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				res := m.GetPublicKey("addr1")
 				Expect(res).To(Equal(pk.PubKey().Base58()))
 			})
@@ -216,7 +216,7 @@ var _ = Describe("UserModule", func() {
 			It("should ask for passphrase and panic when key unlock failed", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
@@ -231,7 +231,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
 				mockKey.EXPECT().Unlock("passphrase").Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
-				mockKeystore.EXPECT().GetByAddress("addr1").Return(mockKey, nil)
+				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				res := m.GetPublicKey("addr1")
 				Expect(res).To(Equal(pk.PubKey().Base58()))
 			})
@@ -373,9 +373,9 @@ var _ = Describe("UserModule", func() {
 		})
 	})
 
-	Describe(".GetValidatorInfo", func() {
+	Describe(".GetValidatorKey", func() {
 		It("should not include private key if 'includePrivKey' argument is set", func() {
-			res := m.GetValidatorInfo()
+			res := m.GetValidatorKey()
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddress"),
@@ -385,7 +385,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should not include private key if 'includePrivKey' is set to 'false'", func() {
-			res := m.GetValidatorInfo()
+			res := m.GetValidatorKey()
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddress"),
@@ -395,7 +395,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should include private key if 'includePrivKey' is set to 'true'", func() {
-			res := m.GetValidatorInfo(true)
+			res := m.GetValidatorKey(true)
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddress"),

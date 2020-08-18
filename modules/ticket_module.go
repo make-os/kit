@@ -51,17 +51,12 @@ func (m *TicketModule) methods() []*types.VMMember {
 		{
 			Name:        "buy",
 			Value:       m.BuyValidatorTicket,
-			Description: "BuyValidatorTicket a validator ticket",
+			Description: "Purchase a validator ticket",
 		},
 		{
-			Name:        "listValidatorTickets",
-			Value:       m.ListValidatorTicketsByProposer,
-			Description: "List validator tickets assigned to a given proposer public key",
-		},
-		{
-			Name:        "listHostTickets",
-			Value:       m.ListHostTicketsByProposer,
-			Description: "List host tickets assigned to a given proposer public key",
+			Name:        "list",
+			Value:       m.GetValidatorTicketsByProposer,
+			Description: "Get validator tickets assigned to a proposer",
 		},
 		{
 			Name:        "listRecent",
@@ -92,12 +87,17 @@ func (m *TicketModule) hostFuncs() []*types.VMMember {
 		{
 			Name:        "buy",
 			Value:       m.BuyHostTicket,
-			Description: "BuyValidatorTicket an host ticket",
+			Description: "Purchase a host ticket",
+		},
+		{
+			Name:        "list",
+			Value:       m.GetHostTicketsByProposer,
+			Description: "Get host tickets assigned to a proposer",
 		},
 		{
 			Name:        "unbond",
 			Value:       m.UnbondHostTicket,
-			Description: "Unbond the stake associated with a host ticket",
+			Description: "Invalidate a host ticket and unbond the staked coins",
 		},
 	}
 }
@@ -219,26 +219,23 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 }
 
 // ListValidatorTicketsByProposer finds validator tickets where the given public
-// key is the proposer; By default it will filter out decayed tickets. Use query
+// key is the proposer; By default it will filter out expired tickets. Use query
 // option to override this behaviour
 //
 // ARGS:
 // proposerPubKey: The public key of the target proposer
 //
 // [queryOpts] <map>
-// [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
-// [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
+// [queryOpts].expired 	<bool>	Forces only expired tickets to be returned
 //
 // RETURNS <[]types.Ticket>
-func (m *TicketModule) ListValidatorTicketsByProposer(
-	proposerPubKey string,
-	queryOpts ...map[string]interface{}) []util.Map {
+func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map {
 
 	var qo tickettypes.QueryOptions
 	if len(queryOpts) > 0 {
 		qo.SortByHeight = -1
 		qoMap := queryOpts[0]
-		qo.NonDecayedOnly = qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil
+		qo.Active = qoMap["expired"] == nil
 		mapstructure.Decode(qoMap, &qo)
 	}
 
@@ -263,14 +260,14 @@ func (m *TicketModule) ListValidatorTicketsByProposer(
 // key is the proposer
 //
 // ARGS:
-// proposerPubKey: The public key of the target proposer
+// proposerPubKey: 				The public key of the target proposer
 //
-// [queryOpts] <map>
-// [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
-// [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
-func (m *TicketModule) ListHostTicketsByProposer(
-	proposerPubKey string,
-	queryOpts ...map[string]interface{}) []util.Map {
+// [queryOpts] 		<map>
+// - immature		<bool>		Return immature tickets
+// - mature			<bool>		Return mature tickets
+// - expired		<bool>		Return expired tickets
+// - unexpired		<bool>		Return expired tickets
+func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map {
 
 	var qo tickettypes.QueryOptions
 	if len(queryOpts) > 0 {

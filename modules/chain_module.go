@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/spf13/cast"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/themakeos/lobe/api/rpc/client"
 	"github.com/themakeos/lobe/modules/types"
@@ -50,9 +51,9 @@ func (m *ChainModule) methods() []*types.VMMember {
 			Description: "Send the native coin from an account to a destination account",
 		},
 		{
-			Name:        "getCurrentHeight",
-			Value:       m.GetCurrentHeight,
-			Description: "Get the current block height",
+			Name:        "getHeight",
+			Value:       m.GetHeight,
+			Description: "Get the current chain height",
 		},
 		{
 			Name:        "getBlockInfo",
@@ -109,17 +110,13 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 	return res
 }
 
-// getCurrentHeight returns the current block height
-func (m *ChainModule) GetCurrentHeight() util.Map {
-
+// getHeight returns the current block height
+func (m *ChainModule) GetHeight() string {
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
-
-	return map[string]interface{}{
-		"height": bi.Height,
-	}
+	return cast.ToString(bi.Height.Int64())
 }
 
 // getBlockInfo get summary block information of a given height

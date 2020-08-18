@@ -90,10 +90,10 @@ func (c *ProposalVoteContract) Exec() error {
 	// to the voter as their vote power
 	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStake {
 
-		tickets, err := c.GetTicketManager().GetNonDecayedTickets(c.tx.SenderPubKey.ToBytes32(),
+		tickets, err := c.GetTicketManager().GetUnExpiredTickets(c.tx.SenderPubKey.ToBytes32(),
 			prop.PowerAge.UInt64())
 		if err != nil {
-			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
+			return errors.Wrap(err, "failed to get unexpired tickets assigned to sender")
 		}
 
 		// Calculate the sum of value of all tickets.

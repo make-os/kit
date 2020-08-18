@@ -67,18 +67,16 @@ var _ = Describe("ChainModule", func() {
 		})
 	})
 
-	Describe(".GetCurrentHeight", func() {
+	Describe(".GetHeight", func() {
 		It("should panic when unable to get last block info from system keeper", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-			Expect(func() { m.GetCurrentHeight() }).To(Panic())
+			Expect(func() { m.GetHeight() }).To(Panic())
 		})
 
 		It("should expected result on success", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
-			res := m.GetCurrentHeight()
-			Expect(res).ToNot(BeNil())
-			Expect(res).To(HaveKey("height"))
-			Expect(res["height"]).To(Equal(util.Int64(100)))
+			height := m.GetHeight()
+			Expect(height).To(Equal("100"))
 		})
 	})
 

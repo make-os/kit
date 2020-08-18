@@ -41,7 +41,7 @@ func (a *TransactionAPI) getTransaction(params interface{}) (resp *rpc.Response)
 func (t *TransactionAPI) APIs() rpc.APISet {
 	return []rpc.APIInfo{
 		{
-			Name:        "sendPayload",
+			Name:        "send",
 			Namespace:   constants.NamespaceTx,
 			Description: "Sends a signed transaction payload to the mempool",
 			Func:        t.sendPayload,

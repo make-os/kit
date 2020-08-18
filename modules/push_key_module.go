@@ -53,7 +53,7 @@ func (m *PushKeyModule) methods() []*modulestypes.VMMember {
 			Description: "Remove a push key from the network",
 		},
 		{
-			Name:        "write",
+			Name:        "update",
 			Value:       m.Update,
 			Description: "Update a previously registered push key",
 		},
@@ -249,16 +249,16 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	}
 }
 
-// Get fetches a push key by id
+// Get fetches a push key by its address
 //
 // ARGS:
-// id: 				The push key ID
+// address: 	he push key address
 // [height]: 	The target block height to query (default: latest)
 //
 // RETURNS state.PushKey
-func (m *PushKeyModule) Get(id string, height ...uint64) util.Map {
+func (m *PushKeyModule) Get(address string, height ...uint64) util.Map {
 
-	if id == "" {
+	if address == "" {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
@@ -267,7 +267,7 @@ func (m *PushKeyModule) Get(id string, height ...uint64) util.Map {
 		h = height[0]
 	}
 
-	o := m.logic.PushKeyKeeper().Get(id, h)
+	o := m.logic.PushKeyKeeper().Get(address, h)
 	if o.IsNil() {
 		panic(util.ReqErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
@@ -288,11 +288,11 @@ func (m *PushKeyModule) GetByAddress(address string) []string {
 // GetAccountOfOwner returns the account of the key owner
 //
 // ARGS:
-// pushKeyID: The push key id
+// address: The push key address
 // [height]: 	The target block height to query (default: latest)
 //
 // RETURNS state.Account
-func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, height ...uint64) util.Map {
+func (m *PushKeyModule) GetAccountOfOwner(address string, height ...uint64) util.Map {
 
 	h := uint64(0)
 	if len(height) > 0 {
@@ -300,17 +300,17 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, height ...uint64) ut
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.GetPushKeyOwner(pushKeyID, h)
+		resp, err := m.AttachedClient.GetPushKeyOwner(address, h)
 		if err != nil {
 			panic(err)
 		}
 		return util.ToMap(resp)
 	}
 
-	pushKey := m.Get(pushKeyID, height...)
+	pushKey := m.Get(address, height...)
 	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), h)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
+		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", types.ErrAccountUnknown.Error()))
 	}
 
 	return util.ToMap(acct)

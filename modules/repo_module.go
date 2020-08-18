@@ -73,7 +73,7 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 			Description: "Vote for or against a proposal",
 		},
 		{
-			Name:        "depositFee",
+			Name:        "depositPropFee",
 			Value:       m.DepositProposalFee,
 			Description: "Deposit fees into a proposal",
 		},
@@ -127,8 +127,8 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // params.nonce <number|string>: 			The senders next account nonce
 // params.fee <number|string>: 				The transaction fee to pay
 // params.timestamp <number>: 				The unix timestamp
-// params.config <map|hex-msgpack-string>  	The repo configuration
-// params.sig <hex-string>					The transaction signature
+// params.config <object>  					The repo configuration
+// params.sig <String>						The transaction signature
 //
 // options <[]interface{}>
 // options[0] key <string>: 				The signer's private key
@@ -221,7 +221,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 // params <map>
 // params.id 		<string>: 			The proposal ID to vote on
 // params.name 		<string>: 			The name of the repository
-// params.vote 		<uint>: 			The vote choice (1) yes (0) no (-1) vote no with veto (-2) abstain
+// params.vote 		<uint>: 			The vote choice (1) yes (0) no (2) vote no with veto (3) abstain
 // params.nonce 	<number|string>: 	The senders next account nonce
 // params.fee 		<number|string>: 	The transaction fee to pay
 // params.timestamp <number>: 			The unix timestamp

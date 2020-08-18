@@ -43,7 +43,7 @@ func NewAttachableTxModule(client client.Client) *TxModule {
 func (m *TxModule) methods() []*modulestypes.VMMember {
 	return []*modulestypes.VMMember{
 		{Name: "get", Value: m.Get, Description: "Get a transactions by its hash"},
-		{Name: "sendPayload", Value: m.SendPayload, Description: "Send a signed transaction payload to the network"},
+		{Name: "send", Value: m.SendPayload, Description: "Send a signed transaction payload to the network"},
 	}
 }
 

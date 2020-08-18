@@ -45,7 +45,12 @@ func (c *RegisterNamespaceContract) Exec() error {
 	ns.ExpiresAt.Set(c.chainHeight + uint64(params.NamespaceTTL))
 	ns.GraceEndAt.Set(ns.ExpiresAt.UInt64() + uint64(params.NamespaceGraceDur))
 	ns.Domains = c.tx.Domains
-	ns.Owner = c.tx.TransferTo
+	ns.Owner = c.tx.To
+
+	// Set default owner to sender.
+	if ns.Owner == "" {
+		ns.Owner = spk.Addr().String()
+	}
 
 	// Get the account of the sender
 	acctKeeper := c.AccountKeeper()

@@ -58,7 +58,7 @@ var _ = Describe("RegisterNamespaceContract", func() {
 		var err error
 		var nsName = "name1"
 
-		When("when transfer account and repo are not set", func() {
+		When("when owner and repo are not set", func() {
 			BeforeEach(func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
@@ -103,9 +103,14 @@ var _ = Describe("RegisterNamespaceContract", func() {
 				acct := logic.AccountKeeper().Get(identifier.Address(sender.Addr()))
 				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
+
+			Specify("that owner is the sender", func() {
+				ns := logic.NamespaceKeeper().Get(nsName)
+				Expect(ns.Owner).To(Equal(sender.Addr().String()))
+			})
 		})
 
-		When("when transfer account is set to an account", func() {
+		When("owner is set to a user account", func() {
 			var transferAcct = "account"
 			BeforeEach(func() {
 				params.NamespaceTTL = 10
@@ -114,10 +119,10 @@ var _ = Describe("RegisterNamespaceContract", func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
 				err = registernamespace.NewContract().Init(logic, &txns.TxNamespaceRegister{
-					Name:       nsName,
-					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					TxValue:    &txns.TxValue{Value: "1"},
-					TransferTo: transferAcct,
+					Name:     nsName,
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxValue:  &txns.TxValue{Value: "1"},
+					To:       transferAcct,
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -138,10 +143,10 @@ var _ = Describe("RegisterNamespaceContract", func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
 				err = registernamespace.NewContract().Init(logic, &txns.TxNamespaceRegister{
-					Name:       nsName,
-					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					TxValue:    &txns.TxValue{Value: "1"},
-					TransferTo: transferToRepo,
+					Name:     nsName,
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxValue:  &txns.TxValue{Value: "1"},
+					To:       transferToRepo,
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})

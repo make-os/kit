@@ -602,7 +602,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("there is an unbond host request; should attempt to update the ticket decay height", func() {
+		When("there is an unbond host request; should attempt to update the ticket expire height", func() {
 			appHash := []byte("app_hash")
 
 			BeforeEach(func() {
@@ -610,7 +610,7 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToHexBytes("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToHexBytes("ticket_hash"), uint64(app.curBlock.Height))
+				mockLogic.TicketManager.EXPECT().UpdateExpireBy(util.StrToHexBytes("ticket_hash"), uint64(app.curBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 

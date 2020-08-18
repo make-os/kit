@@ -16,8 +16,8 @@ import (
 const (
 	TxTypeCoinTransfer                types.TxCode = iota + 1 // For native coin transfer to/between accounts
 	TxTypeValidatorTicket                                     // For validator ticket purchase
-	TxTypeSetDelegatorCommission                              // For setting delegator commission
 	TxTypeHostTicket                                          // For purchasing host ticket
+	TxTypeSetDelegatorCommission                              // For setting delegator commission
 	TxTypeUnbondHostTicket                                    // For unbonding host ticket
 	TxTypeRepoCreate                                          // For creating a repository
 	TxTypeRegisterPushKey                                     // For adding a push key

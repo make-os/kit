@@ -167,24 +167,24 @@ var _ = Describe("TicketModule", func() {
 		})
 	})
 
-	Describe(".ListValidatorTicketsByProposer", func() {
+	Describe(".GetValidatorTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
 			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "proposerPubKey"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListValidatorTicketsByProposer("prop_pub_key", map[string]interface{}{})
+				m.GetValidatorTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
 		})
 
 		It("should panic when unable to get ticket by proposer public key", func() {
 			propPubKey := pk.PubKey().Base58()
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeValidatorTicket, pk.PubKey().MustBytes32(), types.QueryOptions{
-				Limit:          0,
-				SortByHeight:   -1,
-				NonDecayedOnly: true,
+				Limit:        0,
+				SortByHeight: -1,
+				Active:       true,
 			}).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
+				m.GetValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
 		})
 
@@ -194,11 +194,11 @@ var _ = Describe("TicketModule", func() {
 				{Type: txns.TxTypeValidatorTicket},
 			}
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeValidatorTicket, pk.PubKey().MustBytes32(), types.QueryOptions{
-				Limit:          0,
-				SortByHeight:   -1,
-				NonDecayedOnly: true,
+				Limit:        0,
+				SortByHeight: -1,
+				Active:       true,
 			}).Return(tickets, nil)
-			res := m.ListValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
+			res := m.GetValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]["type"]).To(Equal(txns.TxTypeValidatorTicket))
 		})
@@ -207,32 +207,32 @@ var _ = Describe("TicketModule", func() {
 			propPubKey := pk.PubKey().Base58()
 			tickets := []*types.Ticket{}
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeValidatorTicket, pk.PubKey().MustBytes32(), types.QueryOptions{
-				Limit:          1,
-				SortByHeight:   -1,
-				NonDecayedOnly: true,
+				Limit:        1,
+				SortByHeight: -1,
+				Active:       true,
 			}).Return(tickets, nil)
-			res := m.ListValidatorTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
+			res := m.GetValidatorTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
 			Expect(res).To(HaveLen(0))
 		})
 
-		It("should set queryOption.NonDecayedOnly to the value of 'nonDecayed'", func() {
+		It("should set queryOption.UnExpiredOnly to the value of 'active'", func() {
 			propPubKey := pk.PubKey().Base58()
 			tickets := []*types.Ticket{}
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeValidatorTicket, pk.PubKey().MustBytes32(), types.QueryOptions{
-				Limit:          0,
-				SortByHeight:   -1,
-				NonDecayedOnly: false,
+				Limit:        0,
+				SortByHeight: -1,
+				Active:       false,
 			}).Return(tickets, nil)
-			res := m.ListValidatorTicketsByProposer(propPubKey, map[string]interface{}{"nonDecayed": false})
+			res := m.GetValidatorTicketsByProposer(propPubKey, map[string]interface{}{"active": false})
 			Expect(res).To(HaveLen(0))
 		})
 	})
 
-	Describe(".ListHostTicketsByProposer", func() {
+	Describe(".GetHostTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
 			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListHostTicketsByProposer("prop_pub_key", map[string]interface{}{})
+				m.GetHostTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
 		})
 
@@ -241,7 +241,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeHostTicket, pk.PubKey().MustBytes32(), types.QueryOptions{Limit: 0, SortByHeight: -1}).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListHostTicketsByProposer(propPubKey, map[string]interface{}{})
+				m.GetHostTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
 		})
 
@@ -251,7 +251,7 @@ var _ = Describe("TicketModule", func() {
 				{Type: txns.TxTypeHostTicket},
 			}
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeHostTicket, pk.PubKey().MustBytes32(), types.QueryOptions{Limit: 1, SortByHeight: -1}).Return(tickets, nil)
-			res := m.ListHostTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
+			res := m.GetHostTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]["type"]).To(Equal(txns.TxTypeHostTicket))
 		})
@@ -260,7 +260,7 @@ var _ = Describe("TicketModule", func() {
 			propPubKey := pk.PubKey().Base58()
 			tickets := []*types.Ticket{}
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeHostTicket, pk.PubKey().MustBytes32(), types.QueryOptions{Limit: 1, SortByHeight: -1}).Return(tickets, nil)
-			res := m.ListHostTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
+			res := m.GetHostTicketsByProposer(propPubKey, map[string]interface{}{"limit": 1})
 			Expect(res).To(HaveLen(0))
 		})
 	})

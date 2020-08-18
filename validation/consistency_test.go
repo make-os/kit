@@ -287,7 +287,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("ticket decay height is set and greater than current block height", func() {
+		When("ticket expire height is set and greater than current block height", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
@@ -297,7 +297,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
-					DecayBy:        100,
+					ExpireBy:       100,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
@@ -306,11 +306,11 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, msg:ticket is already decaying"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket is already expireing"))
 			})
 		})
 
-		When("ticket decay height is set less than current block height", func() {
+		When("ticket expire height is set less than current block height", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
@@ -320,7 +320,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
-					DecayBy:        100,
+					ExpireBy:       100,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
@@ -329,7 +329,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, msg:ticket has already decayed"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket has already expired"))
 			})
 		})
 
@@ -343,7 +343,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
-					DecayBy:        0,
+					ExpireBy:       0,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
@@ -599,11 +599,11 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
-				tx.TransferTo = "repo1"
+				tx.To = "repo1"
 
 				bi := &core.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				mockRepoKeeper.EXPECT().Get(tx.TransferTo).Return(state.BareRepository())
+				mockRepoKeeper.EXPECT().Get(tx.To).Return(state.BareRepository())
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 0})
 				err = validation.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
@@ -620,11 +620,11 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
-				tx.TransferTo = "os1m4aaslnzmdp4k3g52tk6eh94ghr547exvtcrkd"
+				tx.To = "os1m4aaslnzmdp4k3g52tk6eh94ghr547exvtcrkd"
 
 				bi := &core.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				mockAcctKeeper.EXPECT().Get(identifier.Address(tx.TransferTo)).Return(state.BareAccount())
+				mockAcctKeeper.EXPECT().Get(identifier.Address(tx.To)).Return(state.BareAccount())
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 0})
 				err = validation.CheckTxNSAcquireConsistency(tx, -1, mockLogic)

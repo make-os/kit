@@ -56,14 +56,14 @@ func NewUserModule(
 func (m *UserModule) methods() []*types.VMMember {
 	return []*types.VMMember{
 		{
-			Name:        "listAccounts",
-			Value:       m.ListLocalAccounts,
-			Description: "List local accounts on this node",
+			Name:        "getKeys",
+			Value:       m.GetKeys,
+			Description: "List keys on the keystore",
 		},
 		{
 			Name:        "getKey",
 			Value:       m.GetKey,
-			Description: "Get the private key of an account (supports interactive mode)",
+			Description: "Get the private key of a key (supports interactive mode)",
 		},
 		{
 			Name:        "getPublicKey",
@@ -91,8 +91,8 @@ func (m *UserModule) methods() []*types.VMMember {
 			Description: "Get the total staked coins of an account",
 		},
 		{
-			Name:        "getValidatorInfo",
-			Value:       m.GetValidatorInfo,
+			Name:        "getValidator",
+			Value:       m.GetValidatorKey,
 			Description: "Get the validator information",
 		},
 		{
@@ -113,7 +113,7 @@ func (m *UserModule) globals() []*types.VMMember {
 	return []*types.VMMember{
 		{
 			Name:        "accounts",
-			Value:       m.ListLocalAccounts(),
+			Value:       m.GetKeys(),
 			Description: "Get the list of accounts that exist on this node",
 		},
 	}
@@ -144,7 +144,7 @@ func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 }
 
 // ListLocalAccounts lists all accounts on this node
-func (m *UserModule) ListLocalAccounts() []string {
+func (m *UserModule) GetKeys() []string {
 	accounts, err := m.keystore.List()
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
@@ -173,7 +173,7 @@ func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
 	}
 
 	// Get the address
-	acct, err := m.keystore.GetByAddress(address)
+	acct, err := m.keystore.GetByIndexOrAddress(address)
 	if err != nil {
 		if err != at.ErrAccountUnknown {
 			panic(util.ReqErr(500, StatusCodeServerErr, "address", err.Error()))
@@ -311,7 +311,7 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 // publicKey <string>:	The validator base58 public key
 // address 	<string>:	The validator's bech32 address.
 // tmAddress <string>:	The tendermint address
-func (m *UserModule) GetValidatorInfo(includePrivKey ...bool) util.Map {
+func (m *UserModule) GetValidatorKey(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]interface{}{

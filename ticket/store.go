@@ -200,8 +200,8 @@ func (s *Store) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket)
 		return
 	}
 
-	if upd.DecayBy != 0 {
-		target.DecayBy = upd.DecayBy
+	if upd.ExpireBy != 0 {
+		target.ExpireBy = upd.ExpireBy
 	}
 
 	if upd.MatureBy != 0 {

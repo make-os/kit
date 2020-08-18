@@ -69,9 +69,9 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 
 	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 
-	// Only validator tickets have a pre-determined decay height
+	// Only validator tickets have a pre-determined expire height
 	if t.Is(txns.TxTypeValidatorTicket) {
-		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
+		ticket.ExpireBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 	}
 
 	// Register all tickets to the store
@@ -105,7 +105,7 @@ func (m *Manager) getTopTickets(ticketType types.TxCode, limit int) (tickettypes
 	activeTickets := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
-			(t.DecayBy > uint64(bi.Height) || t.DecayBy == 0)
+			(t.ExpireBy > uint64(bi.Height) || t.ExpireBy == 0)
 	})
 
 	// Create an index that maps a proposers to the sum of value of tickets
@@ -166,16 +166,16 @@ func (m *Manager) GetByProposer(
 		if t.Type != ticketType || t.ProposerPubKey != proposerPubKey {
 			ok = false
 		}
-		if ok && qo.ImmatureOnly && t.MatureBy <= uint64(bi.Height) { // reject mature
+		if ok && qo.Immature && t.MatureBy <= uint64(bi.Height) { // reject mature
 			ok = false
 		}
-		if ok && qo.MaturedOnly && t.MatureBy > uint64(bi.Height) { // reject immature
+		if ok && qo.Matured && t.MatureBy > uint64(bi.Height) { // reject immature
 			ok = false
 		}
-		if ok && qo.DecayedOnly && t.DecayBy > uint64(bi.Height) {
+		if ok && qo.Expired && t.ExpireBy > uint64(bi.Height) {
 			ok = false
 		}
-		if ok && qo.NonDecayedOnly && t.DecayBy <= uint64(bi.Height) {
+		if ok && qo.Active && t.ExpireBy <= uint64(bi.Height) {
 			ok = false
 		}
 		return ok
@@ -184,11 +184,11 @@ func (m *Manager) GetByProposer(
 	return res, nil
 }
 
-// GetNonDecayedTickets finds non-decayed tickets that have the given proposer
+// GetUnExpiredTickets finds unexpired tickets that have the given proposer
 // public key as the proposer or the delegator;
 // If maturityHeight is non-zero, then only tickets that reached maturity before
 // or on the given height are selected. Otherwise, the current chain height is used.
-func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*tickettypes.Ticket, error) {
+func (m *Manager) GetUnExpiredTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*tickettypes.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -206,15 +206,15 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint6
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
-			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not decayed
+			(t.ExpireBy > uint64(bi.Height) ||
+				(t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not expired
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegator or not
 	})
 
 	return result, nil
 }
 
-// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
+// CountActiveValidatorTickets returns the number of matured and unexpired tickets.
 func (m *Manager) CountActiveValidatorTickets() (int, error) {
 
 	// Get the last committed block
@@ -226,14 +226,14 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 	count := m.s.Count(func(t *tickettypes.Ticket) bool {
 		return t.Type == txns.TxTypeValidatorTicket &&
 			t.MatureBy <= uint64(bi.Height) &&
-			t.DecayBy > uint64(bi.Height)
+			t.ExpireBy > uint64(bi.Height)
 	})
 
 	return count, nil
 }
 
 // GetNonDelegatedTickets returns all non-delegated,
-// non-decayed tickets belonging to the given public key.
+// unexpired tickets belonging to the given public key.
 //
 // pubKey: The public key of the proposer
 // ticketType: Filter the search to a specific ticket type
@@ -250,7 +250,7 @@ func (m *Manager) GetNonDelegatedTickets(
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
+			(t.ExpireBy > uint64(bi.Height) || (t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -259,7 +259,7 @@ func (m *Manager) GetNonDelegatedTickets(
 }
 
 // ValueOfNonDelegatedTickets returns the sum of value of all
-// non-delegated, non-decayed tickets which has the given public
+// non-delegated, unexpired tickets which has the given public
 // key as the proposer; Includes both validator and host tickets.
 //
 // pubKey: The public key of the proposer
@@ -281,7 +281,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
+			(t.ExpireBy > uint64(bi.Height) || (t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -296,7 +296,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 }
 
 // ValueOfDelegatedTickets returns the sum of value of all
-// delegated, non-decayed tickets which has the given public
+// delegated, unexpired tickets which has the given public
 // key as the proposer; Includes both validator and host tickets.
 //
 // pubKey: The public key of the proposer
@@ -318,7 +318,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
+			(t.ExpireBy > uint64(bi.Height) || (t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator != ""
 	})
@@ -332,7 +332,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 	return sumF, nil
 }
 
-// ValueOfTickets returns the sum of value of all non-decayed
+// ValueOfTickets returns the sum of value of all unexpired
 // tickets where the given public key is the proposer or delegator;
 // Includes both validator and host tickets.
 //
@@ -360,8 +360,8 @@ func (m *Manager) ValueOfTickets(
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
-			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not decayed
+			(t.ExpireBy > uint64(bi.Height) ||
+				(t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not expired
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegated or not
 	})
 
@@ -374,7 +374,7 @@ func (m *Manager) ValueOfTickets(
 	return sumF, nil
 }
 
-// ValueOfAllTickets returns the sum of value of all non-decayed
+// ValueOfAllTickets returns the sum of value of all unexpired
 // tickets; Includes both validator and host tickets.
 //
 // maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -393,7 +393,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
+			(t.ExpireBy > uint64(bi.Height) || (t.ExpireBy == 0 && t.Type == txns.TxTypeHostTicket)) // not expired
 	})
 
 	var sum = decimal.Zero
@@ -415,9 +415,9 @@ func (m *Manager) QueryOne(qf func(t *tickettypes.Ticket) bool) *tickettypes.Tic
 	return m.s.QueryOne(qf)
 }
 
-// UpdateDecayBy updates the decay height of a ticket
-func (m *Manager) UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error {
-	m.s.UpdateOne(tickettypes.Ticket{DecayBy: newDecayHeight},
+// UpdateExpireBy updates the expire height of a ticket
+func (m *Manager) UpdateExpireBy(hash util.HexBytes, newExpireHeight uint64) error {
+	m.s.UpdateOne(tickettypes.Ticket{ExpireBy: newExpireHeight},
 		func(t *tickettypes.Ticket) bool { return t.Hash.Equal(hash) })
 	return nil
 }

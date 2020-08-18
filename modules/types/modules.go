@@ -68,7 +68,7 @@ type Module interface {
 type ChainModule interface {
 	Module
 	GetBlock(height string) util.Map
-	GetCurrentHeight() util.Map
+	GetHeight() string
 	GetBlockInfo(height string) util.Map
 	GetValidators(height string) (res []util.Map)
 }
@@ -88,14 +88,14 @@ type PoolModule interface {
 
 type UserModule interface {
 	Module
-	ListLocalAccounts() []string
+	GetKeys() []string
 	GetKey(address string, passphrase ...string) string
 	GetPublicKey(address string, passphrase ...string) string
 	GetNonce(address string, height ...uint64) string
 	GetAccount(address string, height ...uint64) util.Map
 	GetAvailableBalance(address string, height ...uint64) string
 	GetStakedBalance(address string, height ...uint64) string
-	GetValidatorInfo(includePrivKey ...bool) util.Map
+	GetValidatorKey(includePrivKey ...bool) util.Map
 	SetCommission(params map[string]interface{}, options ...interface{}) util.Map
 	SendCoin(params map[string]interface{}, options ...interface{}) util.Map
 }
@@ -126,8 +126,8 @@ type TicketModule interface {
 	Module
 	BuyValidatorTicket(params map[string]interface{}, options ...interface{}) util.Map
 	BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map
-	ListValidatorTicketsByProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
-	ListHostTicketsByProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
+	GetValidatorTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map
+	GetHostTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map
 	ListTopValidators(limit ...int) []util.Map
 	ListTopHosts(limit ...int) []util.Map
 	TicketStats(proposerPubKey ...string) (result util.Map)

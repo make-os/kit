@@ -440,9 +440,9 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
-	// Set the decay height for each host stake unbond request
+	// Set the expire height for each host stake unbond request
 	for _, ticketHash := range a.unbondHostReqs {
-		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.curBlock.Height))
+		a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
 	}
 
 	// Create new repositories

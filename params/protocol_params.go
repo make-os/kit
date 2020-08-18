@@ -39,10 +39,10 @@ var (
 	MinTicketMatDur = 3
 
 	// MaxTicketActiveDur is the number of blocks before a matured
-	// ticket is considered spent or decayed.
+	// ticket is considered spent or expired.
 	MaxTicketActiveDur = 100
 
-	// NumBlocksInThawPeriod is the number of blocks a decayed ticket will
+	// NumBlocksInThawPeriod is the number of blocks a expired ticket will
 	// exist for before it can be unbonded
 	NumBlocksInThawPeriod = 10
 
@@ -101,9 +101,9 @@ var (
 	// NumTopHostsLimit is maximum the number of top hosts
 	NumTopHostsLimit = 21
 
-	// CostOfNamespace is the amount of native coin required to obtain a
+	// NamespaceRegFee is the amount of native coin required to obtain a
 	// repo namespace
-	CostOfNamespace = decimal.NewFromFloat(1)
+	NamespaceRegFee = decimal.NewFromFloat(1)
 
 	// NamespaceTTL is the number of blocks of a namespace life span
 	NamespaceTTL = 10

@@ -2,7 +2,6 @@ package validation
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -413,7 +412,7 @@ func CheckTxSetDelegateCommission(tx *txns.TxSetDelegateCommission, index int) e
 	}
 
 	if tx.Commission.Decimal().GreaterThan(decimal.NewFromFloat(100)) {
-		return util.FieldErrorWithIndex(index, "commission", "commission rate cannot exceed 100%%")
+		return feI(index, "commission", "commission rate cannot exceed 100%%")
 	}
 
 	if err := checkCommon(tx, index); err != nil {
@@ -471,7 +470,7 @@ func CheckTxPush(tx *txns.TxPush, index int) error {
 // CheckNamespaceDomains checks namespace domains and targets
 func CheckNamespaceDomains(domains map[string]string, index int) error {
 	for domain, target := range domains {
-		if !regexp.MustCompile(identifier.IdentifierRegexp).MatchString(domain) {
+		if identifier.IsValidResourceNameNoMinLen(domain) != nil {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
 		}
 		if !identifier.IsFullNativeNamespace(target) {
@@ -503,15 +502,15 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceRegister, index int) error {
 		return err
 	}
 
-	if tx.TransferTo != "" {
-		if crypto.IsValidUserAddr(tx.TransferTo) != nil && identifier.IsValidResourceName(tx.TransferTo) != nil {
-			return feI(index, "to", "invalid value. Expected an address or a repository name")
+	if tx.To != "" {
+		if crypto.IsValidUserAddr(tx.To) != nil && identifier.IsValidResourceName(tx.To) != nil {
+			return feI(index, "to", "invalid value. Expected a user address or a repository name")
 		}
 	}
 
-	if !tx.Value.Decimal().Equal(params.CostOfNamespace) {
+	if !tx.Value.Decimal().Equal(params.NamespaceRegFee) {
 		return feI(index, "value", fmt.Sprintf("invalid value; has %s, want %s",
-			tx.Value, params.CostOfNamespace.String()))
+			tx.Value, params.NamespaceRegFee.String()))
 	}
 
 	if len(tx.Domains) > 0 {

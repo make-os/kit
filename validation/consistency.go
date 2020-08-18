@@ -117,11 +117,11 @@ func CheckTxUnbondTicketConsistency(
 	}
 
 	// Ensure the ticket is still active
-	decayBy := ticket.DecayBy
-	if decayBy != 0 && decayBy > uint64(bi.Height) {
-		return feI(index, "hash", "ticket is already decaying")
-	} else if decayBy != 0 && decayBy <= uint64(bi.Height) {
-		return feI(index, "hash", "ticket has already decayed")
+	expireBy := ticket.ExpireBy
+	if expireBy != 0 && expireBy > uint64(bi.Height) {
+		return feI(index, "hash", "ticket is already expireing")
+	} else if expireBy != 0 && expireBy <= uint64(bi.Height) {
+		return feI(index, "hash", "ticket has already expired")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
@@ -299,17 +299,17 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 	}
 
 	// If transfer recipient is a repo name
-	if tx.TransferTo != "" &&
-		identifier.IsValidResourceName(tx.TransferTo) == nil &&
-		crypto.IsValidUserAddr(tx.TransferTo) != nil {
-		if logic.RepoKeeper().Get(tx.TransferTo).IsNil() {
+	if tx.To != "" &&
+		identifier.IsValidResourceName(tx.To) == nil &&
+		crypto.IsValidUserAddr(tx.To) != nil {
+		if logic.RepoKeeper().Get(tx.To).IsNil() {
 			return feI(index, "to", "repo does not exist")
 		}
 	}
 
 	// If transfer recipient is an address of an account
-	if tx.TransferTo != "" && identifier.IsValidUserAddr(tx.TransferTo) == nil {
-		if logic.AccountKeeper().Get(identifier.Address(tx.TransferTo)).IsNil() {
+	if tx.To != "" && identifier.IsValidUserAddr(tx.To) == nil {
+		if logic.AccountKeeper().Get(identifier.Address(tx.To)).IsNil() {
 			return feI(index, "to", "account does not exist")
 		}
 	}

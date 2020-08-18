@@ -96,28 +96,28 @@ var _ = Describe("Manager", func() {
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       50,
-				DecayBy:        1000,
+				ExpireBy:       1000,
 			}
 			ticketB := &tickettypes.Ticket{
 				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       101,
-				DecayBy:        1000,
+				ExpireBy:       1000,
 			}
 			ticketC := &tickettypes.Ticket{
 				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       50,
-				DecayBy:        1000,
+				ExpireBy:       1000,
 			}
 			ticketD := &tickettypes.Ticket{
 				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       101,
-				DecayBy:        10,
+				ExpireBy:       10,
 			}
 
 			When("immature=true", func() {
@@ -130,7 +130,7 @@ var _ = Describe("Manager", func() {
 
 				Specify("that only immature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, crypto.StrToPublicKey("pub_key").ToBytes32(), tickettypes.QueryOptions{
-						ImmatureOnly: true,
+						Immature: true,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
@@ -148,7 +148,7 @@ var _ = Describe("Manager", func() {
 
 				Specify("that mature and immature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						ImmatureOnly: false,
+						Immature: false,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
@@ -165,7 +165,7 @@ var _ = Describe("Manager", func() {
 
 				Specify("that only mature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						MaturedOnly: true,
+						Matured: true,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
@@ -183,14 +183,14 @@ var _ = Describe("Manager", func() {
 
 				Specify("that mature and immature tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						MaturedOnly: false,
+						Matured: false,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
 				})
 			})
 
-			When("decayed=true", func() {
+			When("expired=true", func() {
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
@@ -198,9 +198,9 @@ var _ = Describe("Manager", func() {
 					Expect(err).To(BeNil())
 				})
 
-				Specify("that only decayed tickets are returned", func() {
+				Specify("that only expired tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						DecayedOnly: true,
+						Expired: true,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
@@ -208,7 +208,7 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			When("decayed=false", func() {
+			When("expired=false", func() {
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
@@ -216,16 +216,16 @@ var _ = Describe("Manager", func() {
 					Expect(err).To(BeNil())
 				})
 
-				Specify("that decayed and non-decayed tickets are returned", func() {
+				Specify("that expired and unexpired tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						DecayedOnly: false,
+						Expired: false,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
 				})
 			})
 
-			When("nonDecayed=true", func() {
+			When("active=true", func() {
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
@@ -233,9 +233,9 @@ var _ = Describe("Manager", func() {
 					Expect(err).To(BeNil())
 				})
 
-				Specify("that only non-decayed tickets are returned", func() {
+				Specify("that only unexpired tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						NonDecayedOnly: true,
+						Active: true,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
@@ -243,7 +243,7 @@ var _ = Describe("Manager", func() {
 				})
 			})
 
-			When("nonDecayed=false", func() {
+			When("active=false", func() {
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
@@ -251,9 +251,9 @@ var _ = Describe("Manager", func() {
 					Expect(err).To(BeNil())
 				})
 
-				Specify("that decayed and non-decayed tickets are returned", func() {
+				Specify("that expired and unexpired tickets are returned", func() {
 					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), tickettypes.QueryOptions{
-						NonDecayedOnly: false,
+						Active: false,
 					})
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
@@ -264,8 +264,8 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".CountActiveValidatorTickets", func() {
-		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 200}
-		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 150}
+		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 200}
+		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 150}
 
 		When("only one live ticket exist", func() {
 			BeforeEach(func() {
@@ -315,12 +315,12 @@ var _ = Describe("Manager", func() {
 					Expect(tickets).To(HaveLen(1))
 				})
 
-				Specify("that the ticket's matureBy=160 and decayBy=200", func() {
+				Specify("that the ticket's matureBy=160 and expireBy=200", func() {
 					tickets := mgr.s.Query(func(*tickettypes.Ticket) bool { return true })
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
 					Expect(tickets[0].MatureBy).To(Equal(uint64(160)))
-					Expect(tickets[0].DecayBy).To(Equal(uint64(200)))
+					Expect(tickets[0].ExpireBy).To(Equal(uint64(200)))
 				})
 			})
 
@@ -339,12 +339,12 @@ var _ = Describe("Manager", func() {
 					Expect(tickets).To(HaveLen(1))
 				})
 
-				Specify("that the ticket's matureBy=160 and decayBy=0", func() {
+				Specify("that the ticket's matureBy=160 and expireBy=0", func() {
 					tickets := mgr.s.Query(func(*tickettypes.Ticket) bool { return true })
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(1))
 					Expect(tickets[0].MatureBy).To(Equal(uint64(160)))
-					Expect(tickets[0].DecayBy).To(Equal(uint64(0)))
+					Expect(tickets[0].ExpireBy).To(Equal(uint64(0)))
 				})
 			})
 		})
@@ -436,7 +436,7 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".UpdateDecayBy", func() {
+	Describe(".UpdateExpireBy", func() {
 		var tx types.BaseTx
 		var tickets []*tickettypes.Ticket
 
@@ -454,18 +454,18 @@ var _ = Describe("Manager", func() {
 				Expect(tickets).To(HaveLen(1))
 			})
 
-			It("should update decayBy to 260", func() {
-				Expect(mgr.UpdateDecayBy(tickets[0].Hash, 260)).To(BeNil())
+			It("should update expireBy to 260", func() {
+				Expect(mgr.UpdateExpireBy(tickets[0].Hash, 260)).To(BeNil())
 				tickets = mgr.s.Query(func(*tickettypes.Ticket) bool { return true })
 				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0].DecayBy).To(Equal(uint64(260)))
+				Expect(tickets[0].ExpireBy).To(Equal(uint64(260)))
 			})
 		})
 	})
 
 	Describe(".GetByHash", func() {
 		When("one ticket exist", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
@@ -488,9 +488,9 @@ var _ = Describe("Manager", func() {
 
 	Describe(".getTopTickets", func() {
 		When("proposer (pub_key1) has 1 self-owned ticket (value=3) and 1 delegated ticket (value=1) and proposer (pub_key2) has 1 delegated ticket (value=10)", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeHostTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-			ticket3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "10"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeHostTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "1"}
+			ticket3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "10"}
 
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
@@ -526,12 +526,12 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".GetNonDelegatedTickets", func() {
-		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
-		ticket3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_3"), Type: txns.TxTypeHostTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_4 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_4"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
+		ticket3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "1"}
+		ticket3_2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "1"}
+		ticket3_3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_3"), Type: txns.TxTypeHostTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "1"}
+		ticket3_4 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3_4"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "1"}
 
 		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
 			BeforeEach(func() {
@@ -568,8 +568,8 @@ var _ = Describe("Manager", func() {
 
 	Describe(".ValueOfTickets", func() {
 		When("pubkey is proposer of a ticket with value=3 and delegator of a ticket with value=4", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -585,8 +585,8 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("pubkey is proposer of a ticket with value=3", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -603,8 +603,8 @@ var _ = Describe("Manager", func() {
 
 		When("maturity height is 5", func() {
 			When("pubkey is proposer of a ticket with value=3", func() {
-				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
@@ -623,8 +623,8 @@ var _ = Describe("Manager", func() {
 
 	Describe(".ValueOfAllTickets", func() {
 		When("there are two tickets of value 3 and 4 respectively", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -641,8 +641,8 @@ var _ = Describe("Manager", func() {
 
 		When("maturity height is 5", func() {
 			When("there are two tickets of value 3 and 4 respectively", func() {
-				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
@@ -661,8 +661,8 @@ var _ = Describe("Manager", func() {
 
 	Describe(".ValueOfNonDelegatedTickets", func() {
 		When("pubkey is proposer of a ticket with value=3 and delegator of a ticket with value=4", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -678,8 +678,8 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("pubkey is proposer of non-delegated tickets with values=3,4", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -696,8 +696,8 @@ var _ = Describe("Manager", func() {
 
 		When("maturity height is 5", func() {
 			When("pubkey is proposer of non-delegated tickets with values=3,4", func() {
-				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
@@ -716,8 +716,8 @@ var _ = Describe("Manager", func() {
 
 	Describe(".ValueOfDelegatedTickets", func() {
 		When("pubkey is proposer of a tickets A with value=3 and B with value 4; B is delegated", func() {
-			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -733,8 +733,8 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("pubkey is proposer of a tickets A with value=3 and B with value 4; A and B are delegated", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -751,8 +751,8 @@ var _ = Describe("Manager", func() {
 
 		When("maturity height is 5", func() {
 			When("pubkey is proposer of a tickets A with value=3 and B with value 4; A and B are delegated", func() {
-				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
@@ -769,10 +769,10 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".GetNonDecayedTickets", func() {
-		When("pubkey is proposer of a tickets A with value=3 and B with value 4; B is decayed", func() {
-			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 1, Value: "4"}
+	Describe(".GetUnExpiredTickets", func() {
+		When("pubkey is proposer of a tickets A with value=3 and B with value 4; B is expired", func() {
+			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 1, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -781,15 +781,15 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return length = 1", func() {
-				res, err := mgr.GetNonDecayedTickets(key.PubKey().MustBytes32(), 0)
+				res, err := mgr.GetUnExpiredTickets(key.PubKey().MustBytes32(), 0)
 				Expect(err).To(BeNil())
 				Expect(len(res)).To(Equal(1))
 			})
 		})
 
 		When("pubkey is proposer of a tickets A with value=3 and B with value 4; B is delegated", func() {
-			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
@@ -798,7 +798,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return length = 2", func() {
-				res, err := mgr.GetNonDecayedTickets(key.PubKey().MustBytes32(), 0)
+				res, err := mgr.GetUnExpiredTickets(key.PubKey().MustBytes32(), 0)
 				Expect(err).To(BeNil())
 				Expect(len(res)).To(Equal(2))
 			})
@@ -806,8 +806,8 @@ var _ = Describe("Manager", func() {
 
 		When("maturityHeight is set to non-zero", func() {
 			When("pubkey is proposer of a tickets A with value=3 and B with value 4; B is delegated", func() {
-				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
+				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
@@ -816,7 +816,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("should return length = 0", func() {
-					res, err := mgr.GetNonDecayedTickets(key.PubKey().MustBytes32(), 5)
+					res, err := mgr.GetUnExpiredTickets(key.PubKey().MustBytes32(), 5)
 					Expect(err).To(BeNil())
 					Expect(len(res)).To(Equal(0))
 				})

@@ -8,23 +8,23 @@ import (
 
 // TxNamespaceRegister implements BaseTx, it describes a transaction for acquiring a namespace
 type TxNamespaceRegister struct {
-	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxValue   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name       string            `json:"name" msgpack:"name" mapstructure:"name"`          // The name of the namespace
-	TransferTo string            `json:"to" msgpack:"to" mapstructure:"to"`                // Name of repo or address that will own the name.
-	Domains    map[string]string `json:"domains" msgpack:"domains" mapstructure:"domains"` // Dictionary of namespace domains and their target
+	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
+	Name      string            `json:"name" msgpack:"name" mapstructure:"name"`          // The name of the namespace
+	To        string            `json:"to" msgpack:"to" mapstructure:"to"`                // Name of repo or address that will own the name.
+	Domains   map[string]string `json:"domains" msgpack:"domains" mapstructure:"domains"` // Dictionary of namespace domains and their target
 }
 
 // NewBareTxNamespaceRegister returns an instance of TxNamespaceRegister with zero values
 func NewBareTxNamespaceRegister() *TxNamespaceRegister {
 	return &TxNamespaceRegister{
-		TxType:     &TxType{Type: TxTypeNamespaceRegister},
-		TxCommon:   NewBareTxCommon(),
-		TxValue:    &TxValue{Value: "0"},
-		Name:       "",
-		TransferTo: "",
-		Domains:    make(map[string]string),
+		TxType:   &TxType{Type: TxTypeNamespaceRegister},
+		TxCommon: NewBareTxCommon(),
+		TxValue:  &TxValue{Value: "0"},
+		Name:     "",
+		To:       "",
+		Domains:  make(map[string]string),
 	}
 }
 
@@ -39,7 +39,7 @@ func (tx *TxNamespaceRegister) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.SenderPubKey,
 		tx.Name,
 		tx.Value,
-		tx.TransferTo,
+		tx.To,
 		tx.Domains)
 }
 
@@ -54,7 +54,7 @@ func (tx *TxNamespaceRegister) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Name,
 		&tx.Value,
-		&tx.TransferTo,
+		&tx.To,
 		&tx.Domains)
 }
 
