@@ -67,7 +67,7 @@ var _ = Describe("IssueStatus", func() {
 			Expect(err).To(MatchError("failed to read recent comment: error"))
 		})
 
-		It("should print 'opened' when post body includes a closed=false directive", func() {
+		It("should print 'open' when post body includes a closed=false directive", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
@@ -81,7 +81,7 @@ var _ = Describe("IssueStatus", func() {
 				StdOut: buf,
 			})
 			Expect(err).To(BeNil())
-			Expect(buf.String()).To(Equal("opened\n"))
+			Expect(buf.String()).To(Equal("open\n"))
 		})
 
 		It("should print 'closed' when post body includes a closed=true directive", func() {

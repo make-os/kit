@@ -162,7 +162,7 @@ var _ = Describe("SignCommit", func() {
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			err := SignCommitCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("get-next-nonce error: error"))
+			Expect(err.Error()).To(Equal("failed to get next nonce: error"))
 		})
 
 		It("should return error when unable to get local repo HEAD", func() {

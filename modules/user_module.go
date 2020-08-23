@@ -188,7 +188,7 @@ func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
 
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
-		pass = m.keystore.AskForPasswordOnce()
+		pass, _ = m.keystore.AskForPasswordOnce()
 	} else {
 		pass = passphrase[0]
 	}

@@ -118,7 +118,7 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	if args.Nonce == 0 {
 		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get next nonce")
 		}
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}

@@ -122,8 +122,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	// Populate viper from environment variables
 	viper.SetEnvPrefix(AppEnvPrefix)
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	// Create app config and populate with default values

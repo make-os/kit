@@ -38,7 +38,7 @@ Always backup your keeps regularly.`,
 // keyCreateCmd represents key creation command
 var keyCreateCmd = &cobra.Command{
 	Use:   "create [flags]",
-	Short: "Create an key.",
+	Short: "Create a key.",
 	Long: `This command creates a key and encrypts it using a passphrase
 you provide. Do not forget your passphrase, you will not be able 
 to unlock your key if you do.

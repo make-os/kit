@@ -49,13 +49,13 @@ type IssueReadArgs struct {
 	// - %d 	- Date of creation
 	// - %H    	- The full hash of the comment
 	// - %h    	- The short hash of the comment
-	// - %n  	- The reference name of the issue
+	// - %n  	- The reference name of the post
 	// - %l 	- The label attached to the comment
 	// - %as 	- The assignees attached to the comment
 	// - %r 	- The short commit hash the current comment is replying to.
 	// - %R 	- The full commit hash the current comment is replying to.
 	// - %rs 	- The comment's reactions.
-	// - %pk 	- The pushers push key ID
+	// - %pk 	- The push key address
 	// - %cl 	- Flag for close status of the post (true/false)
 	Format string
 

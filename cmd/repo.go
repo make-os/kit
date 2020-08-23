@@ -257,7 +257,7 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 // repoHookCmd is a command handles git hooks
 var repoHookCmd = &cobra.Command{
 	Use:   "hook [flags] <remote>",
-	Short: "Performs hook operations",
+	Short: "Handles git hook events",
 	Run: func(cmd *cobra.Command, args []string) {
 		authMode, _ := cmd.Flags().GetBool("askpass")
 
@@ -294,7 +294,7 @@ func setupRepoHookCmd(cmd *cobra.Command) {
 // repoInitCmd represents a sub-command to initialize a new repository
 var repoInitCmd = &cobra.Command{
 	Use:   "init [flags] <name>",
-	Short: "Create and configure an empty Git repository and register it on the network",
+	Short: "Register a repository, initialize and configure it locally.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("repository name is required")
@@ -363,7 +363,7 @@ func init() {
 	rootCmd.AddCommand(repoCmd)
 	repoCmd.AddCommand(repoCreateCmd)
 	repoCmd.AddCommand(repoVoteCmd)
-	rootCmd.AddCommand(repoConfigCmd)
+	repoCmd.AddCommand(repoConfigCmd)
 	repoCmd.AddCommand(repoHookCmd)
 	repoCmd.AddCommand(repoInitCmd)
 

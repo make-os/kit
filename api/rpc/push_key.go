@@ -64,7 +64,7 @@ func (a *PushKeyAPI) APIs() rpc.APISet {
 		{
 			Name:        "register",
 			Namespace:   constants.NamespacePushKey,
-			Description: "Register a public key as a push key",
+			Description: "Register a public key on the network",
 			Func:        a.registerPushKey,
 		},
 	}

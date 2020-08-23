@@ -47,7 +47,7 @@ func (ks *Keystore) GetCmd(addrOrIdx, pass string, showPrivKey bool) error {
 
 	// if no passphrase or passphrase file is provided, ask for passphrase
 	if len(pass) == 0 {
-		passphrase = ks.AskForPasswordOnce()
+		passphrase, _ = ks.AskForPasswordOnce()
 		goto unlock
 	}
 

@@ -86,7 +86,7 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 			KeyStoreID: args.Target,
 			Passphrase: args.TargetPass,
 			TargetRepo: nil,
-			Prompt:     "Enter passphrase to unlock the target local account.\n",
+			Prompt:     "Enter passphrase to unlock the target key:\n",
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to unlock the local key")
@@ -98,9 +98,8 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 	key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{
 		KeyStoreID: args.SigningKey,
 		Passphrase: args.SigningKeyPass,
-		NoPrompt:   true,
 		TargetRepo: nil,
-		Prompt:     "Enter passphrase to unlock signing key:\n",
+		Prompt:     "Enter passphrase to unlock the signing key:\n",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to unlock the signing key")

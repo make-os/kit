@@ -73,9 +73,9 @@ var _ = Describe("UnlockKeyUI", func() {
 
 			It("should prompt user for passphrase to unlock account", func() {
 				var prompted bool
-				ks.getPassword = func(s string, i ...interface{}) string {
+				ks.getPassword = func(s string, i ...interface{}) (string, error) {
 					prompted = true
-					return "my_pass"
+					return "my_pass", nil
 				}
 				acct, passphrase, err := ks.UnlockKeyUI(key.Addr().String(), "", "")
 				Expect(err).To(BeNil())
@@ -87,9 +87,9 @@ var _ = Describe("UnlockKeyUI", func() {
 
 			It("should return error when user passphrase is incorrect", func() {
 				var prompted bool
-				ks.getPassword = func(s string, i ...interface{}) string {
+				ks.getPassword = func(s string, i ...interface{}) (string, error) {
 					prompted = true
-					return "my_wrong_pass"
+					return "my_wrong_pass", nil
 				}
 				_, _, err := ks.UnlockKeyUI(key.Addr().String(), "", "")
 				Expect(prompted).To(BeTrue())

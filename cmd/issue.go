@@ -122,7 +122,7 @@ var issueCreateCmd = &cobra.Command{
 // issueListCmd represents a sub-command to list all issues
 var issueListCmd = &cobra.Command{
 	Use:   "list [flags]",
-	Short: "List issues",
+	Short: "List all issues in the current repository",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		limit, _ := cmd.Flags().GetInt("limit")
@@ -154,7 +154,7 @@ var issueListCmd = &cobra.Command{
 
 // issueReadCmd represents a sub-command to read an issue
 var issueReadCmd = &cobra.Command{
-	Use:   "read [flags] [<issue-id>]",
+	Use:   "read [flags] [<issueId>]",
 	Short: "Read an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -190,7 +190,7 @@ var issueReadCmd = &cobra.Command{
 
 // issueCloseCmd represents a sub-command to close an issue
 var issueCloseCmd = &cobra.Command{
-	Use:   "close [flags]",
+	Use:   "close [flags] [<issueId>]",
 	Short: "Close an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -214,7 +214,7 @@ var issueCloseCmd = &cobra.Command{
 
 // issueReopenCmd represents a sub-command to reopen a merge request
 var issueReopenCmd = &cobra.Command{
-	Use:   "reopen",
+	Use:   "reopen [options] [<issueId>]",
 	Short: "Reopen a closed issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -238,7 +238,7 @@ var issueReopenCmd = &cobra.Command{
 
 // issueStatusCmd represents a sub-command to check status of an issue
 var issueStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   "status [<issueId>]",
 	Short: "Get the status of an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -267,28 +267,28 @@ func init() {
 	rootCmd.AddCommand(issueCmd)
 
 	issueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
-	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
-	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
+	issueCreateCmd.Flags().StringP("title", "t", "", "The title of the issue (max. 250 B)")
+	issueCreateCmd.Flags().StringP("body", "b", "", "The body of the issue (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
 	issueCreateCmd.Flags().StringSliceP("reactions", "e", nil, "Add reactions to a reply (max. 10)")
 	issueCreateCmd.Flags().StringP("labels", "l", "", "Specify labels to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringP("assignees", "a", "", "Specify push key of assignees to add to the issue/comment (max. 10)")
-	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
+	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git's `core.editor` program to write the body")
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
-	issueCreateCmd.Flags().Bool("new", false, "Force new issue to be created instead of adding a comment to HEAD")
+	issueCreateCmd.Flags().Bool("new", false, "Force a new issue to be created instead of adding a comment to HEAD")
 	issueCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
 	issueCreateCmd.Flags().IntP("id", "i", 0, "Specify a target issue number")
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
 	issueCreateCmd.Flags().BoolP("reopen", "o", false, "Open a closed issue")
-	issueCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	issueCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
 	issueReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
-	issueCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
-	issueReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	issueCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
+	issueReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
 
 	var commonIssueFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {
-			cmd.Flags().IntP("limit", "n", 0, "Limit the number of issues to returned")
+			cmd.Flags().IntP("limit", "n", 0, "Limit the number of records returned")
 			cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
 			cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
 			cmd.Flags().StringP("format", "f", "", "Set output format")

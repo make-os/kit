@@ -124,8 +124,8 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 	pf.String("rpc.password", "", "Set the RPC password")
 	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 	pf.Bool("rpc.https", false, "Force the client to use https:// protocol")
-	pf.Bool("no.rpc", false, "Disable the ability to query the JSON-RPC API")
-	pf.Bool("no.api", false, "Disable the ability to query the Remote API")
+	pf.Bool("no.rpc", false, "Disable connection to the JSON-RPC API")
+	pf.Bool("no.api", false, "Disable connection to the Remote API")
 	pf.String("api.address", "", "Set the Remote API address")
 	pf.Bool("api.https", false, "Force the client to use https:// protocol")
 }

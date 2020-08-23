@@ -102,7 +102,7 @@ var _ = Describe("SignNote", func() {
 			args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
 			err := SignNoteCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("error"))
+			Expect(err).To(MatchError("failed to get next nonce: error"))
 		})
 
 		It("should return error when unable to update remote URL with push token", func() {

@@ -22,8 +22,8 @@ var pushKeyCmd = &cobra.Command{
 
 // pushKeyRegCmd represents a sub-command to register a public key as a push key
 var pushKeyRegCmd = &cobra.Command{
-	Use:   "register [flags] <name>",
-	Short: "Register a public key as a push key",
+	Use:   "register [flags] <publicKey|keyId>",
+	Short: "Register a public key on the network",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("account ID or public key is required")

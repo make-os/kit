@@ -90,7 +90,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 		KeyStoreID: args.SigningKey,
 		Passphrase: args.SigningKeyPass,
 		TargetRepo: nil,
-		Prompt:     "Enter passphrase to unlock signing key:\n",
+		Prompt:     "Enter passphrase to unlock the signing key:\n",
 		Stdout:     args.Stdout,
 	})
 	if err != nil {

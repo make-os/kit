@@ -40,7 +40,7 @@ func MergeReqReopenCmd(r types.LocalRepo, args *MergeReqReopenArgs) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read recent comment")
 	} else if pb.Close != nil && !(*pb.Close) {
-		return fmt.Errorf("already opened")
+		return fmt.Errorf("already open")
 	}
 
 	// Create the post body

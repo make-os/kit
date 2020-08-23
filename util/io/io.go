@@ -20,10 +20,10 @@ type InputReaderArgs struct {
 }
 
 // InputReader describes a function for reading input from stdin
-type InputReader func(title string, args *InputReaderArgs) string
+type InputReader func(title string, args *InputReaderArgs) (string, error)
 
 // ReadInput starts a prompt to collect single line input
-func ReadInput(title string, args *InputReaderArgs) string {
+func ReadInput(title string, args *InputReaderArgs) (string, error) {
 	if args.Before != nil {
 		args.Before()
 	}
@@ -32,11 +32,14 @@ func ReadInput(title string, args *InputReaderArgs) string {
 
 	if args.Password {
 		fmt.Print(survey.InputQuestionTemplate)
-		inp := readPasswordInput()
+		inp, err := readPasswordInput()
+		if err != nil {
+			return "", err
+		}
 		if args.After != nil {
 			args.After(inp)
 		}
-		return inp
+		return inp, nil
 	}
 
 	var inp string
@@ -46,7 +49,7 @@ func ReadInput(title string, args *InputReaderArgs) string {
 		args.After(inp)
 	}
 
-	return inp
+	return inp, nil
 }
 
 // ConfirmInputReader describes a function for reading user confirmation
@@ -62,12 +65,12 @@ func ConfirmInput(title string, def bool) bool {
 }
 
 // readPasswordInput starts a prompt to collect single line password input
-func readPasswordInput() string {
+func readPasswordInput() (string, error) {
 	password, err := gopass.GetPasswdMasked()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	return string(password[0:])
+	return string(password[0:]), nil
 }
 
 // LimitedReadToTmpFile copies n bytes from src into a temporary file.

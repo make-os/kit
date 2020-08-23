@@ -43,7 +43,7 @@ type IssueListArgs struct {
 	// - %H    	- The full hash of the first comment
 	// - %h    	- The short hash of the first comment
 	// - %n  	- The reference name of the post
-	// - %pk 	- The pushers push key ID
+	// - %pk 	- The push key address
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager

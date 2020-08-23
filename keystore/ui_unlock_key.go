@@ -35,7 +35,7 @@ func (ks *Keystore) UnlockKeyUI(addressOrIndex, passphrase, promptMsg string) (t
 
 	// Ask for passphrase if unset
 	if passphrase == "" {
-		passphrase = ks.AskForPasswordOnce(promptMsg)
+		passphrase, _ = ks.AskForPasswordOnce(promptMsg)
 	}
 
 	// If passphrase is not a path to a file, proceed to unlock the key.

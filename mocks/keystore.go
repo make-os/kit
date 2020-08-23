@@ -245,7 +245,7 @@ func (mr *MockKeystoreMockRecorder) AskForPassword(prompt ...interface{}) *gomoc
 }
 
 // AskForPasswordOnce mocks base method
-func (m *MockKeystore) AskForPasswordOnce(prompt ...string) string {
+func (m *MockKeystore) AskForPasswordOnce(prompt ...string) (string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range prompt {
@@ -253,7 +253,7 @@ func (m *MockKeystore) AskForPasswordOnce(prompt ...string) string {
 	}
 	ret := m.ctrl.Call(m, "AskForPasswordOnce", varargs...)
 	ret0, _ := ret[0].(string)
-	return ret0
+	return ret0, nil
 }
 
 // AskForPasswordOnce indicates an expected call of AskForPasswordOnce

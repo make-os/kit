@@ -123,7 +123,7 @@ var _ = Describe("SignTag", func() {
 
 			err := SignTagCmd(cfg, []string{"tag1"}, mockRepo, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("error getting nonce"))
+			Expect(err).To(MatchError("failed to get next nonce: error getting nonce"))
 			Expect(args.Message).To(Equal("tag1 message"))
 		})
 

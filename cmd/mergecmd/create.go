@@ -151,7 +151,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
 	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
-		args.Title = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &io2.InputReaderArgs{
+		args.Title, _ = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &io2.InputReaderArgs{
 			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
 		})
 		if len(args.Title) == 0 {
@@ -161,7 +161,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
 	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
-		args.Body = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &io2.InputReaderArgs{
+		args.Body, _ = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &io2.InputReaderArgs{
 			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
 		})
 	}

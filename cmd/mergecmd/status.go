@@ -43,7 +43,7 @@ func MergeReqStatusCmd(r types.LocalRepo, args *MergeReqStatusArgs) error {
 		return nil
 	}
 
-	fmt.Fprintf(args.StdOut, "opened\n")
+	fmt.Fprintf(args.StdOut, "open\n")
 
 	return nil
 }

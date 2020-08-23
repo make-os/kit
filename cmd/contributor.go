@@ -24,8 +24,8 @@ var contribCmd = &cobra.Command{
 
 // contribAddCmd represents a sub-command to add contributors to a repository
 var contribAddCmd = &cobra.Command{
-	Use:   "add [flags] <name>",
-	Short: "Add one or more contributors to a repository",
+	Use:   "add [flags] <pushKey>",
+	Short: "Add one or more contributors to a repository or a namespace or both",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("at least one push key address is required")
@@ -34,7 +34,7 @@ var contribAddCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name, _ := cmd.Flags().GetString("name")
-		propID, _ := cmd.Flags().GetString("propId")
+		propID, _ := cmd.Flags().GetString("id")
 		feeMode, _ := cmd.Flags().GetInt("feeMode")
 		feeCap, _ := cmd.Flags().GetFloat64("feeCap")
 		namespace, _ := cmd.Flags().GetString("namespace")
@@ -87,7 +87,7 @@ func init() {
 
 	// Set flags
 	contribAddCmd.Flags().StringP("name", "r", "", "The name of the target repository")
-	contribAddCmd.Flags().String("propId", "", "The unique proposal ID (default: current unix timestamp)")
+	contribAddCmd.Flags().String("id", "", "The unique proposal ID (default: current unix timestamp)")
 	contribAddCmd.Flags().Int("feeMode", 0, "Specify who pays the fees: 0=contributor, 1=repo, 2=repo (capped) ")
 	contribAddCmd.Flags().Float64("feeCap", 0, "Max. amount of repo balance the contributor(s) can spend on fees")
 	contribAddCmd.Flags().String("namespace", "", "Add contributor(s) to the given repo-owned namespace")

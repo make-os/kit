@@ -78,7 +78,7 @@ var _ = Describe("MergeReqReopen", func() {
 				},
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("already opened"))
+			Expect(err).To(MatchError("already open"))
 		})
 
 		Specify("that the correct body was created", func() {

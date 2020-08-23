@@ -9,7 +9,7 @@ import (
 // consoleCmd represents the console command
 var consoleCmd = &cobra.Command{
 	Use:   "console",
-	Short: "Start a JavaScript console mode and start the node",
+	Short: "Start a JavaScript console and connect the node to the network",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// Start the node and also start the console after the node has started

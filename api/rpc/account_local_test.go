@@ -18,7 +18,7 @@ var _ = Describe("AccountLocal", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".listAccounts", func() {
+	Describe(".getKeys", func() {
 		mods := &types.Modules{}
 		api := &LocalAccountAPI{mods}
 		testCases(map[string]*TestCase{

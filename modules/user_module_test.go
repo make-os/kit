@@ -144,7 +144,7 @@ var _ = Describe("UserModule", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
+				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -155,7 +155,7 @@ var _ = Describe("UserModule", func() {
 			It("should ask for passphrase and return private key when key unlock is successful", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
-				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
+				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
@@ -217,7 +217,7 @@ var _ = Describe("UserModule", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
+				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -228,7 +228,7 @@ var _ = Describe("UserModule", func() {
 			It("should ask for passphrase and return private key when key unlock is successful", func() {
 				mockKey := mocks.NewMockStoredKey(ctrl)
 				mockKey.EXPECT().IsUnprotected().Return(false)
-				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase")
+				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)

@@ -43,7 +43,7 @@ func IssueStatusCmd(r types.LocalRepo, args *IssueStatusArgs) error {
 		return nil
 	}
 
-	fmt.Fprintf(args.StdOut, "opened\n")
+	fmt.Fprintf(args.StdOut, "open\n")
 
 	return nil
 }

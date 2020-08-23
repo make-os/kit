@@ -17,7 +17,7 @@ var (
 )
 
 // promptFunc represents a function that can collect user input
-type promptFunc func(string, ...interface{}) string
+type promptFunc func(string, ...interface{}) (string, error)
 
 // Keystore implements Keystore. It provides the ability to
 // create, update, fetch and import keys and accounts.
@@ -34,7 +34,7 @@ type Keystore struct {
 func New(dir string) *Keystore {
 	am := new(Keystore)
 	am.dir = dir
-	am.getPassword = func(s string, args ...interface{}) string {
+	am.getPassword = func(s string, args ...interface{}) (string, error) {
 		s = fmt.Sprintf("\033[33m%s>\033[0m ", s)
 		return io2.ReadInput(fmt.Sprintf(s, args...), &io2.InputReaderArgs{Password: true})
 	}
@@ -60,12 +60,18 @@ func (ks *Keystore) AskForPassword(prompt ...string) (string, error) {
 	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
 
 	for {
-		passphrase := ks.getPassword("Passphrase")
+		passphrase, err := ks.getPassword("Passphrase")
+		if err != nil {
+			return "", err
+		}
 		if len(passphrase) == 0 {
 			continue
 		}
 
-		passphraseRepeat := ks.getPassword("Repeat Passphrase")
+		passphraseRepeat, err := ks.getPassword("Repeat Passphrase")
+		if err != nil {
+			return "", err
+		}
 		if passphrase != passphraseRepeat {
 			return "", fmt.Errorf("passphrases did not match")
 		}
@@ -76,7 +82,7 @@ func (ks *Keystore) AskForPassword(prompt ...string) (string, error) {
 
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
-func (ks *Keystore) AskForPasswordOnce(prompt ...string) string {
+func (ks *Keystore) AskForPasswordOnce(prompt ...string) (string, error) {
 
 	// Set and print prompt.
 	// If prompt is passed in, use it instead of the default
@@ -87,11 +93,14 @@ func (ks *Keystore) AskForPasswordOnce(prompt ...string) string {
 	fmt.Fprint(ks.out, colorfmt.BoldString(promptStr))
 
 	for {
-		passphrase := ks.getPassword("Passphrase")
+		passphrase, err := ks.getPassword("Passphrase")
+		if err != nil {
+			return "", err
+		}
 		if len(passphrase) == 0 {
 			continue
 		}
-		return passphrase
+		return passphrase, nil
 	}
 }
 

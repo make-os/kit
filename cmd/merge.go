@@ -391,18 +391,18 @@ func init() {
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")
 	mergeReqCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
 	mergeReqCreateCmd.Flags().StringSliceP("reactions", "e", nil, "Add reactions to a reply (max. 10)")
-	mergeReqCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
-	mergeReqCreateCmd.Flags().Bool("no-body", false, "Skip prompt for merge request body")
+	mergeReqCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git's `core.editor` program to write the body")
+	mergeReqCreateCmd.Flags().Bool("no-body", false, "Skip prompt for the merge request body")
 	mergeReqCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
 	mergeReqCreateCmd.Flags().IntP("id", "i", 0, "Specify a unique merge request number")
 	mergeReqCreateCmd.Flags().BoolP("close", "c", false, "Close the merge request")
-	mergeReqCreateCmd.Flags().Bool("new", false, "Force new issue to be created instead of adding a comment to HEAD")
+	mergeReqCreateCmd.Flags().Bool("new", false, "Force a new merge request to be created instead of adding a comment to HEAD")
 	mergeReqCreateCmd.Flags().BoolP("reopen", "o", false, "Re-open a closed merge request")
 	mergeReqCreateCmd.Flags().String("base", "", "Specify the base branch name")
 	mergeReqCreateCmd.Flags().String("baseHash", "", "Specify the current hash of the base branch")
 	mergeReqCreateCmd.Flags().String("target", "", "Specify the target branch name")
 	mergeReqCreateCmd.Flags().String("targetHash", "", "Specify the hash of the target branch")
-	mergeReqCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	mergeReqCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
 
 	mergeReqReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
@@ -414,8 +414,8 @@ func init() {
 	mergeReqFetchCmd.Flags().Bool("force-fetch", false, "Forcefully fetch the branch (uncommitted changes will be lost)")
 	mergeReqFetchCmd.Flags().BoolP("base", "b", false, "Fetch the base branch instead of the target branch")
 
-	mergeReqCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
-	mergeReqReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	mergeReqCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
+	mergeReqReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create the close comment (uncommitted changes will be lost)")
 
 	var commonFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {

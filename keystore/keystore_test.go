@@ -13,10 +13,10 @@ import (
 // testPrompt2 will return response with index equal to count
 // count is incremented each time the function is called.
 func testPrompt2(count *int, responses []string) promptFunc {
-	return func(prompt string, args ...interface{}) string {
+	return func(prompt string, args ...interface{}) (string, error) {
 		resp := responses[*count]
 		*count++
-		return resp
+		return resp, nil
 	}
 }
 
@@ -75,7 +75,7 @@ var _ = Describe("AccountMgr", func() {
 		It("should return the first input received", func() {
 			count := 0
 			am.getPassword = testPrompt2(&count, []string{"", "", "passAb"})
-			passphrase := am.AskForPasswordOnce()
+			passphrase, _ := am.AskForPasswordOnce()
 			Expect(passphrase).To(Equal("passAb"))
 		})
 	})

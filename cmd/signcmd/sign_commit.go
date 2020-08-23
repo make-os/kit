@@ -157,7 +157,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	if args.Nonce == 0 {
 		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
-			return errors2.Wrapf(err, "get-next-nonce error")
+			return errors2.Wrapf(err, "failed to get next nonce")
 		}
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}

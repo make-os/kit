@@ -61,7 +61,7 @@ type KeyPayload struct {
 type Keystore interface {
 	SetOutput(out io.Writer)
 	AskForPassword(prompt ...string) (string, error)
-	AskForPasswordOnce(prompt ...string) string
+	AskForPasswordOnce(prompt ...string) (string, error)
 	UnlockKeyUI(addressOrIndex, passphrase, promptMsg string) (StoredKey, string, error)
 	UpdateCmd(addressOrIndex, passphrase string) error
 	GetCmd(addrOrIdx, pass string, showPrivKey bool) error

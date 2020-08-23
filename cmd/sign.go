@@ -14,7 +14,7 @@ import (
 // signCmd represents the commit command
 var signCmd = &cobra.Command{
 	Use:   "sign",
-	Short: "Sign a commit, tag or note and generate push request token",
+	Short: "Sign a commit, tag or note and generate a push request token",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
@@ -83,7 +83,7 @@ var signCommitCmd = &cobra.Command{
 }
 
 var signTagCmd = &cobra.Command{
-	Use:   "tag",
+	Use:   "tag <name>",
 	Short: "Create and sign an annotated tag",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -137,8 +137,8 @@ var signTagCmd = &cobra.Command{
 }
 
 var signNoteCmd = &cobra.Command{
-	Use:   "notes",
-	Short: "Sign a note",
+	Use:   "note <name>",
+	Short: "Create a signed push request token for a note",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetFloat64("fee")
@@ -192,7 +192,7 @@ func init() {
 
 	// Top-level flags
 	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
-	pf.Bool("no-username", false, "Don't sent tokens on remote URLs")
+	pf.Bool("no-username", false, "Do not add tokens to the username part of the remote URLs")
 
 	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().String("head", "", "Specify the branch to use as git HEAD")

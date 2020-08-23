@@ -118,7 +118,7 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		validators, _ := cmd.Flags().GetStringSlice("validators")
 		validatorKey, _ := cmd.Flags().GetString("validator-key")
-		genesisTime, _ := cmd.Flags().GetUint64("genesis-time")
+		genesisTime, _ := cmd.Flags().GetUint64("gen-time")
 		genState, _ := cmd.Flags().GetString("gen-state")
 		tendermintInit(validatorKey, validators, genState, genesisTime)
 		fmt.Fprintln(os.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Node initialized!"))
@@ -129,6 +129,6 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().StringSliceP("validators", "v", nil, "Public key of initial validators")
 	initCmd.Flags().StringP("validator-key", "k", "", "Private key to use for validator role")
-	initCmd.Flags().Uint64P("genesis-time", "t", 0, "Specify genesis time (default: current UTC time)")
+	initCmd.Flags().Uint64P("gen-time", "t", 0, "Specify genesis time (default: current UTC time)")
 	initCmd.Flags().StringP("gen-state", "s", "", "Specify raw or path to genesis state")
 }

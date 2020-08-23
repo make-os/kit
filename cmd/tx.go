@@ -12,7 +12,7 @@ import (
 // txCmd represents the repo command
 var txCmd = &cobra.Command{
 	Use:   "tx",
-	Short: "Access network transaction information",
+	Short: "Create and read transaction data or status",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
@@ -22,7 +22,7 @@ var txCmd = &cobra.Command{
 // txGetCmd represents a sub-command to get a finalized transaction
 var txGetCmd = &cobra.Command{
 	Use:   "get [flags] <hash>",
-	Short: "Get a finalized transaction",
+	Short: "Get a transaction object or status by its hash",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("transaction hash is required")
