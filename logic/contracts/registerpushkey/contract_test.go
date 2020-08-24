@@ -4,18 +4,18 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	logic2 "github.com/make-os/lobe/logic"
+	"github.com/make-os/lobe/logic/contracts/registerpushkey"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	logic2 "github.com/themakeos/lobe/logic"
-	"github.com/themakeos/lobe/logic/contracts/registerpushkey"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("RegisterPushKeyContract", func() {

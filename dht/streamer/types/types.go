@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/themakeos/lobe/util/io"
+	"github.com/make-os/lobe/util/io"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 

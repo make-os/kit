@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/make-os/lobe/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
 )
 

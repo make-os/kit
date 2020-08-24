@@ -1,10 +1,10 @@
 package txns
 
 import (
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Common", func() {

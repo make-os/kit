@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/make-os/lobe/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
 )
 
 // testPrompt2 will return response with index equal to count

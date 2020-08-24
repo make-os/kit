@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 )
 
 func TestHonestComplete(t *testing.T) {

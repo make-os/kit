@@ -3,16 +3,16 @@ package cmd
 import (
 	"net"
 
+	"github.com/make-os/lobe/api/rpc/client"
+	apitypes "github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/console"
+	"github.com/make-os/lobe/keystore"
+	"github.com/make-os/lobe/modules"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/themakeos/lobe/api/rpc/client"
-	apitypes "github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/console"
-	"github.com/themakeos/lobe/keystore"
-	"github.com/themakeos/lobe/modules"
 )
 
 // connectToServer creates an RPC client to configured remote server.

@@ -6,12 +6,12 @@ import (
 	"io"
 	"time"
 
+	common2 "github.com/make-os/lobe/cmd/common"
+	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
+	cf "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	common2 "github.com/themakeos/lobe/cmd/common"
-	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
-	cf "github.com/themakeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

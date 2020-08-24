@@ -3,11 +3,11 @@ package crypto
 import (
 	"encoding/hex"
 
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/libs/bech32"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Crypto", func() {

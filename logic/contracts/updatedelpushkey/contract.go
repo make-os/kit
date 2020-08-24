@@ -1,11 +1,11 @@
 package updatedelpushkey
 
 import (
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/common"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
 )
 
 // PushKeyUpdateDeleteContract is a system contract to update or delete a push key.

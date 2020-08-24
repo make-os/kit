@@ -1,14 +1,14 @@
 package keepers
 
 import (
+	"github.com/make-os/lobe/pkgs/tree"
+	state2 "github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"github.com/themakeos/lobe/pkgs/tree"
-	state2 "github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util/identifier"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 )
 
 var _ = Describe("Account", func() {

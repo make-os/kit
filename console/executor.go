@@ -3,10 +3,10 @@ package console
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/pkgs/logger"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/pkgs/logger"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // Executor is responsible for executing operations inside a

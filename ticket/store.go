@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"sort"
 
-	types2 "github.com/themakeos/lobe/ticket/types"
+	types2 "github.com/make-os/lobe/ticket/types"
 
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/util"
 )
 
 const (

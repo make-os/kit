@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/txcmd"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/txcmd"
 )
 
 // txCmd represents the repo command

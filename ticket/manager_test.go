@@ -3,26 +3,26 @@ package ticket
 import (
 	"os"
 
-	tickettypes "github.com/themakeos/lobe/ticket/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
+	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/themakeos/lobe/crypto"
-	l "github.com/themakeos/lobe/logic"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/crypto"
+	l "github.com/make-os/lobe/logic"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/util"
 
-	"github.com/themakeos/lobe/storage"
+	"github.com/make-os/lobe/storage"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("Manager", func() {

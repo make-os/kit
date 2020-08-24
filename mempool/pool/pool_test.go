@@ -3,12 +3,12 @@ package pool
 import (
 	"time"
 
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
 )
 
 var _ = Describe("pool", func() {

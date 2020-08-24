@@ -7,11 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/remote/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 type GitVerifyArgs struct {

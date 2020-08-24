@@ -11,19 +11,19 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/make-os/lobe/api/rpc/client"
+	apitypes "github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/modules/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/spf13/cast"
-	"github.com/themakeos/lobe/api/rpc/client"
-	apitypes "github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/modules/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
 
 	"github.com/pkg/errors"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/themakeos/lobe/config"
+	"github.com/make-os/lobe/config"
 )
 
 // Console defines functionalities for create and using

@@ -1,12 +1,12 @@
 package types
 
 import (
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
+	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
-	crypto2 "github.com/themakeos/lobe/util/crypto"
-	"github.com/themakeos/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )

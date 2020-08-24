@@ -2,16 +2,16 @@ package modules_test
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
 )
 
 var _ = Describe("PoolModule", func() {

@@ -5,10 +5,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/node"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/node"
 )
 
 func start(onStart func(n *node.Node)) {

@@ -1,8 +1,8 @@
 package policy
 
 import (
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/types/state"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/types/state"
 )
 
 const (

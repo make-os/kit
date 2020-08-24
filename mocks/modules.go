@@ -7,9 +7,9 @@ package mocks
 import (
 	prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
+	types "github.com/make-os/lobe/modules/types"
+	util "github.com/make-os/lobe/util"
 	otto "github.com/robertkrimen/otto"
-	types "github.com/themakeos/lobe/modules/types"
-	util "github.com/themakeos/lobe/util"
 	reflect "reflect"
 )
 

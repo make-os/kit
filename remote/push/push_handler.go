@@ -6,18 +6,18 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/policy"
-	"github.com/themakeos/lobe/remote/push/types"
-	types2 "github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/remote/validation"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/util/crypto"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/policy"
+	"github.com/make-os/lobe/remote/push/types"
+	types2 "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/util/crypto"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
+	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 // Handler describes an interface for handling push updates,

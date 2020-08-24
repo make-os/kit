@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/make-os/lobe/remote/policy"
+	"github.com/make-os/lobe/remote/push"
+	"github.com/make-os/lobe/remote/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/policy"
-	"github.com/themakeos/lobe/remote/push"
-	"github.com/themakeos/lobe/remote/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )

@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore/types"
 )
 
 var _ = Describe("List", func() {

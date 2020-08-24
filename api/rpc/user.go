@@ -1,13 +1,13 @@
 package rpc
 
 import (
+	modtypes "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	modtypes "github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 // UserAPI provides RPC methods for various user related functionalities.

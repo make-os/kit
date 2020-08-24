@@ -1,9 +1,9 @@
 package txns
 
 import (
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/crypto"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/vmihailenco/msgpack"
 )
 

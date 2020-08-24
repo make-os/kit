@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules/types"
 	. "github.com/onsi/ginkgo"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules/types"
 )
 
 var _ = Describe("AccountLocal", func() {

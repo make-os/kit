@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/themakeos/lobe/cmd"
+	"github.com/make-os/lobe/cmd"
 )
 
 var (

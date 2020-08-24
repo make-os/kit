@@ -3,10 +3,10 @@ package validation
 import (
 	"time"
 
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 var validAddrRule = func(err error) func(interface{}) error {

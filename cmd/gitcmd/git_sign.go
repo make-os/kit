@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/remote/types"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/types"
 )
 
 type GitSignArgs struct {

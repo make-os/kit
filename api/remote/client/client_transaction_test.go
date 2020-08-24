@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/imroc/req"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Account", func() {

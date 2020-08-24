@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
 )
 
 // APIs returns all API handlers

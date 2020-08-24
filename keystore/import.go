@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // ImportCmd creates a new key from a private key stored in a file.

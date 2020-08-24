@@ -3,15 +3,15 @@ package keepers
 import (
 	"os"
 
-	state2 "github.com/themakeos/lobe/types/state"
+	state2 "github.com/make-os/lobe/types/state"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/pkgs/tree"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/pkgs/tree"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("RepoKeeper", func() {

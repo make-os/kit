@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/make-os/lobe/params"
+	repo3 "github.com/make-os/lobe/remote/repo"
+	"github.com/make-os/lobe/types/core"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/params"
-	repo3 "github.com/themakeos/lobe/remote/repo"
-	"github.com/themakeos/lobe/types/core"
 )
 
 // Pruner runs a scheduler that prunes repositories to remove unreachable or dangling

@@ -6,18 +6,18 @@ import (
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/push/types"
+	rr "github.com/make-os/lobe/remote/repo"
+	testutil2 "github.com/make-os/lobe/remote/testutil"
+	types2 "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phayes/freeport"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/push/types"
-	rr "github.com/themakeos/lobe/remote/repo"
-	testutil2 "github.com/themakeos/lobe/remote/testutil"
-	types2 "github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Server", func() {

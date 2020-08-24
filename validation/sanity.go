@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/validation"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	crypto2 "github.com/themakeos/lobe/util/crypto"
-	"github.com/themakeos/lobe/util/identifier"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
 	"github.com/thoas/go-funk"
 
 	v "github.com/go-ozzo/ozzo-validation"
+	"github.com/make-os/lobe/params"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/params"
 )
 
 // CheckRecipient validates the recipient address

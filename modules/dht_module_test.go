@@ -6,19 +6,19 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/multiformats/go-multiaddr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/dht"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("DHTModule", func() {

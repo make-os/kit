@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	usercmd "github.com/make-os/lobe/cmd/usercmd"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	usercmd "github.com/themakeos/lobe/cmd/usercmd"
 )
 
 // userCmd represents the user command

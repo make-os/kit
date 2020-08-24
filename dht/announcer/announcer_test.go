@@ -6,15 +6,15 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/dht/announcer"
+	"github.com/make-os/lobe/dht/server"
+	testutil2 "github.com/make-os/lobe/remote/testutil"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phayes/freeport"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/dht/announcer"
-	"github.com/themakeos/lobe/dht/server"
-	testutil2 "github.com/themakeos/lobe/remote/testutil"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("Announcer", func() {

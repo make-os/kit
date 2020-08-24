@@ -3,9 +3,9 @@ package plumbing
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/types"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/types"
-	types2 "github.com/themakeos/lobe/types"
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"

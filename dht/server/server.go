@@ -15,18 +15,18 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	record "github.com/libp2p/go-libp2p-record"
+	"github.com/make-os/lobe/config"
+	dht2 "github.com/make-os/lobe/dht"
+	announcer2 "github.com/make-os/lobe/dht/announcer"
+	"github.com/make-os/lobe/dht/streamer"
+	"github.com/make-os/lobe/dht/streamer/types"
+	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/config"
-	dht2 "github.com/themakeos/lobe/dht"
-	announcer2 "github.com/themakeos/lobe/dht/announcer"
-	"github.com/themakeos/lobe/dht/streamer"
-	"github.com/themakeos/lobe/dht/streamer/types"
-	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 var (
-	ProtocolPrefix = dht.ProtocolPrefix("/themakeos")
+	ProtocolPrefix = dht.ProtocolPrefix("/make-os")
 )
 
 // Server provides distributed hash table functionalities.

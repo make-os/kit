@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 // Constants

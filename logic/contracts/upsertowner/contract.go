@@ -1,16 +1,16 @@
 package upsertowner
 
 import (
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/common"
+	common2 "github.com/make-os/lobe/logic/proposals"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	common2 "github.com/themakeos/lobe/logic/proposals"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 )
 
 // UpsertOwnerContract is a system contract that creates a proposal to update or

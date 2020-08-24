@@ -8,12 +8,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/imroc/req"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Repo", func() {

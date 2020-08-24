@@ -6,12 +6,12 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	types1 "github.com/make-os/lobe/types"
+	core "github.com/make-os/lobe/types/core"
+	util "github.com/make-os/lobe/util"
 	types "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types0 "github.com/tendermint/tendermint/types"
-	types1 "github.com/themakeos/lobe/types"
-	core "github.com/themakeos/lobe/types/core"
-	util "github.com/themakeos/lobe/util"
 	reflect "reflect"
 )
 

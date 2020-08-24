@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	restclient "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/pkg/errors"
-	restclient "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/colorfmt"
 )
 
 // GetArgs contains arguments for GetCmd.

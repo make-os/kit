@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	rpc "github.com/themakeos/lobe/rpc"
+	rpc "github.com/make-os/lobe/rpc"
 	reflect "reflect"
 )
 

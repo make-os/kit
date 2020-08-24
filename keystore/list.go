@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/olekukonko/tablewriter"
 	"github.com/prometheus/common/log"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // List returns the accounts stored on disk.

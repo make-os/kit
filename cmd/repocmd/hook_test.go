@@ -7,14 +7,14 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/cmd/signcmd"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/cmd/signcmd"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
 	config2 "gopkg.in/src-d/go-git.v4/config"
 )
 

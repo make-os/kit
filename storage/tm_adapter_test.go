@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
 )
 
 var _ = Describe("TMDBAdapter", func() {

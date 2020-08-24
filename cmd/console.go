@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"github.com/make-os/lobe/console"
+	"github.com/make-os/lobe/node"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/console"
-	"github.com/themakeos/lobe/node"
 )
 
 // consoleCmd represents the console command

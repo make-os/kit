@@ -1,14 +1,14 @@
 package voteproposal
 
 import (
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/common"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
 )
 
 // ProposalVoteContract is a system contract for adding a vote on a proposal.

@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("Common", func() {

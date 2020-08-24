@@ -6,9 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 
+	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	pushtypes "github.com/make-os/lobe/remote/push/types"
 	"github.com/pkg/errors"
-	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
-	pushtypes "github.com/themakeos/lobe/remote/push/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"

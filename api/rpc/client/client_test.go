@@ -3,10 +3,10 @@ package client
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Client", func() {

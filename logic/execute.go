@@ -1,13 +1,13 @@
 package logic
 
 import (
+	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/logic/contracts"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"
-	"github.com/themakeos/lobe/dht"
-	"github.com/themakeos/lobe/logic/contracts"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
 )
 
 // ExecTx executes a transaction.

@@ -6,21 +6,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/themakeos/lobe/remote/push/types"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
+	"github.com/make-os/lobe/remote/push/types"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
 
+	"github.com/make-os/lobe/params"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/params"
 
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/validation"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/validation"
 )
 
 var _ = Describe("TxValidator", func() {

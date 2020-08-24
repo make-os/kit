@@ -8,16 +8,16 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/gen2brain/beeep"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/cmd/gitcmd"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/remote/repo"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/colorfmt"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/cmd/gitcmd"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/remote/repo"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
 
+	"github.com/make-os/lobe/config"
 	tmcfg "github.com/tendermint/tendermint/config"
-	"github.com/themakeos/lobe/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

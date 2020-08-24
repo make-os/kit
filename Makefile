@@ -28,7 +28,7 @@ vet:
 	go vet ./...
 
 genmocks:
-	mockgen -destination=mocks/remote_types.go -package mocks github.com/themakeos/lobe/remote/types LiteGit,LocalRepo,Commit
+	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks

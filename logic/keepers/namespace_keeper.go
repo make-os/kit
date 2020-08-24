@@ -3,11 +3,11 @@ package keepers
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/pkgs/tree"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/pkgs/tree"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/crypto"
 )
 
 // NamespaceKeeper manages namespaces.

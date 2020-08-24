@@ -4,18 +4,18 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/mergerequest"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
 	"github.com/mr-tron/base58"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/mergerequest"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/remote/validation"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
 )
 
 var _ = Describe("Validation", func() {

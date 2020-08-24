@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/util"
 	"github.com/olebedev/emitter"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/util"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/config"
 
+	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/spf13/viper"
-	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 var (

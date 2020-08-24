@@ -3,11 +3,11 @@ package pool
 import (
 	"time"
 
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

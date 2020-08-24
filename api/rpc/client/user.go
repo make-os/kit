@@ -3,11 +3,11 @@ package client
 import (
 	"time"
 
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 )
 
 // GetAccount gets an account corresponding to a given address

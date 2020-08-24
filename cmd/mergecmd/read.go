@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/make-os/lobe/cmd/common"
+	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/cmd/common"
-	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

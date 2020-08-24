@@ -1,10 +1,10 @@
 package types
 
 import (
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util/identifier"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util/identifier"
 )
 
 // HashResponse contains the hash of a transaction request

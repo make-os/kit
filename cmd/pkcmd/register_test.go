@@ -7,17 +7,17 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	restclient "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	types2 "github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	kstypes "github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	restclient "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	types2 "github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	kstypes "github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("SignCommit", func() {

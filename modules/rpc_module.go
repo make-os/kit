@@ -5,16 +5,16 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/types/constants"
 	"github.com/stretchr/objx"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/types/constants"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/make-os/lobe/util"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/util"
 )
 
 // RPCModule provides RPCClient functionalities

@@ -7,7 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	req "github.com/imroc/req"
-	types "github.com/themakeos/lobe/api/types"
+	types "github.com/make-os/lobe/api/types"
 	reflect "reflect"
 )
 

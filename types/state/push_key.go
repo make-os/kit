@@ -1,9 +1,9 @@
 package state
 
 import (
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
 )
 

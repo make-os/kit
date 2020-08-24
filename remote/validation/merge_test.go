@@ -5,18 +5,18 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	mr "github.com/make-os/lobe/logic/contracts/mergerequest"
+	"github.com/make-os/lobe/mocks"
+	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	mr "github.com/themakeos/lobe/logic/contracts/mergerequest"
-	"github.com/themakeos/lobe/mocks"
-	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/remote/validation"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Merge", func() {

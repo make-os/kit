@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/cmd/contribcmd"
+	"github.com/make-os/lobe/types/state"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/cmd/contribcmd"
-	"github.com/themakeos/lobe/types/state"
 )
 
 // contribCmd represents the contributor command

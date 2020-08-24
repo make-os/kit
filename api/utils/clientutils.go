@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"strconv"
 
+	remote "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/types"
 	"github.com/pkg/errors"
-	remote "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/types"
 )
 
 // NextNonceGetter describes a function for getting the next nonce of an account.

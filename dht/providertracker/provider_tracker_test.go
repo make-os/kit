@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht/providertracker"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/dht/providertracker"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("BasicProviderTracker", func() {

@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/bech32"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 var _ = Describe("Key", func() {

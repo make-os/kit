@@ -3,16 +3,16 @@ package config
 import (
 	golog "log"
 
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
 
 	"github.com/tendermint/tendermint/privval"
 
 	tmcfg "github.com/tendermint/tendermint/config"
 
+	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/olebedev/emitter"
 	"github.com/tendermint/tendermint/p2p"
-	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 // Globals holds references to global objects

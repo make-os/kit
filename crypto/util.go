@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/tendermint/tendermint/libs/bech32"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 // PublicKey represents a 32-byte ED25519 public key

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 	"github.com/thoas/go-funk"
 
 	"github.com/c-bata/go-prompt"

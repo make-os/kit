@@ -8,8 +8,8 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	network "github.com/libp2p/go-libp2p-core/network"
-	types "github.com/themakeos/lobe/dht/streamer/types"
-	io "github.com/themakeos/lobe/util/io"
+	types "github.com/make-os/lobe/dht/streamer/types"
+	io "github.com/make-os/lobe/util/io"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	reflect "reflect"
 )

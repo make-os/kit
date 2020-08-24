@@ -1,11 +1,11 @@
 package core
 
 import (
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/util"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/mempool"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/util"
 )
 
 // Mempool describes a transaction pool for ordering transactions that will be

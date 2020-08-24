@@ -9,16 +9,16 @@ import (
 	"github.com/golang/mock/gomock"
 	routing2 "github.com/libp2p/go-libp2p-core/routing"
 	record "github.com/libp2p/go-libp2p-record"
+	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/server"
+	testutil2 "github.com/make-os/lobe/remote/testutil"
 	"github.com/phayes/freeport"
-	"github.com/themakeos/lobe/dht"
-	"github.com/themakeos/lobe/dht/server"
-	testutil2 "github.com/themakeos/lobe/remote/testutil"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/testutil"
 )
 
 type testObjectFinder struct {

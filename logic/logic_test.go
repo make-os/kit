@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
 
-	l "github.com/themakeos/lobe/logic"
+	l "github.com/make-os/lobe/logic"
 )
 
 var _ = Describe("Logic", func() {

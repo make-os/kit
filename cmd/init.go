@@ -11,6 +11,9 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -18,9 +21,6 @@ import (
 	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // tendermintInit initializes tendermint

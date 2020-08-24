@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	tmmem "github.com/tendermint/tendermint/mempool"
 
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/testutil"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

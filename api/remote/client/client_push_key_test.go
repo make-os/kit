@@ -8,12 +8,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/imroc/req"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 var _ = Describe("Account", func() {

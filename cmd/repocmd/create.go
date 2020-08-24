@@ -9,15 +9,15 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
+	restclient "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
-	restclient "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
 )
 
 // CreateArgs contains arguments for CreateCmd.

@@ -8,15 +8,15 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/mocks"
+	types2 "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/mocks"
-	types2 "github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("GitVerify", func() {

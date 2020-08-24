@@ -5,15 +5,15 @@ import (
 	"io/ioutil"
 
 	"github.com/golang/mock/gomock"
+	restclient "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/cmd/txcmd"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	restclient "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/cmd/txcmd"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("TxCmd", func() {

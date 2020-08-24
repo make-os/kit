@@ -4,14 +4,14 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
 )
 
 func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {

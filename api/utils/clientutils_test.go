@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
+	rest "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/mocks"
+	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	rest "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/mocks"
-	mocks2 "github.com/themakeos/lobe/mocks/rpc"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("ClientUtils", func() {

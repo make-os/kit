@@ -1,11 +1,11 @@
 package rpc
 
 import (
-	types2 "github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
+	types2 "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 )
 
 // TransactionAPI provides RPC methods for various local account management functionality.

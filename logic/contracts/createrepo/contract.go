@@ -1,15 +1,15 @@
 package createrepo
 
 import (
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	"github.com/themakeos/lobe/logic/contracts/registerpushkey"
-	"github.com/themakeos/lobe/remote/policy"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/common"
+	"github.com/make-os/lobe/logic/contracts/registerpushkey"
+	"github.com/make-os/lobe/remote/policy"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 )
 
 // CreateRepoContract is a system contract for creating a repository.

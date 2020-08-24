@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/gohugoio/hugo/parser/pageparser"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"

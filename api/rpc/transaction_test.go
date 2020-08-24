@@ -2,11 +2,11 @@ package rpc
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Transaction", func() {

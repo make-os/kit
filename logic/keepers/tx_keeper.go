@@ -1,10 +1,10 @@
 package keepers
 
 import (
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
 )
 
 // TxKeeper manages transaction data

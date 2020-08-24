@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
+	apitypes "github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
-	apitypes "github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 type ServeMux interface {

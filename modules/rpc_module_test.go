@@ -4,16 +4,16 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/config"
+	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/config"
-	mocks2 "github.com/themakeos/lobe/mocks/rpc"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("RPCModule", func() {

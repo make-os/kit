@@ -6,11 +6,11 @@ import (
 	"net/http/httptest"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("API", func() {

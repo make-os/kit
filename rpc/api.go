@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 )
 
 // Params represent JSON API parameters

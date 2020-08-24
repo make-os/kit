@@ -9,7 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	host "github.com/libp2p/go-libp2p-core/host"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	types "github.com/themakeos/lobe/dht/streamer/types"
+	types "github.com/make-os/lobe/dht/streamer/types"
 	reflect "reflect"
 )
 

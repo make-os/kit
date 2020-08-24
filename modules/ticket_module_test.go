@@ -4,18 +4,18 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
+	crypto2 "github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	crypto2 "github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/ticket/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("TicketModule", func() {

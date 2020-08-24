@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/themakeos/lobe/api/remote"
-	"github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/types/constants"
+	"github.com/make-os/lobe/api/remote"
+	"github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/types/constants"
 )
 
 // SendTxPayload sends a signed transaction to the mempool

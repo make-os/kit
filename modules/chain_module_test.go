@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 var _ = Describe("ChainModule", func() {

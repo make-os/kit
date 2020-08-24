@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	modulestypes "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	modulestypes "github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/util"
 )
 
 // CreateRepo handles request to create a repository

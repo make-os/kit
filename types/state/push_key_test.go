@@ -1,9 +1,9 @@
 package state
 
 import (
+	"github.com/make-os/lobe/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/crypto"
 )
 
 var _ = Describe("PushKey", func() {

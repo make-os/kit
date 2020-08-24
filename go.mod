@@ -1,4 +1,4 @@
-module github.com/themakeos/lobe
+module github.com/make-os/lobe
 
 go 1.13
 

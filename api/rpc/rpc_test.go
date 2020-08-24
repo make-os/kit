@@ -2,8 +2,8 @@ package rpc
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("RPC", func() {

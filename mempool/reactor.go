@@ -3,15 +3,15 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
 
-	"github.com/themakeos/lobe/pkgs/cache"
-	"github.com/themakeos/lobe/pkgs/logger"
+	"github.com/make-os/lobe/pkgs/cache"
+	"github.com/make-os/lobe/pkgs/logger"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"

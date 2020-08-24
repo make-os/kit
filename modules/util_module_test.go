@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"io/ioutil"
 
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("ConsoleUtilModule", func() {

@@ -3,12 +3,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/cmd/signcmd"
+	"github.com/make-os/lobe/remote/server"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/cmd/signcmd"
-	"github.com/themakeos/lobe/remote/server"
 )
 
 // signCmd represents the commit command

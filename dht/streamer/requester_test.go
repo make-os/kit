@@ -12,16 +12,16 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/streamer"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/testutil"
+	io2 "github.com/make-os/lobe/util/io"
 	"github.com/multiformats/go-multiaddr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/dht"
-	"github.com/themakeos/lobe/dht/streamer"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/testutil"
-	io2 "github.com/themakeos/lobe/util/io"
 )
 
 var _ = Describe("BasicObjectRequester", func() {

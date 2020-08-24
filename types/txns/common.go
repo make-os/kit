@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/vmihailenco/msgpack"
 	msgpack2 "github.com/vmihailenco/msgpack/v4"
 )

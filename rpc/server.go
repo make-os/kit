@@ -3,9 +3,9 @@ package rpc
 import (
 	"sync"
 
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/util"
 )
 
 type Server interface {

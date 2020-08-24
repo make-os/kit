@@ -3,13 +3,13 @@ package plumbing_test
 import (
 	"os"
 
+	"github.com/make-os/lobe/config"
+	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	plumbing2 "github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Changes", func() {

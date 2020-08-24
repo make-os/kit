@@ -1,11 +1,11 @@
 package depositproposalfee
 
 import (
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/logic/contracts/common"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
 )
 
 // DepositProposalFeeContract is a system contract for adding deposit fee to a proposal.

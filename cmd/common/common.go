@@ -9,16 +9,16 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	client2 "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/keystore"
+	"github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/modules"
+	remotetypes "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
-	client2 "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/keystore"
-	"github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/modules"
-	remotetypes "github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util/colorfmt"
 )
 
 var (

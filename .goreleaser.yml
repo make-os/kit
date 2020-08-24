@@ -28,7 +28,7 @@ brews:
   -
     name: lobe
     tap:
-      owner: themakeos
+      owner: make-os
       name: homebrew-makeos
     commit_author:
       name: Kennedy Idialu

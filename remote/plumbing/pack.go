@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/types"
+	io2 "github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/types"
-	types2 "github.com/themakeos/lobe/types"
-	io2 "github.com/themakeos/lobe/util/io"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"

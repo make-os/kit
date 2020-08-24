@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	plumbing "github.com/themakeos/lobe/remote/plumbing"
+	plumbing "github.com/make-os/lobe/remote/plumbing"
 	reflect "reflect"
 )
 

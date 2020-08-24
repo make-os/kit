@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
+	client2 "github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	client2 "github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Client", func() {

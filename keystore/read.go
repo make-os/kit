@@ -6,12 +6,12 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/make-os/lobe/crypto"
+	types2 "github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/util"
+	crypto2 "github.com/make-os/lobe/util/crypto"
 	"github.com/spf13/cast"
-	"github.com/themakeos/lobe/crypto"
-	types2 "github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/util"
-	crypto2 "github.com/themakeos/lobe/util/crypto"
 	"github.com/thoas/go-funk"
 )
 

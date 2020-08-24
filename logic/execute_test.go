@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/validation"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/validation"
 
-	"github.com/themakeos/lobe/types"
+	"github.com/make-os/lobe/types"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
 )
 
 type unknownTxType struct {

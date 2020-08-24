@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/cmd/pkcmd"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/cmd/pkcmd"
 )
 
 // pushKeyCmd represents

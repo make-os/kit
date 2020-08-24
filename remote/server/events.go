@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/mempool"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	"github.com/olebedev/emitter"
-	"github.com/themakeos/lobe/mempool"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 )
 
 // subscribe subscribes to various incoming events

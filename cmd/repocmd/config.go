@@ -11,14 +11,14 @@ import (
 	"runtime"
 	"strings"
 
+	restclient "github.com/make-os/lobe/api/remote/client"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/api/utils"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
-	restclient "github.com/themakeos/lobe/api/remote/client"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/api/utils"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
 	gocfg "gopkg.in/src-d/go-git.v4/config"
 )
 

@@ -3,9 +3,9 @@ package issuecmd
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
 )
 
 // IssueCloseArgs contains parameters for IssueCloseCmd

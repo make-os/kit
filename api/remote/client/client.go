@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/imroc/req"
-	"github.com/themakeos/lobe/api/types"
+	"github.com/make-os/lobe/api/types"
 )
 
 // Client describes methods for accessing REST API endpoints

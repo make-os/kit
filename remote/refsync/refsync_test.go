@@ -8,21 +8,21 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/remote/push"
+	"github.com/make-os/lobe/remote/push/types"
+	repo3 "github.com/make-os/lobe/remote/repo"
+	testutil2 "github.com/make-os/lobe/remote/testutil"
+	types2 "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/mocks"
-	"github.com/themakeos/lobe/remote/push"
-	"github.com/themakeos/lobe/remote/push/types"
-	repo3 "github.com/themakeos/lobe/remote/repo"
-	testutil2 "github.com/themakeos/lobe/remote/testutil"
-	types2 "github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
+	. "github.com/make-os/lobe/remote/refsync"
 	. "github.com/onsi/gomega"
-	. "github.com/themakeos/lobe/remote/refsync"
 )
 
 var _ = Describe("RefSync", func() {

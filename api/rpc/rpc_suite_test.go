@@ -3,9 +3,9 @@ package rpc
 import (
 	"testing"
 
+	"github.com/make-os/lobe/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/rpc"
 )
 
 type TestCase struct {

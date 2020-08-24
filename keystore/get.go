@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/pkg/errors"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
-	"github.com/themakeos/lobe/util/crypto"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints

@@ -9,12 +9,12 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/pkgs/logger"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 const (

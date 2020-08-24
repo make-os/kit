@@ -10,13 +10,13 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
 )
 
 // ConsoleUtilModule provides access to various console utility functions.

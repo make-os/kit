@@ -1,10 +1,10 @@
 package rpc
 
 import (
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/rpc"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 )
 
 // LocalAccountAPI provides RPC methods for

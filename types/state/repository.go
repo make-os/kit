@@ -2,12 +2,12 @@ package state
 
 import (
 	"github.com/imdario/mergo"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/util"
 	"github.com/vmihailenco/msgpack"
 )
 

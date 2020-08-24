@@ -1,7 +1,7 @@
 package policy
 
 import (
-	"github.com/themakeos/lobe/types/state"
+	"github.com/make-os/lobe/types/state"
 )
 
 type policyItem struct {

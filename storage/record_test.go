@@ -1,9 +1,9 @@
 package storage_test
 
 import (
+	"github.com/make-os/lobe/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/storage"
 )
 
 var _ = Describe("Types", func() {

@@ -3,9 +3,9 @@ package identifier_test
 import (
 	"strings"
 
+	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 var _ = Describe("Identifier", func() {

@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/repo"
+	testutil2 "github.com/make-os/lobe/remote/testutil"
+	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/repo"
-	testutil2 "github.com/themakeos/lobe/remote/testutil"
-	"github.com/themakeos/lobe/testutil"
-	"github.com/themakeos/lobe/util"
 )
 
 var _ = Describe("Gitops", func() {

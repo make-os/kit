@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	storagemocks "github.com/themakeos/lobe/storage/mocks"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/txns"
+	storagemocks "github.com/make-os/lobe/storage/mocks"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/txns"
 
 	"github.com/golang/mock/gomock"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/storage"
-	"github.com/themakeos/lobe/testutil"
 )
 
 var _ = Describe("TxKeeper", func() {

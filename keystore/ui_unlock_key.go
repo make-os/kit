@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/themakeos/lobe/keystore/types"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
+	"github.com/make-os/lobe/keystore/types"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
 )
 
 // UnlockKeyUI unlocks a target key by rendering prompt to collect a passphrase.

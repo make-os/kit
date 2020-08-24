@@ -3,8 +3,8 @@ package dht
 import (
 	"bytes"
 
+	"github.com/make-os/lobe/remote/plumbing"
 	. "github.com/onsi/ginkgo"
-	"github.com/themakeos/lobe/remote/plumbing"
 
 	. "github.com/onsi/gomega"
 )

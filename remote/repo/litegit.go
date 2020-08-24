@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/make-os/lobe/remote/plumbing"
+	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/plumbing"
-	remotetypes "github.com/themakeos/lobe/remote/types"
 )
 
 // execGitCmd executes git commands and returns the output

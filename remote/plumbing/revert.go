@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/make-os/lobe/remote/types"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/types"
 )
 
 // ActionType represents a repo altering action

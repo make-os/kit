@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/themakeos/lobe/config"
+	"github.com/make-os/lobe/config"
 )
 
 func colorSprintf(format string, attr []color.Attribute, a ...interface{}) string {

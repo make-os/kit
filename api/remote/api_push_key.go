@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
-	"github.com/themakeos/lobe/util"
 )
 
 // GetPushKey finds a push key by ID

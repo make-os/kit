@@ -3,15 +3,15 @@ package core
 import (
 	"encoding/json"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/pkgs/tree"
+	"github.com/make-os/lobe/storage"
+	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/pkgs/tree"
-	"github.com/themakeos/lobe/storage"
-	tickettypes "github.com/themakeos/lobe/ticket/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 // BlockValidators contains validators of a block

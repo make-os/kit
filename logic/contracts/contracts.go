@@ -1,22 +1,22 @@
 package contracts
 
 import (
-	"github.com/themakeos/lobe/logic/contracts/createrepo"
-	"github.com/themakeos/lobe/logic/contracts/depositproposalfee"
-	"github.com/themakeos/lobe/logic/contracts/gitpush"
-	"github.com/themakeos/lobe/logic/contracts/purchaseticket"
-	"github.com/themakeos/lobe/logic/contracts/registernamespace"
-	"github.com/themakeos/lobe/logic/contracts/registerpushkey"
-	"github.com/themakeos/lobe/logic/contracts/registerrepopushkeys"
-	"github.com/themakeos/lobe/logic/contracts/setdelcommission"
-	"github.com/themakeos/lobe/logic/contracts/transfercoin"
-	"github.com/themakeos/lobe/logic/contracts/unbondticket"
-	"github.com/themakeos/lobe/logic/contracts/updatedelpushkey"
-	"github.com/themakeos/lobe/logic/contracts/updatenamespacedomains"
-	"github.com/themakeos/lobe/logic/contracts/updaterepo"
-	"github.com/themakeos/lobe/logic/contracts/upsertowner"
-	"github.com/themakeos/lobe/logic/contracts/voteproposal"
-	"github.com/themakeos/lobe/types/core"
+	"github.com/make-os/lobe/logic/contracts/createrepo"
+	"github.com/make-os/lobe/logic/contracts/depositproposalfee"
+	"github.com/make-os/lobe/logic/contracts/gitpush"
+	"github.com/make-os/lobe/logic/contracts/purchaseticket"
+	"github.com/make-os/lobe/logic/contracts/registernamespace"
+	"github.com/make-os/lobe/logic/contracts/registerpushkey"
+	"github.com/make-os/lobe/logic/contracts/registerrepopushkeys"
+	"github.com/make-os/lobe/logic/contracts/setdelcommission"
+	"github.com/make-os/lobe/logic/contracts/transfercoin"
+	"github.com/make-os/lobe/logic/contracts/unbondticket"
+	"github.com/make-os/lobe/logic/contracts/updatedelpushkey"
+	"github.com/make-os/lobe/logic/contracts/updatenamespacedomains"
+	"github.com/make-os/lobe/logic/contracts/updaterepo"
+	"github.com/make-os/lobe/logic/contracts/upsertowner"
+	"github.com/make-os/lobe/logic/contracts/voteproposal"
+	"github.com/make-os/lobe/types/core"
 )
 
 // SystemContracts is a list of all system contracts

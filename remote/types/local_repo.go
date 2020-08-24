@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/themakeos/lobe/types/state"
+	"github.com/make-os/lobe/types/state"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"

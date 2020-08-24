@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/util"
 )
 
 // SendCoin handles request to send coins from a user account to another user or a repository.

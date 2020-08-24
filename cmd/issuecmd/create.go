@@ -9,15 +9,15 @@ import (
 	"syscall"
 
 	"github.com/fatih/color"
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
+	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
+	io2 "github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
-	fmt2 "github.com/themakeos/lobe/util/colorfmt"
-	"github.com/themakeos/lobe/util/crypto"
-	"github.com/themakeos/lobe/util/identifier"
-	io2 "github.com/themakeos/lobe/util/io"
 )
 
 type IssueCreateArgs struct {

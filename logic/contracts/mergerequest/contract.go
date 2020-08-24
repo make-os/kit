@@ -3,16 +3,16 @@ package mergerequest
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/logic/contracts/common"
+	"github.com/make-os/lobe/logic/proposals"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/logic/contracts/common"
-	"github.com/themakeos/lobe/logic/proposals"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 // MakeMergeRequestProposalID returns the full proposal ID of a given merge request ID

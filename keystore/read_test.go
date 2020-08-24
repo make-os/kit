@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/make-os/lobe/crypto"
+	keystoretypes "github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/crypto"
-	keystoretypes "github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/types"
 )
 
 var _ = Describe("Read", func() {

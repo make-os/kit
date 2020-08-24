@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/make-os/lobe/api/rpc/client"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/node/services"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/robertkrimen/otto"
-	"github.com/themakeos/lobe/api/rpc/client"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/node/services"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/crypto"
 )
 
 // NamespaceModule provides namespace management functionalities

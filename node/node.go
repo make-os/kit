@@ -7,32 +7,32 @@ import (
 	"net/url"
 	"os"
 
-	rpcApi "github.com/themakeos/lobe/api/rpc"
-	dhtserver "github.com/themakeos/lobe/dht/server"
-	"github.com/themakeos/lobe/dht/server/types"
-	types2 "github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/remote/server"
-	"github.com/themakeos/lobe/rpc"
-	tickettypes "github.com/themakeos/lobe/ticket/types"
-	"github.com/themakeos/lobe/types/core"
+	rpcApi "github.com/make-os/lobe/api/rpc"
+	dhtserver "github.com/make-os/lobe/dht/server"
+	"github.com/make-os/lobe/dht/server/types"
+	types2 "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/remote/server"
+	"github.com/make-os/lobe/rpc"
+	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types/core"
 
-	"github.com/themakeos/lobe/modules"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/util"
 	"github.com/thoas/go-funk"
 
+	"github.com/make-os/lobe/extensions"
+	"github.com/make-os/lobe/keystore"
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/themakeos/lobe/extensions"
-	"github.com/themakeos/lobe/keystore"
 
-	"github.com/themakeos/lobe/ticket"
+	"github.com/make-os/lobe/ticket"
 
-	"github.com/themakeos/lobe/mempool"
+	"github.com/make-os/lobe/mempool"
 
-	"github.com/themakeos/lobe/logic"
+	"github.com/make-os/lobe/logic"
 
-	"github.com/themakeos/lobe/node/services"
+	"github.com/make-os/lobe/node/services"
 
 	"github.com/pkg/errors"
 
@@ -42,13 +42,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"github.com/themakeos/lobe/storage"
+	"github.com/make-os/lobe/storage"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/pkgs/logger"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/pkgs/logger"
 )
 
 // RPCServer represents the client

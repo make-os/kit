@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/util"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/util"
 
-	"github.com/themakeos/lobe/params"
+	"github.com/make-os/lobe/params"
 )
 
 // PushPool wraps the transaction container providing a pool

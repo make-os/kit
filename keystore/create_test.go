@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore/types"
+	crypto2 "github.com/make-os/lobe/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore/types"
-	crypto2 "github.com/themakeos/lobe/util/crypto"
 )
 
 var _ = Describe("Create", func() {

@@ -5,12 +5,12 @@ import (
 	"os"
 	path "path/filepath"
 
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore"
+	"github.com/make-os/lobe/keystore/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore"
-	"github.com/themakeos/lobe/keystore/types"
 )
 
 // keysCmd represents the parent command for all key related commands

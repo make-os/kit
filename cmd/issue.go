@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/make-os/lobe/cmd/common"
+	"github.com/make-os/lobe/cmd/issuecmd"
+	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/repo"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/themakeos/lobe/cmd/common"
-	"github.com/themakeos/lobe/cmd/issuecmd"
-	"github.com/themakeos/lobe/remote/plumbing"
-	"github.com/themakeos/lobe/remote/repo"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/io"
 	"github.com/thoas/go-funk"
 )
 

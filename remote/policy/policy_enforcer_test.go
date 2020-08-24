@@ -1,9 +1,9 @@
 package policy
 
 import (
+	"github.com/make-os/lobe/types/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/themakeos/lobe/types/state"
 )
 
 var _ = Describe("PolicyEnforcerFunc", func() {

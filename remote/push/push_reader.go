@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/pkg/errors"
-	"github.com/themakeos/lobe/remote/types"
-	"github.com/themakeos/lobe/util"
-	"github.com/themakeos/lobe/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"

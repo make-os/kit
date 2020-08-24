@@ -3,18 +3,18 @@ package ticket
 import (
 	"sort"
 
+	"github.com/make-os/lobe/storage"
+	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/storage"
-	tickettypes "github.com/themakeos/lobe/ticket/types"
-	"github.com/themakeos/lobe/types"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
 
-	"github.com/themakeos/lobe/crypto"
+	"github.com/make-os/lobe/crypto"
 
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/params"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/params"
 )
 
 // Manager implements types.TicketManager.

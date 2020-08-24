@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/util/crypto"
+	"github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/util/crypto"
 )
 
 // UpdateCmd fetches and lists all accounts

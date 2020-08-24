@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/crypto/bls"
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/types/txns"
+	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/crypto/bls"
-	"github.com/themakeos/lobe/params"
-	"github.com/themakeos/lobe/remote/validation"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/state"
-	"github.com/themakeos/lobe/types/txns"
-	crypto2 "github.com/themakeos/lobe/util/crypto"
-	"github.com/themakeos/lobe/util/identifier"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer

@@ -3,24 +3,24 @@ package modules
 import (
 	"fmt"
 
+	"github.com/make-os/lobe/api/rpc/client"
+	apitypes "github.com/make-os/lobe/api/types"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/keystore"
+	keystoretypes "github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/node/services"
+	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
+	address2 "github.com/make-os/lobe/util/identifier"
 	"github.com/spf13/cast"
-	"github.com/themakeos/lobe/api/rpc/client"
-	apitypes "github.com/themakeos/lobe/api/types"
-	"github.com/themakeos/lobe/config"
-	"github.com/themakeos/lobe/crypto"
-	"github.com/themakeos/lobe/keystore"
-	keystoretypes "github.com/themakeos/lobe/keystore/types"
-	"github.com/themakeos/lobe/modules/types"
-	"github.com/themakeos/lobe/node/services"
-	"github.com/themakeos/lobe/types/constants"
-	"github.com/themakeos/lobe/types/core"
-	"github.com/themakeos/lobe/types/txns"
-	"github.com/themakeos/lobe/util"
-	address2 "github.com/themakeos/lobe/util/identifier"
 
 	"github.com/c-bata/go-prompt"
+	at "github.com/make-os/lobe/types"
 	"github.com/robertkrimen/otto"
-	at "github.com/themakeos/lobe/types"
 )
 
 // UserModule provides account management functionalities
