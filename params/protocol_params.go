@@ -145,4 +145,6 @@ var (
 	// TargetRepoProposalFeeSplit is the percentage of proposal fee distributed to the
 	// repo that received and resolved a proposal
 	TargetRepoProposalFeeSplit = 0.8
+	// MaxPushFileSize is the maximum size of files in a push request
+	MaxPushFileSize = 1024 * 50
 )

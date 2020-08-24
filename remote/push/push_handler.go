@@ -137,8 +137,12 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteC
 		return errors.Wrap(h.AuthorizationHandler(ur), "authorization")
 	})
 
-	// Write the packfile to the push reader and read it
-	io.Copy(h.PushReader, packfile)
+	// Write the packfile to the push reader.
+	if _, err := io.Copy(h.PushReader, packfile); err != nil {
+		return err
+	}
+
+	// Read the packfile objects
 	if err = h.PushReader.Read(h.receivePackCmd); err != nil {
 		return err
 	}

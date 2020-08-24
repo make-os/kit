@@ -106,4 +106,35 @@ var _ = Describe("PushReader", func() {
 			Expect(refs.Names()).To(Equal([]string{"refs/heads/master"}))
 		})
 	})
+
+	Describe("ObjectObserver", func() {
+		Describe(".OnInflatedObjectHeader", func() {
+			It("should return error if blob object exceeded MaxBlobSize", func() {
+				oo := push.ObjectObserver{MaxBlobSize: 100}
+				err := oo.OnInflatedObjectHeader(plumbing.BlobObject, 111, 1)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("a file exceeded the maximum file size of 100 bytes"))
+			})
+
+			It("should add new object entry if size of blob did not exceed MaxBlobSize", func() {
+				oo := push.ObjectObserver{MaxBlobSize: 100}
+				err := oo.OnInflatedObjectHeader(plumbing.BlobObject, 100, 1)
+				Expect(err).To(BeNil())
+				Expect(oo.Objects).To(HaveLen(1))
+				Expect(oo.Objects[0].Type).To(Equal(plumbing.BlobObject))
+			})
+		})
+
+		Describe(".OnInflatedObjectContent", func() {
+			It("should set hash of object", func() {
+				oo := push.ObjectObserver{MaxBlobSize: 100}
+				oo.OnInflatedObjectHeader(plumbing.BlobObject, 100, 1)
+				hash := plumbing.NewHash("d43c6e3a78216a44ecd0aba54e8cf888547b634a")
+				err := oo.OnInflatedObjectContent(hash, 0, 0, nil)
+				Expect(err).To(BeNil())
+				Expect(oo.Objects).To(HaveLen(1))
+				Expect(oo.Objects[0].Hash).To(Equal(hash))
+			})
+		})
+	})
 })

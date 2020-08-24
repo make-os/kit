@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
@@ -15,8 +16,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
-
-var ErrSkipDuplicate = fmt.Errorf("skip duplicate request")
 
 // PackedReferenceObject represent references added to a pack file
 type PackedReferenceObject struct {
@@ -45,26 +44,33 @@ type PackObject struct {
 	Hash plumbing.Hash
 }
 
-// objObserver implements packfile.Observer
-type ObjectObserver struct {
-	objects []*PackObject
-}
-
-func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize int64,
-	pos int64) error {
-	o.objects = append(o.objects, &PackObject{Type: t})
-	return nil
-}
-
-func (o *ObjectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64,
-	crc uint32, content []byte) error {
-	o.objects[len(o.objects)-1].Hash = h
-	return nil
-}
-
 func (o *ObjectObserver) OnHeader(count uint32) error    { return nil }
 func (o *ObjectObserver) OnFooter(h plumbing.Hash) error { return nil }
 
+// ObjectObserver implements packfile.Observer. It allows us to read objects
+// of a packfile and also set limitation of blob size.
+type ObjectObserver struct {
+	Objects     []*PackObject
+	MaxBlobSize int64
+}
+
+// OnInflatedObjectHeader implements packfile.Observer.
+// Returns error if a blob object size surpasses maxBlobSize.
+func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize int64, pos int64) error {
+	if t == plumbing.BlobObject && objSize > o.MaxBlobSize {
+		return fmt.Errorf("a file exceeded the maximum file size of %d bytes", o.MaxBlobSize)
+	}
+	o.Objects = append(o.Objects, &PackObject{Type: t})
+	return nil
+}
+
+// OnInflatedObjectContent implements packfile.Observer.
+func (o *ObjectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64, crc uint32, content []byte) error {
+	o.Objects[len(o.Objects)-1].Hash = h
+	return nil
+}
+
+// PushedObjects is a collection of PackObject
 type PushedObjects []*PackObject
 
 // Hashes returns the string equivalent of the object hashes
@@ -168,7 +174,7 @@ func (r *PushReader) Read(gitCmd *exec.Cmd) error {
 	defer scn.Close()
 	r.Objects, err = r.getObjects(scn)
 	if err != nil {
-		return errors.Wrap(err, "failed to get objects")
+		return err
 	}
 
 	// Copy to git input stream
@@ -190,9 +196,10 @@ write_input:
 	return nil
 }
 
-// getObjects returns a list of objects in the packfile
+// getObjects returns a list of objects in the packfile.
+// Will return error if an object's size exceeds the allowed max. file size in a push operation.
 func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*PackObject, err error) {
-	objObserver := &ObjectObserver{}
+	objObserver := &ObjectObserver{MaxBlobSize: int64(params.MaxPushFileSize)}
 	packfileParser, err := packfile.NewParserWithStorage(scanner, r.repo.GetStorer(), objObserver)
 	if err != nil {
 		return nil, err
@@ -200,7 +207,7 @@ func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*PackObject, 
 	if _, err := packfileParser.Parse(); err != nil {
 		return nil, err
 	}
-	return objObserver.objects, nil
+	return objObserver.Objects, nil
 }
 
 // getReferences returns the references found in the pack buffer
