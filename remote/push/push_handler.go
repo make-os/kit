@@ -67,7 +67,7 @@ type BasicHandler struct {
 	Repo                 types2.LocalRepo                    // The target repository
 	Server               core.RemoteServer                   // The repository remote server
 	OldState             types2.BareRepoRefsState            // The old state of the repo before the current push was written
-	PushReader           *PushReader                         // The push reader for reading pushed git objects
+	PushReader           *Reader                             // The push reader for reading pushed git objects
 	NoteID               string                              // The push note unique ID
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
@@ -91,7 +91,7 @@ func NewHandler(
 		Server:          rMgr,
 		log:             rMgr.Log().Module("push-handler"),
 		polEnforcer:     polEnforcer,
-		PushReader:      &PushReader{},
+		PushReader:      &Reader{},
 		TxDetails:       types2.ToReferenceTxDetails(txDetails),
 		ChangeValidator: validation.ValidateChange,
 		Reverter:        plumbing.Revert,

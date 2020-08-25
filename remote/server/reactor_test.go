@@ -33,12 +33,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-func configIgnoreDenyCurrentBranch(r remotetypes.LocalRepo) error {
-	c, _ := r.Config()
-	c.Raw.SetOption("receive", "", "denyCurrentBranch", "ignore")
-	return r.SetConfig(c)
-}
-
 var _ = Describe("Reactor", func() {
 	var err error
 	var cfg *config.AppConfig
@@ -240,7 +234,6 @@ var _ = Describe("Reactor", func() {
 
 		It("should return error when unable to get pushed objects size", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
-			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
 			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(nil)
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
@@ -251,7 +244,6 @@ var _ = Describe("Reactor", func() {
 
 		It("should return error when note object size and local size don't match", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
-			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
 			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
@@ -284,7 +276,6 @@ var _ = Describe("Reactor", func() {
 
 		It("should return no error when able to process push note", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
-			mockNote.EXPECT().ID().Return(util.StrToBytes32("note_123"))
 			mockNote.EXPECT().GetRepoName().Return("repo1")
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
@@ -574,84 +565,6 @@ var _ = Describe("Reactor", func() {
 				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
 				Expect(err).To(BeNil())
 				Expect(endorsementWasBroadcast).To(BeTrue())
-			})
-		})
-	})
-
-	Describe(".BroadcastNoteAndEndorsement", func() {
-		It("should return error when unable to get top tickets", func() {
-			svr.noteBroadcaster = func(pushNote types.PushNote) {}
-			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get top hosts: error"))
-		})
-
-		It("should return nil when no top selected tickets", func() {
-			svr.noteBroadcaster = func(pushNote types.PushNote) {}
-			tickets := tickettypes.SelectedTickets{}
-			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
-			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
-			Expect(err).To(BeNil())
-		})
-
-		It("should return error when unable to create endorsement", func() {
-			svr.noteBroadcaster = func(pushNote types.PushNote) {}
-			ticket := &tickettypes.SelectedTicket{Ticket: &tickettypes.Ticket{
-				ProposerPubKey: svr.validatorKey.PubKey().MustBytes32(),
-			}}
-			tickets := tickettypes.SelectedTickets{ticket}
-			svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
-				return nil, fmt.Errorf("error")
-			}
-			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
-			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("error"))
-		})
-
-		When("endorsement is created successfully", func() {
-			var endorsementBroadcast bool
-			var madePushTx bool
-			var note = &types.Note{RepoName: "repo1"}
-			var end = &types.PushEndorsement{NoteID: []byte{1, 2, 3}}
-
-			BeforeEach(func() {
-				svr.noteBroadcaster = func(pushNote types.PushNote) {}
-				ticket := &tickettypes.SelectedTicket{Ticket: &tickettypes.Ticket{
-					ProposerPubKey: svr.validatorKey.PubKey().MustBytes32(),
-				}}
-				tickets := tickettypes.SelectedTickets{ticket}
-
-				svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
-					return end, nil
-				}
-
-				svr.endorsementBroadcaster = func(endorsement types.Endorsement) {
-					endorsementBroadcast = true
-				}
-
-				svr.makePushTx = func(noteID string) error {
-					madePushTx = true
-					return nil
-				}
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
-				err := svr.BroadcastNoteAndEndorsement(note)
-				Expect(err).To(BeNil())
-			})
-
-			It("should broadcast the endorsement", func() {
-				Expect(endorsementBroadcast).To(BeTrue())
-			})
-
-			It("should make push transaction", func() {
-				Expect(madePushTx).To(BeTrue())
-			})
-
-			It("should register endorsement to the push note", func() {
-				noteEnds := svr.endorsementsReceived.Get(note.ID().String())
-				Expect(noteEnds).To(HaveLen(1))
-				Expect(noteEnds).To(HaveKey(end.ID().String()))
 			})
 		})
 	})

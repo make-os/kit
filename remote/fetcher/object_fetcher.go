@@ -16,14 +16,15 @@ import (
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
 	io2 "github.com/make-os/lobe/util/io"
+	"github.com/thoas/go-funk"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // ObjectFetcher describes a module for fetching git objects from a given DHT service.
 type ObjectFetcher interface {
-	// Fetch adds a new task to the queue.
+	// FetchAsync adds a new task to the queue and returns immediately.
 	// cb will be called when the task has been processed.
-	Fetch(note types.PushNote, cb func(err error))
+	FetchAsync(note types.PushNote, cb func(err error))
 
 	// QueueSize returns the size of the queue
 	QueueSize() int
@@ -42,10 +43,9 @@ type ObjectFetcher interface {
 // ObjectFetcherService is like ObjectFetcher but exposes only commands
 // necessary for safe use by other packages.
 type ObjectFetcherService interface {
-
-	// Fetch adds a new task to the queue.
+	// FetchAsync adds a new task to the queue.
 	// cb will be called when the task has been processed.
-	Fetch(note types.PushNote, cb func(err error))
+	FetchAsync(note types.PushNote, cb func(err error))
 }
 
 // Task represents a fetch task
@@ -111,7 +111,7 @@ func (f *BasicObjectFetcher) getTask() *Task {
 
 // Fetch adds a new task to the queue.
 // cb will be called when the task has been processed.
-func (f *BasicObjectFetcher) Fetch(note types.PushNote, cb func(error)) {
+func (f *BasicObjectFetcher) FetchAsync(note types.PushNote, cb func(error)) {
 	f.addTask(&Task{note: note, resCb: cb})
 	return
 }
@@ -155,7 +155,7 @@ func (f *BasicObjectFetcher) createWorker(id int) {
 			f.do(id, task)
 			continue
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
 	}
 }
 
@@ -218,7 +218,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 			// is found. If target is not a commit or a tag, set endHash to nil which will cause
 			// the object streamer to only fetch the tag.
 			if len(endHash) > 0 {
-			check_end_hash:
+			checkEndHash:
 				endTag, err := task.note.GetTargetRepo().TagObject(plumbing.BytesToHash(endHash))
 				if err != nil {
 					return err
@@ -228,7 +228,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 					endHash = endTag.Target[:]
 				case plumbing2.TagObject:
 					endHash = endTag.Target[:]
-					goto check_end_hash
+					goto checkEndHash
 				default:
 					endHash = nil
 				}
@@ -251,7 +251,6 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 					if f.onObjFetchedCb != nil {
 						f.onObjFetchedCb(hash, packfile)
 					}
-					packfile.Close()
 					return nil
 				},
 			})

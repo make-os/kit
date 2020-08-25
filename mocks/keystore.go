@@ -253,7 +253,8 @@ func (m *MockKeystore) AskForPasswordOnce(prompt ...string) (string, error) {
 	}
 	ret := m.ctrl.Call(m, "AskForPasswordOnce", varargs...)
 	ret0, _ := ret[0].(string)
-	return ret0, nil
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AskForPasswordOnce indicates an expected call of AskForPasswordOnce

@@ -124,9 +124,9 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		})
 	})
 
-	// Fetch the objects for each references in the push note.
+	// FetchAsync the objects for each references in the push note.
 	// The callback is called when all objects have been fetched successfully.
-	sv.objfetcher.Fetch(&note, func(err error) {
+	sv.objfetcher.FetchAsync(&note, func(err error) {
 		sv.onFetch(err, &note, txDetails, polEnforcer)
 	})
 
@@ -146,7 +146,6 @@ func (sv *Server) onFetch(
 		return err
 	}
 
-	noteID := note.ID().String()
 	repoName := note.GetRepoName()
 
 	// Get the size of the pushed update objects. This is the size of the objects required
@@ -160,16 +159,15 @@ func (sv *Server) onFetch(
 
 	// Verify the note's size ensuring it matches the local size
 	// TODO: Penalize remote node for the inconsistency
-	noteSize := note.GetSize()
-	if note.IsFromRemotePeer() && noteSize != localSize {
-		sv.log.Error("Note's size does not match local size", "ID",
-			noteID, "Size", noteSize, "LocalSize", localSize, "Repo", repoName)
+	if noteSize := note.GetSize(); note.IsFromRemotePeer() && noteSize != localSize {
+		sv.log.Error("Size of push note not match actual local size",
+			"Size", noteSize, "LocalSize", localSize, "Repo", repoName)
 		return fmt.Errorf("note's objects size and local size differs")
 	}
 
 	// Attempt to process the push note
 	if err = sv.processPushNote(note, txDetails, polEnforcer); err != nil {
-		sv.log.Debug("Failed to process push note", "ID", noteID, "Err", err.Error())
+		sv.log.Debug("Failed to process push note", "ID", note.ID().String(), "Err", err.Error())
 		return err
 	}
 
@@ -278,105 +276,12 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	sv.registerEndorsementOfNote(endorsement.NoteID.HexStr(), &endorsement)
 
 	// Attempt to create an send a PushTx to the transaction pool
-	if err := sv.makePushTx(endorsement.NoteID.HexStr()); err != nil {
-		sv.Log().Debug("Unable to create push transaction", "Reason", err.Error())
-	}
+	sv.makePushTx(endorsement.NoteID.HexStr())
 
 	// Broadcast the Endorsement to peers
 	sv.endorsementBroadcaster(&endorsement)
 
 	return nil
-}
-
-// PushNoteAndEndorsementBroadcaster describes a function for broadcasting a push
-// note and an endorsement of it.
-type PushNoteAndEndorsementBroadcaster func(note pushtypes.PushNote) error
-
-// BroadcastNoteAndEndorsement broadcasts a push note and an endorsement of it.
-// The node has to be a top host to broadcast an endorsement.
-func (sv *Server) BroadcastNoteAndEndorsement(note pushtypes.PushNote) error {
-
-	// Broadcast the push note to peers
-	sv.noteBroadcaster(note)
-
-	// Get the top hosts
-	topHosts, err := sv.logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
-	if err != nil {
-		return errors.Wrap(err, "failed to get top hosts")
-	}
-
-	// Exit with nil if node is not among the top hosts
-	if !topHosts.Has(sv.validatorKey.PubKey().MustBytes32()) {
-		return nil
-	}
-
-	// At this point, the node is a top host, create a signed endorsement
-	endorsement, err := sv.endorsementCreator(sv.validatorKey, note)
-	if err != nil {
-		return err
-	}
-
-	// Broadcast the endorsement
-	sv.endorsementBroadcaster(endorsement)
-
-	// Cache the Endorsement object as an endorsement of the PushNote so can use it
-	// to create a mempool-bound push transaction when enough endorsements are discovered.
-	sv.registerEndorsementOfNote(note.ID().String(), endorsement)
-
-	// Attempt to create a PushTx and send to the transaction pool
-	if err = sv.makePushTx(endorsement.NoteID.HexStr()); err != nil {
-		sv.Log().Debug("Unable to create push transaction", "Reason", err.Error())
-	}
-
-	return nil
-}
-
-// NoteBroadcaster describes a function for broadcasting a push note
-type NoteBroadcaster func(pushNote pushtypes.PushNote)
-
-// broadcastPushNote broadcast push transaction to peers.
-// It will not send to original sender of the push note.
-func (sv *Server) broadcastPushNote(pushNote pushtypes.PushNote) {
-	for _, peer := range sv.Switch.Peers().List() {
-		bz, id := pushNote.BytesAndID()
-		if sv.isNoteSender(string(peer.ID()), id.String()) {
-			continue
-		}
-		if peer.Send(PushNoteReactorChannel, bz) {
-			sv.log.Debug("Sent push note to peer", "PeerID", peer.ID(), "ID", id)
-		}
-	}
-}
-
-// EndorsementBroadcaster describes a function for broadcasting endorsement
-type EndorsementBroadcaster func(endorsement pushtypes.Endorsement)
-
-// broadcastEndorsement sends out push endorsements (Endorsement) to peers
-func (sv *Server) broadcastEndorsement(endorsement pushtypes.Endorsement) {
-	for _, peer := range sv.Switch.Peers().List() {
-		bz, id := endorsement.BytesAndID()
-		if sv.isEndorsementSender(string(peer.ID()), id.String()) {
-			continue
-		}
-		if peer.Send(PushEndReactorChannel, bz) {
-			sv.log.Debug("Sent push endorsement to peer", "PeerID", peer.ID(), "TxID", id)
-		}
-	}
-}
-
-// BroadcastMsg broadcast messages to peers
-func (sv *Server) BroadcastMsg(ch byte, msg []byte) {
-	for _, peer := range sv.Switch.Peers().List() {
-		peer.Send(ch, msg)
-	}
-}
-
-// GetChannels implements Reactor.
-func (sv *Server) GetChannels() []*p2p.ChannelDescriptor {
-	return []*p2p.ChannelDescriptor{
-		{ID: PushNoteReactorChannel, Priority: 5},
-		{ID: PushEndReactorChannel, Priority: 5},
-	}
 }
 
 // PushTxCreator describes a function that takes a push note and creates
@@ -397,8 +302,8 @@ func (sv *Server) createPushTx(noteID string) error {
 	// Ensure there are enough push endorsements
 	endorsementIdx := endorsements.(map[string]*pushtypes.PushEndorsement)
 	if len(endorsementIdx) < params.PushEndorseQuorumSize {
-		return fmt.Errorf("cannot create push transaction; note has %d endorsements, wants %d",
-			len(endorsementIdx), params.PushEndorseQuorumSize)
+		msg := "cannot create push transaction; note has %d endorsements, wants %d"
+		return fmt.Errorf(msg, len(endorsementIdx), params.PushEndorseQuorumSize)
 	}
 
 	// Get the push note from the push pool

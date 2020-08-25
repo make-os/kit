@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -128,13 +127,6 @@ var _ = Describe("RefSync", func() {
 	})
 
 	Describe(".Do", func() {
-		It("should append task back to queue when task's has a future next run time", func() {
-			task := &Task{Ref: &types.PushedReference{}, NextRunTime: time.Now().Add(1 * time.Second)}
-			err := Do(rs.(*RefSync), task, 0)
-			Expect(err).To(BeNil())
-			Expect(rs.QueueSize()).To(Equal(1))
-		})
-
 		It("should append task back to queue when another task with matching reference name is being finalized", func() {
 			task := &Task{Ref: &types.PushedReference{Name: "refs/heads/master"}}
 			rs.(*RefSync).FinalizingRefs[task.Ref.Name] = struct{}{}
@@ -161,49 +153,24 @@ var _ = Describe("RefSync", func() {
 		})
 
 		When("local reference hash and task reference old hash do not match", func() {
-			var localHash = "2630fe8660633d5c543d4484769d148fae255b3e"
-
-			It("should add task back to queue, set next run time and increment compat retry count", func() {
+			It("should set task old hash to the local hash", func() {
 				task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
-				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(localHash, nil)
-				mockFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any())
+				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
+				updated := false
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+					updated = true
+					return nil
+				}
+				mockFetcher.EXPECT().FetchAsync(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
+					Expect(note).ToNot(BeNil())
+					cb(nil)
+				})
 				err := Do(rs.(*RefSync), task, 0)
 				Expect(err).To(BeNil())
-				Expect(rs.QueueSize()).To(Equal(1))
-				Expect(time.Now().Before(task.NextRunTime)).To(BeTrue())
-				Expect(task.CompatRetryCount).To(Equal(1))
-			})
-
-			When("compat retry count has reached the max", func() {
-				var err error
-				var task *Task
-
-				BeforeEach(func() {
-					MaxCompatRetries = 1
-					task = &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
-					mockRepo := mocks.NewMockLocalRepo(ctrl)
-					rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
-					mockRepo.EXPECT().RefGet(task.Ref.Name).Return(localHash, nil)
-					mockFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any())
-					err = Do(rs.(*RefSync), task, 0)
-				})
-
-				It("should return error", func() {
-					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("reference is not compatible with local state"))
-				})
-
-				It("should add task back to queue and increment compat retry count", func() {
-					Expect(rs.QueueSize()).To(Equal(1))
-					Expect(time.Now().Before(task.NextRunTime)).To(BeFalse())
-					Expect(task.CompatRetryCount).To(Equal(1))
-				})
-
-				It("should update task's old hash to the local reference old hash", func() {
-					Expect(task.Ref.OldHash).To(Equal(localHash))
-				})
+				Expect(updated).To(BeTrue())
+				Expect(task.Ref.OldHash).To(Equal(oldHash))
 			})
 		})
 
@@ -218,7 +185,7 @@ var _ = Describe("RefSync", func() {
 					updated = true
 					return nil
 				}
-				mockFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
+				mockFetcher.EXPECT().FetchAsync(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
 					Expect(note).ToNot(BeNil())
 					cb(nil)
 				})
@@ -227,7 +194,7 @@ var _ = Describe("RefSync", func() {
 				Expect(updated).To(BeTrue())
 			})
 
-			It("should not attempt to update repo if fetch attempt failed", func() {
+			It("should not attempt to update repo and return error if fetch attempt failed", func() {
 				task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
@@ -237,12 +204,13 @@ var _ = Describe("RefSync", func() {
 					updated = true
 					return nil
 				}
-				mockFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
+				mockFetcher.EXPECT().FetchAsync(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
 					Expect(note).ToNot(BeNil())
 					cb(fmt.Errorf("error"))
 				})
 				err := Do(rs.(*RefSync), task, 0)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("error"))
 				Expect(updated).To(BeFalse())
 			})
 

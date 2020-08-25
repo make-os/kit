@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/providertracker"
 	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
 )
@@ -26,6 +27,7 @@ var (
 
 var (
 	ErrUnknownMsgType = fmt.Errorf("unknown message type")
+	ErrNopeReceived   = fmt.Errorf("nope received")
 )
 
 type PackResult struct {
@@ -74,7 +76,7 @@ type RequestArgs struct {
 	Log logger.Logger
 
 	// BasicProviderTracker for recording and tracking provider behaviour
-	ProviderTracker *providertracker.BasicProviderTracker
+	ProviderTracker providertracker.ProviderTracker
 }
 
 // BasicObjectRequester manages object download sessions between multiple providers
@@ -87,7 +89,7 @@ type BasicObjectRequester struct {
 	log                   logger.Logger
 	reposDir              string
 	closed                bool
-	pTracker              *providertracker.BasicProviderTracker
+	tracker               providertracker.ProviderTracker
 	providerStreams       []network.Stream
 	OnWantResponseHandler func(network.Stream) error
 	OnSendResponseHandler func(network.Stream) (io.ReadSeekerCloser, error)
@@ -103,11 +105,15 @@ func NewBasicObjectRequester(args RequestArgs) *BasicObjectRequester {
 		host:      args.Host,
 		log:       args.Log,
 		reposDir:  args.ReposDir,
-		pTracker:  args.ProviderTracker,
+		tracker:   args.ProviderTracker,
 	}
 
 	r.OnWantResponseHandler = r.OnWantResponse
 	r.OnSendResponseHandler = r.OnSendResponse
+
+	if r.log == nil {
+		r.log = logger.NewLogrus()
+	}
 
 	return &r
 }
@@ -162,18 +168,16 @@ func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 		s, err = r.Write(ctx, prov, ObjectStreamerProtocolID, dht.MakeWantMsg(r.repoName, r.key))
 		if err != nil {
 			wg.Done()
-			r.log.Error("unable to write `WANT` message to peer", "ID", prov.ID.Pretty(), "Err", err)
-			if r.pTracker != nil {
-				r.pTracker.MarkFailure(prov.ID)
+			r.log.Error("Unable to write `WANT` message to peer", "ID", prov.ID.Pretty(), "Err", err)
+			if r.tracker != nil {
+				r.tracker.MarkFailure(prov.ID)
 			}
 			continue
 		}
 
 		// Handle 'WANT' response.
-		// All providers that responded with a 'HAVE' message are
-		// collected into the 'HAVE' stream channel
 		go func() {
-			r.OnWantResponseHandler(s)
+			err = r.OnWantResponseHandler(s)
 			wg.Done()
 		}()
 	}
@@ -209,8 +213,8 @@ func (r *BasicObjectRequester) Do(ctx context.Context) (result *PackResult, err 
 			r.log.Error("failed to write 'SEND' message to peer", "Err", err,
 				"Peer", str.Conn().RemotePeer().Pretty())
 
-			if r.pTracker != nil {
-				r.pTracker.MarkFailure(str.Conn().RemotePeer())
+			if r.tracker != nil {
+				r.tracker.MarkFailure(str.Conn().RemotePeer())
 			}
 			continue
 		}
@@ -223,8 +227,8 @@ func (r *BasicObjectRequester) Do(ctx context.Context) (result *PackResult, err 
 			r.log.Error("failed to read 'SEND' response", "Err", err,
 				"Peer", str.Conn().RemotePeer().Pretty())
 
-			if r.pTracker != nil {
-				r.pTracker.MarkFailure(str.Conn().RemotePeer())
+			if r.tracker != nil {
+				r.tracker.MarkFailure(str.Conn().RemotePeer())
 			}
 			continue
 		}
@@ -244,7 +248,8 @@ func (r *BasicObjectRequester) GetProviderStreams() []network.Stream {
 }
 
 // OnWantResponse handles a remote peer's response to a WANT message.
-// Streams that responded with 'HAVE' will be cached while others are reset.
+// If the remote stream responds with 'HAVE', it will be cached.
+// If the remote stream responds with 'NOPE', it will be logged in the nope cache.
 func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 
 	msg := make([]byte, 4)
@@ -254,8 +259,9 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 	}
 
 	// Mark remote peer as seen.
-	if r.pTracker != nil {
-		r.pTracker.MarkSeen(s.Conn().RemotePeer())
+	remotePeer := s.Conn().RemotePeer()
+	if r.tracker != nil {
+		r.tracker.MarkSeen(remotePeer)
 	}
 
 	switch string(msg[:4]) {
@@ -265,7 +271,11 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 		r.lck.Unlock()
 
 	case dht.MsgTypeNope:
+		hash, _ := dht.ParseObjectKey(r.key)
+		r.log.Debug("Provider no longer has the object", "Hash", plumbing.BytesToHex(hash))
 		s.Reset()
+		r.tracker.PeerSentNope(remotePeer, r.key)
+		return ErrNopeReceived
 
 	default:
 		s.Reset()
@@ -275,27 +285,29 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 }
 
 // OnSendResponse handles incoming packfile data from remote peer.
-// The remote peer may respond with "NOPE", it means they no longer
-// have the requested object and an ErrObjNotFound is returned.
+// If the remote peer responds with 'NOPE', it will be logged in the nope cache.
 func (r *BasicObjectRequester) OnSendResponse(s network.Stream) (io.ReadSeekerCloser, error) {
 	defer s.Reset()
+
+	remotePeer := s.Conn().RemotePeer()
 
 	var buf = bufio.NewReader(s)
 	op, err := buf.Peek(4)
 	if err != nil {
-		if r.pTracker != nil {
-			r.pTracker.MarkFailure(s.Conn().RemotePeer())
+		if r.tracker != nil {
+			r.tracker.MarkFailure(remotePeer)
 		}
 		return nil, errors.Wrap(err, "unable to read msg type")
 	}
 
 	// Mark remote peer as seen.
-	if r.pTracker != nil {
-		r.pTracker.MarkSeen(s.Conn().RemotePeer())
+	if r.tracker != nil {
+		r.tracker.MarkSeen(remotePeer)
 	}
 
 	switch string(op) {
 	case dht.MsgTypeNope:
+		r.tracker.PeerSentNope(remotePeer, r.key)
 		return nil, dht.ErrObjNotFound
 
 	case dht.MsgTypePack:

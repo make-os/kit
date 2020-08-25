@@ -49,9 +49,9 @@ var _ = Describe("ObjectFetcher", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".Fetch", func() {
+	Describe(".FetchAsync", func() {
 		It("should add task", func() {
-			f.Fetch(&types.Note{}, func(err error) {})
+			f.FetchAsync(&types.Note{}, func(err error) {})
 			Expect(f.IsQueueEmpty()).To(BeFalse())
 		})
 	})

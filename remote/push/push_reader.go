@@ -44,14 +44,15 @@ type PackObject struct {
 	Hash plumbing.Hash
 }
 
-func (o *ObjectObserver) OnHeader(count uint32) error    { return nil }
-func (o *ObjectObserver) OnFooter(h plumbing.Hash) error { return nil }
+func (o *ObjectObserver) OnHeader(uint32) error        { return nil }
+func (o *ObjectObserver) OnFooter(plumbing.Hash) error { return nil }
 
 // ObjectObserver implements packfile.Observer. It allows us to read objects
 // of a packfile and also set limitation of blob size.
 type ObjectObserver struct {
 	Objects     []*PackObject
 	MaxBlobSize int64
+	totalSize   int64
 }
 
 // OnInflatedObjectHeader implements packfile.Observer.
@@ -61,6 +62,7 @@ func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize i
 		return fmt.Errorf("a file exceeded the maximum file size of %d bytes", o.MaxBlobSize)
 	}
 	o.Objects = append(o.Objects, &PackObject{Type: t})
+	o.totalSize = o.totalSize + objSize
 	return nil
 }
 
@@ -84,26 +86,27 @@ func (po *PushedObjects) Hashes() (objs []string) {
 // PushReader inspects push data from git client, extracting data such as the
 // pushed references, objects and object to reference mapping. It also pipes the
 // pushed stream to a destination (git-receive-pack) when finished.
-type PushReader struct {
-	dst         io.WriteCloser
-	packFile    *os.File
-	buf         []byte
-	References  PackedReferences
-	Objects     PushedObjects
-	repo        types.LocalRepo
-	request     *packp.ReferenceUpdateRequest
-	updateReqCB func(ur *packp.ReferenceUpdateRequest) error
+type Reader struct {
+	dst          io.WriteCloser
+	packFile     *os.File
+	buf          []byte
+	References   PackedReferences
+	Objects      PushedObjects
+	repo         types.LocalRepo
+	request      *packp.ReferenceUpdateRequest
+	updateReqCB  func(ur *packp.ReferenceUpdateRequest) error
+	totalObjSize int64
 }
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*PushReader, error) {
+func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*Reader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err
 	}
 
-	return &PushReader{
+	return &Reader{
 		dst:        dst,
 		packFile:   packFile,
 		repo:       repo,
@@ -113,30 +116,30 @@ func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*PushReader, error
 }
 
 // Write implements the io.Writer interface.
-func (r *PushReader) Write(p []byte) (int, error) {
+func (r *Reader) Write(p []byte) (int, error) {
 	return r.packFile.Write(p)
 }
 
 // OnReferenceUpdateRequestRead sets a callback that is called after the
 // push requested has been decoded but yet to be written to git.
 // If the callback returns an error, the push request is aborted.
-func (r *PushReader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpdateRequest) error) {
+func (r *Reader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpdateRequest) error) {
 	r.updateReqCB = cb
 }
 
 // SetUpdateRequest sets the reference update request
-func (r *PushReader) SetUpdateRequest(request *packp.ReferenceUpdateRequest) {
+func (r *Reader) SetUpdateRequest(request *packp.ReferenceUpdateRequest) {
 	r.request = request
 }
 
 // GetUpdateRequest returns the reference update request object
-func (r *PushReader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
+func (r *Reader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
 	return r.request
 }
 
 // Read reads the packfile, extracting object and reference information
 // and finally writes the read data to a provided destination
-func (r *PushReader) Read(gitCmd *exec.Cmd) error {
+func (r *Reader) Read(gitCmd *exec.Cmd) error {
 
 	var err error
 
@@ -165,7 +168,7 @@ func (r *PushReader) Read(gitCmd *exec.Cmd) error {
 	packSig := make([]byte, 4)
 	r.packFile.Read(packSig)
 	if string(packSig) != "PACK" {
-		goto write_input
+		goto writeInput
 	}
 	r.packFile.Seek(-4, 1)
 
@@ -178,7 +181,7 @@ func (r *PushReader) Read(gitCmd *exec.Cmd) error {
 	}
 
 	// Copy to git input stream
-write_input:
+writeInput:
 	defer r.packFile.Close()
 	defer r.dst.Close()
 	defer os.Remove(r.packFile.Name())
@@ -196,9 +199,14 @@ write_input:
 	return nil
 }
 
+// GetSizeObjects returns the size of pushed objects
+func (r *Reader) GetSizeObjects() int64 {
+	return r.totalObjSize
+}
+
 // getObjects returns a list of objects in the packfile.
 // Will return error if an object's size exceeds the allowed max. file size in a push operation.
-func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*PackObject, err error) {
+func (r *Reader) getObjects(scanner *packfile.Scanner) (objs []*PackObject, err error) {
 	objObserver := &ObjectObserver{MaxBlobSize: int64(params.MaxPushFileSize)}
 	packfileParser, err := packfile.NewParserWithStorage(scanner, r.repo.GetStorer(), objObserver)
 	if err != nil {
@@ -207,11 +215,12 @@ func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*PackObject, 
 	if _, err := packfileParser.Parse(); err != nil {
 		return nil, err
 	}
+	r.totalObjSize = objObserver.totalSize
 	return objObserver.Objects, nil
 }
 
 // getReferences returns the references found in the pack buffer
-func (r *PushReader) getReferences(ur *packp.ReferenceUpdateRequest) (references map[string]*PackedReferenceObject) {
+func (r *Reader) getReferences(ur *packp.ReferenceUpdateRequest) (references map[string]*PackedReferenceObject) {
 	references = make(map[string]*PackedReferenceObject)
 	for _, cmd := range ur.Commands {
 		references[cmd.Name.String()] = &PackedReferenceObject{

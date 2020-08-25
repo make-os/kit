@@ -8,6 +8,7 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht/providertracker"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -174,6 +175,20 @@ var _ = Describe("BasicProviderTracker", func() {
 			time.Sleep(2 * time.Millisecond)
 			good := tracker.IsGood(peerID)
 			Expect(good).To(BeTrue())
+		})
+	})
+
+	Describe(".PeerSentNope & .DidPeerSendNope", func() {
+		key := util.RandBytes(5)
+		peerID := peer.ID("peer1")
+
+		BeforeEach(func() {
+			Expect(tracker.DidPeerSendNope(peerID, key)).To(BeFalse())
+			tracker.PeerSentNope(peerID, key)
+		})
+
+		It("should return true if peer+key entry exist", func() {
+			Expect(tracker.DidPeerSendNope(peerID, key)).To(BeTrue())
 		})
 	})
 })

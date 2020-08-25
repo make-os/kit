@@ -68,7 +68,7 @@ var _ = Describe("PushReader", func() {
 	})
 
 	Describe(".Read", func() {
-		var pr *push.PushReader
+		var pr *push.Reader
 		var dst = bytes.NewBuffer(nil)
 		var err error
 

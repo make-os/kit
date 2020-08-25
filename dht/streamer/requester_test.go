@@ -14,10 +14,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/providertracker"
 	"github.com/make-os/lobe/dht/streamer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/util"
 	io2 "github.com/make-os/lobe/util/io"
 	"github.com/multiformats/go-multiaddr"
 	. "github.com/onsi/ginkgo"
@@ -269,7 +271,10 @@ var _ = Describe("BasicObjectRequester", func() {
 
 		BeforeEach(func() {
 			mockStream = mocks.NewMockStream(ctrl)
-			reqArgs = streamer.RequestArgs{}
+			reqArgs = streamer.RequestArgs{
+				Key:             util.RandBytes(5),
+				ProviderTracker: providertracker.NewProviderTracker(),
+			}
 		})
 
 		It("should return error when unable to read message type from stream", func() {
@@ -285,6 +290,9 @@ var _ = Describe("BasicObjectRequester", func() {
 				copy(p, dht.MsgTypeHave)
 				return len(dht.MsgTypeHave), nil
 			})
+			mockConn := mocks.NewMockConn(ctrl)
+			mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
+			mockStream.EXPECT().Conn().Return(mockConn)
 			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
 			Expect(err).To(BeNil())
@@ -292,16 +300,49 @@ var _ = Describe("BasicObjectRequester", func() {
 			Expect(r.GetProviderStreams()[0]).To(Equal(mockStream))
 		})
 
-		It("should reset stream, when message type is 'NOPE'", func() {
-			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-				copy(p, dht.MsgTypeNope)
-				return len(dht.MsgTypeNope), nil
+		When("message type is 'NOPE'", func() {
+			remotePeer := core.PeerID("peer_id")
+
+			BeforeEach(func() {
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, dht.MsgTypeNope)
+					return len(dht.MsgTypeNope), nil
+				})
+				mockConn := mocks.NewMockConn(ctrl)
+				mockConn.EXPECT().RemotePeer().Return(remotePeer)
+				mockStream.EXPECT().Conn().Return(mockConn)
 			})
-			mockStream.EXPECT().Reset()
-			r := streamer.NewBasicObjectRequester(reqArgs)
-			err := r.OnWantResponse(mockStream)
-			Expect(err).To(BeNil())
-			Expect(r.GetProviderStreams()).To(HaveLen(0))
+
+			It("should reset stream", func() {
+				mockStream.EXPECT().Reset()
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				r.OnWantResponse(mockStream)
+			})
+
+			It("should return err=ErrNopeReceived", func() {
+				mockStream.EXPECT().Reset()
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				err := r.OnWantResponse(mockStream)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(streamer.ErrNopeReceived))
+				Expect(r.GetProviderStreams()).To(HaveLen(0))
+			})
+
+			Specify("that there are no providers", func() {
+				mockStream.EXPECT().Reset()
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				err := r.OnWantResponse(mockStream)
+				Expect(err).ToNot(BeNil())
+				Expect(r.GetProviderStreams()).To(HaveLen(0))
+			})
+
+			Specify("that the peer was added to the NOPE cache for the given key", func() {
+				mockStream.EXPECT().Reset()
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				err := r.OnWantResponse(mockStream)
+				Expect(err).ToNot(BeNil())
+				Expect(reqArgs.ProviderTracker.DidPeerSendNope(remotePeer, reqArgs.Key)).To(BeTrue())
+			})
 		})
 
 		It("should reset stream, when message type is 'UNKNOWN'", func() {
@@ -309,6 +350,9 @@ var _ = Describe("BasicObjectRequester", func() {
 				copy(p, "UNKNOWN")
 				return len("UNKNOWN"), nil
 			})
+			mockConn := mocks.NewMockConn(ctrl)
+			mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
@@ -320,11 +364,18 @@ var _ = Describe("BasicObjectRequester", func() {
 	Describe(".OnSendResponse", func() {
 		var mockStream *mocks.MockStream
 		var reqArgs streamer.RequestArgs
+		var remotePeer = core.PeerID("peer_id")
 
 		BeforeEach(func() {
 			mockStream = mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Reset()
-			reqArgs = streamer.RequestArgs{}
+			mockConn := mocks.NewMockConn(ctrl)
+			mockConn.EXPECT().RemotePeer().Return(remotePeer)
+			mockStream.EXPECT().Conn().Return(mockConn)
+			reqArgs = streamer.RequestArgs{
+				Key:             util.RandBytes(5),
+				ProviderTracker: providertracker.NewProviderTracker(),
+			}
 		})
 
 		It("should return error when unable to read message type from stream", func() {
@@ -335,15 +386,27 @@ var _ = Describe("BasicObjectRequester", func() {
 			Expect(err).To(MatchError("unable to read msg type: read error"))
 		})
 
-		It("should return ErrObjNotFound if msg type is 'NOPE'", func() {
-			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-				copy(p, dht.MsgTypeNope)
-				return len(dht.MsgTypeNope), nil
+		When("msg type is 'NOPE'", func() {
+			BeforeEach(func() {
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, dht.MsgTypeNope)
+					return len(dht.MsgTypeNope), nil
+				})
 			})
-			r := streamer.NewBasicObjectRequester(reqArgs)
-			_, err := r.OnSendResponse(mockStream)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(dht.ErrObjNotFound))
+
+			It("should return ErrObjNotFound", func() {
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				_, err := r.OnSendResponse(mockStream)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(dht.ErrObjNotFound))
+			})
+
+			Specify("that the peer was added to the NOPE cache for the given key", func() {
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				_, err := r.OnSendResponse(mockStream)
+				Expect(err).ToNot(BeNil())
+				Expect(reqArgs.ProviderTracker.DidPeerSendNope(remotePeer, reqArgs.Key)).To(BeTrue())
+			})
 		})
 
 		It("should return packfile if msg type is 'PACK'", func() {
@@ -360,7 +423,7 @@ var _ = Describe("BasicObjectRequester", func() {
 			Expect(data).To(Equal([]byte(dht.MsgTypePack)))
 		})
 
-		It("should return ErrUnknownMshType if msg type is unknown", func() {
+		It("should return ErrUnknownMsgType if msg type is unknown", func() {
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 				copy(p, "UNKNOWN")
 				return len("UNKNOWN"), nil

@@ -34,7 +34,7 @@ genmocks:
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks
 	mockgen -source=remote/push/types/objects.go -destination=mocks/pushpool.go -package mocks
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
-	mockgen -source=remote/fetcher/objectfetcher.go -destination=mocks/object_fetcher.go -package mocks
+	mockgen -source=remote/fetcher/object_fetcher.go -destination=mocks/object_fetcher.go -package mocks
 	mockgen -source=remote/push/push_handler.go -destination=mocks/push_handler.go -package mocks
 	mockgen -source=remote/types/pruner.go -destination=mocks/pruner.go -package mocks
 	mockgen -source=api/remote/client/client.go -destination=mocks/rests_client.go -package mocks
@@ -45,6 +45,7 @@ genmocks:
 	mockgen -source=dht/server/types/types.go -destination=mocks/dht_server.go -package mocks
 	mockgen -source=dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
 	mockgen -source=dht/streamer/types/types.go -destination=mocks/dht_streamer.go -package mocks
+	mockgen -source=dht/providertracker/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
 	mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks
 	mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks
 	mockgen -source=modules/types/modules.go -destination=mocks/modules.go -package mocks

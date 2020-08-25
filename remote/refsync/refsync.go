@@ -20,11 +20,12 @@ import (
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var (
-	MaxCompatRetries = 5
+	MaxCompatRetries = 1
 )
 
 // RefSyncer describes an interface for synchronizing a repository's
@@ -74,11 +75,6 @@ type Task struct {
 	// CompatRetryCount is the number of times this task has been retried
 	// because it was not yet compatible with the local reference.
 	CompatRetryCount int
-
-	// NextRunTime indicates a future time when this task can be processed.
-	// If a worker receives this task before the specified time, it must put
-	// it back into the queue.
-	NextRunTime time.Time
 }
 
 func (t *Task) GetID() interface{} {
@@ -86,8 +82,8 @@ func (t *Task) GetID() interface{} {
 }
 
 // RefSync implements RefSyncer. It provides the mechanism that synchronizes the state of a
-// repository's reference based on push transactions in the blockchain. It reacts to push
-// transactions to change the state of a repository's reference state.
+// repository's reference based on push transactions in the blockchain. It reacts to newly
+// processed push transactions, processing each references to change the state of a repository.
 type RefSync struct {
 	cfg                     *config.AppConfig
 	log                     logger.Logger
@@ -215,7 +211,7 @@ func (rs *RefSync) createWorker(id int) {
 			}
 			continue
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
 	}
 }
 
@@ -249,12 +245,6 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 
 	refName := task.Ref.Name
 
-	// When next run time is a future time, put task back in the queue
-	if task.NextRunTime.After(time.Now()) {
-		rs.queue.Append(task)
-		return nil
-	}
-
 	// If a matching reference is currently being processed by a different worker,
 	// put the task back to the queue to be tried another time.
 	if rs.isFinalizing(refName) {
@@ -276,38 +266,24 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 	}
 
 	// Get the target reference
-	localRefHash, err := targetRepo.RefGet(refName)
+	localHash, err := targetRepo.RefGet(refName)
 	if err != nil {
 		if err != plumbing.ErrRefNotFound {
 			return errors.Wrap(err, "failed to get reference from target repo")
 		}
 	}
 
-	// If reference does not exist locally, reset ref hash is zero hash.
-	if localRefHash == "" {
-		localRefHash = plumbing2.ZeroHash.String()
+	// If reference does not exist locally, use zero hash as the local hash.
+	if localHash == "" {
+		localHash = plumbing2.ZeroHash.String()
 	}
 
-	// If the local reference hash does not match the task's old reference hash,
-	// they are not compatible yet. It may be that there is another reference in
-	// the queue capable of filling in the missing history. With that, we add
-	// the task back to the queue to be re-processed later.
-	// However, if we reach the compatibility retry limit, we attempt to alter
-	// the task to point to the current local reference hash and re-queue in
-	// hopes that the adjusted task completes the missing history.
-	if localRefHash != task.Ref.OldHash {
-
-		task.CompatRetryCount++
-		if task.CompatRetryCount >= MaxCompatRetries {
-			task.Ref.OldHash = localRefHash
-			rs.queue.Append(task)
-			return fmt.Errorf("reference is not compatible with local state")
-		}
-
-		// Put the task back in the queue and set future run time.
-		task.NextRunTime = time.Now().Add(15 * time.Second)
-		rs.queue.Append(task)
-		return nil
+	// If the local hash does not match the task's old hash, it means history is missing.
+	// This can be due to failure to apply previous push notes. To solve this, we update
+	// the task's old hash to point to the local hash so that the missing history objects
+	// are fetched and applied along with this task.
+	if localHash != task.Ref.OldHash {
+		task.Ref.OldHash = localHash
 	}
 
 	// Reconstruct a push note
@@ -324,7 +300,6 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 			rs.log.Error("Failed to update reference using note", "Err", err.Error(), "ID", task.ID)
 			return err
 		}
-
 		rs.log.Debug("Successfully updated reference", "Repo", task.RepoName, "Ref", refName)
 		return nil
 	}
@@ -346,19 +321,25 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 		}
 	}
 
-	// Fetch objects required to apply push note successfully
-	rs.fetcher.Fetch(note, func(err error) {
+	// FetchAsync objects required to apply the push note updates successfully.
+	// Since fetching is asynchronous, we use an error channel to learn about
+	// problems and also to wait for the fetch operation to finish.
+	var errCh = make(chan error, 1)
+	rs.fetcher.FetchAsync(note, func(err error) {
+		errCh <- err
+
 		if err != nil {
-			rs.log.Error("Failed to fetch reference object", "Err", err.Error())
+			rs.log.Error("Failed to fetch push note objects", "Err", err.Error())
 			return
 		}
+
 		if err = doUpdate(); err != nil {
 			rs.log.Error("Failed to update repo using push note", "Err", err.Error())
 			return
 		}
 	})
 
-	return nil
+	return <-errCh
 }
 
 // UpdateRepoUsingNoteFunc describes a function for updating a repo using a push note

@@ -115,7 +115,7 @@ var (
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
 
 	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
-	MaxNoteObjectFetchAttempts = 15
+	MaxNoteObjectFetchAttempts = 5
 )
 
 // Repo config

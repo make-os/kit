@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
@@ -23,6 +24,7 @@ import (
 	types2 "github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -72,7 +74,7 @@ type BasicObjectStreamer struct {
 	log              logger.Logger
 	reposDir         string
 	gitBinPath       string
-	providerTracker  *providertracker.BasicProviderTracker
+	tracker          providertracker.ProviderTracker
 	OnWantHandler    func(msg []byte, s network.Stream) error
 	OnSendHandler    func(msg []byte, s network.Stream) error
 	HaveCache        HaveCache
@@ -89,7 +91,7 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 		reposDir:         cfg.GetRepoRoot(),
 		log:              cfg.G().Log.Module("object-streamer"),
 		gitBinPath:       cfg.Node.GitBinPath,
-		providerTracker:  providertracker.NewProviderTracker(),
+		tracker:          providertracker.NewProviderTracker(),
 		HaveCache:        newHaveCache(1000),
 		RepoGetter:       repo.GetWithLiteGit,
 		PackObject:       plumbing.PackObject,
@@ -97,12 +99,17 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 	}
 
 	// Hook concrete functions to function type fields
-	ce.OnWantHandler = ce.OnWant
-	ce.OnSendHandler = ce.OnSend
+	ce.OnWantHandler = ce.OnWantRequest
+	ce.OnSendHandler = ce.OnSendRequest
 	ce.MakeRequester = makeRequester
 
 	dht.Host().SetStreamHandler(ObjectStreamerProtocolID, ce.Handler)
 	return ce
+}
+
+// SetProviderTracker overwrites the default provider tracker.
+func (c *BasicObjectStreamer) SetProviderTracker(t providertracker.ProviderTracker) {
+	c.tracker = t
 }
 
 // Announce announces an object's hash
@@ -124,20 +131,19 @@ func (c *BasicObjectStreamer) GetCommit(
 		return nil, nil, errors.Wrap(err, "failed to get providers")
 	}
 
+	// Remove banned providers and providers that have recently
+	// sent NOPE as response to previous request for the key
+	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
+		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, key)
+	}).([]peer.AddrInfo)
+
 	// Return immediate with error if no provider was found
 	if len(providers) == 0 {
 		return nil, nil, ErrNoProviderFound
 	}
 
-	// Remove banned providers
-	for i, prov := range providers {
-		if good := c.providerTracker.IsGood(prov.ID); !good {
-			providers = append(providers[:i], providers[i+1:]...)
-		}
-	}
-
 	// Register the providers we can track its behaviour over time.
-	c.providerTracker.Register(providers...)
+	c.tracker.Register(providers...)
 
 	// Start request session
 	req := c.MakeRequester(RequestArgs{
@@ -147,7 +153,7 @@ func (c *BasicObjectStreamer) GetCommit(
 		Host:            c.dht.Host(),
 		Log:             c.log,
 		ReposDir:        c.reposDir,
-		ProviderTracker: c.providerTracker,
+		ProviderTracker: c.tracker,
 	})
 
 	// Do the request
@@ -157,17 +163,15 @@ func (c *BasicObjectStreamer) GetCommit(
 	}
 
 	// Get the commit from the packfile
-	// TODO: If the packfile could not be read, ban peer for sending a bad packfile.
 	commit, err := c.PackObjectGetter(res.Pack, plumbing.BytesToHex(hash))
 	if err != nil {
-		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
+		c.tracker.Ban(res.RemotePeer, 24*time.Hour)
 		return nil, nil, errors.Wrap(err, "failed to get target commit from packfile")
 	}
 
 	// Ensure the commit exist in the packfile.
-	// TODO: If commit is unset, ban peer for sending packfile that did not contain the queried object.
 	if commit == nil {
-		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
+		c.tracker.Ban(res.RemotePeer, 24*time.Hour)
 		return nil, nil, fmt.Errorf("target commit not found in the packfile")
 	}
 
@@ -233,7 +237,7 @@ func GetCommitWithAncestors(
 				return packfiles, err
 			} else if startObj != nil {
 				fetchedCommit = startObj
-				goto process_fetched
+				goto processFetched
 			}
 		}
 
@@ -243,7 +247,7 @@ func GetCommitWithAncestors(
 			return packfiles, err
 		}
 
-	process_fetched:
+	processFetched:
 
 		// Cache successfully fetched commits.
 		fetched[targetHash] = struct{}{}
@@ -352,20 +356,19 @@ func (c *BasicObjectStreamer) GetTag(
 		return nil, nil, errors.Wrap(err, "failed to get providers")
 	}
 
+	// Remove banned providers and providers that have recently
+	// sent NOPE as response to previous request for the key
+	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
+		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, key)
+	}).([]peer.AddrInfo)
+
 	// Return immediate with error if no provider was found
 	if len(providers) == 0 {
 		return nil, nil, ErrNoProviderFound
 	}
 
-	// Remove banned providers
-	for i, prov := range providers {
-		if good := c.providerTracker.IsGood(prov.ID); !good {
-			providers = append(providers[:i], providers[i+1:]...)
-		}
-	}
-
 	// Register the providers we can track its behaviour over time.
-	c.providerTracker.Register(providers...)
+	c.tracker.Register(providers...)
 
 	// Start request session
 	req := c.MakeRequester(RequestArgs{
@@ -375,7 +378,7 @@ func (c *BasicObjectStreamer) GetTag(
 		Host:            c.dht.Host(),
 		Log:             c.log,
 		ReposDir:        c.reposDir,
-		ProviderTracker: c.providerTracker,
+		ProviderTracker: c.tracker,
 	})
 
 	// Do the request
@@ -388,14 +391,14 @@ func (c *BasicObjectStreamer) GetTag(
 	// If the packfile could not be read, ban peer for sending a bad packfile.
 	tag, err := c.PackObjectGetter(res.Pack, plumbing.BytesToHex(hash))
 	if err != nil {
-		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
+		c.tracker.Ban(res.RemotePeer, 24*time.Hour)
 		return nil, nil, errors.Wrap(err, "failed to get target tag from packfile")
 	}
 
 	// Ensure the tag exist in the packfile
 	// If tag is unset, ban peer for sending a packfile that did not contain the queried object.
 	if tag == nil {
-		c.providerTracker.Ban(res.RemotePeer, 24*time.Hour)
+		c.tracker.Ban(res.RemotePeer, 24*time.Hour)
 		return nil, nil, fmt.Errorf("target tag not found in the packfile")
 	}
 
@@ -435,7 +438,7 @@ func GetTaggedCommitWithAncestors(
 	endTagHash := plumbing.BytesToHex(args.EndHash)
 	var endTagTargetHash plumb.Hash
 	if endTagHash != "" {
-	check_end_tag:
+	checkEndTag:
 		endTag, err := r.GetObject(endTagHash)
 		if err != nil {
 			if err == plumb.ErrObjectNotFound {
@@ -451,7 +454,7 @@ func GetTaggedCommitWithAncestors(
 			endTagTargetHash = endTag.(*object.Tag).Target
 		case plumb.TagObject:
 			endTagHash = endTag.(*object.Tag).Target.String()
-			goto check_end_tag
+			goto checkEndTag
 		default:
 			return nil, fmt.Errorf("end tag must point to a tag or commit object")
 		}
@@ -575,8 +578,8 @@ func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 	}
 }
 
-// OnWant handles incoming "WANT" requests
-func (c *BasicObjectStreamer) OnWant(msg []byte, s network.Stream) error {
+// OnWantRequest handles incoming "WANT" requests
+func (c *BasicObjectStreamer) OnWantRequest(msg []byte, s network.Stream) error {
 
 	repoName, key, err := dht2.ParseWantOrSendMsg(msg)
 	if err != nil {
@@ -602,7 +605,6 @@ func (c *BasicObjectStreamer) OnWant(msg []byte, s network.Stream) error {
 
 	// Check if object exist in the repo
 	if !r.ObjectExist(plumbing.BytesToHex(commitHash)) {
-		s.Reset()
 		if _, err = s.Write(dht2.MakeNopeMsg()); err != nil {
 			return errors.Wrap(err, "failed to write 'nope' message")
 		}
@@ -619,8 +621,8 @@ func (c *BasicObjectStreamer) OnWant(msg []byte, s network.Stream) error {
 	return nil
 }
 
-// OnSend handles incoming "SEND" requests.
-func (c *BasicObjectStreamer) OnSend(msg []byte, s network.Stream) error {
+// OnSendRequest handles incoming "SEND" requests.
+func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error {
 
 	// Parse the message
 	repoName, key, err := dht2.ParseWantOrSendMsg(msg)
