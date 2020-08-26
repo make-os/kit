@@ -175,6 +175,24 @@ func (mr *MockLiteGitMockRecorder) ExpandShortHash(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLiteGit)(nil).ExpandShortHash), arg0)
 }
 
+// GC mocks base method
+func (m *MockLiteGit) GC(arg0 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GC", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GC indicates an expected call of GC
+func (mr *MockLiteGitMockRecorder) GC(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockLiteGit)(nil).GC), arg0...)
+}
+
 // GetHEAD mocks base method
 func (m *MockLiteGit) GetHEAD(arg0 bool) (string, error) {
 	m.ctrl.T.Helper()
@@ -404,6 +422,21 @@ func (mr *MockLiteGitMockRecorder) RemoveEntryFromNote(arg0, arg1 interface{}, a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockLiteGit)(nil).RemoveEntryFromNote), varargs...)
+}
+
+// Size mocks base method
+func (m *MockLiteGit) Size() (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Size")
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Size indicates an expected call of Size
+func (mr *MockLiteGitMockRecorder) Size() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockLiteGit)(nil).Size))
 }
 
 // TagDelete mocks base method
@@ -665,6 +698,24 @@ func (m *MockLocalRepo) ExpandShortHash(arg0 string) (string, error) {
 func (mr *MockLocalRepoMockRecorder) ExpandShortHash(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLocalRepo)(nil).ExpandShortHash), arg0)
+}
+
+// GC mocks base method
+func (m *MockLocalRepo) GC(arg0 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GC", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GC indicates an expected call of GC
+func (mr *MockLocalRepoMockRecorder) GC(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockLocalRepo)(nil).GC), arg0...)
 }
 
 // GetAncestors mocks base method
@@ -1297,6 +1348,21 @@ func (m *MockLocalRepo) SetState(arg0 *state.Repository) {
 func (mr *MockLocalRepoMockRecorder) SetState(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetState", reflect.TypeOf((*MockLocalRepo)(nil).SetState), arg0)
+}
+
+// Size mocks base method
+func (m *MockLocalRepo) Size() (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Size")
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Size indicates an expected call of Size
+func (mr *MockLocalRepoMockRecorder) Size() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockLocalRepo)(nil).Size))
 }
 
 // Tag mocks base method

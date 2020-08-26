@@ -59,7 +59,7 @@ type ObjectObserver struct {
 // Returns error if a blob object size surpasses maxBlobSize.
 func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize int64, pos int64) error {
 	if t == plumbing.BlobObject && objSize > o.MaxBlobSize {
-		return fmt.Errorf("a file exceeded the maximum file size of %d bytes", o.MaxBlobSize)
+		return fmt.Errorf("size error: a file's size exceeded the network limit")
 	}
 	o.Objects = append(o.Objects, &PackObject{Type: t})
 	o.totalSize = o.totalSize + objSize

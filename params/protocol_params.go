@@ -122,29 +122,40 @@ var (
 var (
 	// RepoProposalDur is the number of blocks a repo proposal can remain active
 	RepoProposalDur = uint64(10)
+
 	// RepoProposalQuorum is the minimum percentage of voters required to
 	// consider a proposal valid.
 	RepoProposalQuorum = float64(10)
+
 	// RepoProposalThreshold is the minimum percentage required to consider a
 	// proposal accepted ("YES" voted)
 	RepoProposalThreshold = float64(51)
+
 	// RepoProposalVetoQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum
 	RepoProposalVetoQuorum = float64(33)
+
 	// RepoProposalVetoOwnersQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum in a proposal where stakeholders and
 	// owners are eligible to vote
 	RepoProposalVetoOwnersQuorum = float64(0)
+
 	// MinProposalFee is the minimum fee to be paid for each new proposal
 	// NOTE: This should probably be set to zero, otherwise every proposal (even
 	// by owners) will require an additional fee.
 	MinProposalFee = float64(0)
+
 	// HelmProposalFeeSplit is the percentage of proposal fee distributed to the
 	// helm repo
 	HelmProposalFeeSplit = 0.2
+
 	// TargetRepoProposalFeeSplit is the percentage of proposal fee distributed to the
 	// repo that received and resolved a proposal
 	TargetRepoProposalFeeSplit = 0.8
+
 	// MaxPushFileSize is the maximum size of files in a push request
-	MaxPushFileSize = 1024 * 50
+	MaxPushFileSize = 1024 * 1024 * 50 // 50 MB
+
+	// MaxRepoSize is the maximum size of a repository
+	MaxRepoSize = 500000 // 1024 * 1024 // 1 MB
 )

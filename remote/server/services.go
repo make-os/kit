@@ -13,13 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/types"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
-	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
 
 // RequestContext describes a request from the git remote server
@@ -34,6 +33,7 @@ type RequestContext struct {
 	Operation   string
 	ServiceName string
 	GitBinPath  string
+	pktEnc      *pktline.Encoder
 }
 
 // sendFile fetches a file and sends it to the requester
@@ -160,14 +160,6 @@ func getIdxFile(s *RequestContext) error {
 	return sendFile(s.Operation, "application/x-git-packed-objects-toc", s)
 }
 
-func sidebandErr(msg string) []byte {
-	return sideband.ErrorMessage.WithPayload([]byte(fmt2.RedString(msg)))
-}
-
-func sidebandProgress(msg string) []byte {
-	return sideband.ProgressMessage.WithPayload([]byte(fmt2.GreenString(msg)))
-}
-
 // service describes a git service and its handler
 type service struct {
 	method string
@@ -228,6 +220,8 @@ dumbReq:
 
 // serveService handles git-upload & fetch-pack requests
 func serveService(s *RequestContext) error {
+	defer s.pktEnc.Flush()
+
 	w, r, op, dir := s.W, s.R, s.Operation, s.RepoDir
 	op = strings.ReplaceAll(op, "git-", "")
 
@@ -291,30 +285,22 @@ func serveService(s *RequestContext) error {
 		return nil
 	}
 
-	scn := pktline.NewScanner(stdout)
-	pktEnc := pktline.NewEncoder(w)
-	defer pktEnc.Flush()
-
 	// Read, analyse and pass the packfile to git
-	s.PushHandler.SetGitReceivePackCmd(cmd)
-	if err := s.PushHandler.HandleStream(reader, in); err != nil {
-		pktEnc.Encode(sidebandErr(errors.Wrap(err, "server error").Error()))
+	if err := s.PushHandler.HandleStream(reader, in, cmd, s.pktEnc); err != nil {
+		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
 		return errors.Wrap(err, "HandleStream error")
 	}
 
 	// Handle validate, revert and broadcast the changes
 	if err := s.PushHandler.HandleUpdate(); err != nil {
-		pktEnc.Encode(sidebandErr(err.Error()))
-		return errors.Wrap(err, "HandleUpdate err")
+		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
+		return errors.Wrap(err, "HandleUpdate error")
 	}
 
-	noteID := s.PushHandler.(*push.BasicHandler).NoteID
-	w.Header().Set("TxID", noteID)
-	pktEnc.Encode(sidebandProgress(fmt.Sprintf("TxHash: %s", noteID)))
-
 	// Write output from git to the http response
+	scn := pktline.NewScanner(stdout)
 	for scn.Scan() {
-		pktEnc.Encode(scn.Bytes())
+		s.pktEnc.Encode(scn.Bytes())
 	}
 
 	return nil

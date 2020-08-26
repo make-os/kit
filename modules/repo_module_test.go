@@ -27,7 +27,6 @@ var _ = Describe("RepoModule", func() {
 	var mockLogic *mocks.MockLogic
 	var mockRepoSrv *mocks.MockRemoteServer
 	var mockMempoolReactor *mocks.MockMempoolReactor
-	var mockPruner *mocks.MockRepoPruner
 	var mockRepoKeeper *mocks.MockRepoKeeper
 
 	BeforeEach(func() {
@@ -35,13 +34,11 @@ var _ = Describe("RepoModule", func() {
 		mockService = mocks.NewMockService(ctrl)
 		mockRepoSrv = mocks.NewMockRemoteServer(ctrl)
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
-		mockPruner = mocks.NewMockRepoPruner(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
 		mockLogic.EXPECT().RepoKeeper().Return(mockRepoKeeper).AnyTimes()
 		mockLogic.EXPECT().GetRemoteServer().Return(mockRepoSrv).AnyTimes()
-		mockRepoSrv.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
 		m = modules.NewRepoModule(mockService, mockRepoSrv, mockLogic)
 	})
 
@@ -226,21 +223,6 @@ var _ = Describe("RepoModule", func() {
 			res := m.Vote(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
-		})
-	})
-
-	Describe(".Prune", func() {
-		It("should panic when forced prune failed", func() {
-			mockPruner.EXPECT().Prune("repo1", true).Return(fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Prune("repo1", true)
-			})
-		})
-
-		It("should schedule prune operation when force=false", func() {
-			mockPruner.EXPECT().Schedule("repo1")
-			m.Prune("repo1", false)
 		})
 	})
 

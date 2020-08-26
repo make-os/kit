@@ -168,6 +168,8 @@ type LiteGit interface {
 	Var(name string) (string, error)
 	ExpandShortHash(hash string) (string, error)
 	RefFetch(args RefFetchArgs) error
+	GC(pruneExpire ...string) error
+	Size() (size float64, err error)
 }
 
 // Commit represents a Commit.

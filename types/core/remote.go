@@ -70,20 +70,14 @@ type RemoteServer interface {
 	// RegisterAPIHandlers registers server API handlers
 	RegisterAPIHandlers(agg types2.ModulesHub)
 
-	// AnnounceObject announces a git object to the DHT network
-	AnnounceObject(hash []byte, doneCB func(error))
+	// AnnounceObject announces a key on the DHT network
+	Announce(hash []byte, doneCB func(error))
 
 	// AnnounceRepoObjects announces all objects in a repository
 	AnnounceRepoObjects(repoName string) error
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher
-
-	// GetPruner returns the repo pruner
-	GetPruner() remotetypes.RepoPruner
-
-	// SetPruner sets the pruner
-	SetPruner(pruner remotetypes.RepoPruner)
 
 	// GetDHT returns the dht service
 	GetDHT() types.DHT

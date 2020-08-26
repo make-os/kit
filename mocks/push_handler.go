@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	pktline "gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	packp "gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 	io "io"
 	exec "os/exec"
@@ -36,17 +37,17 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 }
 
 // HandleStream mocks base method
-func (m *MockHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
+func (m *MockHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitReceiveCmd *exec.Cmd, pktEnc *pktline.Encoder) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleStream", packfile, gitReceivePack)
+	ret := m.ctrl.Call(m, "HandleStream", packfile, gitReceive, gitReceiveCmd, pktEnc)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleStream indicates an expected call of HandleStream
-func (mr *MockHandlerMockRecorder) HandleStream(packfile, gitReceivePack interface{}) *gomock.Call {
+func (mr *MockHandlerMockRecorder) HandleStream(packfile, gitReceive, gitReceiveCmd, pktEnc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleStream", reflect.TypeOf((*MockHandler)(nil).HandleStream), packfile, gitReceivePack)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleStream", reflect.TypeOf((*MockHandler)(nil).HandleStream), packfile, gitReceive, gitReceiveCmd, pktEnc)
 }
 
 // EnsureReferencesHaveTxDetail mocks base method
@@ -105,6 +106,20 @@ func (mr *MockHandlerMockRecorder) HandleReferences() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReferences", reflect.TypeOf((*MockHandler)(nil).HandleReferences))
 }
 
+// HandleRepoSize mocks base method
+func (m *MockHandler) HandleRepoSize() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleRepoSize")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleRepoSize indicates an expected call of HandleRepoSize
+func (mr *MockHandlerMockRecorder) HandleRepoSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRepoSize", reflect.TypeOf((*MockHandler)(nil).HandleRepoSize))
+}
+
 // HandleUpdate mocks base method
 func (m *MockHandler) HandleUpdate() error {
 	m.ctrl.T.Helper()
@@ -131,16 +146,4 @@ func (m *MockHandler) HandleReference(ref string, revertOnly bool) []error {
 func (mr *MockHandlerMockRecorder) HandleReference(ref, revertOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReference", reflect.TypeOf((*MockHandler)(nil).HandleReference), ref, revertOnly)
-}
-
-// SetGitReceivePackCmd mocks base method
-func (m *MockHandler) SetGitReceivePackCmd(cmd *exec.Cmd) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetGitReceivePackCmd", cmd)
-}
-
-// SetGitReceivePackCmd indicates an expected call of SetGitReceivePackCmd
-func (mr *MockHandlerMockRecorder) SetGitReceivePackCmd(cmd interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGitReceivePackCmd", reflect.TypeOf((*MockHandler)(nil).SetGitReceivePackCmd), cmd)
 }

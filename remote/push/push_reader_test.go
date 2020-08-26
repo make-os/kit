@@ -113,7 +113,7 @@ var _ = Describe("PushReader", func() {
 				oo := push.ObjectObserver{MaxBlobSize: 100}
 				err := oo.OnInflatedObjectHeader(plumbing.BlobObject, 111, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("a file exceeded the maximum file size of 100 bytes"))
+				Expect(err).To(MatchError("size error: a file's size exceeded the network limit"))
 			})
 
 			It("should add new object entry if size of blob did not exceed MaxBlobSize", func() {

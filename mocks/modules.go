@@ -1153,18 +1153,6 @@ func (mr *MockRepoModuleMockRecorder) Vote(params interface{}, options ...interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vote", reflect.TypeOf((*MockRepoModule)(nil).Vote), varargs...)
 }
 
-// Prune mocks base method
-func (m *MockRepoModule) Prune(name string, force bool) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Prune", name, force)
-}
-
-// Prune indicates an expected call of Prune
-func (mr *MockRepoModuleMockRecorder) Prune(name, force interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockRepoModule)(nil).Prune), name, force)
-}
-
 // Get mocks base method
 func (m *MockRepoModule) Get(name string, opts ...types.GetOptions) util.Map {
 	m.ctrl.T.Helper()

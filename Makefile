@@ -36,7 +36,6 @@ genmocks:
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
 	mockgen -source=remote/fetcher/object_fetcher.go -destination=mocks/object_fetcher.go -package mocks
 	mockgen -source=remote/push/push_handler.go -destination=mocks/push_handler.go -package mocks
-	mockgen -source=remote/types/pruner.go -destination=mocks/pruner.go -package mocks
 	mockgen -source=api/remote/client/client.go -destination=mocks/rests_client.go -package mocks
 	mockgen -source=api/remote/api.go -destination=mocks/rests_api.go -package mocks
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks

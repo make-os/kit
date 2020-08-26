@@ -24,10 +24,6 @@ import (
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-var (
-	MaxCompatRetries = 1
-)
-
 // RefSyncer describes an interface for synchronizing a repository's
 // reference local state with the network using information from a
 // push transaction.

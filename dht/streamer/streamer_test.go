@@ -371,6 +371,67 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 	})
 
+	Describe(".GetProviders", func() {
+		var ctx = context.Background()
+		var repoName = "repo1"
+
+		It("should return error when unable to get providers of object's key", func() {
+			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, fmt.Errorf("error"))
+			_, err := cs.GetProviders(ctx, repoName, dht.MakeObjectKey(hash[:]))
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get providers of target object: error"))
+		})
+
+		When("no provider for the target object was found", func() {
+			It("should return error when unable to get providers of the repository", func() {
+				mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, nil)
+				mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, fmt.Errorf("error"))
+				_, err := cs.GetProviders(ctx, repoName, dht.MakeObjectKey(hash[:]))
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to get providers of target repo: error"))
+			})
+		})
+
+		When("providers for the target object was found", func() {
+			It("should return no error when unable to get providers of the repository", func() {
+				prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
+				mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+				mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, fmt.Errorf("error"))
+				res, err := cs.GetProviders(ctx, repoName, dht.MakeObjectKey(hash[:]))
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(Equal(prov))
+			})
+		})
+
+		When("providers for the target object and repository were found", func() {
+			It("should return no error and 2 providers", func() {
+				prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
+				prov2 := peer.AddrInfo{ID: "id2", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.2")}}
+				mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+				mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return([]peer.AddrInfo{prov2}, nil)
+				res, err := cs.GetProviders(ctx, repoName, dht.MakeObjectKey(hash[:]))
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
+				Expect(res[0]).To(Equal(prov))
+				Expect(res[1]).To(Equal(prov2))
+			})
+		})
+
+		When("same providers for the target object and repository were found", func() {
+			It("should return no error and 1 provider", func() {
+				prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
+				prov2 := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
+				mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+				mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return([]peer.AddrInfo{prov2}, nil)
+				res, err := cs.GetProviders(ctx, repoName, dht.MakeObjectKey(hash[:]))
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(Equal(prov))
+			})
+		})
+	})
+
 	Describe(".GetCommit", func() {
 		var ctx = context.Background()
 		var repoName = "repo1"
@@ -379,11 +440,12 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, fmt.Errorf("error"))
 			_, _, err := cs.GetCommit(ctx, repoName, hash[:])
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get providers: error"))
+			Expect(err).To(MatchError("failed to get providers of target object: error"))
 		})
 
 		It("should return ErrNoProviderFound when no provider is found", func() {
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 			_, _, err := cs.GetCommit(ctx, repoName, hash[:])
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(streamer.ErrNoProviderFound))
@@ -392,6 +454,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return ErrNoProviderFound when the only provider is not a GOOD provider", func() {
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 
 			mockTracker := mocks.NewMockProviderTracker(ctrl)
 			cs.SetProviderTracker(mockTracker)
@@ -405,6 +468,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return ErrNoProviderFound when the only provider previously returned NOPE for the key", func() {
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 
 			mockTracker := mocks.NewMockProviderTracker(ctrl)
 			cs.SetProviderTracker(mockTracker)
@@ -421,6 +485,8 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
+
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 			mockReq.EXPECT().Do(ctx).Return(nil, fmt.Errorf("request error"))
 			cs.MakeRequester = func(args streamer.RequestArgs) streamer.ObjectRequester {
@@ -436,6 +502,8 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
+
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 			mockReq.EXPECT().Do(ctx).Return(&streamer.PackResult{}, nil)
 			cs.MakeRequester = func(args streamer.RequestArgs) streamer.ObjectRequester {
@@ -454,6 +522,8 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
+
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 			mockReq.EXPECT().Do(ctx).Return(&streamer.PackResult{}, nil)
 			cs.MakeRequester = func(args streamer.RequestArgs) streamer.ObjectRequester {
@@ -472,6 +542,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 
 			pack, err := ioutil.TempFile(os.TempDir(), "")
@@ -499,11 +570,12 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, fmt.Errorf("error"))
 			_, _, err := cs.GetTag(ctx, repoName, hash[:])
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get providers: error"))
+			Expect(err).To(MatchError("failed to get providers of target object: error"))
 		})
 
 		It("should return ErrNoProviderFound when no provider is found", func() {
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return(nil, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 			_, _, err := cs.GetTag(ctx, repoName, hash[:])
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(streamer.ErrNoProviderFound))
@@ -512,6 +584,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return ErrNoProviderFound when the only provider is not a GOOD provider", func() {
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 
 			mockTracker := mocks.NewMockProviderTracker(ctrl)
 			cs.SetProviderTracker(mockTracker)
@@ -525,6 +598,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return ErrNoProviderFound when the only provider previously returned NOPE for the key", func() {
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 
 			mockTracker := mocks.NewMockProviderTracker(ctrl)
 			cs.SetProviderTracker(mockTracker)
@@ -541,6 +615,8 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
+
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 			mockReq.EXPECT().Do(ctx).Return(nil, fmt.Errorf("request error"))
 			cs.MakeRequester = func(args streamer.RequestArgs) streamer.ObjectRequester {
@@ -556,6 +632,8 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
+
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 			mockReq.EXPECT().Do(ctx).Return(&streamer.PackResult{}, nil)
 			cs.MakeRequester = func(args streamer.RequestArgs) streamer.ObjectRequester {
@@ -574,6 +652,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 			prov := peer.AddrInfo{ID: "id", Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 			mockDHT.EXPECT().GetProviders(ctx, dht.MakeObjectKey(hash[:])).Return([]peer.AddrInfo{prov}, nil)
+			mockDHT.EXPECT().GetProviders(ctx, []byte(repoName)).Return(nil, nil)
 			mockReq := mocks.NewMockObjectRequester(ctrl)
 
 			pack, err := ioutil.TempFile(os.TempDir(), "")

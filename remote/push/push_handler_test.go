@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/params"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
@@ -78,7 +79,7 @@ var _ = Describe("BasicHandler", func() {
 		When("unable to get repo old state", func() {
 			BeforeEach(func() {
 				mockRemoteSrv.EXPECT().GetRepoState(repo).Return(nil, fmt.Errorf("error"))
-				err = handler.HandleStream(nil, nil)
+				err = handler.HandleStream(nil, nil, nil, nil)
 			})
 
 			It("should return err", func() {
@@ -91,7 +92,7 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				oldState := &plumbing2.State{}
 				mockRemoteSrv.EXPECT().GetRepoState(repo).Return(oldState, nil)
-				err = handler.HandleStream(strings.NewReader("invalid"), nil)
+				err = handler.HandleStream(strings.NewReader("invalid"), nil, nil, nil)
 			})
 
 			It("should return err", func() {
@@ -119,7 +120,7 @@ var _ = Describe("BasicHandler", func() {
 			When("old state is unset", func() {
 				It("should return error when unable to get repo state", func() {
 					mockRemoteSrv.EXPECT().GetRepoState(handler.Repo).Return(nil, fmt.Errorf("error"))
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("error"))
 				})
@@ -131,7 +132,7 @@ var _ = Describe("BasicHandler", func() {
 					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 						return fmt.Errorf("auth failed badly")
 					}
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("authorization: auth failed badly"))
 				})
@@ -143,7 +144,7 @@ var _ = Describe("BasicHandler", func() {
 					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 						return nil
 					}
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -427,6 +428,38 @@ var _ = Describe("BasicHandler", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("bad error"))
 			})
+		})
+	})
+
+	Describe(".HandleRepoSize", func() {
+		It("should return error when garbage collection execution failed", func() {
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().GC("1 day ago").Return(fmt.Errorf("error"))
+			handler.Repo = mockRepo
+			err := handler.HandleRepoSize()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to run garbage collection: error"))
+		})
+
+		It("should return error when unable to get repo size", func() {
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().GC("1 day ago").Return(nil)
+			mockRepo.EXPECT().Size().Return(float64(0), fmt.Errorf("error"))
+			handler.Repo = mockRepo
+			err := handler.HandleRepoSize()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get repo size: error"))
+		})
+
+		It("should return error repo size exceeded limit", func() {
+			params.MaxRepoSize = 999
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().GC("1 day ago").Return(nil)
+			mockRepo.EXPECT().Size().Return(float64(1000), nil)
+			handler.Repo = mockRepo
+			err := handler.HandleRepoSize()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("size error: repository size has exceeded the network limit"))
 		})
 	})
 

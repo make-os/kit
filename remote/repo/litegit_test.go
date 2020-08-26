@@ -517,4 +517,42 @@ var _ = Describe("Gitops", func() {
 			Expect(res).To(Equal(hash))
 		})
 	})
+
+	Describe(".GC", func() {
+		It("should pack loose objects", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
+			hash := testutil2.GetRecentCommitHash(path, "master")
+			Expect(hash).To(HaveLen(40))
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeTrue())
+			Expect(r.GC()).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeFalse())
+		})
+
+		It("should not delete unreachable objects if pruneExpire is unset", func() {
+			hash, err := r.CreateBlob("alice is nice")
+			Expect(err).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeTrue())
+			Expect(r.GC()).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeTrue())
+		})
+
+		It("should remove all unreachable objects immediately if pruneExpire is now", func() {
+			hash, err := r.CreateBlob("alice is nice")
+			Expect(err).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeTrue())
+			Expect(r.GC("now")).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeFalse())
+		})
+	})
+
+	Describe(".Size", func() {
+		It("should return expected size", func() {
+			hash, err := r.CreateBlob("alice is nice")
+			Expect(err).To(BeNil())
+			Expect(util.IsPathOk(filepath.Join(path, ".git", "objects", hash[:2]))).To(BeTrue())
+			size, err := r.Size()
+			Expect(err).To(BeNil())
+			Expect(size).To(Equal(float64(4096)))
+		})
+	})
 })

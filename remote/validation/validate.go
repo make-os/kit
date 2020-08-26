@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/crypto"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
@@ -72,6 +73,7 @@ func ValidateChange(
 	if plumbing2.IsBranch(refname) {
 		commit, err := localRepo.CommitObject(plumbing.NewHash(change.Item.GetData()))
 		if err != nil {
+			pp.Println("CANT", change.Item.GetData())
 			return errors.Wrap(err, "unable to get commit object")
 		}
 		return CheckCommit(commit, detail, getPushKey)

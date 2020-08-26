@@ -11,6 +11,7 @@ import (
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/util"
+	"github.com/thoas/go-funk"
 )
 
 type Announcer interface {
@@ -42,7 +43,7 @@ func (t *Task) GetID() interface{} {
 }
 
 // BasicAnnouncer implements Announcer.
-// It provides the mechanism for announcing objects to the DHT.
+// It provides the mechanism for announcing keys on the DHT.
 // Announcement requests are queued up an concurrently executed by n workers.
 // When an announcement fails, it is retried several times.
 type BasicAnnouncer struct {
@@ -116,7 +117,7 @@ func (a *BasicAnnouncer) createWorker(id int) {
 			}
 			continue
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
 	}
 }
 
@@ -168,12 +169,12 @@ func (a *BasicAnnouncer) Do(workerID int, task *Task) error {
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5))
 
 	if err != nil {
-		a.log.Error("Failed to announce object", "Err", err, "Key", task.Key.HexStr(true))
+		a.log.Error("Failed to announce key", "Err", err, "Key", task.Key.HexStr(true))
 		task.Done(err)
 		return err
 	}
 
-	a.log.Debug("Announced an object", "Key", task.Key.HexStr(true))
+	a.log.Debug("Successfully announced a key", "Key", task.Key.HexStr(true))
 
 	task.Done(nil)
 

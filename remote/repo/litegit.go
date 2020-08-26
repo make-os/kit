@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/make-os/lobe/remote/plumbing"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 )
 
 // execGitCmd executes git commands and returns the output
@@ -484,4 +486,35 @@ func (lg *LiteGit) RefFetch(params remotetypes.RefFetchArgs) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return errors.Wrap(cmd.Run(), "failed to fetch")
+}
+
+// GC performs garbage collection
+func (lg *LiteGit) GC(pruneExpire ...string) error {
+	args := []string{"gc"}
+	if len(pruneExpire) > 0 {
+		args = append(args, "--prune="+pruneExpire[0])
+	}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	return cmd.Run()
+}
+
+// Size returns the size of all packed, loose and garbage objects
+func (lg *LiteGit) Size() (size float64, err error) {
+	args := []string{"count-objects", "-vH"}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, errors.Wrap(err, string(out))
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(out)))
+	for scanner.Scan() {
+		if strings.HasPrefix(scanner.Text(), "size") {
+			size += cast.ToFloat64(strings.Fields(scanner.Text())[1]) * 1024
+		}
+	}
+
+	return
 }

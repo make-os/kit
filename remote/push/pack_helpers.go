@@ -23,25 +23,18 @@ type ReferenceUpdateRequestPackMaker func(tx pushtypes.PushNote) (io.ReadSeeker,
 // to send to git-receive-pack program.
 func MakeReferenceUpdateRequestPack(note pushtypes.PushNote) (io.ReadSeeker, error) {
 
-	var targetRepo = note.GetTargetRepo()
+	// Gather the new hash of the pushed references.
+	// Skip delete request
 	var hashes []plumbing.Hash
-
-	// Gather objects introduced by the pushed references.
-	// We need the list of objects to create a packfile later.
 	for _, ref := range note.GetPushedReferences() {
-		newHash := ref.NewHash
-
-		// Skip delete request
-		if plumbing2.IsZeroHash(newHash) {
-			continue
+		if !plumbing2.IsZeroHash(ref.NewHash) {
+			hashes = append(hashes, plumbing.NewHash(ref.NewHash))
 		}
-
-		hashes = append(hashes, plumbing.NewHash(ref.NewHash))
 	}
 
 	// Use the hashes to create a packfile
 	var pack = bytes.NewBuffer(nil)
-	enc := packfile.NewEncoder(pack, targetRepo.GetStorer(), true)
+	enc := packfile.NewEncoder(pack, note.GetTargetRepo().GetStorer(), true)
 	_, err := enc.Encode(hashes, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to pack pushed references new hash")

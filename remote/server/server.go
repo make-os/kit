@@ -18,7 +18,6 @@ import (
 	"github.com/make-os/lobe/remote/fetcher"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
-	"github.com/make-os/lobe/remote/pruner"
 	"github.com/make-os/lobe/remote/push"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/remote/refsync"
@@ -80,7 +79,6 @@ type Server struct {
 	pushKeyGetter              core.PushKeyGetter                   // finds and returns PGP public key
 	dht                        types2.DHT                           // The dht service
 	objfetcher                 fetcher.ObjectFetcher                // The object fetcher service
-	pruner                     remotetypes.RepoPruner               // The repo runner
 	blockGetter                types.BlockGetter                    // Provides access to blocks
 	noteSenders                *cache.Cache                         // Store senders of push notes
 	endorsementSenders         *cache.Cache                         // Stores senders of Endorsement messages
@@ -156,9 +154,6 @@ func NewRemoteServer(
 
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)
-
-	// Instantiate the pruner
-	server.pruner = pruner.NewPruner(server, server.rootDir)
 
 	if !cfg.Node.Validator {
 
@@ -250,7 +245,6 @@ func (sv *Server) Start() error {
 	}()
 
 	go sv.subscribe()
-	go sv.pruner.Start()
 
 	return nil
 }
@@ -279,16 +273,6 @@ func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
 	return sv.validatorKey
 }
 
-// GetPruner returns the repo pruner
-func (sv *Server) GetPruner() remotetypes.RepoPruner {
-	return sv.pruner
-}
-
-// SetPruner sets the pruner
-func (sv *Server) SetPruner(pruner remotetypes.RepoPruner) {
-	sv.pruner = pruner
-}
-
 // GetPushPool returns the push pool
 func (sv *Server) GetPushPool() pushtypes.PushPool {
 	return sv.pushPool
@@ -313,8 +297,8 @@ func (sv *Server) getRepoPath(name string) string {
 	return filepath.Join(sv.rootDir, name)
 }
 
-// AnnounceObject announces a git object to the DHT network
-func (sv *Server) AnnounceObject(hash []byte, doneCB func(error)) {
+// AnnounceObject announces a key on the DHT network
+func (sv *Server) Announce(hash []byte, doneCB func(error)) {
 	sv.dht.ObjectStreamer().Announce(hash, doneCB)
 }
 
@@ -355,9 +339,10 @@ func (sv *Server) AnnounceRepoObjects(repoName string) error {
 
 // gitRequestsHandler handles incoming http request from a git client
 func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
-
 	sv.log.Debug("New request", "Method", r.Method, "URL", r.URL.String())
+	pktEnc := pktline.NewEncoder(w)
 
+	// handle panics gracefully
 	defer func() {
 		if rcv, ok := recover().(error); ok {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -405,6 +390,10 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if op == "git-receive-pack" {
+		go pktEnc.Encode(plumbing.SidebandInfo("performing authentication checks"))
+	}
+
 	// Authenticate pusher
 	txDetails, polEnforcer, err := sv.handleAuth(r, w, repoState, namespace)
 	if err != nil {
@@ -418,8 +407,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		// the preferred response code since `git push` will not show the error
 		// if it is not within 200-209 range.
 		w.WriteHeader(http.StatusResetContent)
-		pktEnc := pktline.NewEncoder(w)
-		pktEnc.Encode(sidebandErr(err.Error()))
+		pktEnc.Encode(plumbing.SidebandErr(err.Error()))
 		pktEnc.Flush()
 		return
 	}
@@ -453,6 +441,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		RepoDir:     repo.GetPath(),
 		ServiceName: getService(r),
 		GitBinPath:  sv.gitBinPath,
+		pktEnc:      pktEnc,
 	}
 
 	req.PushHandler = sv.makePushHandler(req.Repo, txDetails, polEnforcer)
@@ -468,7 +457,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 		if srv.method != r.Method {
 			writeMethodNotAllowed(w, r)
-			return
+			break
 		}
 
 		err := srv.handle(req)
@@ -522,7 +511,6 @@ func (sv *Server) Shutdown(ctx context.Context) {
 	if sv.srv != nil {
 		sv.srv.Shutdown(ctx)
 	}
-	sv.pruner.Stop()
 }
 
 // Stop implements Reactor

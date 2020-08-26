@@ -58,11 +58,6 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 			Description: "Update a repository",
 		},
 		{
-			Name:        "prune",
-			Value:       m.Prune,
-			Description: "Delete all dangling and unreachable loose objects from a repository",
-		},
-		{
 			Name:        "upsertOwner",
 			Value:       m.UpsertOwner,
 			Description: "Create a proposal to add or update a repository owner",
@@ -252,21 +247,6 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 	return map[string]interface{}{
 		"hash": hash,
 	}
-}
-
-// prune removes dangling or unreachable objects from a repository.
-//
-// ARGS:
-// name: The name of the repository
-// force: When true, forcefully prunes the target repository
-func (m *RepoModule) Prune(name string, force bool) {
-	if force {
-		if err := m.repoSrv.GetPruner().Prune(name, true); err != nil {
-			panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
-		}
-		return
-	}
-	m.repoSrv.GetPruner().Schedule(name)
 }
 
 // Get finds and returns a repository.

@@ -111,14 +111,13 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// Register a cache entry that indicates the sender of the push note
 	sv.registerNoteSender(string(peerID), note.ID().String())
 
-	// For each objects fetched:
-	// - Broadcast commit and tag objects.
+	// For each packfile fetched, announce commit and tag objects.
 	sv.objfetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
 		plumbing.UnpackPackfile(packfile, func(header *packfile2.ObjectHeader, read func() (object.Object, error)) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
 				objHash := obj.ID()
-				sv.AnnounceObject(objHash[:], nil)
+				sv.Announce(objHash[:], nil)
 			}
 			return nil
 		})
@@ -160,16 +159,19 @@ func (sv *Server) onFetch(
 	// Verify the note's size ensuring it matches the local size
 	// TODO: Penalize remote node for the inconsistency
 	if noteSize := note.GetSize(); note.IsFromRemotePeer() && noteSize != localSize {
-		sv.log.Error("Size of push note not match actual local size",
-			"Size", noteSize, "LocalSize", localSize, "Repo", repoName)
+		sv.log.Error("push note size and local size mismatch", "Size", noteSize,
+			"LocalSize", localSize, "Repo", repoName)
 		return fmt.Errorf("note's objects size and local size differs")
 	}
 
 	// Attempt to process the push note
 	if err = sv.processPushNote(note, txDetails, polEnforcer); err != nil {
-		sv.log.Debug("Failed to process push note", "ID", note.ID().String(), "Err", err.Error())
+		sv.log.Error("Failed to process push note", "ID", note.ID().String(), "Err", err.Error())
 		return err
 	}
+
+	// Announce interest in providing the repository objects
+	sv.Announce([]byte(repoName), nil)
 
 	return nil
 }
@@ -188,7 +190,7 @@ func (sv *Server) maybeProcessPushNote(
 	polEnforcer policy.EnforcerFunc) error {
 
 	// Create a packfile that represents updates described in the note.
-	updatePackfile, err := sv.makeReferenceUpdatePack(note)
+	packfile, err := sv.makeReferenceUpdatePack(note)
 	if err != nil {
 		return errors.Wrap(err, "failed to create packfile from push note")
 	}
@@ -218,16 +220,20 @@ func (sv *Server) maybeProcessPushNote(
 	}
 
 	// Read, analyse and pass the packfile to git
-	pushHandler := sv.makePushHandler(note.GetTargetRepo(), txDetails, polEnforcer)
-	pushHandler.SetGitReceivePackCmd(cmd)
-	if err := pushHandler.HandleStream(updatePackfile, in); err != nil {
+	handler := sv.makePushHandler(note.GetTargetRepo(), txDetails, polEnforcer)
+	if err := handler.HandleStream(packfile, in, cmd, nil); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
 
 	// Handle transaction validation and revert changes
-	err = pushHandler.HandleReferences()
+	err = handler.HandleReferences()
 	if err != nil {
 		return errors.Wrap(err, "HandleReferences error")
+	}
+
+	// Handle repository size check
+	if err := handler.HandleRepoSize(); err != nil {
+		return errors.Wrap(err, "HandleRepoSize error")
 	}
 
 	// Add the note to the push pool

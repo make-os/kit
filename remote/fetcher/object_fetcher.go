@@ -198,6 +198,8 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 				},
 			})
 			if err != nil {
+				f.log.Error("failed to fetch object(s) of reference",
+					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash)
 				cn()
 				return err
 			}
@@ -255,6 +257,8 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 				},
 			})
 			if err != nil {
+				f.log.Error("failed to fetch object(s) of reference",
+					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash)
 				cn()
 				return err
 			}

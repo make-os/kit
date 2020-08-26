@@ -145,7 +145,6 @@ type RepoModule interface {
 	Create(params map[string]interface{}, options ...interface{}) util.Map
 	UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map
 	Vote(params map[string]interface{}, options ...interface{}) util.Map
-	Prune(name string, force bool)
 	Get(name string, opts ...GetOptions) util.Map
 	Update(params map[string]interface{}, options ...interface{}) util.Map
 	DepositProposalFee(params map[string]interface{}, options ...interface{}) util.Map

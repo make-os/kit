@@ -39,6 +39,11 @@ var (
 	MsgTypeLen               = 4
 )
 
+// MakeHaveCacheKey returns a key for storing HaveCache entries.
+func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
+	return repoName + hash.String()
+}
+
 // HaveCache describes a module for keeping track of objects known to peers
 type HaveCache interface {
 	GetCache(peerID string) *cache.Cache
@@ -117,6 +122,47 @@ func (c *BasicObjectStreamer) Announce(hash []byte, doneCB func(error)) {
 	c.dht.Announce(dht2.MakeObjectKey(hash), doneCB)
 }
 
+// GetProviders find providers that may be able to provide an object.
+//
+// It finds providers that have announced their ability to provide an object.
+// It also finds providers that have announce their ability to provide a
+// repository - these providers are used as fallback in cases where an object
+// may exist in a repository but not announced.
+//
+// TODO: In the future, we should sort the providers by rank such that hosts,
+//  popular remotes and good-behaved providers are prioritized.
+func (c *BasicObjectStreamer) GetProviders(ctx context.Context, repoName string, objKey []byte) ([]peer.AddrInfo, error) {
+
+	// First, get providers that can provide the target object
+	objProviders, err := c.dht.GetProviders(ctx, objKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get providers of target object")
+	}
+
+	// Get providers that can provide the repository.
+	// When an error occurred, only return it if no providers so far.
+	repoProviders, err := c.dht.GetProviders(ctx, []byte(repoName))
+	if err != nil && len(objProviders) == 0 {
+		return nil, errors.Wrap(err, "failed to get providers of target repo")
+	}
+
+	// Add unique repo provider to the object providers list
+	for _, rp := range repoProviders {
+		found := false
+		for _, op := range objProviders {
+			if rp.ID.Pretty() == op.ID.Pretty() {
+				found = true
+				break
+			}
+		}
+		if !found {
+			objProviders = append(objProviders, rp)
+		}
+	}
+
+	return objProviders, nil
+}
+
 // GetCommit gets a single commit by hash.
 // It returns the packfile, the commit object and error.
 func (c *BasicObjectStreamer) GetCommit(
@@ -126,13 +172,13 @@ func (c *BasicObjectStreamer) GetCommit(
 
 	// Find providers of the object
 	key := dht2.MakeObjectKey(hash)
-	providers, err := c.dht.GetProviders(ctx, key)
+	providers, err := c.GetProviders(ctx, repoName, key)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get providers")
+		return nil, nil, err
 	}
 
-	// Remove banned providers and providers that have recently
-	// sent NOPE as response to previous request for the key
+	// Remove banned providers or providers that have recently sent NOPE as
+	// response to previous request for the key
 	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
 		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, key)
 	}).([]peer.AddrInfo)
@@ -180,8 +226,9 @@ func (c *BasicObjectStreamer) GetCommit(
 	return res.Pack, commit.(*object.Commit), nil
 }
 
-// GetCommitWithAncestors gets a commit and its ancestors that do not exist.
-// in the local repository. It stops fetching ancestors when it finds an ancestor matching the given end commit hash.
+// GetCommitWithAncestors gets a commit and its ancestors that do not exist in the local repository.
+//
+// It stops fetching ancestors when it finds an ancestor matching the given end commit hash.
 // If EndHash is true, it is expected that the EndHash commit exist locally.
 // It will skip the start commit if it exist locally but try to add its parent to the internal wantlist allowing
 // it to find ancestors that may have not been fetched before.
@@ -343,6 +390,7 @@ func GetCommitWithAncestors(
 }
 
 // GetTag gets a single annotated tag by hash.
+//
 // It returns the packfile, the tag object and error.
 func (c *BasicObjectStreamer) GetTag(
 	ctx context.Context,
@@ -351,9 +399,9 @@ func (c *BasicObjectStreamer) GetTag(
 
 	// Find providers of the object
 	key := dht2.MakeObjectKey(hash)
-	providers, err := c.dht.GetProviders(ctx, key)
+	providers, err := c.GetProviders(ctx, repoName, key)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get providers")
+		return nil, nil, err
 	}
 
 	// Remove banned providers and providers that have recently
@@ -407,6 +455,7 @@ func (c *BasicObjectStreamer) GetTag(
 
 // GetTaggedCommitWithAncestors gets the ancestors of the commit pointed by the given tag that
 // do not exist in the local repository.
+//
 // - If the start tag points to another tag, the function is recursively called on the nested tag.
 // - If the start tag does not point to a commit or a tag, the tag's packfile is returned.
 // - If EndHash is set, it must be an already existing tag pointing to a commit or a tag.
@@ -508,8 +557,9 @@ func GetTaggedCommitWithAncestors(
 	return
 }
 
-// GetCommitWithAncestors gets a commit and also its ancestors that do not exist
-// in the local repository. It will stop fetching ancestors when it finds
+// GetCommitWithAncestors gets a commit and also its ancestors that do not exist in the local repository.
+//
+// It will stop fetching ancestors when it finds
 // an ancestor matching the given end hash.
 // If EndHash is true, it is expected that EndHash commit must exist locally.
 // Packfiles returned are expected to be closed by the caller.
@@ -524,6 +574,7 @@ func (c *BasicObjectStreamer) GetCommitWithAncestors(ctx context.Context,
 
 // GetTaggedCommitWithAncestors gets the ancestors of the commit pointed by the given tag that
 // do not exist in the local repository.
+//
 // - If EndHash is set, it must be an already existing tag pointing to a commit.
 // - If EndHash is set, it will stop fetching ancestors when it finds an
 //   ancestor matching the commit pointed by the end hash tag.
@@ -698,9 +749,4 @@ func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error 
 	}
 
 	return nil
-}
-
-// MakeHaveCacheKey returns a key for storing HaveCache entries.
-func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
-	return repoName + hash.String()
 }

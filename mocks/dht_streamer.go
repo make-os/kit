@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	network "github.com/libp2p/go-libp2p-core/network"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 	types "github.com/make-os/lobe/dht/streamer/types"
 	io "github.com/make-os/lobe/util/io"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -124,4 +125,19 @@ func (m *MockObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 func (mr *MockObjectStreamerMockRecorder) OnRequest(s interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnRequest", reflect.TypeOf((*MockObjectStreamer)(nil).OnRequest), s)
+}
+
+// GetProviders mocks base method
+func (m *MockObjectStreamer) GetProviders(ctx context.Context, repoName string, objectHash []byte) ([]peer.AddrInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProviders", ctx, repoName, objectHash)
+	ret0, _ := ret[0].([]peer.AddrInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProviders indicates an expected call of GetProviders
+func (mr *MockObjectStreamerMockRecorder) GetProviders(ctx, repoName, objectHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProviders", reflect.TypeOf((*MockObjectStreamer)(nil).GetProviders), ctx, repoName, objectHash)
 }
