@@ -56,7 +56,11 @@ type Handler interface {
 	HandleReferences() error
 
 	// HandleRepoSize performs garbage collection and repo size validation.
+	//
 	// It will return error if repo size exceeds the allowed maximum.
+	//
+	// It will also reload the repository handle since GC makes
+	// go-git internal state stale.
 	HandleRepoSize() error
 
 	// HandleUpdate creates a push note to represent the push operation and
@@ -280,6 +284,12 @@ func (h *BasicHandler) HandleRepoSize() error {
 		return fmt.Errorf("size error: repository size has exceeded the network limit")
 	}
 
+	// Reload the repository. Necessary because after GC, the repo
+	// handle's internal indices becomes stale.
+	if err := h.Repo.Reload(); err != nil {
+		return errors.Wrap(err, "failed to reload repo handle")
+	}
+
 	return nil
 }
 
@@ -298,14 +308,14 @@ func (h *BasicHandler) HandleUpdate() error {
 
 	h.pktEnc.Encode(plumbing.SidebandInfo("performing repo and references validation"))
 
-	// Validate the pushed references
-	err := h.HandleReferences()
-	if err != nil {
+	// Check repository size check
+	if err := h.HandleRepoSize(); err != nil {
 		return err
 	}
 
-	// Check repository size check
-	if err := h.HandleRepoSize(); err != nil {
+	// Validate the pushed references
+	err := h.HandleReferences()
+	if err != nil {
 		return err
 	}
 

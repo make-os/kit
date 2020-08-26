@@ -147,6 +147,12 @@ func (sv *Server) onFetch(
 
 	repoName := note.GetRepoName()
 
+	// Reload repository handle because the handle's internal reference
+	// become stale after new objects where written to the repository.
+	if err = note.GetTargetRepo().Reload(); err != nil {
+		return errors.Wrap(err, "failed to reload repo handle")
+	}
+
 	// Get the size of the pushed update objects. This is the size of the objects required
 	// to bring the local reference up to the state of the note's pushed reference.
 	localSize, err := push.GetSizeOfObjects(note)
@@ -225,15 +231,15 @@ func (sv *Server) maybeProcessPushNote(
 		return errors.Wrap(err, "HandleStream error")
 	}
 
+	// Handle repository size check
+	if err := handler.HandleRepoSize(); err != nil {
+		return errors.Wrap(err, "HandleRepoSize error")
+	}
+
 	// Handle transaction validation and revert changes
 	err = handler.HandleReferences()
 	if err != nil {
 		return errors.Wrap(err, "HandleReferences error")
-	}
-
-	// Handle repository size check
-	if err := handler.HandleRepoSize(); err != nil {
-		return errors.Wrap(err, "HandleRepoSize error")
 	}
 
 	// Add the note to the push pool

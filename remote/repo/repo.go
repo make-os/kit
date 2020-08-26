@@ -232,6 +232,16 @@ func (r *Repo) GetReferences() (refs []plumbing.ReferenceName, err error) {
 	return
 }
 
+// Reload reloads the repository
+func (r *Repo) Reload() error {
+	repo, err := Get(r.path)
+	if err != nil {
+		return err
+	}
+	r.Repository = repo.(*Repo).Repository
+	return nil
+}
+
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
 	return r.getNameFromPath()

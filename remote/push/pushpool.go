@@ -16,8 +16,7 @@ import (
 )
 
 var (
-	errTxExistInPushPool = fmt.Errorf("push note already exist in pool")
-	errFullPushPool      = fmt.Errorf("push pool is full")
+	errFullPushPool = fmt.Errorf("push pool is full")
 )
 
 type containerItem struct {
@@ -184,9 +183,10 @@ func (p *PushPool) Add(note types.PushNote, noValidation ...bool) error {
 	p.gmx.Lock()
 	defer p.gmx.Unlock()
 
+	// If note already exist in the pool, return nil
 	id := note.ID()
 	if p.index.has(id.HexStr()) {
-		return errTxExistInPushPool
+		return nil
 	}
 
 	item := newItem(note.(*types.Note))

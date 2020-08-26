@@ -157,5 +157,5 @@ var (
 	MaxPushFileSize = 1024 * 1024 * 50 // 50 MB
 
 	// MaxRepoSize is the maximum size of a repository
-	MaxRepoSize = 500000 // 1024 * 1024 // 1 MB
+	MaxRepoSize = 1024 * 1024 * 300 // 300 MB
 )

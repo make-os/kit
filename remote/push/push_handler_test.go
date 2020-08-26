@@ -461,6 +461,29 @@ var _ = Describe("BasicHandler", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("size error: repository size has exceeded the network limit"))
 		})
+
+		It("should return error when unable to reload repo handle", func() {
+			params.MaxRepoSize = 2000
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().GC("1 day ago").Return(nil)
+			mockRepo.EXPECT().Reload().Return(fmt.Errorf("error"))
+			mockRepo.EXPECT().Size().Return(float64(1000), nil)
+			handler.Repo = mockRepo
+			err := handler.HandleRepoSize()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to reload repo handle: error"))
+		})
+
+		It("should return no error", func() {
+			params.MaxRepoSize = 2000
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().GC("1 day ago").Return(nil)
+			mockRepo.EXPECT().Reload().Return(nil)
+			mockRepo.EXPECT().Size().Return(float64(1000), nil)
+			handler.Repo = mockRepo
+			err := handler.HandleRepoSize()
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Describe(".HandleReference", func() {

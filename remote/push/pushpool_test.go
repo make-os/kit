@@ -118,17 +118,14 @@ var _ = Describe("PushPool", func() {
 		})
 
 		When("tx already exist in pool", func() {
-			BeforeEach(func() {
+			It("should return nil and it should not add duplicate to the pool", func() {
 				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				err = pool.Add(tx)
-				Expect(err).ToNot(BeNil())
-			})
-
-			It("should return err=errTxExistInPushPool", func() {
-				Expect(err).To(Equal(errTxExistInPushPool))
+				Expect(err).To(BeNil())
+				Expect(pool.Len()).To(Equal(1))
 			})
 		})
 

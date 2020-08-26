@@ -88,6 +88,9 @@ type LocalRepo interface {
 	// GetReferences returns all references in the repo
 	GetReferences() (refs []plumbing.ReferenceName, err error)
 
+	// Reload reloads the repository
+	Reload() error
+
 	// GetPath returns the repository's path
 	GetPath() string
 

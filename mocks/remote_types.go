@@ -1293,6 +1293,20 @@ func (mr *MockLocalRepoMockRecorder) References() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "References", reflect.TypeOf((*MockLocalRepo)(nil).References))
 }
 
+// Reload mocks base method
+func (m *MockLocalRepo) Reload() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reload")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Reload indicates an expected call of Reload
+func (mr *MockLocalRepoMockRecorder) Reload() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reload", reflect.TypeOf((*MockLocalRepo)(nil).Reload))
+}
+
 // RemoveEntryFromNote mocks base method
 func (m *MockLocalRepo) RemoveEntryFromNote(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
