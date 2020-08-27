@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/make-os/lobe/pkgs/tree"
 	"github.com/make-os/lobe/storage"
@@ -22,14 +23,20 @@ func NewTrackListKeeper(db storage.Tx, state *tree.SafeTree) *TrackListKeeper {
 	return &TrackListKeeper{db: db, state: state}
 }
 
-// Add adds repositories to the track list. If a user namespace is provided,
-// all repositories targets are added.
-func (t *TrackListKeeper) Add(targets ...string) error {
+// Add adds repositories to the track list.
+//
+// Target can be one or more comma-separated list of repositories or user namespaces.
+//
+// If a user namespace is provided, all repositories targets are added.
+//
+// If height is provided, it will be used as the last update height.
+func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 
 	var final = []string{}
-	for _, target := range targets {
+	for _, target := range strings.Split(targets, ",") {
 		// If target is a user namespace, get the namespace and
 		// add all repository target in the track list.
+		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
 			ns := NewNamespaceKeeper(t.state).Get(nsName)
@@ -50,8 +57,13 @@ func (t *TrackListKeeper) Add(targets ...string) error {
 		final = append(final, target)
 	}
 
+	var h = uint64(0)
+	if len(height) > 0 {
+		h = height[0]
+	}
+
 	for _, repo := range final {
-		data := core.TrackedRepo{}
+		data := core.TrackedRepo{LastHeight: h}
 		rec := storage.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
 			return errors.Wrap(err, "failed to add repo")

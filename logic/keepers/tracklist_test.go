@@ -65,6 +65,27 @@ var _ = Describe("Tracklist", func() {
 			Expect(rec).ToNot(BeNil())
 		})
 
+		It("should add 2 repo names", func() {
+			err := keeper.Add("repo1, repo2")
+			Expect(err).To(BeNil())
+			rec, err := appDB.Get(MakeTrackedRepoKey("repo1"))
+			Expect(err).To(BeNil())
+			Expect(rec).ToNot(BeNil())
+			rec, err = appDB.Get(MakeTrackedRepoKey("repo2"))
+			Expect(err).To(BeNil())
+			Expect(rec).ToNot(BeNil())
+		})
+
+		It("should add repo name and set initial update height", func() {
+			err := keeper.Add("repo1", 100)
+			Expect(err).To(BeNil())
+			rec, err := appDB.Get(MakeTrackedRepoKey("repo1"))
+			Expect(err).To(BeNil())
+			var tr core.TrackedRepo
+			rec.Scan(&tr)
+			Expect(tr.LastHeight).To(Equal(uint64(100)))
+		})
+
 		It("should return error when repo name is invalid", func() {
 			err := keeper.Add("rep&%o1")
 			Expect(err).ToNot(BeNil())
