@@ -36,7 +36,7 @@ func New(
 	dht types.DHT,
 	extMgr *extensions.Manager,
 	rpcServer *rpc.RPCServer,
-	repoMgr core.RemoteServer) *Module {
+	remoteSvr core.RemoteServer) *Module {
 
 	return &Module{
 		cfg: cfg,
@@ -46,13 +46,13 @@ func New(
 			User:    NewUserModule(cfg, acctmgr, service, logic),
 			PushKey: NewPushKeyModule(cfg, service, logic),
 			Ticket:  NewTicketModule(service, logic, ticketmgr),
-			Repo:    NewRepoModule(service, repoMgr, logic),
-			NS:      NewNamespaceModule(service, repoMgr, logic),
+			Repo:    NewRepoModule(service, remoteSvr, logic),
+			NS:      NewNamespaceModule(service, remoteSvr, logic),
 			DHT:     NewDHTModule(cfg, dht),
 			ExtMgr:  extMgr,
 			Util:    NewConsoleUtilModule(os.Stdout),
 			RPC:     NewRPCModule(cfg, rpcServer),
-			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
+			Pool:    NewPoolModule(mempoolReactor, remoteSvr.GetPushPool()),
 			Dev:     NewDevModule(),
 		},
 	}

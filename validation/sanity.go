@@ -473,7 +473,7 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 		if identifier.IsValidResourceNameNoMinLen(domain) != nil {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
 		}
-		if !identifier.IsFullNativeNamespace(target) {
+		if !identifier.IsWholeNativeURI(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
 		if target[:2] == "a/" && crypto.IsValidUserAddr(target[2:]) != nil {

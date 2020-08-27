@@ -17,7 +17,6 @@ const (
 	TagBlockInfo             = "b"
 	TagLastRepoSyncherHeight = "rh"
 	TagHelmRepo              = "hr"
-	TagNetMaturity           = "m"
 	TagValidators            = "v"
 	TagTx                    = "t"
 )

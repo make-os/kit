@@ -67,9 +67,9 @@ func (c *CoinTransferContract) Exec() error {
 	// If the recipient address is a full native namespace (e.g r/repo or a/repo),
 	// we need to get the balance account corresponding to the namespace target.
 	if recvAddr.IsFullNativeNamespace() {
-		addrVal := identifier.GetNativeNamespaceTarget(recvAddr.String())
+		addrVal := identifier.GetDomain(recvAddr.String())
 		recipientAddr = identifier.Address(addrVal)
-		if identifier.IsFullNativeNamespaceRepo(recvAddr.String()) {
+		if identifier.IsWholeNativeRepoURI(recvAddr.String()) {
 			recvAcct = repoKeeper.Get(addrVal)
 		} else {
 			recvAcct = acctKeeper.Get(identifier.Address(addrVal))
