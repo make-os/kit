@@ -61,6 +61,9 @@ type Logic struct {
 	// txKeeper provides operations for managing transaction data
 	txKeeper *keepers.TxKeeper
 
+	// tracklist provides functionalities for managing tracked repositories
+	tracklist *keepers.TrackListKeeper
+
 	// pushKeyKeeper provides functionalities for managing push public keys
 	pushKeyKeeper *keepers.PushKeyKeeper
 
@@ -80,9 +83,8 @@ func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *
 	return l
 }
 
-// NewAtomic creates an instance of Logic that supports atomic operations across
-// all sub-logic providers and keepers.
-// PANICS: If unable to load state tree
+// NewAtomic creates an instance of Logic that supports atomic database
+// operations across all keepers and logic providers.
 func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
@@ -110,6 +112,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.repoKeeper = keepers.NewRepoKeeper(safeTree, dbTx)
 	l.pushKeyKeeper = keepers.NewPushKeyKeeper(safeTree, dbTx)
 	l.nsKeeper = keepers.NewNamespaceKeeper(safeTree)
+	l.tracklist = keepers.NewTrackListKeeper(dbTx, safeTree)
 
 	return l
 }
@@ -168,7 +171,7 @@ func (l *Logic) Commit() error {
 }
 
 // Cfg returns the application config
-func (l *Logic) Cfg() *config.AppConfig {
+func (l *Logic) Config() *config.AppConfig {
 	return l.cfg
 }
 
@@ -211,6 +214,11 @@ func (l *Logic) StateTree() tree.Tree {
 // SysKeeper returns the system keeper
 func (l *Logic) SysKeeper() core.SystemKeeper {
 	return l.systemKeeper
+}
+
+// TracklistKeeper returns the track list keeper
+func (l *Logic) TracklistKeeper() core.TrackListKeeper {
+	return l.tracklist
 }
 
 // NamespaceKeeper returns the namespace keeper

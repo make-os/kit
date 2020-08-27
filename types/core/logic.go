@@ -97,6 +97,18 @@ type AccountKeeper interface {
 	Update(address identifier.Address, upd *state.Account)
 }
 
+// TrackedRepo stores status info about a tracked repository or
+type TrackedRepo struct {
+	LastHeight uint64 `json:"lastHeight" msgpack:"lastHeight"`
+}
+
+// TrackListKeeper describes an interface for managing tracked repository.
+type TrackListKeeper interface {
+	Add(targets ...string) error
+	UpdateLastHeight(name string, height uint64) error
+	Tracked() (res map[string]*TrackedRepo)
+}
+
 // RepoKeeper describes an interface for accessing repository data
 type RepoKeeper interface {
 	// Get finds a repository by name.
@@ -303,7 +315,7 @@ type Logic interface {
 	ExecTx(args *ExecArgs) abcitypes.ResponseDeliverTx
 
 	// Cfg returns the application config
-	Cfg() *config.AppConfig
+	Config() *config.AppConfig
 
 	// GetMempoolReactor returns the mempool reactor
 	GetMempoolReactor() MempoolReactor
@@ -322,6 +334,9 @@ type Keepers interface {
 
 	// SysKeeper provides access to system or operation information.
 	SysKeeper() SystemKeeper
+
+	// TracklistKeeper returns the track list keeper
+	TracklistKeeper() TrackListKeeper
 
 	// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
 	ManagedSysKeeper() SystemKeeper

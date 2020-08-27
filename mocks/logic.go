@@ -312,6 +312,75 @@ func (mr *MockAccountKeeperMockRecorder) Update(address, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAccountKeeper)(nil).Update), address, upd)
 }
 
+// MockTrackListKeeper is a mock of TrackListKeeper interface
+type MockTrackListKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTrackListKeeperMockRecorder
+}
+
+// MockTrackListKeeperMockRecorder is the mock recorder for MockTrackListKeeper
+type MockTrackListKeeperMockRecorder struct {
+	mock *MockTrackListKeeper
+}
+
+// NewMockTrackListKeeper creates a new mock instance
+func NewMockTrackListKeeper(ctrl *gomock.Controller) *MockTrackListKeeper {
+	mock := &MockTrackListKeeper{ctrl: ctrl}
+	mock.recorder = &MockTrackListKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockTrackListKeeper) EXPECT() *MockTrackListKeeperMockRecorder {
+	return m.recorder
+}
+
+// Add mocks base method
+func (m *MockTrackListKeeper) Add(targets ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range targets {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Add", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Add indicates an expected call of Add
+func (mr *MockTrackListKeeperMockRecorder) Add(targets ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockTrackListKeeper)(nil).Add), targets...)
+}
+
+// UpdateLastHeight mocks base method
+func (m *MockTrackListKeeper) UpdateLastHeight(name string, height uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastHeight", name, height)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastHeight indicates an expected call of UpdateLastHeight
+func (mr *MockTrackListKeeperMockRecorder) UpdateLastHeight(name, height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastHeight", reflect.TypeOf((*MockTrackListKeeper)(nil).UpdateLastHeight), name, height)
+}
+
+// Tracked mocks base method
+func (m *MockTrackListKeeper) Tracked() map[string]*core.TrackedRepo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Tracked")
+	ret0, _ := ret[0].(map[string]*core.TrackedRepo)
+	return ret0
+}
+
+// Tracked indicates an expected call of Tracked
+func (mr *MockTrackListKeeperMockRecorder) Tracked() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tracked", reflect.TypeOf((*MockTrackListKeeper)(nil).Tracked))
+}
+
 // MockRepoKeeper is a mock of RepoKeeper interface
 type MockRepoKeeper struct {
 	ctrl     *gomock.Controller
@@ -667,6 +736,20 @@ func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).SysKeeper))
 }
 
+// TracklistKeeper mocks base method
+func (m *MockAtomicLogic) TracklistKeeper() core.TrackListKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TracklistKeeper")
+	ret0, _ := ret[0].(core.TrackListKeeper)
+	return ret0
+}
+
+// TracklistKeeper indicates an expected call of TracklistKeeper
+func (mr *MockAtomicLogicMockRecorder) TracklistKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TracklistKeeper))
+}
+
 // ManagedSysKeeper mocks base method
 func (m *MockAtomicLogic) ManagedSysKeeper() core.SystemKeeper {
 	m.ctrl.T.Helper()
@@ -901,18 +984,18 @@ func (mr *MockAtomicLogicMockRecorder) ExecTx(args interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockAtomicLogic)(nil).ExecTx), args)
 }
 
-// Cfg mocks base method
-func (m *MockAtomicLogic) Cfg() *config.AppConfig {
+// Config mocks base method
+func (m *MockAtomicLogic) Config() *config.AppConfig {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Cfg")
+	ret := m.ctrl.Call(m, "Config")
 	ret0, _ := ret[0].(*config.AppConfig)
 	return ret0
 }
 
-// Cfg indicates an expected call of Cfg
-func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
+// Config indicates an expected call of Config
+func (mr *MockAtomicLogicMockRecorder) Config() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockAtomicLogic)(nil).Cfg))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockAtomicLogic)(nil).Config))
 }
 
 // GetMempoolReactor mocks base method
@@ -1030,6 +1113,20 @@ func (m *MockLogic) SysKeeper() core.SystemKeeper {
 func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
+}
+
+// TracklistKeeper mocks base method
+func (m *MockLogic) TracklistKeeper() core.TrackListKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TracklistKeeper")
+	ret0, _ := ret[0].(core.TrackListKeeper)
+	return ret0
+}
+
+// TracklistKeeper indicates an expected call of TracklistKeeper
+func (mr *MockLogicMockRecorder) TracklistKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockLogic)(nil).TracklistKeeper))
 }
 
 // ManagedSysKeeper mocks base method
@@ -1266,18 +1363,18 @@ func (mr *MockLogicMockRecorder) ExecTx(args interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockLogic)(nil).ExecTx), args)
 }
 
-// Cfg mocks base method
-func (m *MockLogic) Cfg() *config.AppConfig {
+// Config mocks base method
+func (m *MockLogic) Config() *config.AppConfig {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Cfg")
+	ret := m.ctrl.Call(m, "Config")
 	ret0, _ := ret[0].(*config.AppConfig)
 	return ret0
 }
 
-// Cfg indicates an expected call of Cfg
-func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
+// Config indicates an expected call of Config
+func (mr *MockLogicMockRecorder) Config() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockLogic)(nil).Cfg))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockLogic)(nil).Config))
 }
 
 // GetMempoolReactor mocks base method
@@ -1355,6 +1452,20 @@ func (m *MockKeepers) SysKeeper() core.SystemKeeper {
 func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockKeepers)(nil).SysKeeper))
+}
+
+// TracklistKeeper mocks base method
+func (m *MockKeepers) TracklistKeeper() core.TrackListKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TracklistKeeper")
+	ret0, _ := ret[0].(core.TrackListKeeper)
+	return ret0
+}
+
+// TracklistKeeper indicates an expected call of TracklistKeeper
+func (mr *MockKeepersMockRecorder) TracklistKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockKeepers)(nil).TracklistKeeper))
 }
 
 // ManagedSysKeeper mocks base method

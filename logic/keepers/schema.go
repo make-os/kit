@@ -19,7 +19,18 @@ const (
 	TagHelmRepo              = "hr"
 	TagValidators            = "v"
 	TagTx                    = "t"
+	TagTrackedRepo           = "tr"
 )
+
+// MakeTrackedRepoKey creates a key for accessing a tracked repo.
+func MakeTrackedRepoKey(name string) []byte {
+	return storage.MakePrefix([]byte(TagTrackedRepo), []byte(name))
+}
+
+// MakeQueryTrackedRepoKey creates a key for accessing all tracked repo.
+func MakeQueryTrackedRepoKey() []byte {
+	return storage.MakePrefix([]byte(TagTrackedRepo))
+}
 
 // MakeAccountKey creates a key for accessing an account
 func MakeAccountKey(address string) []byte {

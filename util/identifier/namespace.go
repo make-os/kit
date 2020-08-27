@@ -23,6 +23,13 @@ func GetDomain(str string) string {
 	return strings.Split(str, "/")[1]
 }
 
+// GetNamespace returns the namespace part of a whole namespace. URI
+//
+// Example: r/abc => r , a/os1 => a , ns1/abc => ns1
+func GetNamespace(str string) string {
+	return strings.Split(str, "/")[0]
+}
+
 // IsWholeNativeRepoURI checks whether the given string is a whole native repo namespace URI.
 //
 // Example: r/repo
