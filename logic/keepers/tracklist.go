@@ -36,8 +36,6 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 
 	var final = []string{}
 	for _, target := range strings.Split(targets, ",") {
-		// If target is a user namespace, get the namespace and
-		// add all repository target in the track list.
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
@@ -65,10 +63,6 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 	}
 
 	for _, repo := range final {
-		if t.Get(repo) != nil {
-			continue
-		}
-
 		data := core.TrackedRepo{LastHeight: h}
 		rec := storage.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
@@ -77,26 +71,6 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 	}
 
 	return nil
-}
-
-// UpdateLastHeight resets the last update height of a repository.
-// Returns error if repository is not being tracked.
-func (t *TrackListKeeper) UpdateLastHeight(name string, height uint64) error {
-	rec, err := t.db.Get(MakeTrackedRepoKey(name))
-	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return fmt.Errorf("repo not tracked")
-		}
-		return err
-	}
-
-	var tr core.TrackedRepo
-	if err = rec.Scan(&tr); err != nil {
-		return err
-	}
-
-	tr.LastHeight = height
-	return t.db.Put(storage.NewFromKeyValue(MakeTrackedRepoKey(name), util.ToBytes(tr)))
 }
 
 // Tracked returns a map of repositories.
@@ -127,7 +101,40 @@ func (t *TrackListKeeper) Get(name string) *core.TrackedRepo {
 	return &tr
 }
 
-// Remove removes a repo
-func (t *TrackListKeeper) Remove(name string) error {
-	return t.db.Del(MakeTrackedRepoKey(name))
+// Remove removes repositories from the track list.
+//
+// Target can be one or more comma-separated list of repositories or user namespaces.
+//
+// If a user namespace is provided, all repository targets are removed.
+func (t *TrackListKeeper) Remove(targets string) error {
+	var final = []string{}
+	for _, target := range strings.Split(targets, ",") {
+		target = strings.TrimSpace(target)
+		if identifier.IsUserURI(target) {
+			nsName := identifier.GetNamespace(target)
+			ns := NewNamespaceKeeper(t.state).Get(nsName)
+			if ns.IsNil() {
+				return fmt.Errorf("namespace (%s) not found", nsName)
+			}
+			for _, t := range ns.Domains {
+				if identifier.IsWholeNativeRepoURI(t) {
+					final = append(final, identifier.GetDomain(t))
+				}
+			}
+			continue
+		}
+
+		if err := identifier.IsValidResourceName(target); err != nil {
+			return fmt.Errorf("target (%s) is not a valid repo identifier", target)
+		}
+		final = append(final, target)
+	}
+
+	for _, name := range final {
+		if err := t.db.Del(MakeTrackedRepoKey(name)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

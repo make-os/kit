@@ -104,9 +104,10 @@ type TrackedRepo struct {
 
 // TrackListKeeper describes an interface for managing tracked repository.
 type TrackListKeeper interface {
-	Add(targets ...string) error
-	UpdateLastHeight(name string, height uint64) error
+	Add(targets string, height ...uint64) error
 	Tracked() (res map[string]*TrackedRepo)
+	Get(name string) *TrackedRepo
+	Remove(targets string) error
 }
 
 // RepoKeeper describes an interface for accessing repository data

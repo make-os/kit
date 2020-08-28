@@ -86,7 +86,7 @@ var _ = Describe("Tracklist", func() {
 			Expect(tr.LastHeight).To(Equal(uint64(100)))
 		})
 
-		It("should not re-add repo name if it already exist", func() {
+		It("should re-add repo name and reset update height if it already exist", func() {
 			err := keeper.Add("repo1", 100)
 			Expect(err).To(BeNil())
 			err = keeper.Add("repo1", 200)
@@ -95,7 +95,7 @@ var _ = Describe("Tracklist", func() {
 			Expect(err).To(BeNil())
 			var tr core.TrackedRepo
 			rec.Scan(&tr)
-			Expect(tr.LastHeight).To(Equal(uint64(100)))
+			Expect(tr.LastHeight).To(Equal(uint64(200)))
 		})
 
 		It("should return error when repo name is invalid", func() {
@@ -137,39 +137,27 @@ var _ = Describe("Tracklist", func() {
 			res := keeper.Get("repo1")
 			Expect(res).To(BeNil())
 		})
-	})
 
-	Describe(".UpdateLastHeight", func() {
-		It("should update last height of tracked repo", func() {
-			err := keeper.Add("repo1")
+		It("should remove repository targets if argument is a namespace", func() {
+			nsKeeper := NewNamespaceKeeper(state)
+			nsKeeper.Update("ns1", &state2.Namespace{Domains: map[string]string{
+				"stuff":  "r/abc",
+				"stuff2": "r/xyz",
+			}})
+			err := keeper.Add("ns1/")
 			Expect(err).To(BeNil())
-			rec, err := appDB.Get(MakeTrackedRepoKey("repo1"))
-			Expect(err).To(BeNil())
-			var ti core.TrackedRepo
-			rec.Scan(&ti)
-			Expect(ti.LastHeight).To(Equal(uint64(0)))
-
-			err = keeper.UpdateLastHeight("repo1", 1200)
-			Expect(err).To(BeNil())
-
-			rec, err = appDB.Get(MakeTrackedRepoKey("repo1"))
-			Expect(err).To(BeNil())
-			rec.Scan(&ti)
-			Expect(ti.LastHeight).To(Equal(uint64(1200)))
-		})
-
-		It("should return error if repo is not tracked", func() {
-			err = keeper.UpdateLastHeight("repo1", 1200)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("repo not tracked"))
+			Expect(keeper.Get("abc")).ToNot(BeNil())
+			Expect(keeper.Get("xyz")).ToNot(BeNil())
+			Expect(keeper.Remove("ns1/")).To(BeNil())
+			Expect(keeper.Get("abc")).To(BeNil())
+			Expect(keeper.Get("xyz")).To(BeNil())
 		})
 	})
 
 	Describe(".Tracked", func() {
 		It("should return map of tracked repo", func() {
 			keeper.Add("repo1")
-			keeper.Add("repo2")
-			err = keeper.UpdateLastHeight("repo2", 1200)
+			err = keeper.Add("repo2", 1200)
 			Expect(err).To(BeNil())
 			res := keeper.Tracked()
 			Expect(res).To(HaveKey("repo1"))
