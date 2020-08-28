@@ -83,7 +83,7 @@ var _ = Describe("Tracklist", func() {
 			Expect(err).To(BeNil())
 			var tr core.TrackedRepo
 			rec.Scan(&tr)
-			Expect(tr.LastHeight).To(Equal(uint64(100)))
+			Expect(tr.LastHeight.UInt64()).To(Equal(uint64(100)))
 		})
 
 		It("should re-add repo name and reset update height if it already exist", func() {
@@ -95,7 +95,7 @@ var _ = Describe("Tracklist", func() {
 			Expect(err).To(BeNil())
 			var tr core.TrackedRepo
 			rec.Scan(&tr)
-			Expect(tr.LastHeight).To(Equal(uint64(200)))
+			Expect(tr.LastHeight.UInt64()).To(Equal(uint64(200)))
 		})
 
 		It("should return error when repo name is invalid", func() {
@@ -121,7 +121,7 @@ var _ = Describe("Tracklist", func() {
 			Expect(err).To(BeNil())
 			res := keeper.Get("repo1")
 			Expect(res).ToNot(BeNil())
-			Expect(res.LastHeight).To(Equal(uint64(200)))
+			Expect(res.LastHeight.UInt64()).To(Equal(uint64(200)))
 		})
 	})
 
@@ -162,7 +162,7 @@ var _ = Describe("Tracklist", func() {
 			res := keeper.Tracked()
 			Expect(res).To(HaveKey("repo1"))
 			Expect(res).To(HaveKey("repo2"))
-			Expect(res["repo2"].LastHeight).To(Equal(uint64(1200)))
+			Expect(res["repo2"].LastHeight.UInt64()).To(Equal(uint64(1200)))
 		})
 	})
 })

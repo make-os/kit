@@ -63,7 +63,7 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 	}
 
 	for _, repo := range final {
-		data := core.TrackedRepo{LastHeight: h}
+		data := core.TrackedRepo{LastHeight: util.UInt64(h)}
 		rec := storage.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
 			return errors.Wrap(err, "failed to add repo")

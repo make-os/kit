@@ -99,7 +99,7 @@ type AccountKeeper interface {
 
 // TrackedRepo stores status info about a tracked repository or
 type TrackedRepo struct {
-	LastHeight uint64 `json:"lastHeight" msgpack:"lastHeight"`
+	LastHeight util.UInt64 `json:"lastHeight" msgpack:"lastHeight"`
 }
 
 // TrackListKeeper describes an interface for managing tracked repository.
