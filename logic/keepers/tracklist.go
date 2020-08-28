@@ -45,6 +45,11 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
 			}
+			if nsDomain != "" {
+				if _, ok := ns.Domains[nsDomain]; !ok {
+					return fmt.Errorf("namespace domain (%s) not found", nsDomain)
+				}
+			}
 			for domain, t := range ns.Domains {
 				if nsDomain != "" && nsDomain != domain {
 					continue
@@ -121,6 +126,11 @@ func (t *TrackListKeeper) Remove(targets string) error {
 			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
+			}
+			if nsDomain != "" {
+				if _, ok := ns.Domains[nsDomain]; !ok {
+					return fmt.Errorf("namespace domain (%s) not found", nsDomain)
+				}
 			}
 			for domain, t := range ns.Domains {
 				if nsDomain != "" && nsDomain != domain {

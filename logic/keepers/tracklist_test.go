@@ -74,6 +74,16 @@ var _ = Describe("Tracklist", func() {
 			Expect(rec).ToNot(BeNil())
 		})
 
+		It("should return error if namespace domain does not exist", func() {
+			nsKeeper := NewNamespaceKeeper(state)
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
+				"domain1": "r/abc",
+			}})
+			err := keeper.Add("ns1/domain2")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("namespace domain (domain2) not found"))
+		})
+
 		It("should add repo name", func() {
 			err := keeper.Add("repo1")
 			Expect(err).To(BeNil())
@@ -183,6 +193,16 @@ var _ = Describe("Tracklist", func() {
 			Expect(keeper.Remove("ns1/domain2")).To(BeNil())
 			Expect(keeper.Get("abc")).ToNot(BeNil())
 			Expect(keeper.Get("xyz")).To(BeNil())
+		})
+
+		It("should return error if namespace domain does not exist", func() {
+			nsKeeper := NewNamespaceKeeper(state)
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
+				"domain1": "r/abc",
+			}})
+			err := keeper.Add("ns1/")
+			Expect(err).To(BeNil())
+			Expect(keeper.Remove("ns1/domain2")).To(MatchError("namespace domain (domain2) not found"))
 		})
 	})
 
