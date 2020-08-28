@@ -21,7 +21,7 @@ var _ = Describe("Tracklist", func() {
 	var state *tree.SafeTree
 	var err error
 	var cfg *config.AppConfig
-	var keeper *TrackListKeeper
+	var keeper *TrackedRepoKeeper
 	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
@@ -31,7 +31,7 @@ var _ = Describe("Tracklist", func() {
 		appDB, _ = testutil.GetDB(cfg)
 		dbTx := appDB.NewTx(true, true)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
-		keeper = NewTrackListKeeper(dbTx, state)
+		keeper = NewTrackedRepoKeeper(dbTx, state)
 	})
 
 	AfterEach(func() {

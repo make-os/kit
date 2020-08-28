@@ -42,27 +42,20 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	}
 }
 
-// onPushNoteReceived is the handler for incoming Note messages
+// onPushNoteReceived handles incoming Note messages
 func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
-	// Exit if the node is in validator mode
-	if sv.cfg.IsValidatorNode() {
-		return nil
-	}
-
-	// Attempt to decode message to PushNote
+	// Attempt to decode message to a PushNote
 	var note pushtypes.Note
 	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 	note.FromRemotePeer = true
+	noteID := note.ID().String()
 
-	peerID := peer.ID()
-	repoName := note.GetRepoName()
-	repoPath := sv.getRepoPath(repoName)
-	repoState := sv.logic.RepoKeeper().Get(repoName)
-
-	sv.log.Debug("Received a push note", "PeerID", peerID, "ID", note.ID().String())
+	peerID, repoName := peer.ID(), note.GetRepoName()
+	repoPath, repoState := sv.getRepoPath(repoName), sv.logic.RepoKeeper().Get(repoName)
+	sv.log.Debug("Received a push note", "PeerID", peerID, "ID", noteID)
 
 	// Ensure target repository exists
 	if repoState.IsNil() {
@@ -76,6 +69,26 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		if namespace.IsNil() {
 			return fmt.Errorf("namespace '%s' not found", note.Namespace)
 		}
+	}
+
+	// Reconstruct references transaction details from push note
+	txDetails := validation.GetTxDetailsFromNote(&note)
+
+	// Perform authentication check
+	polEnforcer, err := sv.authenticate(txDetails, repoState, namespace, sv.logic, validation.CheckTxDetail)
+	if err != nil {
+		return errors.Wrap(err, "authorization failed")
+	}
+
+	// If the node is in validator mode or the target repository cannot
+	// be synced, we can only broadcast the node at this point.
+	if err := sv.refSyncer.CanSync(note.Namespace, note.RepoName); err != nil || sv.cfg.IsValidatorNode() {
+		sv.log.Info("Partially processing received push note", "ID",
+			noteID, "IsValidator",
+			sv.cfg.IsValidatorNode(), "IsUntrackedRepo", err != nil)
+		sv.registerNoteSender(string(peerID), noteID)
+		sv.noteBroadcaster(&note)
+		return nil
 	}
 
 	// Get a reference to the local repository
@@ -94,22 +107,13 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		Namespace:     namespace,
 	}
 
-	// Reconstruct references transaction details from push note
-	txDetails := validation.GetTxDetailsFromNote(&note)
-
-	// Perform authentication check
-	polEnforcer, err := sv.authenticate(txDetails, repoState, namespace, sv.logic, validation.CheckTxDetail)
-	if err != nil {
-		return errors.Wrap(err, "authorization failed")
-	}
-
 	// Validate the push note.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
 		return errors.Wrap(err, "failed push note validation")
 	}
 
 	// Register a cache entry that indicates the sender of the push note
-	sv.registerNoteSender(string(peerID), note.ID().String())
+	sv.registerNoteSender(string(peerID), noteID)
 
 	// For each packfile fetched, announce commit and tag objects.
 	sv.objfetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
@@ -126,15 +130,15 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// FetchAsync the objects for each references in the push note.
 	// The callback is called when all objects have been fetched successfully.
 	sv.objfetcher.FetchAsync(&note, func(err error) {
-		sv.onFetch(err, &note, txDetails, polEnforcer)
+		sv.onObjectsFetched(err, &note, txDetails, polEnforcer)
 	})
 
 	return nil
 }
 
-// onFetch is called after all objects of the push note have been
+// onObjectsFetched is called after all objects of the push note have been
 // completely fetched or an error occurred while fetching.
-func (sv *Server) onFetch(
+func (sv *Server) onObjectsFetched(
 	err error,
 	note pushtypes.PushNote,
 	txDetails []*remotetypes.TxDetail,
@@ -145,8 +149,6 @@ func (sv *Server) onFetch(
 		return err
 	}
 
-	repoName := note.GetRepoName()
-
 	// Reload repository handle because the handle's internal reference
 	// become stale after new objects where written to the repository.
 	if err = note.GetTargetRepo().Reload(); err != nil {
@@ -155,12 +157,12 @@ func (sv *Server) onFetch(
 
 	// Get the size of the pushed update objects. This is the size of the objects required
 	// to bring the local reference up to the state of the note's pushed reference.
+	repoName := note.GetRepoName()
 	localSize, err := push.GetSizeOfObjects(note)
 	if err != nil {
 		sv.log.Error("Failed to get size of pushed refs objects", "Err", err.Error(), "Repo", repoName)
 		return errors.Wrapf(err, "failed to get pushed refs objects size")
 	}
-	note.SetLocalSize(localSize)
 
 	// Verify the note's size ensuring it matches the local size
 	// TODO: Penalize remote node for the inconsistency
@@ -183,9 +185,7 @@ func (sv *Server) onFetch(
 }
 
 // PushNoteProcessor is a function for processing a push note
-type PushNoteProcessor func(
-	note pushtypes.PushNote,
-	txDetails []*remotetypes.TxDetail,
+type PushNoteProcessor func(note pushtypes.PushNote, txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc) error
 
 // maybeProcessPushNote validates and dry-run the push note.
@@ -257,13 +257,10 @@ func (sv *Server) maybeProcessPushNote(
 	return nil
 }
 
-// onEndorsementReceived is the handler for incoming Endorsement messages
+// onEndorsementReceived handles incoming Endorsement messages
 func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 
-	// Return if in validator mode.
-	if sv.cfg.IsValidatorNode() {
-		return nil
-	}
+	var peerID = peer.ID()
 
 	// Decode the endorsement
 	var endorsement pushtypes.PushEndorsement
@@ -278,18 +275,25 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "endorsement validation failed")
 	}
 
-	peerID := peer.ID()
 	sv.log.Debug("Received a valid push endorsement", "PeerID", peerID, "ID", endID)
 
 	// Cache the sender so we don't broadcast same Endorsement to it later
 	sv.registerEndorsementSender(string(peerID), endID)
 
+	noteID := endorsement.NoteID.HexStr()
+
+	// If in validator mode, next step is to broadcast
+	if sv.cfg.IsValidatorNode() {
+		goto broadcast
+	}
+
 	// cache the Endorsement object as an endorsement of the PushNote
-	sv.registerEndorsementOfNote(endorsement.NoteID.HexStr(), &endorsement)
+	sv.registerEndorsementOfNote(noteID, &endorsement)
 
 	// Attempt to create an send a PushTx to the transaction pool
-	sv.makePushTx(endorsement.NoteID.HexStr())
+	sv.makePushTx(noteID)
 
+broadcast:
 	// Broadcast the Endorsement to peers
 	sv.endorsementBroadcaster(&endorsement)
 

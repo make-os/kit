@@ -312,34 +312,34 @@ func (mr *MockAccountKeeperMockRecorder) Update(address, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAccountKeeper)(nil).Update), address, upd)
 }
 
-// MockTrackListKeeper is a mock of TrackListKeeper interface
-type MockTrackListKeeper struct {
+// MockTrackedRepoKeeper is a mock of TrackedRepoKeeper interface
+type MockTrackedRepoKeeper struct {
 	ctrl     *gomock.Controller
-	recorder *MockTrackListKeeperMockRecorder
+	recorder *MockTrackedRepoKeeperMockRecorder
 }
 
-// MockTrackListKeeperMockRecorder is the mock recorder for MockTrackListKeeper
-type MockTrackListKeeperMockRecorder struct {
-	mock *MockTrackListKeeper
+// MockTrackedRepoKeeperMockRecorder is the mock recorder for MockTrackedRepoKeeper
+type MockTrackedRepoKeeperMockRecorder struct {
+	mock *MockTrackedRepoKeeper
 }
 
-// NewMockTrackListKeeper creates a new mock instance
-func NewMockTrackListKeeper(ctrl *gomock.Controller) *MockTrackListKeeper {
-	mock := &MockTrackListKeeper{ctrl: ctrl}
-	mock.recorder = &MockTrackListKeeperMockRecorder{mock}
+// NewMockTrackedRepoKeeper creates a new mock instance
+func NewMockTrackedRepoKeeper(ctrl *gomock.Controller) *MockTrackedRepoKeeper {
+	mock := &MockTrackedRepoKeeper{ctrl: ctrl}
+	mock.recorder = &MockTrackedRepoKeeperMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTrackListKeeper) EXPECT() *MockTrackListKeeperMockRecorder {
+func (m *MockTrackedRepoKeeper) EXPECT() *MockTrackedRepoKeeperMockRecorder {
 	return m.recorder
 }
 
 // Add mocks base method
-func (m *MockTrackListKeeper) Add(targets ...string) error {
+func (m *MockTrackedRepoKeeper) Add(targets string, height ...uint64) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range targets {
+	varargs := []interface{}{targets}
+	for _, a := range height {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Add", varargs...)
@@ -348,27 +348,14 @@ func (m *MockTrackListKeeper) Add(targets ...string) error {
 }
 
 // Add indicates an expected call of Add
-func (mr *MockTrackListKeeperMockRecorder) Add(targets ...interface{}) *gomock.Call {
+func (mr *MockTrackedRepoKeeperMockRecorder) Add(targets interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockTrackListKeeper)(nil).Add), targets...)
-}
-
-// UpdateLastHeight mocks base method
-func (m *MockTrackListKeeper) UpdateLastHeight(name string, height uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateLastHeight", name, height)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateLastHeight indicates an expected call of UpdateLastHeight
-func (mr *MockTrackListKeeperMockRecorder) UpdateLastHeight(name, height interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastHeight", reflect.TypeOf((*MockTrackListKeeper)(nil).UpdateLastHeight), name, height)
+	varargs := append([]interface{}{targets}, height...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Add), varargs...)
 }
 
 // Tracked mocks base method
-func (m *MockTrackListKeeper) Tracked() map[string]*core.TrackedRepo {
+func (m *MockTrackedRepoKeeper) Tracked() map[string]*core.TrackedRepo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Tracked")
 	ret0, _ := ret[0].(map[string]*core.TrackedRepo)
@@ -376,9 +363,37 @@ func (m *MockTrackListKeeper) Tracked() map[string]*core.TrackedRepo {
 }
 
 // Tracked indicates an expected call of Tracked
-func (mr *MockTrackListKeeperMockRecorder) Tracked() *gomock.Call {
+func (mr *MockTrackedRepoKeeperMockRecorder) Tracked() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tracked", reflect.TypeOf((*MockTrackListKeeper)(nil).Tracked))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tracked", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Tracked))
+}
+
+// Get mocks base method
+func (m *MockTrackedRepoKeeper) Get(name string) *core.TrackedRepo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", name)
+	ret0, _ := ret[0].(*core.TrackedRepo)
+	return ret0
+}
+
+// Get indicates an expected call of Get
+func (mr *MockTrackedRepoKeeperMockRecorder) Get(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Get), name)
+}
+
+// Remove mocks base method
+func (m *MockTrackedRepoKeeper) Remove(targets string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", targets)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockTrackedRepoKeeperMockRecorder) Remove(targets interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Remove), targets)
 }
 
 // MockRepoKeeper is a mock of RepoKeeper interface
@@ -736,32 +751,18 @@ func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).SysKeeper))
 }
 
-// TracklistKeeper mocks base method
-func (m *MockAtomicLogic) TracklistKeeper() core.TrackListKeeper {
+// TrackedRepoKeeper mocks base method
+func (m *MockAtomicLogic) TrackedRepoKeeper() core.TrackedRepoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TracklistKeeper")
-	ret0, _ := ret[0].(core.TrackListKeeper)
+	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
+	ret0, _ := ret[0].(core.TrackedRepoKeeper)
 	return ret0
 }
 
-// TracklistKeeper indicates an expected call of TracklistKeeper
-func (mr *MockAtomicLogicMockRecorder) TracklistKeeper() *gomock.Call {
+// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
+func (mr *MockAtomicLogicMockRecorder) TrackedRepoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TracklistKeeper))
-}
-
-// ManagedSysKeeper mocks base method
-func (m *MockAtomicLogic) ManagedSysKeeper() core.SystemKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(core.SystemKeeper)
-	return ret0
-}
-
-// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
-func (mr *MockAtomicLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).ManagedSysKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TrackedRepoKeeper))
 }
 
 // AccountKeeper mocks base method
@@ -1115,32 +1116,18 @@ func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
 }
 
-// TracklistKeeper mocks base method
-func (m *MockLogic) TracklistKeeper() core.TrackListKeeper {
+// TrackedRepoKeeper mocks base method
+func (m *MockLogic) TrackedRepoKeeper() core.TrackedRepoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TracklistKeeper")
-	ret0, _ := ret[0].(core.TrackListKeeper)
+	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
+	ret0, _ := ret[0].(core.TrackedRepoKeeper)
 	return ret0
 }
 
-// TracklistKeeper indicates an expected call of TracklistKeeper
-func (mr *MockLogicMockRecorder) TracklistKeeper() *gomock.Call {
+// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
+func (mr *MockLogicMockRecorder) TrackedRepoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockLogic)(nil).TracklistKeeper))
-}
-
-// ManagedSysKeeper mocks base method
-func (m *MockLogic) ManagedSysKeeper() core.SystemKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(core.SystemKeeper)
-	return ret0
-}
-
-// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
-func (mr *MockLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockLogic)(nil).ManagedSysKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockLogic)(nil).TrackedRepoKeeper))
 }
 
 // AccountKeeper mocks base method
@@ -1454,32 +1441,18 @@ func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockKeepers)(nil).SysKeeper))
 }
 
-// TracklistKeeper mocks base method
-func (m *MockKeepers) TracklistKeeper() core.TrackListKeeper {
+// TrackedRepoKeeper mocks base method
+func (m *MockKeepers) TrackedRepoKeeper() core.TrackedRepoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TracklistKeeper")
-	ret0, _ := ret[0].(core.TrackListKeeper)
+	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
+	ret0, _ := ret[0].(core.TrackedRepoKeeper)
 	return ret0
 }
 
-// TracklistKeeper indicates an expected call of TracklistKeeper
-func (mr *MockKeepersMockRecorder) TracklistKeeper() *gomock.Call {
+// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
+func (mr *MockKeepersMockRecorder) TrackedRepoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TracklistKeeper", reflect.TypeOf((*MockKeepers)(nil).TracklistKeeper))
-}
-
-// ManagedSysKeeper mocks base method
-func (m *MockKeepers) ManagedSysKeeper() core.SystemKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(core.SystemKeeper)
-	return ret0
-}
-
-// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
-func (mr *MockKeepersMockRecorder) ManagedSysKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockKeepers)(nil).ManagedSysKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockKeepers)(nil).TrackedRepoKeeper))
 }
 
 // AccountKeeper mocks base method

@@ -16,11 +16,11 @@ type Encoder interface {
 // CodecUtil provides convenient methods to serialize and deserialize objects.
 // It is expected to be embedded in a struct to provided code utilities.
 type CodecUtil struct {
-	// Version is host object version. When the host object is encoded, this
+	// Version is the host object version. When the host object is encoded, this
 	// version is added to the encoding before any other data fields.
 	Version string
 
-	// DecodeVersion is the version of input data that was decoded.
+	// DecodeVersion is the version of the input data that was decoded.
 	DecodedVersion string
 }
 

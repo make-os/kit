@@ -61,8 +61,8 @@ type Logic struct {
 	// txKeeper provides operations for managing transaction data
 	txKeeper *keepers.TxKeeper
 
-	// tracklist provides functionalities for managing tracked repositories
-	tracklist *keepers.TrackListKeeper
+	// trackedRepoKeeper provides functionalities for managing tracked repositories
+	trackedRepoKeeper *keepers.TrackedRepoKeeper
 
 	// pushKeyKeeper provides functionalities for managing push public keys
 	pushKeyKeeper *keepers.PushKeyKeeper
@@ -79,6 +79,7 @@ type Logic struct {
 func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
 	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
+	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
 	l._db = db
 	return l
 }
@@ -88,9 +89,16 @@ func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *
 func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
+
+	// Tracked repo keeper uses a managed transaction since it is not used
+	// during transaction execution and will not need its state rollback.
+	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(l._db.NewTx(true, true), l.stateTree)
+
 	return l
 }
 
+// newLogicWithTx creates a Logic instance using an externally provided DB transaction.
+// All keepers will use the transactions allowing for atomic state operations across them.
 func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logic {
 
 	// Load the state tree
@@ -112,14 +120,8 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.repoKeeper = keepers.NewRepoKeeper(safeTree, dbTx)
 	l.pushKeyKeeper = keepers.NewPushKeyKeeper(safeTree, dbTx)
 	l.nsKeeper = keepers.NewNamespaceKeeper(safeTree)
-	l.tracklist = keepers.NewTrackListKeeper(dbTx, safeTree)
 
 	return l
-}
-
-// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
-func (l *Logic) ManagedSysKeeper() core.SystemKeeper {
-	return keepers.NewSystemKeeper(l._db.NewTx(true, true))
 }
 
 // SetMempoolReactor sets the mempool reactor
@@ -216,9 +218,9 @@ func (l *Logic) SysKeeper() core.SystemKeeper {
 	return l.systemKeeper
 }
 
-// TracklistKeeper returns the track list keeper
-func (l *Logic) TracklistKeeper() core.TrackListKeeper {
-	return l.tracklist
+// TrackedRepoKeeper returns the track list keeper
+func (l *Logic) TrackedRepoKeeper() core.TrackedRepoKeeper {
+	return l.trackedRepoKeeper
 }
 
 // NamespaceKeeper returns the namespace keeper

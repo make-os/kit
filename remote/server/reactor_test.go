@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
+	"github.com/make-os/lobe/remote/refsync"
 	"github.com/make-os/lobe/remote/repo"
 	testutil2 "github.com/make-os/lobe/remote/testutil"
 	remotetypes "github.com/make-os/lobe/remote/types"
@@ -83,14 +84,6 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".onPushNoteReceived", func() {
-		When("in validator mode", func() {
-			It("should return nil", func() {
-				cfg.Node.Validator = true
-				err = svr.onPushNoteReceived(mockPeer, util.RandBytes(10))
-				Expect(err).To(BeNil())
-			})
-		})
-
 		When("unable to decode msg", func() {
 			It("should return err=failed to decoded message...", func() {
 				err = svr.onPushNoteReceived(mockPeer, util.RandBytes(5))
@@ -130,27 +123,9 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("unable to open target repository", func() {
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				pn := &types.Note{RepoName: "repo1"}
-				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to open repo '.*': repository does not exist"))
-			})
-		})
-
 		When("authentication fails", func() {
 			BeforeEach(func() {
+				pn := &types.Note{RepoName: repoName}
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -158,7 +133,6 @@ var _ = Describe("Reactor", func() {
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, fmt.Errorf("bad error")
 				}
-				pn := &types.Note{RepoName: repoName}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -168,19 +142,104 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
+		When("target repository cannot be synced", func() {
+			var broadcastNote bool
+			BeforeEach(func() {
+				pn := &types.Note{RepoName: "repo1"}
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(refsync.ErrUntracked)
+				svr.refSyncer = mockRefSyncer
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+					return nil, nil
+				}
+				svr.noteBroadcaster = func(pushNote types.PushNote) {
+					broadcastNote = true
+				}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should broadcast the push note", func() {
+				Expect(broadcastNote).To(BeTrue())
+			})
+		})
+
+		When("target repository can be synced but the node is in validator mode", func() {
+			var broadcastNote bool
+			BeforeEach(func() {
+				cfg.Node.Validator = true
+
+				pn := &types.Note{RepoName: "repo1"}
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
+				svr.refSyncer = mockRefSyncer
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+					return nil, nil
+				}
+				svr.noteBroadcaster = func(pushNote types.PushNote) {
+					broadcastNote = true
+				}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should broadcast the push note", func() {
+				Expect(broadcastNote).To(BeTrue())
+			})
+		})
+
+		When("unable to open target repository", func() {
+			BeforeEach(func() {
+				pn := &types.Note{RepoName: "repo1"}
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
+				svr.refSyncer = mockRefSyncer
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+					return nil, nil
+				}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("failed to open repo '.*': repository does not exist"))
+			})
+		})
+
 		When("push note validation fail", func() {
 			BeforeEach(func() {
+				pn := &types.Note{RepoName: repoName}
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
+				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
 					return fmt.Errorf("error")
 				}
-				pn := &types.Note{RepoName: repoName}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -194,17 +253,20 @@ var _ = Describe("Reactor", func() {
 			var pn *types.Note
 
 			BeforeEach(func() {
+				pn = &types.Note{RepoName: repoName}
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
+				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
 					return nil
 				}
-				pn = &types.Note{RepoName: repoName}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -224,22 +286,21 @@ var _ = Describe("Reactor", func() {
 
 	})
 
-	Describe(".onFetch", func() {
+	Describe(".onObjectsFetched", func() {
 		It("should return error when err is passed", func() {
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
-			err := svr.onFetch(fmt.Errorf("error"), &types.Note{}, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(fmt.Errorf("error"), &types.Note{}, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
 
 		It("should return error when unable to reload repo handle", func() {
 			mockNote := mocks.NewMockPushNote(ctrl)
-			mockNote.EXPECT().GetRepoName().Return(repoName)
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().Reload().Return(fmt.Errorf("error reloading"))
 			mockNote.EXPECT().GetTargetRepo().Return(mockRepo)
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
-			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to reload repo handle: error reloading"))
 		})
@@ -250,7 +311,7 @@ var _ = Describe("Reactor", func() {
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo)
 			mockNote.EXPECT().GetTargetRepo().Return(nil)
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
-			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get pushed refs objects size: repo is required"))
 		})
@@ -260,11 +321,10 @@ var _ = Describe("Reactor", func() {
 			mockNote.EXPECT().GetRepoName().Return(repoName)
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo).Times(2)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
-			mockNote.EXPECT().SetLocalSize(uint64(0))
 			mockNote.EXPECT().IsFromRemotePeer().Return(true)
 			mockNote.EXPECT().GetSize().Return(uint64(100))
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
-			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("note's objects size and local size differs"))
 		})
@@ -275,14 +335,13 @@ var _ = Describe("Reactor", func() {
 			mockNote.EXPECT().GetRepoName().Return(repoName)
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo).Times(2)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
-			mockNote.EXPECT().SetLocalSize(uint64(0))
 			mockNote.EXPECT().IsFromRemotePeer().Return(true)
 			mockNote.EXPECT().GetSize().Return(uint64(0))
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
 			svr.processPushNote = func(note types.PushNote, txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc) error {
 				return fmt.Errorf("error")
 			}
-			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -292,7 +351,6 @@ var _ = Describe("Reactor", func() {
 			mockNote.EXPECT().GetRepoName().Return(repoName)
 			mockNote.EXPECT().GetTargetRepo().Return(testRepo).Times(2)
 			mockNote.EXPECT().GetPushedReferences().Return(types.PushedReferences{})
-			mockNote.EXPECT().SetLocalSize(uint64(0))
 			mockNote.EXPECT().IsFromRemotePeer().Return(true)
 			mockNote.EXPECT().GetSize().Return(uint64(0))
 			polEnforcer := func(subject, object, action string) (bool, int) { return false, 0 }
@@ -302,7 +360,7 @@ var _ = Describe("Reactor", func() {
 			mockObjStreamer := mocks.NewMockObjectStreamer(ctrl)
 			mockObjStreamer.EXPECT().Announce([]byte(repoName), nil)
 			mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
-			err := svr.onFetch(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
+			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).To(BeNil())
 		})
 	})
@@ -523,10 +581,10 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".onEndorsementReceived", func() {
-		It("should return no error (do nothing) if node is a validator", func() {
-			cfg.Node.Validator = true
-			err = svr.onEndorsementReceived(mockPeer, util.RandBytes(5))
-			Expect(err).To(BeNil())
+		var senderPeerID p2p.ID = "peer_id"
+
+		BeforeEach(func() {
+			mockPeer.EXPECT().ID().Return(senderPeerID)
 		})
 
 		It("should return error when unable to decode endorsement", func() {
@@ -546,7 +604,6 @@ var _ = Describe("Reactor", func() {
 		})
 
 		When("endorsement passed validation", func() {
-			var senderPeerID p2p.ID = "peer_id"
 			var end *types.PushEndorsement
 			var endorsementWasBroadcast bool
 
@@ -556,7 +613,6 @@ var _ = Describe("Reactor", func() {
 					endorsementWasBroadcast = true
 				}
 				end = &types.PushEndorsement{NoteID: util.RandBytes(32)}
-				mockPeer.EXPECT().ID().Return(senderPeerID)
 				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
 				Expect(err).To(BeNil())
 			})
@@ -578,8 +634,27 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
+		When("endorsement passed validation but node is in validator mode", func() {
+			var end *types.PushEndorsement
+			var endorsementWasBroadcast bool
+
+			BeforeEach(func() {
+				cfg.Node.Validator = true
+				svr.checkEndorsement = func(end *types.PushEndorsement, logic core.Logic, index int) error { return nil }
+				svr.endorsementBroadcaster = func(endorsement types.Endorsement) {
+					endorsementWasBroadcast = true
+				}
+				end = &types.PushEndorsement{NoteID: util.RandBytes(32)}
+				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
+				Expect(err).To(BeNil())
+			})
+
+			It("should broadcast endorsement", func() {
+				Expect(endorsementWasBroadcast).To(BeTrue())
+			})
+		})
+
 		When("unable to create push transaction in response to a valid endorsement", func() {
-			var senderPeerID p2p.ID = "peer_id"
 			var end *types.PushEndorsement
 			var endorsementWasBroadcast bool
 
@@ -592,7 +667,6 @@ var _ = Describe("Reactor", func() {
 					return fmt.Errorf("error")
 				}
 				end = &types.PushEndorsement{NoteID: util.RandBytes(32)}
-				mockPeer.EXPECT().ID().Return(senderPeerID)
 				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
 				Expect(err).To(BeNil())
 				Expect(endorsementWasBroadcast).To(BeTrue())

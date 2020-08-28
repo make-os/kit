@@ -15,8 +15,11 @@ import (
 	testutil2 "github.com/make-os/lobe/remote/testutil"
 	types2 "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	. "github.com/onsi/ginkgo"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -34,6 +37,8 @@ var _ = Describe("RefSync", func() {
 	var oldHash = "5b9ba1de20344b12cce76256b67cff9bb31e77b2"
 	var newHash = "8d998c7de21bbe561f7992bb983cef4b1554993b"
 	var path string
+	var mockKeepers *mocks.MockKeepers
+	var mockTrackedRepoKeeper *mocks.MockTrackedRepoKeeper
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -41,7 +46,10 @@ var _ = Describe("RefSync", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockFetcher = mocks.NewMockObjectFetcher(ctrl)
-		rs = New(cfg, mockFetcher, 1)
+		mockKeepers = mocks.NewMockKeepers(ctrl)
+		mockTrackedRepoKeeper = mocks.NewMockTrackedRepoKeeper(ctrl)
+		mockKeepers.EXPECT().TrackedRepoKeeper().Return(mockTrackedRepoKeeper).AnyTimes()
+		rs = New(cfg, 1, mockFetcher, mockKeepers)
 
 		repoName = util.RandString(5)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
@@ -75,46 +83,138 @@ var _ = Describe("RefSync", func() {
 		})
 	})
 
-	Describe(".HasTax", func() {
+	Describe(".HasTask", func() {
 		It("should return false when task queue is empty", func() {
 			Expect(rs.QueueSize()).To(BeZero())
 			Expect(rs.HasTask()).To(BeFalse())
 		})
 	})
 
+	Describe(".CanSync", func() {
+		It("should return nil if no repository is being tracked", func() {
+			mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			Expect(rs.CanSync("", "repo1")).To(BeNil())
+		})
+
+		It("should return ErrUntracked if target repo is not part of the tracked repositories", func() {
+			mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+				"repo2": {},
+			})
+			err := rs.CanSync("", "repo1")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(ErrUntracked))
+		})
+
+		When("tx targets a repo using a namespace URI", func() {
+			var mockNSKeeper *mocks.MockNamespaceKeeper
+
+			BeforeEach(func() {
+				mockNSKeeper = mocks.NewMockNamespaceKeeper(ctrl)
+				mockKeepers.EXPECT().NamespaceKeeper().Return(mockNSKeeper)
+			})
+
+			It("should return error if namespace does not exist", func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+					"repo2": {},
+				})
+				tx := &txns.TxPush{Note: &types.Note{Namespace: "ns1", RepoName: "domain"}}
+				mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(tx.Note.GetNamespace())).Return(&state.Namespace{})
+				err := rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName())
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace not found"))
+			})
+
+			It("should return error if namespace's domain does not exist", func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+					"repo2": {},
+				})
+				tx := &txns.TxPush{Note: &types.Note{Namespace: "ns1", RepoName: "domain"}}
+				mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(tx.Note.GetNamespace())).Return(&state.Namespace{
+					Domains: map[string]string{"domain2": "target"},
+				})
+				err := rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName())
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace's domain not found"))
+			})
+
+			It("should return ErrUntracked if namespace domain target is not a tracked repository", func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+					"repo2": {},
+				})
+				tx := &txns.TxPush{Note: &types.Note{Namespace: "ns1", RepoName: "domain"}}
+				mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(tx.Note.GetNamespace())).Return(&state.Namespace{
+					Domains: map[string]string{"domain": "r/repo1"},
+				})
+				err := rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName())
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(ErrUntracked))
+			})
+
+			It("should return nil if namespace domain target is a tracked repository", func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+					"repo2": {},
+				})
+				tx := &txns.TxPush{Note: &types.Note{Namespace: "ns1", RepoName: "domain"}}
+				mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(tx.Note.GetNamespace())).Return(&state.Namespace{
+					Domains: map[string]string{"domain": "r/repo2"},
+				})
+				err := rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName())
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
 	Describe(".OnNewTx", func() {
-		It("should add new task to queue", func() {
-			rs.OnNewTx(&txns.TxPush{Note: &types.Note{
-				References: []*types.PushedReference{{Name: "master", Nonce: 1}},
-			}})
-			Expect(rs.HasTask()).To(BeTrue())
-			Expect(rs.QueueSize()).To(Equal(1))
+
+		When("target repo is untracked", func() {
+			It("should not add new task to queue", func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+					"repo2": {},
+				})
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{RepoName: "repo1"}})
+				Expect(rs.HasTask()).To(BeFalse())
+				Expect(rs.QueueSize()).To(Equal(0))
+			})
 		})
 
-		It("should not add new task to queue when task with matching ID already exist in queue", func() {
-			rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
-			rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
-			Expect(rs.HasTask()).To(BeTrue())
-			Expect(rs.QueueSize()).To(Equal(1))
-		})
+		When("there are  no tracked repositories", func() {
+			BeforeEach(func() {
+				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{}).AnyTimes()
+			})
 
-		It("should not add task if reference new hash is zero-hash", func() {
-			rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{
-				{Name: "master", Nonce: 1, NewHash: plumbing.ZeroHash.String()},
-			}}})
-			Expect(rs.HasTask()).To(BeFalse())
-			Expect(rs.QueueSize()).To(Equal(0))
-		})
+			It("should add new task to queue", func() {
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{
+					References: []*types.PushedReference{{Name: "master", Nonce: 1}},
+				}})
+				Expect(rs.HasTask()).To(BeTrue())
+				Expect(rs.QueueSize()).To(Equal(1))
+			})
 
-		It("should add two tasks if push transaction contains 2 different references", func() {
-			rs.OnNewTx(&txns.TxPush{Note: &types.Note{
-				References: []*types.PushedReference{
-					{Name: "refs/heads/master", Nonce: 1},
-					{Name: "refs/heads/dev", Nonce: 1},
-				},
-			}})
-			Expect(rs.HasTask()).To(BeTrue())
-			Expect(rs.QueueSize()).To(Equal(2))
+			It("should not add new task to queue when task with matching ID already exist in queue", func() {
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
+				Expect(rs.HasTask()).To(BeTrue())
+				Expect(rs.QueueSize()).To(Equal(1))
+			})
+
+			It("should not add task if reference new hash is zero-hash", func() {
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{
+					{Name: "master", Nonce: 1, NewHash: plumbing.ZeroHash.String()},
+				}}})
+				Expect(rs.HasTask()).To(BeFalse())
+				Expect(rs.QueueSize()).To(Equal(0))
+			})
+
+			It("should add two tasks if push transaction contains 2 different references", func() {
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1},
+						{Name: "refs/heads/dev", Nonce: 1},
+					},
+				}})
+				Expect(rs.HasTask()).To(BeTrue())
+				Expect(rs.QueueSize()).To(Equal(2))
+			})
 		})
 	})
 

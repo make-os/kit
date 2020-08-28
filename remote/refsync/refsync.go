@@ -17,11 +17,18 @@ import (
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/remote/repo"
+	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
+)
+
+var (
+	ErrUntracked = fmt.Errorf("untracked repository")
 )
 
 // RefSyncer describes an interface for synchronizing a repository's
@@ -46,6 +53,9 @@ type RefSyncer interface {
 
 	// QueueSize returns the size of the tasks queue
 	QueueSize() int
+
+	// CanSync checks whether the target repository of a push transaction can be synchronized.
+	CanSync(namespace, repoName string) error
 
 	// Stops the syncer
 	Stop()
@@ -86,17 +96,19 @@ type RefSync struct {
 	nWorkers                int
 	fetcher                 fetcher.ObjectFetcherService
 	queue                   *queue.UniqueQueue
-	lck                     *sync.Mutex
-	started                 bool
-	stopped                 bool
-	FinalizingRefs          map[string]struct{}
 	makeReferenceUpdatePack push.ReferenceUpdateRequestPackMaker
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
+	keepers                 core.Keepers
+
+	lck            *sync.Mutex
+	started        bool
+	stopped        bool
+	FinalizingRefs map[string]struct{}
 }
 
 // New creates an instance of RefSync
-func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, nWorkers int) *RefSync {
+func New(cfg *config.AppConfig, nWorkers int, fetcher fetcher.ObjectFetcherService, keepers core.Keepers) *RefSync {
 	rs := &RefSync{
 		fetcher:                 fetcher,
 		nWorkers:                nWorkers,
@@ -105,6 +117,7 @@ func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, nWorkers i
 		log:                     cfg.G().Log.Module("ref-syncer"),
 		queue:                   queue.NewUnique(),
 		FinalizingRefs:          make(map[string]struct{}),
+		keepers:                 keepers,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
@@ -122,9 +135,43 @@ func (rs *RefSync) QueueSize() int {
 	return rs.queue.Size()
 }
 
+// CanSync checks whether the target repository of a push transaction can be synchronized.
+func (rs *RefSync) CanSync(namespace, repoName string) error {
+
+	// If there are no explicitly tracked repository, all repositories must be synchronized
+	var tracked = rs.keepers.TrackedRepoKeeper().Tracked()
+	if len(tracked) == 0 {
+		return nil
+	}
+
+	// If the push targets a namespace, resolve the namespace/domain
+	if namespace != "" {
+		ns := rs.keepers.NamespaceKeeper().Get(crypto.MakeNamespaceHash(namespace))
+		if ns.IsNil() {
+			return fmt.Errorf("namespace not found")
+		}
+		target, ok := ns.Domains[repoName]
+		if !ok {
+			return fmt.Errorf("namespace's domain not found")
+		}
+		repoName = identifier.GetDomain(target)
+	}
+
+	if _, ok := tracked[repoName]; !ok {
+		return ErrUntracked
+	}
+
+	return nil
+}
+
 // OnNewTx receives push transactions and adds non-delete
 // pushed references to the queue as new tasks.
 func (rs *RefSync) OnNewTx(tx *txns.TxPush) {
+
+	if rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName()) != nil {
+		return
+	}
+
 	for _, ref := range tx.Note.GetPushedReferences() {
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue

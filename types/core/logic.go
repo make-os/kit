@@ -102,8 +102,8 @@ type TrackedRepo struct {
 	LastHeight util.UInt64 `json:"lastHeight" msgpack:"lastHeight"`
 }
 
-// TrackListKeeper describes an interface for managing tracked repository.
-type TrackListKeeper interface {
+// TrackedRepoKeeper describes an interface for managing tracked repositories.
+type TrackedRepoKeeper interface {
 	Add(targets string, height ...uint64) error
 	Tracked() (res map[string]*TrackedRepo)
 	Get(name string) *TrackedRepo
@@ -336,11 +336,8 @@ type Keepers interface {
 	// SysKeeper provides access to system or operation information.
 	SysKeeper() SystemKeeper
 
-	// TracklistKeeper returns the track list keeper
-	TracklistKeeper() TrackListKeeper
-
-	// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
-	ManagedSysKeeper() SystemKeeper
+	// TrackedRepoKeeper returns the track list keeper
+	TrackedRepoKeeper() TrackedRepoKeeper
 
 	// AccountKeeper manages and provides access to network accounts
 	AccountKeeper() AccountKeeper

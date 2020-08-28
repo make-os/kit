@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -28,6 +29,7 @@ var _ = Describe("RepoModule", func() {
 	var mockRepoSrv *mocks.MockRemoteServer
 	var mockMempoolReactor *mocks.MockMempoolReactor
 	var mockRepoKeeper *mocks.MockRepoKeeper
+	var mockTrackedRepoKeeper *mocks.MockTrackedRepoKeeper
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -36,9 +38,11 @@ var _ = Describe("RepoModule", func() {
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
+		mockTrackedRepoKeeper = mocks.NewMockTrackedRepoKeeper(ctrl)
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
 		mockLogic.EXPECT().RepoKeeper().Return(mockRepoKeeper).AnyTimes()
 		mockLogic.EXPECT().GetRemoteServer().Return(mockRepoSrv).AnyTimes()
+		mockLogic.EXPECT().TrackedRepoKeeper().Return(mockTrackedRepoKeeper).AnyTimes()
 		m = modules.NewRepoModule(mockService, mockRepoSrv, mockLogic)
 	})
 
@@ -463,6 +467,51 @@ var _ = Describe("RepoModule", func() {
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.AnnounceObjects("repo1")
 			})
+		})
+	})
+
+	Describe(".Track", func() {
+		It("should panic if unable to add repo", func() {
+			mockTrackedRepoKeeper.EXPECT().Add("repo1", []uint64{100}).Return(fmt.Errorf("error"))
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Track("repo1", 100)
+			})
+		})
+
+		It("should not panic if able to add repo", func() {
+			mockTrackedRepoKeeper.EXPECT().Add("repo1", []uint64{100}).Return(nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.Track("repo1", 100)
+			})
+		})
+	})
+
+	Describe(".UnTrack", func() {
+		It("should panic if unable to untrack repo", func() {
+			mockTrackedRepoKeeper.EXPECT().Remove("repo1").Return(fmt.Errorf("error"))
+			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.UnTrack("repo1")
+			})
+		})
+
+		It("should not panic if able to untrack repo", func() {
+			mockTrackedRepoKeeper.EXPECT().Remove("repo1").Return(nil)
+			assert.NotPanics(GinkgoT(), func() {
+				m.UnTrack("repo1")
+			})
+		})
+	})
+
+	Describe(".GetTracked", func() {
+		It("should panic if unable to untrack repo", func() {
+			tracked := map[string]*core.TrackedRepo{
+				"repo1": {LastHeight: 10},
+			}
+			mockTrackedRepoKeeper.EXPECT().Tracked().Return(tracked)
+			res := m.GetTracked()
+			Expect(res).To(Equal(util.Map(util.ToBasicMap(tracked))))
 		})
 	})
 })

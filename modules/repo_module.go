@@ -82,6 +82,21 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 			Value:       m.AnnounceObjects,
 			Description: "Announce commit and tag objects of a repository",
 		},
+		{
+			Name:        "track",
+			Value:       m.Track,
+			Description: "Track one or more repositories",
+		},
+		{
+			Name:        "untrack",
+			Value:       m.UnTrack,
+			Description: "Untrack one or more repositories",
+		},
+		{
+			Name:        "tracked",
+			Value:       m.GetTracked,
+			Description: "Returns the tracked repositories",
+		},
 	}
 }
 
@@ -460,4 +475,29 @@ func (m *RepoModule) AnnounceObjects(repoName string) {
 		}
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
+}
+
+// Track adds a repository to the track list.
+//
+// ARGS:
+// names: A comma-separated list of repository or namespace names.
+func (m *RepoModule) Track(names string, height ...uint64) {
+	if err := m.logic.TrackedRepoKeeper().Add(names, height...); err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+}
+
+// UnTrack removes a repository from the track list.
+//
+// ARGS:
+// names: A comma-separated list of repository or namespace names.
+func (m *RepoModule) UnTrack(names string) {
+	if err := m.logic.TrackedRepoKeeper().Remove(names); err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+}
+
+// GetTracked returns the tracked repositories
+func (m *RepoModule) GetTracked() util.Map {
+	return util.ToBasicMap(m.logic.TrackedRepoKeeper().Tracked())
 }

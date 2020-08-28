@@ -18,7 +18,8 @@ type Note struct {
 	// TargetRepo is the target repo local instance
 	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
 
-	// RepoName is the name of the repo
+	// RepoName is the name of the repo. If Namespace is set, it will be the
+	// domain pointing to the actual repository.
 	RepoName string `json:"repo,omitempty" msgpack:"repo,omitempty"`
 
 	// Namespace is the namespace which the pusher is targeting.
@@ -54,10 +55,6 @@ type Note struct {
 	// FromPeer indicates that the note was received from a remote
 	// peer and not created by the local node
 	FromRemotePeer bool `json:"-" msgpack:"-"`
-
-	// LocalSize is the actual size of the pushed objects from the push note receiver's perspective.
-	// This field is for local use; It will not be serialized along with other fields for transport.
-	LocalSize uint64 `json:"-" msgpack:"-"`
 }
 
 // GetTargetRepo returns the target repository
@@ -207,19 +204,9 @@ func (pt *Note) TxSize() uint {
 	return uint(len(pt.Bytes()))
 }
 
-// GetLocalSize returns the local size value
-func (pt *Note) GetLocalSize() uint64 {
-	return pt.LocalSize
-}
-
 // SizeForFeeCal is the size of the transaction + pushed objects
 func (pt *Note) SizeForFeeCal() uint64 {
 	return pt.GetEcoSize() + pt.Size
-}
-
-// SetLocalSize sets the actual local size of the pushed objects
-func (pt *Note) SetLocalSize(val uint64) {
-	pt.LocalSize = val
 }
 
 // GetSize returns the total pushed objects size
@@ -417,7 +404,6 @@ type PushNote interface {
 	Bytes(recompute ...bool) []byte
 	BytesNoCache() []byte
 	BytesNoSig() []byte
-	GetLocalSize() uint64
 	GetEcoSize() uint64
 	GetCreatorPubKey() util.Bytes32
 	GetNodeSignature() []byte
@@ -431,7 +417,6 @@ type PushNote interface {
 	TxSize() uint
 	SizeForFeeCal() uint64
 	GetSize() uint64
-	SetLocalSize(uint64)
 	GetFee() util.String
 	GetValue() util.String
 	IsFromRemotePeer() bool

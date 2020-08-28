@@ -132,7 +132,7 @@ func NewRemoteServer(
 		objfetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
-		refSyncer:               refsync.New(cfg, mFetcher, 10),
+		refSyncer:               refsync.New(cfg, 10, mFetcher, logic),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,

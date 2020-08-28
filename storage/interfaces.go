@@ -56,9 +56,11 @@ type Operations interface {
 	NewBatch() interface{}
 
 	// NewTx creates a new transaction.
+	//
 	// autoFinish: ensure that the underlying transaction is committed after
 	// each successful operation.
-	// renew: reinitializes the transaction after each operation. Requires
+	//
+	// renew: re-initializes the transaction after each operation. Requires
 	// autoFinish to be enabled.
 	NewTx(autoFinish, renew bool) Tx
 }
