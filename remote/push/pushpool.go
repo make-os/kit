@@ -118,15 +118,15 @@ func newItem(note *types.Note) *containerItem {
 
 // PushPool implements types.PushPool.
 type PushPool struct {
-	gmx          *sync.RWMutex          // general lock
-	cap          int                    // The number of transaction the pool is capable of holding.
-	container    []*containerItem       // Holds all the push notes in the pool
-	index        containerIndex         // Helps keep track of note in the pool
-	refIndex     containerIndex         // Helps keep track of note targeting references of a repository
-	refNonceIdx  refNonceIndex          // Helps keep track of the nonce of repo references
-	repoNotesIdx repoNotesIndex         // Helps keep track of repos and push notes target them
-	logic        core.Logic             // The application logic manager
-	noteChecker  validation.NoteChecker // Function used to validate a transaction
+	gmx          *sync.RWMutex                // general lock
+	cap          int                          // The number of transaction the pool is capable of holding.
+	container    []*containerItem             // Holds all the push notes in the pool
+	index        containerIndex               // Helps keep track of note in the pool
+	refIndex     containerIndex               // Helps keep track of note targeting references of a repository
+	refNonceIdx  refNonceIndex                // Helps keep track of the nonce of repo references
+	repoNotesIdx repoNotesIndex               // Helps keep track of repos and push notes target them
+	logic        core.Logic                   // The application logic manager
+	noteChecker  validation.CheckPushNoteFunc // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPool

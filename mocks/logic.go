@@ -1689,7 +1689,7 @@ func (m *MockSystemContract) EXPECT() *MockSystemContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockSystemContract) Init(arg0 core.Logic, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
+func (m *MockSystemContract) Init(arg0 core.Keepers, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)
@@ -1754,7 +1754,7 @@ func (m *MockProposalContract) EXPECT() *MockProposalContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockProposalContract) Init(arg0 core.Logic, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
+func (m *MockProposalContract) Init(arg0 core.Keepers, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)

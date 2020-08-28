@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("PushKeyUpdateDeleteContract", func() {
+var _ = Describe("Contract", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig

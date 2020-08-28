@@ -12,33 +12,32 @@ import (
 	"github.com/make-os/lobe/util"
 )
 
-// CreateRepoContract is a system contract for creating a repository.
-// CreateRepoContract implements SystemContract.
-type CreateRepoContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for creating a repository.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoCreate
 	chainHeight uint64
 }
 
 // NewContract creates a new instance of CreateRepoContract
-func NewContract() *CreateRepoContract {
-	return &CreateRepoContract{}
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *CreateRepoContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoCreate
 }
 
 // Init initialize the contract
-func (c *CreateRepoContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoCreate)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *CreateRepoContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
@@ -63,7 +62,7 @@ func (c *CreateRepoContract) Exec() error {
 	if newRepo.Config.Gov.CreatorAsContributor {
 
 		// Register sender's public key as a push key
-		if err := registerpushkey.NewContractWithNoSenderUpdate().Init(c.Logic, &txns.TxRegisterPushKey{
+		if err := registerpushkey.NewContractWithNoSenderUpdate().Init(c.Keepers, &txns.TxRegisterPushKey{
 			TxCommon:  &txns.TxCommon{SenderPubKey: c.tx.SenderPubKey},
 			PublicKey: spk.ToPublicKey(),
 			FeeCap:    "0",

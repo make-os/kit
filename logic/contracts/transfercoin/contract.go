@@ -16,34 +16,33 @@ var (
 	fe = util.FieldError
 )
 
-// CoinTransferContract is a system contract for handling credit and debit
+// Contract implements core.SystemContract. It is a system contract for handling credit and debit
 // operation from between user accounts and/or repo accounts.
-// CoinTransferContract implements SystemContract.
-type CoinTransferContract struct {
-	core.Logic
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxCoinTransfer
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of CoinTransferContract
-func NewContract() *CoinTransferContract {
-	return &CoinTransferContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *CoinTransferContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeCoinTransfer
 }
 
 // Init initialize the contract
-func (c *CoinTransferContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = logic
 	c.tx = tx.(*txns.TxCoinTransfer)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *CoinTransferContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	var recvAcct core.BalanceAccount
 	recipientAddr := c.tx.To
@@ -126,8 +125,10 @@ func (c *CoinTransferContract) Exec() error {
 	return nil
 }
 
-// DryExec checks whether the given sender can execute the transaction
-func (c *CoinTransferContract) DryExec(sender interface{}) error {
+// DryExec checks whether the given sender can execute the transaction.
+//
+// sender can be an address, identifier.Address or *crypto.PubKey
+func (c *Contract) DryExec(sender interface{}) error {
 
 	senderAddr := ""
 	switch o := sender.(type) {

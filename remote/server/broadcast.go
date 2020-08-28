@@ -7,9 +7,9 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 )
 
-// PushNoteAndEndorsementBroadcaster describes a function for broadcasting a push
+// BroadcastNoteAndEndorsementFunc describes a function for broadcasting a push
 // note and an endorsement of it.
-type PushNoteAndEndorsementBroadcaster func(note pushtypes.PushNote) error
+type BroadcastNoteAndEndorsementFunc func(note pushtypes.PushNote) error
 
 // BroadcastNoteAndEndorsement broadcasts a push note and an endorsement of it.
 // The node has to be a top host to broadcast an endorsement.
@@ -48,8 +48,8 @@ func (sv *Server) BroadcastNoteAndEndorsement(note pushtypes.PushNote) error {
 	return nil
 }
 
-// NoteBroadcaster describes a function for broadcasting a push note
-type NoteBroadcaster func(pushNote pushtypes.PushNote)
+// BroadcastPushNoteFunc describes a function for broadcasting a push note
+type BroadcastPushNoteFunc func(pushNote pushtypes.PushNote)
 
 // broadcastPushNote broadcast push transaction to peers.
 // It will not send to original sender of the push note.
@@ -65,8 +65,8 @@ func (sv *Server) broadcastPushNote(pushNote pushtypes.PushNote) {
 	}
 }
 
-// EndorsementBroadcaster describes a function for broadcasting endorsement
-type EndorsementBroadcaster func(endorsement pushtypes.Endorsement)
+// BroadcastEndorsementFunc describes a function for broadcasting endorsement
+type BroadcastEndorsementFunc func(endorsement pushtypes.Endorsement)
 
 // broadcastEndorsement sends out push endorsements (Endorsement) to peers
 func (sv *Server) broadcastEndorsement(endorsement pushtypes.Endorsement) {

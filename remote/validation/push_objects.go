@@ -24,25 +24,33 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// CheckPushedReferenceConsistency validates pushed references
-func CheckPushedReferenceConsistency(
-	targetRepo remotetypes.LocalRepo,
+// CheckPushedReferenceConsistency validates pushed references.
+//
+// targetRepo is a reference to the local repo. If unset, the pushed
+// reference's old hash will not be compared to the corresponding local
+// reference current hash.
+//
+// ref is the pushed reference.
+//
+// repoState is the repository's network state.
+func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 	ref *types.PushedReference,
 	repoState *state.Repository) error {
 
 	name, nonce := ref.Name, ref.Nonce
 	oldHashIsZero := plumbing.NewHash(ref.OldHash).IsZero()
 
-	// We need to check if the reference exists in the repo.
-	// Ignore references whose old hash is a 0-hash, these are new
-	// references and as such we don't expect to find it in the repo.
+	// We need to check if the reference exists in the repository network state.
+	// Ignore references whose old hash is a 0-hash, these are new references
+	// and as such we don't expect to find it in the repo network state.
 	if !oldHashIsZero && !repoState.References.Has(name) {
 		return fe(-1, "references", fmt.Sprintf("reference '%s' is unknown", name))
 	}
 
-	// If target repo is set and old hash is non-zero, we need to ensure
-	// the current hash of the local version of the reference is the same as the old hash,
-	// otherwise the pushed reference will not be compatible.
+	// If target repo is set and the pushed reference old hash is non-zero, we
+	// need to ensure the current hash of the local version of the pushed
+	// reference is the same as the old hash of the pushed reference, otherwise
+	// the pushed reference will not be compatible.
 	if targetRepo != nil && !oldHashIsZero {
 		localRef, err := targetRepo.Reference(plumbing.ReferenceName(name), false)
 		if err != nil {
@@ -292,8 +300,8 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 	return nil
 }
 
-// NoteChecker describes a function for checking a push note
-type NoteChecker func(tx types.PushNote, logic core.Logic) error
+// CheckPushNoteFunc describes a function for checking a push note
+type CheckPushNoteFunc func(tx types.PushNote, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
 func CheckPushNote(note types.PushNote, logic core.Logic) error {
@@ -400,8 +408,8 @@ func CheckEndorsementSanity(e *types.PushEndorsement, fromPushTx bool, index int
 	return nil
 }
 
-// EndorsementChecker describes a function for validating a push endorsement
-type EndorsementChecker func(end *types.PushEndorsement, logic core.Logic, index int) error
+// CheckEndorsementFunc describes a function for validating a push endorsement
+type CheckEndorsementFunc func(end *types.PushEndorsement, logic core.Logic, index int) error
 
 // CheckEndorsement performs sanity and state consistency checks on the given Endorsement object
 func CheckEndorsement(end *types.PushEndorsement, logic core.Logic, index int) error {

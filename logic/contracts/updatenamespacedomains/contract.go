@@ -8,33 +8,32 @@ import (
 	"github.com/make-os/lobe/util"
 )
 
-// NamespaceDomainUpdateContract is a system contract to update the domains of a namespace.
-// NamespaceDomainUpdateContract implements SystemContract.
-type NamespaceDomainUpdateContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract to update the domains of a namespace.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxNamespaceDomainUpdate
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of NamespaceDomainUpdateContract
-func NewContract() *NamespaceDomainUpdateContract {
-	return &NamespaceDomainUpdateContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *NamespaceDomainUpdateContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeNamespaceDomainUpdate
 }
 
 // Init initialize the contract
-func (c *NamespaceDomainUpdateContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxNamespaceDomainUpdate)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *NamespaceDomainUpdateContract) Exec() error {
+func (c *Contract) Exec() error {
 	spk := crypto.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the current namespace object and update.

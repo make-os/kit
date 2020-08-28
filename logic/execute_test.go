@@ -26,7 +26,7 @@ type testSystemContract struct {
 	execErr error
 }
 
-func (t testSystemContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+func (t testSystemContract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	return t
 }
 

@@ -13,34 +13,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UpsertOwnerContract is a system contract that creates a proposal to update or
-// insert a repo owner. UpsertOwnerContract implements ProposalContract.
-type UpsertOwnerContract struct {
-	core.Logic
+// Contract implements core.ProposalContract. It is a system contract that
+// creates a proposal to update or insert a repo owner.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoProposalUpsertOwner
 	chainHeight uint64
 	contracts   *[]core.SystemContract
 }
 
-// NewContract creates a new instance of UpsertOwnerContract
-func NewContract(contracts *[]core.SystemContract) *UpsertOwnerContract {
-	return &UpsertOwnerContract{contracts: contracts}
+// NewContract creates a new instance of Contract
+func NewContract(contracts *[]core.SystemContract) *Contract {
+	return &Contract{contracts: contracts}
 }
 
-func (c *UpsertOwnerContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoProposalUpsertOwner
 }
 
 // Init initialize the contract
-func (c *UpsertOwnerContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoProposalUpsertOwner)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *UpsertOwnerContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	// Get the repo
 	repoKeeper := c.RepoKeeper()
@@ -85,7 +85,7 @@ update:
 }
 
 // Apply applies the proposal
-func (c *UpsertOwnerContract) Apply(args *core.ProposalApplyArgs) error {
+func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 
 	// Get the action data
 	ad := args.Proposal.GetActionData()

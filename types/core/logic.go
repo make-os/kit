@@ -309,6 +309,8 @@ type Logic interface {
 	GetRemoteServer() RemoteServer
 
 	// DrySend checks whether the given sender can execute the transaction
+	//
+	// sender can be an address, identifier.Address or *crypto.PubKey
 	DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error
 
 	// ExecTx executes a transaction.
@@ -392,7 +394,7 @@ type SystemContract interface {
 	// logic is the logic manager
 	// tx is the transaction to execute.
 	// curChainHeight is the current height of the chain
-	Init(Logic, types.BaseTx, uint64) SystemContract
+	Init(Keepers, types.BaseTx, uint64) SystemContract
 
 	// CanExec checks whether the given tx type can be executed by the contract.
 	CanExec(tx types.TxCode) bool

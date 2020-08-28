@@ -48,7 +48,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
-			data := &mergerequest.MergeRequestData{}
+			data := &mergerequest.Data{}
 			ct := mergerequest.NewContract(data)
 			Expect(ct.CanExec(txns.MergeRequestProposalAction)).To(BeTrue())
 			Expect(ct.CanExec(txns.TxTypeRepoProposalSendFee)).To(BeFalse())
@@ -78,7 +78,7 @@ var _ = Describe("MergeRequestContract", func() {
 			BeforeEach(func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 
-				err = mergerequest.NewContract(&mergerequest.MergeRequestData{
+				err = mergerequest.NewContract(&mergerequest.Data{
 					Repo:             repo,
 					RepoName:         repoName,
 					ProposalID:       id,
@@ -127,7 +127,7 @@ var _ = Describe("MergeRequestContract", func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				repo.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 
-				err = mergerequest.NewContract(&mergerequest.MergeRequestData{
+				err = mergerequest.NewContract(&mergerequest.Data{
 					Repo:             repo,
 					RepoName:         repoName,
 					ProposalID:       id,
@@ -188,7 +188,7 @@ var _ = Describe("MergeRequestContract", func() {
 					},
 				})
 
-				err = mergerequest.NewContract(&mergerequest.MergeRequestData{
+				err = mergerequest.NewContract(&mergerequest.Data{
 					Repo:             repo,
 					RepoName:         repoName,
 					ProposalID:       id,
@@ -235,7 +235,7 @@ var _ = Describe("MergeRequestContract", func() {
 					},
 				})
 
-				err = mergerequest.NewContract(&mergerequest.MergeRequestData{
+				err = mergerequest.NewContract(&mergerequest.Data{
 					Repo:             repo,
 					RepoName:         repoName,
 					ProposalID:       id,

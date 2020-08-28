@@ -81,11 +81,15 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// If the node is in validator mode or the target repository cannot
-	// be synced, we can only broadcast the node at this point.
+	// be synced, we can only validate and broadcast the node.
 	if err := sv.refSyncer.CanSync(note.Namespace, note.RepoName); err != nil || sv.cfg.IsValidatorNode() {
-		sv.log.Info("Partially processing received push note", "ID",
-			noteID, "IsValidator",
-			sv.cfg.IsValidatorNode(), "IsUntrackedRepo", err != nil)
+		sv.log.Info("Partially processing received push note",
+			"ID", noteID, "IsValidator", sv.cfg.IsValidatorNode(), "IsUntrackedRepo", err != nil)
+
+		if err := sv.checkPushNote(&note, sv.logic); err != nil {
+			return errors.Wrap(err, "failed push note validation")
+		}
+
 		sv.registerNoteSender(string(peerID), noteID)
 		sv.noteBroadcaster(&note)
 		return nil
@@ -184,8 +188,8 @@ func (sv *Server) onObjectsFetched(
 	return nil
 }
 
-// PushNoteProcessor is a function for processing a push note
-type PushNoteProcessor func(note pushtypes.PushNote, txDetails []*remotetypes.TxDetail,
+// MaybeProcessPushNoteFunc is a function for processing a push note
+type MaybeProcessPushNoteFunc func(note pushtypes.PushNote, txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc) error
 
 // maybeProcessPushNote validates and dry-run the push note.
@@ -300,9 +304,9 @@ broadcast:
 	return nil
 }
 
-// PushTxCreator describes a function that takes a push note and creates
+// CreatePushTxFunc describes a function that takes a push note and creates
 // a push transaction which is then added to the mempool.
-type PushTxCreator func(noteID string) error
+type CreatePushTxFunc func(noteID string) error
 
 // createPushTx attempts to create a PushTx from a given push note, only if
 // a push note matching the given id exist in the push pool and the push note
@@ -395,8 +399,8 @@ func (sv *Server) createPushTx(noteID string) error {
 	return nil
 }
 
-// EndorsementCreator describes a function for creating an endorsement for the given push note
-type EndorsementCreator func(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error)
+// CreateEndorsementFunc describes a function for creating an endorsement for the given push note
+type CreateEndorsementFunc func(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error)
 
 // createEndorsement creates a push endorsement
 func createEndorsement(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error) {

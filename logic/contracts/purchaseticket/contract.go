@@ -12,31 +12,30 @@ import (
 	"github.com/make-os/lobe/util"
 )
 
-// TicketPurchaseContract is a system contract for purchasing a ticket.
-// TicketPurchaseContract implements SystemContract.
-type TicketPurchaseContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for purchasing a ticket.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxTicketPurchase
 	chainHeight uint64
 }
 
-// NewContract creates an instance of TicketPurchaseContract
-func NewContract() *TicketPurchaseContract {
-	return &TicketPurchaseContract{}
+// NewContract creates an instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *TicketPurchaseContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeValidatorTicket || typ == txns.TxTypeHostTicket
 }
 
-func (c *TicketPurchaseContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = logic
 	c.tx = tx.(*txns.TxTicketPurchase)
 	c.chainHeight = curChainHeight
 	return c
 }
 
-func (c *TicketPurchaseContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	acctKeeper := c.AccountKeeper()

@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/mr-tron/base58"
 )
 
@@ -72,42 +73,48 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 }
 
 // CheckTxDetailConsistency performs consistency checks on a transaction's parameters.
-func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, index int) error {
+func CheckTxDetailConsistency(txd *types.TxDetail, keepers core.Keepers, index int) error {
 
 	// Pusher key must exist
-	pushKey := keepers.PushKeyKeeper().Get(params.PushKeyID)
+	pushKey := keepers.PushKeyKeeper().Get(txd.PushKeyID)
 	if pushKey.IsNil() {
 		return fe(index, "pkID", "push key not found")
 	}
 
-	// Ensure repo namespace exist if set
-	var paramNS = state.BareNamespace()
-	if params.RepoNamespace != "" && len(pushKey.Scopes) > 0 {
-		paramNS = keepers.NamespaceKeeper().Get(params.RepoNamespace)
-		if paramNS.IsNil() {
-			msg := fmt.Sprintf("namespace (%s) is unknown", params.RepoNamespace)
-			return fe(index, "namespace", msg)
+	// If a namespace is set, ensure it exists and the domain also exists
+	var ns = state.BareNamespace()
+	var repoName = txd.RepoName
+	if txd.RepoNamespace != "" {
+		ns = keepers.NamespaceKeeper().Get(txd.RepoNamespace)
+		if ns.IsNil() {
+			return fe(index, "namespace", fmt.Sprintf("namespace (%s) is unknown", txd.RepoNamespace))
 		}
+		target := ns.Domains.Get(repoName)
+		if target == "" {
+			return fe(index, "namespace", fmt.Sprintf("namespace domain (%s) is unknown", repoName))
+		}
+		repoName = identifier.GetDomain(target)
 	}
 
 	// Ensure push key scope grants access to the destination repo namespace and repo name.
-	if len(pushKey.Scopes) > 0 && IsBlockedByScope(pushKey.Scopes, params, paramNS) {
-		msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
+	if len(pushKey.Scopes) > 0 && IsBlockedByScope(pushKey.Scopes, txd, ns) {
+		msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", txd.PushKeyID)
 		return fe(index, "repo|namespace", msg)
 	}
 
 	// Ensure the nonce is a future nonce (> current nonce of pusher's account)
-	if keyOwner := keepers.AccountKeeper().Get(pushKey.Address); params.Nonce <= keyOwner.Nonce.UInt64() {
-		msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
-			keyOwner.Nonce)
+	owner := keepers.AccountKeeper().Get(pushKey.Address)
+	if txd.Nonce <= owner.Nonce.UInt64() {
+		msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", txd.Nonce,
+			owner.Nonce)
 		return fe(index, "nonce", msg)
 	}
 
 	// When merge proposal ID is set, check if merge proposal exist and
 	// whether it was created by the owner of the push key
-	if params.MergeProposalID != "" {
-		repoState := keepers.RepoKeeper().Get(params.RepoName)
-		mp := repoState.Proposals.Get(mergerequest.MakeMergeRequestProposalID(params.MergeProposalID))
+	if txd.MergeProposalID != "" {
+		repoState := keepers.RepoKeeper().Get(repoName)
+		mp := repoState.Proposals.Get(mergerequest.MakeMergeRequestProposalID(txd.MergeProposalID))
 		if mp == nil {
 			return fe(index, "mergeID", "merge proposal not found")
 		}
@@ -121,7 +128,7 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 
 	// Use the key to verify the tx params signature
 	pubKey, _ := crypto.PubKeyFromBytes(pushKey.PubKey.Bytes())
-	if ok, err := pubKey.Verify(params.BytesNoSig(), params.MustSignatureAsBytes()); err != nil || !ok {
+	if ok, err := pubKey.Verify(txd.BytesNoSig(), txd.MustSignatureAsBytes()); err != nil || !ok {
 		return fe(index, "sig", "signature is not valid")
 	}
 

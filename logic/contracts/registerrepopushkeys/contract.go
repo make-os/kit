@@ -14,34 +14,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RegisterRepoPushKeysContract is a system contract that creates a proposal to register
-// push keys to a repo. RegisterRepoPushKeysContract implements ProposalContract.
-type RegisterRepoPushKeysContract struct {
-	core.Logic
+// Contract implements core.ProposalContract. It is a system contract that
+// creates a proposal to register push keys to a repo.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoProposalRegisterPushKey
 	chainHeight uint64
 	contracts   *[]core.SystemContract
 }
 
-// NewContract creates a new instance of RegisterRepoPushKeysContract
-func NewContract(contracts *[]core.SystemContract) *RegisterRepoPushKeysContract {
-	return &RegisterRepoPushKeysContract{contracts: contracts}
+// NewContract creates a new instance of Contract
+func NewContract(contracts *[]core.SystemContract) *Contract {
+	return &Contract{contracts: contracts}
 }
 
-func (c *RegisterRepoPushKeysContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoProposalRegisterPushKey
 }
 
 // Init initialize the contract
-func (c *RegisterRepoPushKeysContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoProposalRegisterPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *RegisterRepoPushKeysContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	// Get the repo
 	repoKeeper := c.RepoKeeper()
@@ -94,7 +94,7 @@ update:
 }
 
 // Apply applies the proposal
-func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error {
+func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 	ad := args.Proposal.GetActionData()
 
 	// Extract the policies.
@@ -140,7 +140,7 @@ func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error
 		// If namespace is set, add the contributor to the the namespace and
 		// then if namespaceOnly is set, continue  to the next push key
 		// id after adding a contributor to the namespace
-		if namespace != "" || namespaceOnly != "" {
+		if ns != nil && namespace != "" || namespaceOnly != "" {
 			ns.Contributors[pushKeyID] = contributor
 			if namespaceOnly != "" {
 				continue

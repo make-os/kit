@@ -144,6 +144,7 @@ var _ = Describe("Reactor", func() {
 
 		When("target repository cannot be synced", func() {
 			var broadcastNote bool
+			var validated bool
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
@@ -159,6 +160,10 @@ var _ = Describe("Reactor", func() {
 				svr.noteBroadcaster = func(pushNote types.PushNote) {
 					broadcastNote = true
 				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					validated = true
+					return nil
+				}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -169,10 +174,14 @@ var _ = Describe("Reactor", func() {
 			It("should broadcast the push note", func() {
 				Expect(broadcastNote).To(BeTrue())
 			})
+
+			It("should validate the push note", func() {
+				Expect(validated).To(BeTrue())
+			})
 		})
 
 		When("target repository can be synced but the node is in validator mode", func() {
-			var broadcastNote bool
+			var broadcastNote, validated bool
 			BeforeEach(func() {
 				cfg.Node.Validator = true
 
@@ -190,6 +199,10 @@ var _ = Describe("Reactor", func() {
 				svr.noteBroadcaster = func(pushNote types.PushNote) {
 					broadcastNote = true
 				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					validated = true
+					return nil
+				}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -199,6 +212,49 @@ var _ = Describe("Reactor", func() {
 
 			It("should broadcast the push note", func() {
 				Expect(broadcastNote).To(BeTrue())
+			})
+
+			It("should validate the push note", func() {
+				Expect(validated).To(BeTrue())
+			})
+		})
+
+		When("target repository cannot be synced and the push note failed validation", func() {
+			var broadcastNote bool
+			var validated bool
+			BeforeEach(func() {
+				pn := &types.Note{RepoName: "repo1"}
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(refsync.ErrUntracked)
+				svr.refSyncer = mockRefSyncer
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+					return nil, nil
+				}
+				svr.noteBroadcaster = func(pushNote types.PushNote) {
+					broadcastNote = true
+				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					validated = true
+					return fmt.Errorf("error")
+				}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should validate the push note", func() {
+				Expect(validated).To(BeTrue())
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed push note validation: error"))
+			})
+
+			It("should not broadcast the push note", func() {
+				Expect(broadcastNote).To(BeFalse())
 			})
 		})
 

@@ -12,31 +12,30 @@ import (
 	"github.com/make-os/lobe/util"
 )
 
-// TicketUnbondContract is a system contract to unbond a ticket.
-// TicketUnbondContract implements SystemContract.
-type TicketUnbondContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract to unbond a ticket.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxTicketUnbond
 	chainHeight uint64
 }
 
-// NewContract creates an instance of TicketUnbondContract
-func NewContract() *TicketUnbondContract {
-	return &TicketUnbondContract{}
+// NewContract creates an instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *TicketUnbondContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeUnbondHostTicket
 }
 
-func (c *TicketUnbondContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxTicketUnbond)
 	c.chainHeight = curChainHeight
 	return c
 }
 
-func (c *TicketUnbondContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	// Get sender account
 	acctKeeper := c.AccountKeeper()

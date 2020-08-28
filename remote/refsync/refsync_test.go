@@ -259,7 +259,7 @@ var _ = Describe("RefSync", func() {
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				updated := false
-				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
 					updated = true
 					return nil
 				}
@@ -281,7 +281,7 @@ var _ = Describe("RefSync", func() {
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				updated := false
-				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
 					updated = true
 					return nil
 				}
@@ -300,7 +300,7 @@ var _ = Describe("RefSync", func() {
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				updated := false
-				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
 					updated = true
 					return nil
 				}
@@ -325,7 +325,7 @@ var _ = Describe("RefSync", func() {
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				updated := false
-				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
 					updated = true
 					return nil
 				}
@@ -347,7 +347,7 @@ var _ = Describe("RefSync", func() {
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				updated := false
-				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.ReferenceUpdateRequestPackMaker, types.PushNote) error {
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
 					updated = true
 					return nil
 				}

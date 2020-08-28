@@ -8,34 +8,33 @@ import (
 	"github.com/make-os/lobe/types/txns"
 )
 
-// DepositProposalFeeContract is a system contract for adding deposit fee to a proposal.
-// DepositProposalFeeContract implements SystemContract.
-type DepositProposalFeeContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for adding deposit fee to a proposal.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoProposalSendFee
 	chainHeight uint64
 	contracts   []core.SystemContract
 }
 
 // NewContract creates a new instance of DepositProposalFeeContract
-func NewContract() *DepositProposalFeeContract {
-	return &DepositProposalFeeContract{}
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *DepositProposalFeeContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoProposalSendFee
 }
 
 // Init initialize the contract
-func (c *DepositProposalFeeContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoProposalSendFee)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *DepositProposalFeeContract) Exec() error {
+func (c *Contract) Exec() error {
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the repo and proposal

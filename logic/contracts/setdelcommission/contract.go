@@ -8,33 +8,32 @@ import (
 	"github.com/make-os/lobe/util"
 )
 
-// SetDelegateCommissionContract is a system contract for setting an account's delegate commission.
-// SetDelegateCommissionContract implements SystemContract.
-type SetDelegateCommissionContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for setting an account's delegate commission.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxSetDelegateCommission
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of SetDelegateCommissionContract
-func NewContract() *SetDelegateCommissionContract {
-	return &SetDelegateCommissionContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *SetDelegateCommissionContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeSetDelegatorCommission
 }
 
 // Init initialize the contract
-func (c *SetDelegateCommissionContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxSetDelegateCommission)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *SetDelegateCommissionContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	acctKeeper := c.AccountKeeper()

@@ -11,34 +11,33 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// ProposalVoteContract is a system contract for adding a vote on a proposal.
-// ProposalVoteContract implements SystemContract.
-type ProposalVoteContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for adding a vote on a proposal.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoProposalVote
 	chainHeight uint64
 	contracts   []core.SystemContract
 }
 
-// NewContract creates a new instance of ProposalVoteContract
-func NewContract() *ProposalVoteContract {
-	return &ProposalVoteContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *ProposalVoteContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoProposalVote
 }
 
 // Init initialize the contract
-func (c *ProposalVoteContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoProposalVote)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *ProposalVoteContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	var err error
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())

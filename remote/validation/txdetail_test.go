@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Validation", func() {
+var _ = Describe("TxDetail", func() {
 	var err error
 	var cfg *config.AppConfig
 	var privKey, privKey2 *crypto.Key
@@ -202,14 +202,14 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return scope error when key scope is ns1/repo1 and tx repo=repo2 and namespace=ns1", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "domain", RepoNamespace: "ns1"}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"ns1/repo1"}
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
 			ns := state.BareNamespace()
-			ns.Domains["ns1"] = "real-repo"
+			ns.Domains["domain"] = "r/something"
 			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
@@ -218,14 +218,14 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return scope error when key scope is ns1/ and tx repo=repo2 and namespace=ns2", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "domain", RepoNamespace: "ns1"}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"ns1/repo1"}
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
 			ns := state.BareNamespace()
-			ns.Domains["ns1"] = "real-repo"
+			ns.Domains["domain"] = "r/real-repo"
 			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
@@ -306,6 +306,30 @@ var _ = Describe("Validation", func() {
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge error: signer did not create the proposal"))
+			})
+
+			When("namespace is set", func() {
+				It("should return error when domain does not exist in namespace", func() {
+					detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9,
+						RepoNamespace: "ns1", RepoName: "repo1"}
+
+					sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+					Expect(err).To(BeNil())
+					detail.Signature = base58.Encode(sig)
+
+					pk := state.BarePushKey()
+					pk.Address = privKey.Addr()
+					pk.PubKey = privKey.PubKey().ToPublicKey()
+					mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+					ns := state.BareNamespace()
+					ns.Owner = "os1abc"
+					mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+
+					err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("index:0, field:namespace, msg:namespace domain (repo1) is unknown"))
+				})
 			})
 		})
 

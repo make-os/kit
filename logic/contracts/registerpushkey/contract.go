@@ -9,42 +9,41 @@ import (
 	"github.com/make-os/lobe/types/txns"
 )
 
-// RegisterPushKeyContract is a system contract for creating a repository.
-// RegisterPushKeyContract implements SystemContract.
-type RegisterPushKeyContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract for creating a repository.
+type Contract struct {
+	core.Keepers
 	tx                 *txns.TxRegisterPushKey
 	chainHeight        uint64
 	disableSenderDebit bool
 }
 
-// NewContract creates a new instance of RegisterPushKeyContract
-func NewContract() *RegisterPushKeyContract {
-	return &RegisterPushKeyContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
 // NewContractWithNoSenderUpdate is like NewContract but disables fee debit and nonce
 // update on the sender's account. This is meant to be used when calling the
 // contract from other contract that intend to handle sender account update
 // them self.
-func NewContractWithNoSenderUpdate() *RegisterPushKeyContract {
-	return &RegisterPushKeyContract{disableSenderDebit: true}
+func NewContractWithNoSenderUpdate() *Contract {
+	return &Contract{disableSenderDebit: true}
 }
 
-func (c *RegisterPushKeyContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRegisterPushKey
 }
 
 // Init initialize the contract
-func (c *RegisterPushKeyContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRegisterPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *RegisterPushKeyContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 

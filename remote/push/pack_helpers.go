@@ -15,9 +15,9 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/capability"
 )
 
-// ReferenceUpdateRequestPackMaker describes a function for create git
+// MakeReferenceUpdateRequestPackFunc describes a function for create git
 // packfile from a push note and a target repository
-type ReferenceUpdateRequestPackMaker func(tx pushtypes.PushNote) (io.ReadSeeker, error)
+type MakeReferenceUpdateRequestPackFunc func(tx pushtypes.PushNote) (io.ReadSeeker, error)
 
 // MakeReferenceUpdateRequestPack creates a reference update request
 // to send to git-receive-pack program.

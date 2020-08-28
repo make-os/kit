@@ -20,7 +20,7 @@ func MakeMergeRequestProposalID(id interface{}) string {
 	return fmt.Sprintf("MR%v", id)
 }
 
-type MergeRequestData struct {
+type Data struct {
 
 	// RepoName is the target repo
 	RepoName string
@@ -54,31 +54,31 @@ type MergeRequestData struct {
 }
 
 // MergeRequestContract is a system contract that creates a merge request proposal.
-// MergeRequestContract implements SystemContract.
-type MergeRequestContract struct {
-	core.Logic
+// MergeRequestContract implements core.SystemContract.
+type Contract struct {
+	core.Keepers
 	chainHeight uint64
-	data        *MergeRequestData
+	data        *Data
 }
 
 // NewContract creates a new instance of MergeRequestContract
-func NewContract(mergeData *MergeRequestData) *MergeRequestContract {
-	return &MergeRequestContract{data: mergeData}
+func NewContract(mergeData *Data) *Contract {
+	return &Contract{data: mergeData}
 }
 
-func (c *MergeRequestContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.MergeRequestProposalAction
 }
 
 // Init initialize the contract
-func (c *MergeRequestContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = logic
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *MergeRequestContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	var id = MakeMergeRequestProposalID(c.data.ProposalID)
 	var proposal = c.data.Repo.Proposals.Get(id)

@@ -66,43 +66,43 @@ var services = [][]interface{}{
 type Server struct {
 	p2p.BaseReactor
 	cfg                        *config.AppConfig
-	log                        logger.Logger                        // log is the application logger
-	wg                         *sync.WaitGroup                      // wait group for waiting for the remote server
-	srv                        *http.Server                         // the http server
-	rootDir                    string                               // the root directory where all repos are stored
-	addr                       string                               // addr is the listening address for the http server
-	gitBinPath                 string                               // gitBinPath is the path of the git executable
-	pushPool                   pushtypes.PushPool                   // The transaction pool for push transactions
-	mempool                    core.Mempool                         // The general transaction pool for block-bound transaction
-	logic                      core.Logic                           // logic is the application logic provider
-	validatorKey               *crypto.Key                          // the node's private validator key for signing transactions
-	pushKeyGetter              core.PushKeyGetter                   // finds and returns PGP public key
-	dht                        types2.DHT                           // The dht service
-	objfetcher                 fetcher.ObjectFetcher                // The object fetcher service
-	blockGetter                types.BlockGetter                    // Provides access to blocks
-	noteSenders                *cache.Cache                         // Store senders of push notes
-	endorsementSenders         *cache.Cache                         // Stores senders of Endorsement messages
-	endorsementsReceived       *cache.Cache                         // Store PushEnds
-	modulesAgg                 types3.ModulesHub                    // Modules aggregator
-	refSyncer                  refsync.RefSyncer                    // Responsible for syncing pushed references in a push transaction
-	authenticate               AuthenticatorFunc                    // Function for performing authentication
-	checkPushNote              validation.NoteChecker               // Function for performing PushNote validation
-	makeReferenceUpdatePack    push.ReferenceUpdateRequestPackMaker // Function for creating a reference update pack for updating a repository
-	makePushHandler            PushHandlerFunc                      // Function for creating a push handler
-	noteAndEndorserBroadcaster PushNoteAndEndorsementBroadcaster    // Function for broadcasting a push note and its endorsement
-	makePushTx                 PushTxCreator                        // Function for creating a push transaction and adding it to the mempool
-	processPushNote            PushNoteProcessor                    // Function for processing a push note
-	checkEndorsement           validation.EndorsementChecker        // Function for checking push endorsement
-	endorsementBroadcaster     EndorsementBroadcaster               // Function for broadcasting an endorsement
-	noteBroadcaster            NoteBroadcaster                      // Function for broadcasting a push note
-	endorsementCreator         EndorsementCreator                   // Function for creating an endorsement for a given push note
+	log                        logger.Logger                           // log is the application logger
+	wg                         *sync.WaitGroup                         // wait group for waiting for the remote server
+	srv                        *http.Server                            // the http server
+	rootDir                    string                                  // the root directory where all repos are stored
+	addr                       string                                  // addr is the listening address for the http server
+	gitBinPath                 string                                  // gitBinPath is the path of the git executable
+	pushPool                   pushtypes.PushPool                      // The transaction pool for push transactions
+	mempool                    core.Mempool                            // The general transaction pool for block-bound transaction
+	logic                      core.Logic                              // logic is the application logic provider
+	validatorKey               *crypto.Key                             // the node's private validator key for signing transactions
+	pushKeyGetter              core.PushKeyGetter                      // finds and returns PGP public key
+	dht                        types2.DHT                              // The dht service
+	objfetcher                 fetcher.ObjectFetcher                   // The object fetcher service
+	blockGetter                types.BlockGetter                       // Provides access to blocks
+	noteSenders                *cache.Cache                            // Store senders of push notes
+	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
+	endorsementsReceived       *cache.Cache                            // Store PushEnds
+	modulesAgg                 types3.ModulesHub                       // Modules aggregator
+	refSyncer                  refsync.RefSyncer                       // Responsible for syncing pushed references in a push transaction
+	authenticate               AuthenticatorFunc                       // Function for performing authentication
+	checkPushNote              validation.CheckPushNoteFunc            // Function for performing PushNote validation
+	makeReferenceUpdatePack    push.MakeReferenceUpdateRequestPackFunc // Function for creating a reference update pack for updating a repository
+	makePushHandler            PushHandlerFunc                         // Function for creating a push handler
+	noteAndEndorserBroadcaster BroadcastNoteAndEndorsementFunc         // Function for broadcasting a push note and its endorsement
+	makePushTx                 CreatePushTxFunc                        // Function for creating a push transaction and adding it to the mempool
+	processPushNote            MaybeProcessPushNoteFunc                // Function for processing a push note
+	checkEndorsement           validation.CheckEndorsementFunc         // Function for checking push endorsement
+	endorsementBroadcaster     BroadcastEndorsementFunc                // Function for broadcasting an endorsement
+	noteBroadcaster            BroadcastPushNoteFunc                   // Function for broadcasting a push note
+	endorsementCreator         CreateEndorsementFunc                   // Function for creating an endorsement for a given push note
 }
 
 // NewRemoteServer creates an instance of Server
 func NewRemoteServer(
 	cfg *config.AppConfig,
 	addr string,
-	logic core.Logic,
+	appLogic core.Logic,
 	dht types2.DHT,
 	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Server {
@@ -125,14 +125,14 @@ func NewRemoteServer(
 		rootDir:                 cfg.GetRepoRoot(),
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
-		pushPool:                push.NewPushPool(params.PushPoolCap, logic),
-		logic:                   logic,
+		pushPool:                push.NewPushPool(params.PushPoolCap, appLogic),
+		logic:                   appLogic,
 		validatorKey:            key,
 		dht:                     dht,
 		objfetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
-		refSyncer:               refsync.New(cfg, 10, mFetcher, logic),
+		refSyncer:               refsync.New(cfg, 10, mFetcher, appLogic),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
@@ -160,7 +160,7 @@ func NewRemoteServer(
 		// Start the fetcher service
 		server.objfetcher.Start()
 
-		// // Start the reference syncer
+		// Start the reference syncer
 		server.refSyncer.Start()
 	}
 

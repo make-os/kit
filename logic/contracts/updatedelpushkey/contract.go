@@ -8,33 +8,32 @@ import (
 	"github.com/make-os/lobe/types/txns"
 )
 
-// PushKeyUpdateDeleteContract is a system contract to update or delete a push key.
-// PushKeyUpdateDeleteContract implements SystemContract.
-type PushKeyUpdateDeleteContract struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract to update or delete a push key.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxUpDelPushKey
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of PushKeyUpdateDeleteContract
-func NewContract() *PushKeyUpdateDeleteContract {
-	return &PushKeyUpdateDeleteContract{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *PushKeyUpdateDeleteContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeUpDelPushKey
 }
 
 // Init initialize the contract
-func (c *PushKeyUpdateDeleteContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxUpDelPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *PushKeyUpdateDeleteContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	pushKeyKeeper := c.PushKeyKeeper()
 	key := pushKeyKeeper.Get(c.tx.ID)

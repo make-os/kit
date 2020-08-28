@@ -12,34 +12,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UpdateRepoContract is a system contract that creates a proposal to
-// update a repository. UpdateRepoContract implements ProposalContract.
-type UpdateRepoContract struct {
-	core.Logic
+// Contract implements core.ProposalContract. It is a system contract that
+// creates a proposal to update a repository.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxRepoProposalUpdate
 	chainHeight uint64
 	contracts   *[]core.SystemContract
 }
 
-// NewContract creates a new instance of UpdateRepoContract
-func NewContract(contracts *[]core.SystemContract) *UpdateRepoContract {
-	return &UpdateRepoContract{contracts: contracts}
+// NewContract creates a new instance of Contract
+func NewContract(contracts *[]core.SystemContract) *Contract {
+	return &Contract{contracts: contracts}
 }
 
-func (c *UpdateRepoContract) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypeRepoProposalUpdate
 }
 
 // Init initialize the contract
-func (c *UpdateRepoContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxRepoProposalUpdate)
 	c.chainHeight = curChainHeight
 	return c
 }
 
 // Exec executes the contract
-func (c *UpdateRepoContract) Exec() error {
+func (c *Contract) Exec() error {
 
 	// Get the repo
 	repoKeeper := c.RepoKeeper()
@@ -81,7 +81,7 @@ update:
 }
 
 // Apply applies the proposal action
-func (c *UpdateRepoContract) Apply(args *core.ProposalApplyArgs) error {
+func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 	var cfgUpd map[string]interface{}
 	if err := util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd); err != nil {
 		return err

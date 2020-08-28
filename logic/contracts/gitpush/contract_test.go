@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GitPush", func() {
+var _ = Describe("Contract", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -110,7 +110,7 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference already exist", func() {
 			It("should not update reference creator", func() {
-				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&remotetypes.ReferenceData{}), Fee: "1"}}
+				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: &remotetypes.ReferenceData{}, Fee: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
@@ -125,7 +125,7 @@ var _ = Describe("GitPush", func() {
 
 		When("reference has nonce = 1. After a successful exec:", func() {
 			BeforeEach(func() {
-				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&remotetypes.ReferenceData{}), Fee: "1"}}
+				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: &remotetypes.ReferenceData{}, Fee: "1"}}
 				rawPkID := crypto2.MustDecodePushKeyID(pushKeyID)
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -178,7 +178,7 @@ var _ = Describe("GitPush", func() {
 				refs = []*types.PushedReference{{
 					Name: issueRef1,
 					Fee:  "1",
-					Data: (&remotetypes.ReferenceData{Close: &cls})}}
+					Data: &remotetypes.ReferenceData{Close: &cls}}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},

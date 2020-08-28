@@ -96,7 +96,7 @@ type RefSync struct {
 	nWorkers                int
 	fetcher                 fetcher.ObjectFetcherService
 	queue                   *queue.UniqueQueue
-	makeReferenceUpdatePack push.ReferenceUpdateRequestPackMaker
+	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
 	keepers                 core.Keepers
@@ -388,14 +388,14 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 // UpdateRepoUsingNoteFunc describes a function for updating a repo using a push note
 type UpdateRepoUsingNoteFunc func(
 	gitBinPath string,
-	refUpdateMaker push.ReferenceUpdateRequestPackMaker,
+	refUpdateMaker push.MakeReferenceUpdateRequestPackFunc,
 	note types.PushNote) error
 
 // UpdateRepoUsingNote updates a push note's target repo to match the state
 // of the pushed references contained in it.
 func UpdateRepoUsingNote(
 	gitBinPath string,
-	refUpdateMaker push.ReferenceUpdateRequestPackMaker,
+	refUpdateMaker push.MakeReferenceUpdateRequestPackFunc,
 	note types.PushNote) error {
 
 	// Create a packfile that represents updates described in the note.

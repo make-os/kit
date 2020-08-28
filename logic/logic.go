@@ -196,11 +196,20 @@ func (l *Logic) GetTicketManager() tickettypes.TicketManager {
 }
 
 // DrySend checks whether the given sender can execute the transaction
-func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+//
+// sender can be an address, identifier.Address or *crypto.PubKey
+func DrySend(keepers core.Keepers, sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
 	tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: value}, TxCommon: &txns.TxCommon{Fee: fee, Nonce: nonce}}
 	ct := transfercoin.NewContract()
-	ct.Init(l, tx, chainHeight)
+	ct.Init(keepers, tx, chainHeight)
 	return ct.DryExec(sender)
+}
+
+// DrySend checks whether the given sender can execute the transaction
+//
+// sender can be an address, identifier.Address or *crypto.PubKey
+func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+	return DrySend(l, sender, value, fee, nonce, chainHeight)
 }
 
 // DB returns the hubs db reference

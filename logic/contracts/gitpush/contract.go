@@ -13,32 +13,31 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// GitPush is a system contract to process a push transaction.
-// GitPush implements SystemContract.
-type GitPush struct {
-	core.Logic
+// Contract implements core.SystemContract. It is a system contract to process a push transaction.
+type Contract struct {
+	core.Keepers
 	tx          *txns.TxPush
 	chainHeight uint64
 }
 
-// NewContract creates a new instance of GitPush
-func NewContract() *GitPush {
-	return &GitPush{}
+// NewContract creates a new instance of Contract
+func NewContract() *Contract {
+	return &Contract{}
 }
 
-func (c *GitPush) CanExec(typ types.TxCode) bool {
+func (c *Contract) CanExec(typ types.TxCode) bool {
 	return typ == txns.TxTypePush
 }
 
 // Init initialize the contract
-func (c *GitPush) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
-	c.Logic = logic
+func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+	c.Keepers = keepers
 	c.tx = tx.(*txns.TxPush)
 	c.chainHeight = curChainHeight
 	return c
 }
 
-func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pushtypes.PushedReference) error {
+func (c *Contract) execReference(repo *state.Repository, repoName string, ref *pushtypes.PushedReference) error {
 
 	// When the reference needs to be deleted, remove from repo reference
 	r := repo.References.Get(ref.Name)
@@ -97,7 +96,7 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 		}
 
 		// Execute merge request contract
-		if err := mergerequest.NewContract(&mergerequest.MergeRequestData{
+		if err := mergerequest.NewContract(&mergerequest.Data{
 			Repo:             repo,
 			RepoName:         repoName,
 			ProposalID:       plumbing.GetReferenceShortName(ref.Name),
@@ -108,7 +107,7 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 			BaseBranchHash:   ref.Data.BaseBranchHash,
 			TargetBranch:     ref.Data.TargetBranch,
 			TargetBranchHash: ref.Data.TargetBranchHash,
-		}).Init(c.Logic, nil, c.chainHeight).Exec(); err != nil {
+		}).Init(c.Keepers, nil, c.chainHeight).Exec(); err != nil {
 			return err
 		}
 
@@ -131,7 +130,7 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 }
 
 // Exec executes the contract
-func (c *GitPush) Exec() error {
+func (c *Contract) Exec() error {
 	repoName := c.tx.Note.GetRepoName()
 	repoKeeper := c.RepoKeeper()
 	repo := repoKeeper.Get(repoName)
