@@ -40,11 +40,15 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
+			nsDomain := identifier.GetDomain(target)
 			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
 			}
-			for _, t := range ns.Domains {
+			for domain, t := range ns.Domains {
+				if nsDomain != "" && nsDomain != domain {
+					continue
+				}
 				if identifier.IsWholeNativeRepoURI(t) {
 					final = append(final, identifier.GetDomain(t))
 				}
@@ -113,11 +117,15 @@ func (t *TrackListKeeper) Remove(targets string) error {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
+			nsDomain := identifier.GetDomain(target)
 			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
 			}
-			for _, t := range ns.Domains {
+			for domain, t := range ns.Domains {
+				if nsDomain != "" && nsDomain != domain {
+					continue
+				}
 				if identifier.IsWholeNativeRepoURI(t) {
 					final = append(final, identifier.GetDomain(t))
 				}

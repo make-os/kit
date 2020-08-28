@@ -42,11 +42,11 @@ var _ = Describe("Tracklist", func() {
 	})
 
 	Describe(".Add", func() {
-		It("should add repository targets if argument is a namespace", func() {
+		It("should add all repository targets if argument is a namespace with no domain", func() {
 			nsKeeper := NewNamespaceKeeper(state)
 			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
-				"stuff":  "r/abc",
-				"stuff2": "r/xyz",
+				"domain1": "r/abc",
+				"domain2": "r/xyz",
 			}})
 			err := keeper.Add("ns1/")
 			Expect(err).To(BeNil())
@@ -54,6 +54,22 @@ var _ = Describe("Tracklist", func() {
 			Expect(err).To(BeNil())
 			Expect(rec).ToNot(BeNil())
 			rec, err = appDB.Get(MakeTrackedRepoKey("xyz"))
+			Expect(err).To(BeNil())
+			Expect(rec).ToNot(BeNil())
+		})
+
+		It("should add only repository of namespace target if namespace point to a repository target", func() {
+			nsKeeper := NewNamespaceKeeper(state)
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
+				"domain1": "r/abc",
+				"domain2": "r/xyz",
+			}})
+			err := keeper.Add("ns1/domain2")
+			Expect(err).To(BeNil())
+			_, err = appDB.Get(MakeTrackedRepoKey("abc"))
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(storage.ErrRecordNotFound))
+			rec, err := appDB.Get(MakeTrackedRepoKey("xyz"))
 			Expect(err).To(BeNil())
 			Expect(rec).ToNot(BeNil())
 		})
@@ -142,8 +158,8 @@ var _ = Describe("Tracklist", func() {
 		It("should remove repository targets if argument is a namespace", func() {
 			nsKeeper := NewNamespaceKeeper(state)
 			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
-				"stuff":  "r/abc",
-				"stuff2": "r/xyz",
+				"domain1": "r/abc",
+				"domain2": "r/xyz",
 			}})
 			err := keeper.Add("ns1/")
 			Expect(err).To(BeNil())
@@ -151,6 +167,21 @@ var _ = Describe("Tracklist", func() {
 			Expect(keeper.Get("xyz")).ToNot(BeNil())
 			Expect(keeper.Remove("ns1/")).To(BeNil())
 			Expect(keeper.Get("abc")).To(BeNil())
+			Expect(keeper.Get("xyz")).To(BeNil())
+		})
+
+		It("should remove namespace target if namespace is whole", func() {
+			nsKeeper := NewNamespaceKeeper(state)
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
+				"domain1": "r/abc",
+				"domain2": "r/xyz",
+			}})
+			err := keeper.Add("ns1/")
+			Expect(err).To(BeNil())
+			Expect(keeper.Get("abc")).ToNot(BeNil())
+			Expect(keeper.Get("xyz")).ToNot(BeNil())
+			Expect(keeper.Remove("ns1/domain2")).To(BeNil())
+			Expect(keeper.Get("abc")).ToNot(BeNil())
 			Expect(keeper.Get("xyz")).To(BeNil())
 		})
 	})
