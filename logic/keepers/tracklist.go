@@ -27,9 +27,11 @@ func NewTrackListKeeper(db storage.Tx, state *tree.SafeTree) *TrackListKeeper {
 //
 // Target can be one or more comma-separated list of repositories or user namespaces.
 //
-// If a user namespace is provided, all repositories targets are added.
+// If a user namespace is provided, all repository targets are added.
 //
 // If height is provided, it will be used as the last update height.
+//
+// If will not re-add an already repo
 func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 
 	var final = []string{}
@@ -63,6 +65,10 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 	}
 
 	for _, repo := range final {
+		if t.Get(repo) != nil {
+			continue
+		}
+
 		data := core.TrackedRepo{LastHeight: h}
 		rec := storage.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
@@ -73,7 +79,7 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 	return nil
 }
 
-// UpdateLastHeight resets the last update height of a tracked repository.
+// UpdateLastHeight resets the last update height of a repository.
 // Returns error if repository is not being tracked.
 func (t *TrackListKeeper) UpdateLastHeight(name string, height uint64) error {
 	rec, err := t.db.Get(MakeTrackedRepoKey(name))
@@ -93,7 +99,7 @@ func (t *TrackListKeeper) UpdateLastHeight(name string, height uint64) error {
 	return t.db.Put(storage.NewFromKeyValue(MakeTrackedRepoKey(name), util.ToBytes(tr)))
 }
 
-// Tracked returns a map of tracked repositories.
+// Tracked returns a map of repositories.
 func (t *TrackListKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
 	t.db.Iterate(MakeQueryTrackedRepoKey(), false, func(r *storage.Record) bool {
@@ -103,4 +109,25 @@ func (t *TrackListKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 		return false
 	})
 	return
+}
+
+// Get returns a repo.
+//
+// Returns nil if not found
+func (t *TrackListKeeper) Get(name string) *core.TrackedRepo {
+	rec, err := t.db.Get(MakeTrackedRepoKey(name))
+	if err != nil {
+		if err == storage.ErrRecordNotFound {
+			return nil
+		}
+		return nil
+	}
+	var tr core.TrackedRepo
+	rec.Scan(&tr)
+	return &tr
+}
+
+// Remove removes a repo
+func (t *TrackListKeeper) Remove(name string) error {
+	return t.db.Del(MakeTrackedRepoKey(name))
 }

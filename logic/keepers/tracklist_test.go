@@ -86,6 +86,18 @@ var _ = Describe("Tracklist", func() {
 			Expect(tr.LastHeight).To(Equal(uint64(100)))
 		})
 
+		It("should not re-add repo name if it already exist", func() {
+			err := keeper.Add("repo1", 100)
+			Expect(err).To(BeNil())
+			err = keeper.Add("repo1", 200)
+			Expect(err).To(BeNil())
+			rec, err := appDB.Get(MakeTrackedRepoKey("repo1"))
+			Expect(err).To(BeNil())
+			var tr core.TrackedRepo
+			rec.Scan(&tr)
+			Expect(tr.LastHeight).To(Equal(uint64(100)))
+		})
+
 		It("should return error when repo name is invalid", func() {
 			err := keeper.Add("rep&%o1")
 			Expect(err).ToNot(BeNil())
@@ -96,6 +108,34 @@ var _ = Describe("Tracklist", func() {
 			err := keeper.Add("ns1/")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("namespace (ns1) not found"))
+		})
+	})
+
+	Describe(".Get", func() {
+		It("should return nil if repo was not found", func() {
+			Expect(keeper.Get("repo1")).To(BeNil())
+		})
+
+		It("should return tracked repo if it exist", func() {
+			err := keeper.Add("repo1", 200)
+			Expect(err).To(BeNil())
+			res := keeper.Get("repo1")
+			Expect(res).ToNot(BeNil())
+			Expect(res.LastHeight).To(Equal(uint64(200)))
+		})
+	})
+
+	Describe(".Remove", func() {
+		It("should return nil if repo was not found", func() {
+			Expect(keeper.Remove("repo1")).To(BeNil())
+		})
+
+		It("should remove tracked repo if it exist", func() {
+			err := keeper.Add("repo1", 200)
+			Expect(err).To(BeNil())
+			Expect(keeper.Remove("repo1")).To(BeNil())
+			res := keeper.Get("repo1")
+			Expect(res).To(BeNil())
 		})
 	})
 
