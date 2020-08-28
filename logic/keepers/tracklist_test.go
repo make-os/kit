@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/core"
 	state2 "github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
@@ -43,7 +44,7 @@ var _ = Describe("Tracklist", func() {
 	Describe(".Add", func() {
 		It("should add repository targets if argument is a namespace", func() {
 			nsKeeper := NewNamespaceKeeper(state)
-			nsKeeper.Update("ns1", &state2.Namespace{Domains: map[string]string{
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
 				"stuff":  "r/abc",
 				"stuff2": "r/xyz",
 			}})
@@ -140,7 +141,7 @@ var _ = Describe("Tracklist", func() {
 
 		It("should remove repository targets if argument is a namespace", func() {
 			nsKeeper := NewNamespaceKeeper(state)
-			nsKeeper.Update("ns1", &state2.Namespace{Domains: map[string]string{
+			nsKeeper.Update(crypto.MakeNamespaceHash("ns1"), &state2.Namespace{Domains: map[string]string{
 				"stuff":  "r/abc",
 				"stuff2": "r/xyz",
 			}})

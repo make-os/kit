@@ -8,6 +8,7 @@ import (
 	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/crypto"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
 )
@@ -39,7 +40,7 @@ func (t *TrackListKeeper) Add(targets string, height ...uint64) error {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
-			ns := NewNamespaceKeeper(t.state).Get(nsName)
+			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
 			}
@@ -112,7 +113,7 @@ func (t *TrackListKeeper) Remove(targets string) error {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
 			nsName := identifier.GetNamespace(target)
-			ns := NewNamespaceKeeper(t.state).Get(nsName)
+			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
 			if ns.IsNil() {
 				return fmt.Errorf("namespace (%s) not found", nsName)
 			}
