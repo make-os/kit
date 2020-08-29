@@ -677,4 +677,45 @@ var _ = Describe("App", func() {
 			})
 		})
 	})
+
+	Describe(".createGitRepositories", func() {
+		It("should return nil if no new repo", func() {
+			app.newRepos = []string{}
+			Expect(app.createGitRepositories()).To(BeNil())
+		})
+
+		It("should skip if node is in validator mode", func() {
+			cfg.Node.Validator = true
+			app.newRepos = []string{"repo1"}
+			Expect(app.createGitRepositories()).To(Equal(ErrSkipped))
+		})
+
+		It("should create all repositories if no repo is being tracked", func() {
+			app.logic = mockLogic.AtomicLogic
+			app.newRepos = []string{"repo1", "repo2"}
+			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1")
+			mockLogic.RemoteServer.EXPECT().CreateRepository("repo2")
+			app.createGitRepositories()
+		})
+
+		It("should create only repositories that are being tracked when there the node tracks repos", func() {
+			app.logic = mockLogic.AtomicLogic
+			app.newRepos = []string{"repo1", "repo2"}
+			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
+			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1")
+			app.createGitRepositories()
+		})
+
+		It("should panic if unable to create repository", func() {
+			app.logic = mockLogic.AtomicLogic
+			app.newRepos = []string{"repo1"}
+			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1").Return(fmt.Errorf("error"))
+			mockLogic.AtomicLogic.EXPECT().Discard()
+			Expect(func() {
+				app.createGitRepositories()
+			}).To(Panic())
+		})
+	})
 })

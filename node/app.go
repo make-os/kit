@@ -23,6 +23,8 @@ import (
 	"github.com/tendermint/tendermint/state"
 )
 
+var ErrSkipped = fmt.Errorf("skip")
+
 type ticketInfo struct {
 	Tx    types.BaseTx
 	index int
@@ -407,57 +409,31 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Index tickets we have collected so far.
-	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
-		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curBlock.Height),
-			ticket.index); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
-		}
-	}
+	a.indexTickets()
 
 	// Update the current validators record if the current block
 	// height is the height where the last validator update will take effect.
 	// Tendermint effects validator updates after 2 blocks; We need to index
 	// the validators to the real height when the validators were selected (2 blocks ago)
 	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
-		if err := a.logic.ValidatorKeeper().Index(a.curBlock.Height.Int64(), a.unsavedValidators); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to update current validators"))
-		}
+		a.indexValidators()
 		a.log.Info("Indexed new validators for the new epoch", "Height", a.curBlock.Height)
 	}
 
 	// Index the un-indexed txs
-	for _, t := range a.unIdxTxs {
-		if err := a.logic.TxKeeper().Index(t); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
-		}
-	}
+	a.indexTransactions()
 
 	// Index proposal votes
-	for _, v := range a.unIdxRepoPropVotes {
-		if err := a.logic.RepoKeeper().IndexProposalVote(v.RepoName, v.ProposalID,
-			v.GetFrom().String(), v.Vote); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index repository proposal vote"))
-		}
-	}
+	a.indexProposalVotes()
 
 	// Set the expire height for each host stake unbond request
-	for _, ticketHash := range a.unbondHostReqs {
-		a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
-	}
+	a.expireHostTickets()
 
 	// Create new repositories
-	for _, repoName := range a.newRepos {
-		if err := a.logic.GetRemoteServer().CreateRepository(repoName); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to create repository"))
-		}
-	}
+	a.createGitRepositories()
 
 	// Mark all merge proposals as closed.
-	for _, info := range a.unIdxClosedMergeProposal {
-		if err := a.logic.RepoKeeper().MarkProposalAsClosed(info.repo, info.proposalID); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to mark merge proposal as closed"))
-		}
-	}
+	a.markMergeProposalAsClosed()
 
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
@@ -499,4 +475,82 @@ func (a *App) reset() {
 // Query for data from the application.
 func (a *App) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	return abcitypes.ResponseQuery{Code: 0}
+}
+
+// indexValidators indexes new validators
+func (a *App) indexValidators() {
+	if err := a.logic.ValidatorKeeper().Index(a.curBlock.Height.Int64(), a.unsavedValidators); err != nil {
+		a.commitPanic(errors.Wrap(err, "failed to update current validators"))
+	}
+}
+
+// createGitRepositories creates new git repositories.
+// If the node is in validator node, no git repository is created.
+// If the node is tracking repositories, only tracked repositories will be created.
+func (a *App) createGitRepositories() error {
+
+	if len(a.newRepos) == 0 {
+		return nil
+	}
+
+	if a.cfg.IsValidatorNode() {
+		return ErrSkipped
+	}
+
+	tracked := a.logic.TrackedRepoKeeper().Tracked()
+	for _, repoName := range a.newRepos {
+		if len(tracked) > 0 && tracked[repoName] == nil {
+			continue
+		}
+		if err := a.logic.GetRemoteServer().CreateRepository(repoName); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to create repository"))
+		}
+	}
+
+	return nil
+}
+
+// markMergeProposalAsClosed marks a merge proposal as closed.
+func (a *App) markMergeProposalAsClosed() {
+	for _, info := range a.unIdxClosedMergeProposal {
+		if err := a.logic.RepoKeeper().MarkProposalAsClosed(info.repo, info.proposalID); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to mark merge proposal as closed"))
+		}
+	}
+}
+
+// expireHostTickets sets the expiry height of unbonded host tickets
+func (a *App) expireHostTickets() {
+	for _, ticketHash := range a.unbondHostReqs {
+		a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
+	}
+}
+
+// indexProposalVotes indexes a vote for on a proposal
+func (a *App) indexProposalVotes() {
+	for _, v := range a.unIdxRepoPropVotes {
+		if err := a.logic.RepoKeeper().IndexProposalVote(v.RepoName, v.ProposalID,
+			v.GetFrom().String(), v.Vote); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to index repository proposal vote"))
+		}
+	}
+}
+
+// indexTransactions indexes transactions
+func (a *App) indexTransactions() {
+	for _, t := range a.unIdxTxs {
+		if err := a.logic.TxKeeper().Index(t); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
+		}
+	}
+}
+
+// indexTickets indexes new validator and host tickets
+func (a *App) indexTickets() {
+	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
+		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curBlock.Height),
+			ticket.index); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
+		}
+	}
 }
