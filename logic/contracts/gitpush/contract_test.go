@@ -13,7 +13,7 @@ import (
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
 	remotetypes "github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
@@ -26,7 +26,7 @@ import (
 )
 
 var _ = Describe("Contract", func() {
-	var appDB, stateTreeDB storage.Engine
+	var appDB, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var logic *logic2.Logic

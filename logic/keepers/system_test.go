@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
 	storagemocks "github.com/make-os/lobe/storage/mocks"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/core"
 	. "github.com/onsi/ginkgo"
@@ -15,7 +15,7 @@ import (
 )
 
 var _ = Describe("SystemKeeper", func() {
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var sysKeeper *SystemKeeper

@@ -4,11 +4,11 @@ import (
 	"os"
 
 	"github.com/make-os/lobe/crypto"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	state2 "github.com/make-os/lobe/types/state"
 
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("PushKeyKeeper", func() {
 	var state *tree.SafeTree
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var cfg *config.AppConfig
 	var err error
 	var pushKeyKeeper *PushKeyKeeper

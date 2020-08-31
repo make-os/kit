@@ -2,7 +2,8 @@ package keepers
 
 import (
 	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/state"
 	"github.com/pkg/errors"
 )
@@ -10,11 +11,11 @@ import (
 // PushKeyKeeper manages push public keys.
 type PushKeyKeeper struct {
 	state *tree.SafeTree
-	db    storage.Tx
+	db    storagetypes.Tx
 }
 
 // NewPushKeyKeeper creates an instance of PushKeyKeeper
-func NewPushKeyKeeper(state *tree.SafeTree, db storage.Tx) *PushKeyKeeper {
+func NewPushKeyKeeper(state *tree.SafeTree, db storagetypes.Tx) *PushKeyKeeper {
 	return &PushKeyKeeper{state: state, db: db}
 }
 
@@ -65,7 +66,7 @@ func (g *PushKeyKeeper) Get(pushKeyID string, blockNum ...uint64) *state.PushKey
 func (g *PushKeyKeeper) Update(pushKeyID string, upd *state.PushKey) error {
 	g.state.Set(MakePushKeyKey(pushKeyID), upd.Bytes())
 	key := MakeAddrPushKeyIDIndexKey(upd.Address.String(), pushKeyID)
-	idx := storage.NewFromKeyValue(key, []byte{})
+	idx := common.NewFromKeyValue(key, []byte{})
 	return g.db.Put(idx)
 }
 
@@ -84,8 +85,8 @@ func (g *PushKeyKeeper) Remove(pushKeyID string) bool {
 // address: The target address
 func (g *PushKeyKeeper) GetByAddress(address string) []string {
 	var pushKeyIDs []string
-	g.db.Iterate(MakeQueryPushKeyIDsOfAddress(address), true, func(rec *storage.Record) bool {
-		parts := storage.SplitPrefix(rec.Key)
+	g.db.Iterate(MakeQueryPushKeyIDsOfAddress(address), true, func(rec *common.Record) bool {
+		parts := common.SplitPrefix(rec.Key)
 		pushKeyIDs = append(pushKeyIDs, string(parts[len(parts)-1]))
 		return false
 	})

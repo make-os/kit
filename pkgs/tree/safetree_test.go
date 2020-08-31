@@ -5,6 +5,7 @@ import (
 
 	. "github.com/make-os/lobe/pkgs/tree"
 	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,7 @@ import (
 )
 
 var _ = Describe("TMDBAdapter", func() {
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var tree *SafeTree

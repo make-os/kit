@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"os"
 
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/identifier"
 
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,7 +17,7 @@ import (
 )
 
 var _ = Describe("Logic", func() {
-	var appDB, stateTreeDB storage.Engine
+	var appDB, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var logic *l.Logic

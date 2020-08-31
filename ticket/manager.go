@@ -3,7 +3,7 @@ package ticket
 import (
 	"sort"
 
-	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
@@ -27,7 +27,7 @@ type Manager struct {
 
 // NewManager returns an instance of Manager.
 // Returns error if unable to initialize the store.
-func NewManager(db storage.Tx, cfg *config.AppConfig, logic core.Logic) *Manager {
+func NewManager(db storagetypes.Tx, cfg *config.AppConfig, logic core.Logic) *Manager {
 	mgr := &Manager{cfg: cfg, logic: logic}
 	mgr.s = NewStore(db)
 	return mgr

@@ -11,6 +11,7 @@ import (
 	"github.com/make-os/lobe/logic/proposals"
 	"github.com/make-os/lobe/pkgs/tree"
 	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
@@ -28,11 +29,11 @@ type Logic struct {
 
 	// _db is the db handle for instantly committed database operations.
 	// Use this to store records that should be be run in a transaction.
-	_db storage.Engine
+	_db storagetypes.Engine
 
 	// db is the db handle for transaction-centric operations.
 	// Use this to store records that should run a transaction managed by ABCI app.
-	db storage.Tx
+	db storagetypes.Tx
 
 	// stateTree is the chain's state tree
 	stateTree *tree.SafeTree
@@ -76,7 +77,7 @@ type Logic struct {
 
 // New creates an instance of Logic
 // PANICS: If unable to load state tree
-func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
+func New(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
 	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
 	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
@@ -86,7 +87,7 @@ func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *
 
 // NewAtomic creates an instance of Logic that supports atomic database
 // operations across all keepers and logic providers.
-func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
+func NewAtomic(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.AppConfig) *Logic {
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
 
@@ -99,7 +100,7 @@ func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppCon
 
 // newLogicWithTx creates a Logic instance using an externally provided DB transaction.
 // All keepers will use the transactions allowing for atomic state operations across them.
-func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logic {
+func newLogicWithTx(dbTx, stateTreeDBTx storagetypes.Tx, cfg *config.AppConfig) *Logic {
 
 	// Load the state tree
 	dbAdapter := storage.NewTMDBAdapter(stateTreeDBTx)
@@ -145,7 +146,7 @@ func (l *Logic) GetRemoteServer() core.RemoteServer {
 }
 
 // GetDBTx returns the db transaction used by the logic providers and keepers
-func (l *Logic) GetDBTx() storage.Tx {
+func (l *Logic) GetDBTx() storagetypes.Tx {
 	return l.db
 }
 
@@ -213,7 +214,7 @@ func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chain
 }
 
 // DB returns the hubs db reference
-func (l *Logic) DB() storage.Engine {
+func (l *Logic) DB() storagetypes.Engine {
 	return l._db
 }
 

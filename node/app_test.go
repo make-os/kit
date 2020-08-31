@@ -8,6 +8,7 @@ import (
 	"github.com/make-os/lobe/logic/contracts/mergerequest"
 	"github.com/make-os/lobe/params"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
@@ -30,7 +31,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 )
 
@@ -46,7 +46,7 @@ func genFilePV(bz []byte) *privval.FilePV {
 }
 
 var _ = Describe("App", func() {
-	var c, stateTreeDB storage.Engine
+	var c, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var logic *l.Logic

@@ -3,17 +3,19 @@ package storage
 import (
 	"bytes"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
+	"github.com/make-os/lobe/storage/common"
+	"github.com/make-os/lobe/storage/types"
 	tmdb "github.com/tendermint/tm-db"
 )
 
 // TMDBAdapter fully implements some of github.com/tendermint/tm-db.DB interface.
 type TMDBAdapter struct {
-	db Tx
+	db types.Tx
 }
 
 // NewTMDBAdapter creates an instance TMDBAdapter.
-func NewTMDBAdapter(db Tx) *TMDBAdapter {
+func NewTMDBAdapter(db types.Tx) *TMDBAdapter {
 	return &TMDBAdapter{db: db}
 }
 
@@ -42,7 +44,7 @@ func (tm *TMDBAdapter) Has(key []byte) bool {
 // A nil key is interpreted as an empty byteslice.
 // CONTRACT: key, value readonly []byte
 func (tm *TMDBAdapter) Set(k []byte, v []byte) {
-	tm.db.Put(NewFromKeyValue(k, v))
+	tm.db.Put(common.NewFromKeyValue(k, v))
 }
 
 // SetSync is like Set but works synchronously
@@ -141,7 +143,7 @@ func (b *TMDBBatchAdapter) Delete(key []byte) {
 
 // TMDBIteratorAdapter implements github.com/tendermint/tm-db.Iterator
 type TMDBIteratorAdapter struct {
-	db      Tx
+	db      types.Tx
 	k       []byte
 	v       []byte
 	valid   bool
@@ -152,7 +154,7 @@ type TMDBIteratorAdapter struct {
 }
 
 // NewTMDBIteratorAdapter returns an instance of TMDBIteratorAdapter
-func NewTMDBIteratorAdapter(db Tx, start, end []byte, reverse bool) *TMDBIteratorAdapter {
+func NewTMDBIteratorAdapter(db types.Tx, start, end []byte, reverse bool) *TMDBIteratorAdapter {
 	iOpts := badger.DefaultIteratorOptions
 	iOpts.Reverse = reverse
 	it := db.RawIterator(iOpts).(*badger.Iterator)

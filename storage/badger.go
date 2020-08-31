@@ -1,14 +1,21 @@
 package storage
 
 import (
-	"github.com/dgraph-io/badger"
+	"fmt"
+
+	"github.com/dgraph-io/badger/v2"
+	"github.com/make-os/lobe/storage/common"
+	"github.com/make-os/lobe/storage/types"
 	"github.com/pkg/errors"
 )
 
-// Badger implements storage.Engine. It provides
+// ErrRecordNotFound indicates that a record was not found
+var ErrRecordNotFound = fmt.Errorf("record not found")
+
+// Badger implements storagetypes.Engine. It provides
 // storage functions built on top of badger.
 type Badger struct {
-	*BadgerFunctions
+	*WrappedTx
 	db *badger.DB
 }
 
@@ -17,11 +24,15 @@ func NewBadger() *Badger {
 	return &Badger{}
 }
 
-// Init starts the database
+// Init starts the database.
+// If dir is empty, an in-memory DB is created.
 func (b *Badger) Init(dir string) error {
 
 	opts := badger.DefaultOptions(dir)
-	opts.Logger = &noLogger{}
+	if dir == "" {
+		opts = opts.WithInMemory(true)
+	}
+	opts.Logger = &common.NoopLogger{}
 	db, err := badger.Open(opts)
 	if err != nil {
 		return errors.Wrap(err, "failed to open database")
@@ -34,7 +45,7 @@ func (b *Badger) Init(dir string) error {
 	// on success ops or discards on failure.
 	// It also enables the renewal of the underlying transaction
 	// after executing a read/write operation
-	b.BadgerFunctions = NewBadgerFunctions(db, true, true)
+	b.WrappedTx = NewBadgerFunctions(db, true, true)
 
 	return nil
 }
@@ -45,11 +56,13 @@ func (b *Badger) GetDB() *badger.DB {
 }
 
 // NewTx creates a new transaction.
+//
 // autoFinish: ensure that the underlying transaction is committed after
 // each successful operation.
+//
 // renew: re-initializes the transaction after each operation. Requires
 // autoFinish to be enabled.
-func (b *Badger) NewTx(autoFinish, renew bool) Tx {
+func (b *Badger) NewTx(autoFinish, renew bool) types.Tx {
 	return NewBadgerFunctions(b.db, autoFinish, renew)
 }
 

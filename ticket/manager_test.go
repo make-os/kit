@@ -3,6 +3,7 @@ package ticket
 import (
 	"os"
 
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
@@ -17,8 +18,6 @@ import (
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
 
-	"github.com/make-os/lobe/storage"
-
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
@@ -27,7 +26,7 @@ import (
 
 var _ = Describe("Manager", func() {
 	var err error
-	var appDB, stateTreeDB storage.Engine
+	var appDB, stateTreeDB storagetypes.Engine
 	var cfg *config.AppConfig
 	var mgr *Manager
 	var logic *l.Logic

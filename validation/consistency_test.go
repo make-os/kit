@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/make-os/lobe/remote/push/types"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
@@ -19,7 +20,6 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/validation"
@@ -30,7 +30,7 @@ import (
 var _ = Describe("TxValidator", func() {
 	var key = crypto.NewKeyFromIntSeed(1)
 	var key2 = crypto.NewKeyFromIntSeed(2)
-	var appDB, stateTreeDB storage.Engine
+	var appDB, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller

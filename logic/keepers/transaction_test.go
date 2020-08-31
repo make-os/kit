@@ -5,20 +5,20 @@ import (
 	"os"
 
 	storagemocks "github.com/make-os/lobe/storage/mocks"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/txns"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TxKeeper", func() {
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var txKeeper *TxKeeper

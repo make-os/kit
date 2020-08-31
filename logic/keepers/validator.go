@@ -3,6 +3,8 @@ package keepers
 import (
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
@@ -10,11 +12,11 @@ import (
 
 // ValidatorKeeper manages information about validators
 type ValidatorKeeper struct {
-	db storage.Tx
+	db storagetypes.Tx
 }
 
 // NewValidatorKeeper creates an instance of ValidatorKeeper
-func NewValidatorKeeper(db storage.Tx) *ValidatorKeeper {
+func NewValidatorKeeper(db storagetypes.Tx) *ValidatorKeeper {
 	return &ValidatorKeeper{db: db}
 }
 
@@ -67,7 +69,7 @@ func (v *ValidatorKeeper) GetByHeight(height int64) (core.BlockValidators, error
 	var err error
 	res := make(map[util.Bytes32]*core.Validator)
 	key := MakeQueryKeyBlockValidators()
-	v.db.Iterate(key, false, func(rec *storage.Record) bool {
+	v.db.Iterate(key, false, func(rec *common.Record) bool {
 		err = rec.Scan(&res)
 		return true
 	})
@@ -90,7 +92,7 @@ func (v *ValidatorKeeper) Index(height int64, validators []*core.Validator) erro
 	}
 
 	key := MakeBlockValidatorsKey(height)
-	rec := storage.NewFromKeyValue(key, util.ToBytes(data))
+	rec := common.NewFromKeyValue(key, util.ToBytes(data))
 	if err := v.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index validators")
 	}

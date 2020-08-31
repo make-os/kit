@@ -3,10 +3,10 @@ package ticket
 import (
 	"os"
 
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
@@ -16,7 +16,7 @@ import (
 var _ = Describe("Store", func() {
 	var err error
 	var cfg *config.AppConfig
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var store *Store
 
 	BeforeEach(func() {

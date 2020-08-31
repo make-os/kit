@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 
 	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
 	"github.com/pkg/errors"
 )
 
 // RepoKeeper manages repository state.
 type RepoKeeper struct {
 	state *tree.SafeTree
-	db    storage.Tx
+	db    storagetypes.Tx
 }
 
 // NewRepoKeeper creates an instance of RepoKeeper
-func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
+func NewRepoKeeper(state *tree.SafeTree, db storagetypes.Tx) *RepoKeeper {
 	return &RepoKeeper{state: state, db: db}
 }
 
@@ -117,7 +119,7 @@ func (a *RepoKeeper) Update(name string, upd *state.Repository) {
 // vote: Indicates the vote choice
 func (a *RepoKeeper) IndexProposalVote(name, propID, voterAddr string, vote int) error {
 	key := MakeRepoProposalVoteKey(name, propID, voterAddr)
-	rec := storage.NewFromKeyValue(key, []byte(fmt.Sprintf("%d", vote)))
+	rec := common.NewFromKeyValue(key, []byte(fmt.Sprintf("%d", vote)))
 	if err := a.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index proposal vote")
 	}
@@ -159,7 +161,7 @@ func (a *RepoKeeper) GetProposalVote(
 // endHeight: The chain height when the proposal will stop accepting votes.
 func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) error {
 	key := MakeRepoProposalEndIndexKey(name, propID, endHeight)
-	rec := storage.NewFromKeyValue(key, []byte("0"))
+	rec := common.NewFromKeyValue(key, []byte("0"))
 	if err := a.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index proposal end")
 	}
@@ -173,8 +175,8 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
 	var res []*core.EndingProposals
-	a.db.Iterate(key, true, func(rec *storage.Record) bool {
-		prefixes := storage.SplitPrefix(rec.GetKey())
+	a.db.Iterate(key, true, func(rec *common.Record) bool {
+		prefixes := common.SplitPrefix(rec.GetKey())
 		res = append(res, &core.EndingProposals{
 			RepoName:   string(prefixes[2]),
 			ProposalID: string(prefixes[3]),
@@ -192,7 +194,7 @@ func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals
 // propID: The target proposal
 func (a *RepoKeeper) MarkProposalAsClosed(name, propID string) error {
 	key := MakeClosedProposalKey(name, propID)
-	rec := storage.NewFromKeyValue(key, []byte("0"))
+	rec := common.NewFromKeyValue(key, []byte("0"))
 	if err := a.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to mark proposal as closed")
 	}

@@ -9,7 +9,7 @@ import (
 	logic2 "github.com/make-os/lobe/logic"
 	"github.com/make-os/lobe/logic/contracts/voteproposal"
 	"github.com/make-os/lobe/mocks"
-	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
@@ -20,7 +20,7 @@ import (
 )
 
 var _ = Describe("Contract", func() {
-	var appDB, stateTreeDB storage.Engine
+	var appDB, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
 	var logic *logic2.Logic

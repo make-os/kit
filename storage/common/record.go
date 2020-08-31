@@ -1,14 +1,10 @@
-package storage
+package common
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/make-os/lobe/util"
 )
-
-// ErrRecordNotFound indicates that a record was not found
-var ErrRecordNotFound = fmt.Errorf("record not found")
 
 const (
 	// KeyPrefixSeparator is used to separate prefix and key

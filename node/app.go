@@ -10,7 +10,7 @@ import (
 	nodetypes "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
@@ -35,7 +35,7 @@ type mergeProposalInfo struct {
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db                        storage.Engine
+	db                        storagetypes.Engine
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validation.ValidateTxFunc
@@ -58,7 +58,7 @@ type App struct {
 // NewApp creates an instance of App
 func NewApp(
 	cfg *config.AppConfig,
-	db storage.Engine,
+	db storagetypes.Engine,
 	logic core.AtomicLogic,
 	ticketMgr tickettypes.TicketManager) *App {
 	return &App{

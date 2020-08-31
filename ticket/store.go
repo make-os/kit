@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	types2 "github.com/make-os/lobe/ticket/types"
 
-	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/util"
 )
 
@@ -64,12 +65,12 @@ type TicketStore interface {
 
 // Store implements TicketStore
 type Store struct {
-	db       storage.Tx // The DB transaction
-	fromHead bool       // If true, the iterator iterates from the tail
+	db       storagetypes.Tx // The DB transaction
+	fromHead bool            // If true, the iterator iterates from the tail
 }
 
 // NewStore creates an instance of Store
-func NewStore(db storage.Tx) *Store {
+func NewStore(db storagetypes.Tx) *Store {
 	return &Store{db: db, fromHead: true}
 }
 
@@ -88,7 +89,7 @@ func getQueryOptions(queryOptions ...interface{}) types2.QueryOptions {
 func (s *Store) Add(tickets ...*types2.Ticket) error {
 	for _, ticket := range tickets {
 		key := MakeKey(ticket.Hash, ticket.Height, ticket.Index)
-		rec := storage.NewRecord(key, util.ToBytes(ticket))
+		rec := common.NewRecord(key, util.ToBytes(ticket))
 		if err := s.db.Put(rec); err != nil {
 			return err
 		}
@@ -99,7 +100,7 @@ func (s *Store) Add(tickets ...*types2.Ticket) error {
 // GetByHash queries a ticket by its hash
 func (s *Store) GetByHash(hash util.HexBytes) *types2.Ticket {
 	var t *types2.Ticket
-	s.db.Iterate(MakeHashKey(hash), false, func(r *storage.Record) bool {
+	s.db.Iterate(MakeHashKey(hash), false, func(r *common.Record) bool {
 		r.Scan(&t)
 		return true
 	})
@@ -119,7 +120,7 @@ func (s *Store) RemoveByHash(hash util.HexBytes) error {
 // for which the predicate returns true.
 func (s *Store) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
 	var selected *types2.Ticket
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {
@@ -137,7 +138,7 @@ func (s *Store) Query(predicate func(*types2.Ticket) bool,
 	queryOpt ...interface{}) []*types2.Ticket {
 	var selected []*types2.Ticket
 	var qo = getQueryOptions(queryOpt...)
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 
 		// Apply limit only when limit is set and sorting is not required
 		if qo.Limit > 0 && qo.Limit == len(selected) && qo.SortByHeight == 0 {
@@ -180,7 +181,7 @@ func (s *Store) FromTail() *Store {
 // Count counts tickets for which the predicate returns true.
 func (s *Store) Count(predicate func(*types2.Ticket) bool) int {
 	var count int
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {

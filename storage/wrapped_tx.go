@@ -3,12 +3,14 @@ package storage
 import (
 	"sync"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
+	"github.com/make-os/lobe/storage/common"
+	"github.com/make-os/lobe/storage/types"
 	"github.com/pkg/errors"
 )
 
-// BadgerFunctions implements storage.Tx.
-type BadgerFunctions struct {
+// WrappedTx implements types.Tx
+type WrappedTx struct {
 	sync.RWMutex
 
 	// db is the badger database
@@ -26,33 +28,33 @@ type BadgerFunctions struct {
 	renew bool
 }
 
-// NewBadgerFunctions returns an instance of BadgerFunctions
-func NewBadgerFunctions(db *badger.DB, finish, renew bool) *BadgerFunctions {
-	return &BadgerFunctions{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
+// NewBadgerFunctions returns an instance of WrappedTx
+func NewBadgerFunctions(db *badger.DB, finish, renew bool) *WrappedTx {
+	return &WrappedTx{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
 }
 
 // GetTx get the underlying transaction
-func (f *BadgerFunctions) GetTx() *badger.Txn {
+func (f *WrappedTx) GetTx() *badger.Txn {
 	return f.tx
 }
 
 // NewTx creates a new transaction.
 // autoFinish: ensure that the underlying transaction is committed after
 // each successful operation.
-// renew: reinitializes the transaction after each operation. Requires
+// renew: reinitialize the transaction after each operation. Requires
 // autoFinish to be enabled.
-func (f *BadgerFunctions) NewTx(autoFinish, renew bool) Tx {
+func (f *WrappedTx) NewTx(autoFinish, renew bool) types.Tx {
 	return NewBadgerFunctions(f.db, autoFinish, renew)
 }
 
 // CanFinish checks whether transaction is automatically committed
 // after every successful operation.
-func (f *BadgerFunctions) CanFinish() bool {
+func (f *WrappedTx) CanFinish() bool {
 	return f.finish
 }
 
 // commit commits the transaction if auto commit is enabled
-func (f *BadgerFunctions) commit() error {
+func (f *WrappedTx) commit() error {
 	defer f.renewTx()
 	if f.finish {
 		return f.Commit()
@@ -61,12 +63,12 @@ func (f *BadgerFunctions) commit() error {
 }
 
 // Commit commits the transaction
-func (f *BadgerFunctions) Commit() error {
+func (f *WrappedTx) Commit() error {
 	return f.tx.Commit()
 }
 
 // renewTx renews the transaction only if auto renew and auto finish are enabled
-func (f *BadgerFunctions) renewTx() {
+func (f *WrappedTx) renewTx() {
 	f.Lock()
 	defer f.Unlock()
 	if f.finish && f.renew {
@@ -75,13 +77,13 @@ func (f *BadgerFunctions) renewTx() {
 }
 
 // Discard discards the transaction
-func (f *BadgerFunctions) Discard() {
+func (f *WrappedTx) Discard() {
 	f.tx.Discard()
 }
 
 // Put adds a record to the database.
 // It will discard the transaction if an error occurred.
-func (f *BadgerFunctions) Put(record *Record) error {
+func (f *WrappedTx) Put(record *common.Record) error {
 	f.renewTx()
 	f.Lock()
 	err := f.tx.Set(record.GetKey(), record.Value)
@@ -95,7 +97,7 @@ func (f *BadgerFunctions) Put(record *Record) error {
 }
 
 // Get a record by key
-func (f *BadgerFunctions) Get(key []byte) (*Record, error) {
+func (f *WrappedTx) Get(key []byte) (*common.Record, error) {
 	f.renewTx()
 	f.Lock()
 	defer f.Unlock()
@@ -113,18 +115,18 @@ func (f *BadgerFunctions) Get(key []byte) (*Record, error) {
 		return nil, errors.Wrap(err, "failed to read value")
 	}
 
-	return NewFromKeyValue(key, val), nil
+	return common.NewFromKeyValue(key, val), nil
 }
 
 // RenewTx forcefully renews the underlying transaction.
-func (f *BadgerFunctions) RenewTx() {
+func (f *WrappedTx) RenewTx() {
 	f.Lock()
 	defer f.Unlock()
 	f.tx = f.db.NewTransaction(true)
 }
 
 // Del deletes a record by key
-func (f *BadgerFunctions) Del(key []byte) error {
+func (f *WrappedTx) Del(key []byte) error {
 	f.renewTx()
 	f.Lock()
 	defer f.commit()
@@ -139,7 +141,7 @@ func (f *BadgerFunctions) Del(key []byte) error {
 //
 // If first is set to true, it begins from the first record, otherwise,
 // it will begin from the last record
-func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *Record) bool) {
+func (f *WrappedTx) Iterate(prefix []byte, first bool, iterFunc func(rec *common.Record) bool) {
 	f.renewTx()
 	f.RLock()
 	defer f.RUnlock()
@@ -157,7 +159,7 @@ func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *
 		item := it.Item()
 		k := item.Key()
 		v, _ := item.ValueCopy(nil)
-		if iterFunc(NewFromKeyValue(k, v)) {
+		if iterFunc(common.NewFromKeyValue(k, v)) {
 			return
 		}
 	}
@@ -165,11 +167,11 @@ func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *
 }
 
 // RawIterator returns badger's Iterator
-func (f *BadgerFunctions) RawIterator(opts interface{}) interface{} {
+func (f *WrappedTx) RawIterator(opts interface{}) interface{} {
 	return f.tx.NewIterator(opts.(badger.IteratorOptions))
 }
 
 // NewBatch returns a batch writer
-func (f *BadgerFunctions) NewBatch() interface{} {
+func (f *WrappedTx) NewBatch() interface{} {
 	return f.db.NewWriteBatch()
 }

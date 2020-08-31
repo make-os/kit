@@ -6,6 +6,8 @@ import (
 
 	"github.com/make-os/lobe/pkgs/tree"
 	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
@@ -15,12 +17,12 @@ import (
 
 // TrackedRepoKeeper manages information about repositories that the node has subscribed to.
 type TrackedRepoKeeper struct {
-	db    storage.Tx
+	db    storagetypes.Tx
 	state *tree.SafeTree
 }
 
 // NewTrackedRepoKeeper creates an instance of TrackedRepoKeeper
-func NewTrackedRepoKeeper(db storage.Tx, state *tree.SafeTree) *TrackedRepoKeeper {
+func NewTrackedRepoKeeper(db storagetypes.Tx, state *tree.SafeTree) *TrackedRepoKeeper {
 	return &TrackedRepoKeeper{db: db, state: state}
 }
 
@@ -74,7 +76,7 @@ func (t *TrackedRepoKeeper) Add(targets string, height ...uint64) error {
 
 	for _, repo := range final {
 		data := core.TrackedRepo{LastUpdated: util.UInt64(h)}
-		rec := storage.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
+		rec := common.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
 			return errors.Wrap(err, "failed to add repo")
 		}
@@ -86,10 +88,10 @@ func (t *TrackedRepoKeeper) Add(targets string, height ...uint64) error {
 // Tracked returns a map of repositories.
 func (t *TrackedRepoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
-	t.db.Iterate(MakeQueryTrackedRepoKey(), false, func(r *storage.Record) bool {
+	t.db.Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
 		var tr core.TrackedRepo
 		r.Scan(&tr)
-		res[string(storage.SplitPrefix(r.GetKey())[1])] = &tr
+		res[string(common.SplitPrefix(r.GetKey())[1])] = &tr
 		return false
 	})
 	return

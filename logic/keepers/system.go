@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/make-os/lobe/storage"
+	"github.com/make-os/lobe/storage/common"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
 )
@@ -15,14 +17,14 @@ var ErrBlockInfoNotFound = fmt.Errorf("block info not found")
 // SystemKeeper stores system information such as
 // app states, commit history and more.
 type SystemKeeper struct {
-	db storage.Tx
+	db storagetypes.Tx
 
 	gmx       *sync.RWMutex
 	lastSaved *core.BlockInfo
 }
 
 // NewSystemKeeper creates an instance of SystemKeeper
-func NewSystemKeeper(db storage.Tx) *SystemKeeper {
+func NewSystemKeeper(db storagetypes.Tx) *SystemKeeper {
 	return &SystemKeeper{db: db, gmx: &sync.RWMutex{}}
 }
 
@@ -31,7 +33,7 @@ func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 // that GetLastBlockInfo will not refetch
 func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
 	data := util.ToBytes(info)
-	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
+	record := common.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
 
 	s.gmx.Lock()
 	s.lastSaved = info
@@ -51,8 +53,8 @@ func (s *SystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
 		return lastSaved, nil
 	}
 
-	var rec *storage.Record
-	s.db.Iterate(MakeQueryKeyBlockInfo(), false, func(r *storage.Record) bool {
+	var rec *common.Record
+	s.db.Iterate(MakeQueryKeyBlockInfo(), false, func(r *common.Record) bool {
 		rec = r
 		return true
 	})
@@ -90,14 +92,14 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
 // object synchronizer
 func (s *SystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
 	data := util.ToBytes(height)
-	record := storage.NewFromKeyValue(MakeKeyRepoSyncherHeight(), data)
+	record := common.NewFromKeyValue(MakeKeyRepoSyncerHeight(), data)
 	return s.db.Put(record)
 }
 
 // GetLastRepoObjectsSyncHeight returns the last block that was processed by the
 // repo object synchronizer
 func (s *SystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
-	record, err := s.db.Get(MakeKeyRepoSyncherHeight())
+	record, err := s.db.Get(MakeKeyRepoSyncerHeight())
 	if err != nil {
 		if err == storage.ErrRecordNotFound {
 			return 0, nil
@@ -113,7 +115,7 @@ func (s *SystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
 // SetHelmRepo sets the governing repository of the network
 func (s *SystemKeeper) SetHelmRepo(name string) error {
 	data := []byte(name)
-	record := storage.NewFromKeyValue(MakeKeyHelmRepo(), data)
+	record := common.NewFromKeyValue(MakeKeyHelmRepo(), data)
 	return s.db.Put(record)
 }
 

@@ -11,6 +11,7 @@ import (
 	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/rpc"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
 
@@ -56,8 +57,8 @@ type Node struct {
 	acctMgr        *keystore.Keystore
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
-	db             storage.Engine
-	stateTreeDB    storage.Engine
+	db             storagetypes.Engine
+	stateTreeDB    storagetypes.Engine
 	tm             *nm.Node
 	service        services.Service
 	logic          core.AtomicLogic
@@ -320,7 +321,7 @@ func (n *Node) GetChainHeight() int64 {
 }
 
 // GetDB returns the database instance
-func (n *Node) GetDB() storage.Engine {
+func (n *Node) GetDB() storagetypes.Engine {
 	return n.db
 }
 

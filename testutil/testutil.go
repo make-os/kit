@@ -63,11 +63,11 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 // GetDB test databases
 func GetDB(cfg *config.AppConfig) (appDB *storage.Badger, stateTreeDB *storage.Badger) {
 	appDB = storage.NewBadger()
-	if err := appDB.Init(cfg.GetAppDBDir()); err != nil {
+	if err := appDB.Init(""); err != nil {
 		panic(err)
 	}
 	stateTreeDB = storage.NewBadger()
-	if err := stateTreeDB.Init(cfg.GetStateTreeDBDir()); err != nil {
+	if err := stateTreeDB.Init(""); err != nil {
 		panic(err)
 	}
 	return appDB, stateTreeDB

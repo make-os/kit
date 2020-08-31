@@ -9,14 +9,14 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/make-os/lobe/config"
 	tree "github.com/make-os/lobe/pkgs/tree"
-	storage "github.com/make-os/lobe/storage"
-	types "github.com/make-os/lobe/ticket/types"
-	types0 "github.com/make-os/lobe/types"
+	types "github.com/make-os/lobe/storage/types"
+	types0 "github.com/make-os/lobe/ticket/types"
+	types1 "github.com/make-os/lobe/types"
 	core "github.com/make-os/lobe/types/core"
 	state "github.com/make-os/lobe/types/state"
 	util "github.com/make-os/lobe/util"
 	identifier "github.com/make-os/lobe/util/identifier"
-	types1 "github.com/tendermint/tendermint/abci/types"
+	types2 "github.com/tendermint/tendermint/abci/types"
 	reflect "reflect"
 )
 
@@ -169,7 +169,7 @@ func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTxKeeper) Index(tx types0.BaseTx) error {
+func (m *MockTxKeeper) Index(tx types1.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx)
 	ret0, _ := ret[0].(error)
@@ -183,10 +183,10 @@ func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
 }
 
 // GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash []byte) (types0.BaseTx, error) {
+func (m *MockTxKeeper) GetTx(hash []byte) (types1.BaseTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTx", hash)
-	ret0, _ := ret[0].(types0.BaseTx)
+	ret0, _ := ret[0].(types1.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -836,10 +836,10 @@ func (mr *MockAtomicLogicMockRecorder) PushKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockAtomicLogic) GetTicketManager() types.TicketManager {
+func (m *MockAtomicLogic) GetTicketManager() types0.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types0.TicketManager)
 	return ret0
 }
 
@@ -878,10 +878,10 @@ func (mr *MockAtomicLogicMockRecorder) Validator() *gomock.Call {
 }
 
 // DB mocks base method
-func (m *MockAtomicLogic) DB() storage.Engine {
+func (m *MockAtomicLogic) DB() types.Engine {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DB")
-	ret0, _ := ret[0].(storage.Engine)
+	ret0, _ := ret[0].(types.Engine)
 	return ret0
 }
 
@@ -920,7 +920,7 @@ func (mr *MockAtomicLogicMockRecorder) ApplyGenesisState(state interface{}) *gom
 }
 
 // SetTicketManager mocks base method
-func (m *MockAtomicLogic) SetTicketManager(tm types.TicketManager) {
+func (m *MockAtomicLogic) SetTicketManager(tm types0.TicketManager) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTicketManager", tm)
 }
@@ -972,10 +972,10 @@ func (mr *MockAtomicLogicMockRecorder) DrySend(sender, value, fee, nonce, chainH
 }
 
 // ExecTx mocks base method
-func (m *MockAtomicLogic) ExecTx(args *core.ExecArgs) types1.ResponseDeliverTx {
+func (m *MockAtomicLogic) ExecTx(args *core.ExecArgs) types2.ResponseDeliverTx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecTx", args)
-	ret0, _ := ret[0].(types1.ResponseDeliverTx)
+	ret0, _ := ret[0].(types2.ResponseDeliverTx)
 	return ret0
 }
 
@@ -1040,10 +1040,10 @@ func (mr *MockAtomicLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Cal
 }
 
 // GetDBTx mocks base method
-func (m *MockAtomicLogic) GetDBTx() storage.Tx {
+func (m *MockAtomicLogic) GetDBTx() types.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDBTx")
-	ret0, _ := ret[0].(storage.Tx)
+	ret0, _ := ret[0].(types.Tx)
 	return ret0
 }
 
@@ -1201,10 +1201,10 @@ func (mr *MockLogicMockRecorder) PushKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockLogic) GetTicketManager() types.TicketManager {
+func (m *MockLogic) GetTicketManager() types0.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types0.TicketManager)
 	return ret0
 }
 
@@ -1243,10 +1243,10 @@ func (mr *MockLogicMockRecorder) Validator() *gomock.Call {
 }
 
 // DB mocks base method
-func (m *MockLogic) DB() storage.Engine {
+func (m *MockLogic) DB() types.Engine {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DB")
-	ret0, _ := ret[0].(storage.Engine)
+	ret0, _ := ret[0].(types.Engine)
 	return ret0
 }
 
@@ -1285,7 +1285,7 @@ func (mr *MockLogicMockRecorder) ApplyGenesisState(state interface{}) *gomock.Ca
 }
 
 // SetTicketManager mocks base method
-func (m *MockLogic) SetTicketManager(tm types.TicketManager) {
+func (m *MockLogic) SetTicketManager(tm types0.TicketManager) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTicketManager", tm)
 }
@@ -1337,10 +1337,10 @@ func (mr *MockLogicMockRecorder) DrySend(sender, value, fee, nonce, chainHeight 
 }
 
 // ExecTx mocks base method
-func (m *MockLogic) ExecTx(args *core.ExecArgs) types1.ResponseDeliverTx {
+func (m *MockLogic) ExecTx(args *core.ExecArgs) types2.ResponseDeliverTx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecTx", args)
-	ret0, _ := ret[0].(types1.ResponseDeliverTx)
+	ret0, _ := ret[0].(types2.ResponseDeliverTx)
 	return ret0
 }
 
@@ -1526,10 +1526,10 @@ func (mr *MockKeepersMockRecorder) PushKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockKeepers) GetTicketManager() types.TicketManager {
+func (m *MockKeepers) GetTicketManager() types0.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types0.TicketManager)
 	return ret0
 }
 
@@ -1652,7 +1652,7 @@ func (m *MockValidatorLogic) EXPECT() *MockValidatorLogicMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockValidatorLogic) Index(height int64, valUpdates []types1.ValidatorUpdate) error {
+func (m *MockValidatorLogic) Index(height int64, valUpdates []types2.ValidatorUpdate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", height, valUpdates)
 	ret0, _ := ret[0].(error)
@@ -1689,7 +1689,7 @@ func (m *MockSystemContract) EXPECT() *MockSystemContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockSystemContract) Init(arg0 core.Keepers, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
+func (m *MockSystemContract) Init(arg0 core.Keepers, arg1 types1.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)
@@ -1703,7 +1703,7 @@ func (mr *MockSystemContractMockRecorder) Init(arg0, arg1, arg2 interface{}) *go
 }
 
 // CanExec mocks base method
-func (m *MockSystemContract) CanExec(tx types0.TxCode) bool {
+func (m *MockSystemContract) CanExec(tx types1.TxCode) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanExec", tx)
 	ret0, _ := ret[0].(bool)
@@ -1754,7 +1754,7 @@ func (m *MockProposalContract) EXPECT() *MockProposalContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockProposalContract) Init(arg0 core.Keepers, arg1 types0.BaseTx, arg2 uint64) core.SystemContract {
+func (m *MockProposalContract) Init(arg0 core.Keepers, arg1 types1.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)
@@ -1768,7 +1768,7 @@ func (mr *MockProposalContractMockRecorder) Init(arg0, arg1, arg2 interface{}) *
 }
 
 // CanExec mocks base method
-func (m *MockProposalContract) CanExec(tx types0.TxCode) bool {
+func (m *MockProposalContract) CanExec(tx types1.TxCode) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanExec", tx)
 	ret0, _ := ret[0].(bool)

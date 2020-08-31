@@ -5,7 +5,7 @@ import (
 
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/state"
@@ -259,7 +259,7 @@ type AtomicLogic interface {
 	Logic
 
 	// GetDBTx returns the db transaction used by the logic and keepers
-	GetDBTx() storage.Tx
+	GetDBTx() storagetypes.Tx
 
 	// Commit the state tree, database transaction and other
 	// processes that needs to be finalized after a new tree
@@ -291,7 +291,7 @@ type Logic interface {
 	Validator() ValidatorLogic
 
 	// DB returns the application's database
-	DB() storage.Engine
+	DB() storagetypes.Engine
 
 	// StateTree manages the app state tree
 	StateTree() tree.Tree

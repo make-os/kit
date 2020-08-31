@@ -1,4 +1,8 @@
-package storage
+package types
+
+import (
+	"github.com/make-os/lobe/storage/common"
+)
 
 // Engine provides an interface that describes
 // a storage engine
@@ -32,10 +36,10 @@ type Operations interface {
 
 	// Put adds a record to the database.
 	// It will discard the transaction if an error occurred.
-	Put(record *Record) error
+	Put(record *common.Record) error
 
 	// Get a record by key
-	Get(key []byte) (*Record, error)
+	Get(key []byte) (*common.Record, error)
 
 	// Del deletes a record by key
 	Del(key []byte) error
@@ -47,7 +51,7 @@ type Operations interface {
 	//
 	// If first is set to true, it begins from the first record, otherwise
 	// it will begin from the last record
-	Iterate(prefix []byte, first bool, iterFunc func(rec *Record) bool)
+	Iterate(prefix []byte, first bool, iterFunc func(rec *common.Record) bool)
 
 	// RawIterator returns badger's Iterator
 	RawIterator(opts interface{}) interface{}

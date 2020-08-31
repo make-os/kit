@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/pkgs/tree"
 	"github.com/make-os/lobe/storage"
+	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/core"
 	state2 "github.com/make-os/lobe/types/state"
@@ -17,7 +18,7 @@ import (
 )
 
 var _ = Describe("Tracklist", func() {
-	var appDB storage.Engine
+	var appDB storagetypes.Engine
 	var state *tree.SafeTree
 	var err error
 	var cfg *config.AppConfig

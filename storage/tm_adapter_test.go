@@ -3,6 +3,7 @@ package storage_test
 import (
 	"os"
 
+	"github.com/make-os/lobe/storage/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -12,8 +13,8 @@ import (
 )
 
 var _ = Describe("TMDBAdapter", func() {
-	var c storage.Engine
-	var tx storage.Tx
+	var c types.Engine
+	var tx types.Tx
 	var err error
 	var cfg *config.AppConfig
 	var adapter *storage.TMDBAdapter
