@@ -1,4 +1,4 @@
-package push
+package push_test
 
 import (
 	"io"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/make-os/lobe/config"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
 	repo3 "github.com/make-os/lobe/remote/repo"
 	testutil2 "github.com/make-os/lobe/remote/testutil"
@@ -51,7 +52,7 @@ var _ = Describe("PackHelpers", func() {
 					{Name: "refs/heads/master", NewHash: plumbing.ZeroHash.String(), OldHash: "e070e3147d617e026e6ac08f1aac9ca3d0ae561a"},
 				}}
 				note.SetTargetRepo(repo)
-				pack, err = MakeReferenceUpdateRequestPack(&note)
+				pack, err = push.MakeReferenceUpdateRequestPack(&note)
 				Expect(err).To(BeNil())
 			})
 
@@ -86,7 +87,7 @@ var _ = Describe("PackHelpers", func() {
 				}}
 
 				note.SetTargetRepo(repo)
-				pack, err = MakeReferenceUpdateRequestPack(&note)
+				pack, err = push.MakeReferenceUpdateRequestPack(&note)
 				Expect(err).To(BeNil())
 			})
 
@@ -113,7 +114,7 @@ var _ = Describe("PackHelpers", func() {
 	Describe(".GetSizeOfObjects", func() {
 		It("should return error when note does not contain a non-nil repo reference", func() {
 			note := &types.Note{}
-			_, err := GetSizeOfObjects(note)
+			_, err := push.GetSizeOfObjects(note)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("repo is required"))
 		})
@@ -125,7 +126,7 @@ var _ = Describe("PackHelpers", func() {
 				{Name: "refs/heads/master", NewHash: commit1Hash, OldHash: plumbing.ZeroHash.String()},
 			}}
 			note.SetTargetRepo(repo)
-			size, err := GetSizeOfObjects(&note)
+			size, err := push.GetSizeOfObjects(&note)
 			Expect(err).To(BeNil())
 
 			commit1TotalSize := uint64(0)

@@ -22,6 +22,7 @@ require (
 	github.com/coreos/go-semver v0.3.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger v1.6.1
+	github.com/dgraph-io/badger/v2 v2.2007.1 // indirect
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/emirpasic/gods v1.12.0

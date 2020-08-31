@@ -19,8 +19,10 @@ import (
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
+	"github.com/make-os/lobe/remote/push/pool"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/remote/refsync"
+	types4 "github.com/make-os/lobe/remote/refsync/types"
 	rr "github.com/make-os/lobe/remote/repo"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
@@ -84,7 +86,7 @@ type Server struct {
 	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
 	endorsementsReceived       *cache.Cache                            // Store PushEnds
 	modulesAgg                 types3.ModulesHub                       // Modules aggregator
-	refSyncer                  refsync.RefSyncer                       // Responsible for syncing pushed references in a push transaction
+	refSyncer                  types4.RefSync                          // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                       // Function for performing authentication
 	checkPushNote              validation.CheckPushNoteFunc            // Function for performing PushNote validation
 	makeReferenceUpdatePack    push.MakeReferenceUpdateRequestPackFunc // Function for creating a reference update pack for updating a repository
@@ -125,14 +127,14 @@ func NewRemoteServer(
 		rootDir:                 cfg.GetRepoRoot(),
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
-		pushPool:                push.NewPushPool(params.PushPoolCap, appLogic),
+		pushPool:                pool.NewPushPool(params.PushPoolCap, appLogic),
 		logic:                   appLogic,
 		validatorKey:            key,
 		dht:                     dht,
 		objfetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
-		refSyncer:               refsync.New(cfg, 10, mFetcher, appLogic),
+		refSyncer:               refsync.New(cfg, mFetcher, appLogic),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
@@ -155,7 +157,7 @@ func NewRemoteServer(
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)
 
-	if !cfg.Node.Validator {
+	if !cfg.Node.Validator && cfg.Node.Mode != config.ModeTest {
 
 		// Start the fetcher service
 		server.objfetcher.Start()

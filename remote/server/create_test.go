@@ -41,10 +41,10 @@ var _ = Describe("Create", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".CreateRepository", func() {
+	Describe(".InitRepository", func() {
 		When("a repository with the matching name does not exist", func() {
 			It("should return nil and create the repository", func() {
-				err := repoMgr.CreateRepository("my_repo")
+				err := repoMgr.InitRepository("my_repo")
 				Expect(err).To(BeNil())
 				path := filepath.Join(repoMgr.rootDir, "my_repo")
 				_, err = os.Stat(path)
@@ -54,14 +54,14 @@ var _ = Describe("Create", func() {
 
 		When("a repository with the matching name already exist", func() {
 			BeforeEach(func() {
-				err := repoMgr.CreateRepository("my_repo")
+				err := repoMgr.InitRepository("my_repo")
 				Expect(err).To(BeNil())
 			})
 
 			It("should return nil and create the repository", func() {
-				err := repoMgr.CreateRepository("my_repo")
+				err := repoMgr.InitRepository("my_repo")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("a repository with name (my_repo) already exist"))
+				Expect(err.Error()).To(Equal("failed to create repo: repository already exists"))
 			})
 		})
 	})
@@ -76,7 +76,7 @@ var _ = Describe("Create", func() {
 
 		When("repo does exist", func() {
 			It("should return true", func() {
-				err := repoMgr.CreateRepository("my_repo")
+				err := repoMgr.InitRepository("my_repo")
 				Expect(err).To(BeNil())
 				res := repoMgr.HasRepository("my_repo")
 				Expect(res).To(BeTrue())

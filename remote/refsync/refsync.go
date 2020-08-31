@@ -10,16 +10,17 @@ import (
 
 	"github.com/make-os/lobe/config"
 	nodetypes "github.com/make-os/lobe/node/types"
+	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/remote/fetcher"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
+	types2 "github.com/make-os/lobe/remote/refsync/types"
 	"github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
@@ -31,75 +32,19 @@ var (
 	ErrUntracked = fmt.Errorf("untracked repository")
 )
 
-// RefSyncer describes an interface for synchronizing a repository's
-// reference local state with the network using information from a
-// push transaction.
-type RefSyncer interface {
-	// OnNewTx is called for every push transaction processed.
-	OnNewTx(tx *txns.TxPush)
-
-	// SetFetcher sets the object fetcher
-	SetFetcher(fetcher fetcher.ObjectFetcherService)
-
-	// Start starts the syncer.
-	// Panics if reference syncer is already started.
-	Start()
-
-	// IsRunning checks if the syncer is running.
-	IsRunning() bool
-
-	// HasTask checks whether there are one or more unprocessed tasks.
-	HasTask() bool
-
-	// QueueSize returns the size of the tasks queue
-	QueueSize() int
-
-	// CanSync checks whether the target repository of a push transaction can be synchronized.
-	CanSync(namespace, repoName string) error
-
-	// Stops the syncer
-	Stop()
-}
-
-// Task represents a task
-type Task struct {
-	// ID is the unique ID of the task
-	ID string
-
-	// RepoName is the target repository name
-	RepoName string
-
-	// Ref is the pushed reference
-	Ref *types.PushedReference
-
-	// Endorsements are the endorsements in the push transaction
-	Endorsements txns.PushEndorsements
-
-	// NoteCreator is the public key of the note creator
-	NoteCreator util.Bytes32
-
-	// CompatRetryCount is the number of times this task has been retried
-	// because it was not yet compatible with the local reference.
-	CompatRetryCount int
-}
-
-func (t *Task) GetID() interface{} {
-	return t.ID
-}
-
-// RefSync implements RefSyncer. It provides the mechanism that synchronizes the state of a
+// RefSync implements RefSync. It provides the mechanism that synchronizes the state of a
 // repository's reference based on push transactions in the blockchain. It reacts to newly
 // processed push transactions, processing each references to change the state of a repository.
 type RefSync struct {
 	cfg                     *config.AppConfig
 	log                     logger.Logger
-	nWorkers                int
 	fetcher                 fetcher.ObjectFetcherService
 	queue                   *queue.UniqueQueue
 	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
 	keepers                 core.Keepers
+	watcher                 types2.Watcher
 
 	lck            *sync.Mutex
 	started        bool
@@ -108,23 +53,24 @@ type RefSync struct {
 }
 
 // New creates an instance of RefSync
-func New(cfg *config.AppConfig, nWorkers int, fetcher fetcher.ObjectFetcherService, keepers core.Keepers) *RefSync {
+func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers core.Keepers) *RefSync {
+	var q = queue.NewUnique()
 	rs := &RefSync{
 		fetcher:                 fetcher,
-		nWorkers:                nWorkers,
 		lck:                     &sync.Mutex{},
 		cfg:                     cfg,
 		log:                     cfg.G().Log.Module("ref-syncer"),
-		queue:                   queue.NewUnique(),
+		queue:                   q,
 		FinalizingRefs:          make(map[string]struct{}),
 		keepers:                 keepers,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
 	}
+	rs.watcher = NewWatcher(cfg, rs.OnNewTx, keepers)
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
-			rs.OnNewTx(evt.Args[0].(*txns.TxPush))
+			rs.OnNewTx(evt.Args[0].(*txns.TxPush), evt.Args[1].(int64))
 		}
 	}()
 	return rs
@@ -166,7 +112,8 @@ func (rs *RefSync) CanSync(namespace, repoName string) error {
 
 // OnNewTx receives push transactions and adds non-delete
 // pushed references to the queue as new tasks.
-func (rs *RefSync) OnNewTx(tx *txns.TxPush) {
+// height is the block height that contains the transaction.
+func (rs *RefSync) OnNewTx(tx *txns.TxPush, height int64) {
 
 	if rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName()) != nil {
 		return
@@ -176,12 +123,13 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush) {
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue
 		}
-		rs.queue.Append(&Task{
+		rs.queue.Append(&types2.RefTask{
 			ID:           fmt.Sprintf("%s_%d", ref.Name, ref.Nonce),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),
 			Endorsements: tx.Endorsements,
 			Ref:          ref,
+			Height:       height,
 		})
 	}
 }
@@ -225,7 +173,10 @@ func (rs *RefSync) Start() {
 		panic("already started")
 	}
 
-	for i := 0; i < rs.nWorkers; i++ {
+	// Start the watcher
+	rs.watcher.Start()
+
+	for i := 0; i < params.NumRefSyncWorker; i++ {
 		go rs.createWorker(i)
 	}
 
@@ -249,7 +200,7 @@ func (rs *RefSync) createWorker(id int) {
 	for !rs.hasStopped() {
 		task := rs.getTask()
 		if task != nil {
-			if err := Do(rs, task, id); err != nil {
+			if err := rs.Do(task, id); err != nil {
 				rs.log.Error(err.Error(), "Repo", task.RepoName, "Ref", task.Ref.Name)
 			}
 			continue
@@ -266,17 +217,18 @@ func (rs *RefSync) hasStopped() bool {
 }
 
 // getTask returns a task
-func (rs *RefSync) getTask() *Task {
+func (rs *RefSync) getTask() *types2.RefTask {
 	item := rs.queue.Head()
 	if item == nil {
 		return nil
 	}
-	return item.(*Task)
+	return item.(*types2.RefTask)
 }
 
 // Stop stops the syncer
 func (rs *RefSync) Stop() {
 	rs.lck.Lock()
+	rs.watcher.Stop()
 	rs.stopped = true
 	rs.started = false
 	rs.lck.Unlock()
@@ -284,7 +236,7 @@ func (rs *RefSync) Stop() {
 
 // Do takes a pushed reference task and attempts to fetch the objects
 // required to update the reference's local state.
-func Do(rs *RefSync, task *Task, workerID int) error {
+func (rs *RefSync) Do(task *types2.RefTask, workerID int) error {
 
 	refName := task.Ref.Name
 
@@ -339,12 +291,23 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 
 	// doUpdate uses the push note to update the target repo
 	doUpdate := func() error {
-		if err := rs.UpdateRepoUsingNote(rs.cfg.Node.GitBinPath, rs.makeReferenceUpdatePack, note); err != nil {
+		err := rs.UpdateRepoUsingNote(rs.cfg.Node.GitBinPath, rs.makeReferenceUpdatePack, note)
+		if err != nil {
 			rs.log.Error("Failed to update reference using note", "Err", err.Error(), "ID", task.ID)
 			return err
 		}
-		rs.log.Debug("Successfully updated reference", "Repo", task.RepoName, "Ref", refName)
-		return nil
+
+		// If the repository is being tracked, update its last update height
+		if trackInfo := rs.keepers.TrackedRepoKeeper().Get(task.RepoName); trackInfo != nil {
+			if err = rs.keepers.TrackedRepoKeeper().Add(task.RepoName, uint64(task.Height)); err != nil {
+				err = errors.Wrap(err, "failed to update tracked repo info")
+			}
+		}
+
+		rs.log.Debug("Successfully updated reference", "Repo", task.RepoName,
+			"Ref", refName, "NewHash", task.Ref.NewHash, "OldHash", task.Ref.OldHash)
+
+		return err
 	}
 
 	// If the push note was signed by the current node, we don't need to fetch
@@ -369,17 +332,20 @@ func Do(rs *RefSync, task *Task, workerID int) error {
 	// problems and also to wait for the fetch operation to finish.
 	var errCh = make(chan error, 1)
 	rs.fetcher.FetchAsync(note, func(err error) {
-		errCh <- err
 
 		if err != nil {
 			rs.log.Error("Failed to fetch push note objects", "Err", err.Error())
+			errCh <- err
 			return
 		}
 
 		if err = doUpdate(); err != nil {
 			rs.log.Error("Failed to update repo using push note", "Err", err.Error())
+			errCh <- err
 			return
 		}
+
+		errCh <- nil
 	})
 
 	return <-errCh

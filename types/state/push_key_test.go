@@ -22,7 +22,7 @@ var _ = Describe("PushKey", func() {
 			bz := pushPubKey.Bytes()
 			obj, err := NewPushKeyFromBytes(bz)
 			Expect(err).To(BeNil())
-			Expect(obj).To(Equal(pushPubKey))
+			Expect(obj.Bytes()).To(Equal(pushPubKey.Bytes()))
 		})
 	})
 })

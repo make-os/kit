@@ -3,8 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/url"
 	"os"
 
 	rpcApi "github.com/make-os/lobe/api/rpc"
@@ -56,7 +54,6 @@ type Node struct {
 	app            *App
 	cfg            *config.AppConfig
 	acctMgr        *keystore.Keystore
-	tmcfg          *tmconfig.Config
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
 	db             storage.Engine
@@ -73,20 +70,18 @@ type Node struct {
 }
 
 // NewNode creates an instance of RPCServer
-func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
+func NewNode(cfg *config.AppConfig) *Node {
 
-	// Parse tendermint RPC address
-	tmRPCAddr, err := url.Parse(tmcfg.RPC.ListenAddress)
+	service, err := services.NewFromConfig(cfg.G().TMConfig)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to parse RPC address"))
+		panic(errors.Wrap(err, "failed to create node service instance"))
 	}
 
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("node"),
-		tmcfg:   tmcfg,
-		service: services.New(net.JoinHostPort(tmRPCAddr.Hostname(), tmRPCAddr.Port())),
+		service: service,
 		acctMgr: keystore.New(cfg.KeystoreDir()),
 	}
 }
@@ -137,7 +132,7 @@ func (n *Node) Start() error {
 
 	tmLog := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	var err error
-	tmLog, err = tmflags.ParseLogLevel(n.tmcfg.LogLevel, tmLog, tmconfig.DefaultLogLevel())
+	tmLog, err = tmflags.ParseLogLevel(n.cfg.G().TMConfig.LogLevel, tmLog, tmconfig.DefaultLogLevel())
 	if err != nil {
 		return errors.Wrap(err, "failed to parse log level")
 	}
@@ -149,7 +144,7 @@ func (n *Node) Start() error {
 	n.log.Info("App database has been loaded", "AppDBDir", n.cfg.GetAppDBDir())
 
 	// Read private validator
-	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
+	pv := privval.LoadFilePV(n.cfg.G().TMConfig.PrivValidatorKeyFile(), n.cfg.G().TMConfig.PrivValidatorStateFile())
 
 	// Create an atomic logic provider
 	n.logic = logic.NewAtomic(n.db, n.stateTreeDB, n.cfg)
@@ -190,14 +185,14 @@ func (n *Node) Start() error {
 
 	// Create node
 	n.tm, err = nm.NewNodeWithCustomMempool(
-		n.tmcfg,
+		n.cfg.G().TMConfig,
 		pv,
 		n.nodeKey,
 		clientCreator,
 		cusMemp,
-		nm.DefaultGenesisDocProviderFunc(n.tmcfg),
+		nm.DefaultGenesisDocProviderFunc(n.cfg.G().TMConfig),
 		nm.DefaultDBProvider,
-		nm.DefaultMetricsProvider(n.tmcfg.Instrumentation),
+		nm.DefaultMetricsProvider(n.cfg.G().TMConfig.Instrumentation),
 		tmLog)
 	if err != nil {
 		return errors.Wrap(err, "failed to fully create node")
@@ -209,7 +204,7 @@ func (n *Node) Start() error {
 	// Pass the proxy app to the mempool
 	memp.SetProxyApp(n.tm.ProxyApp().Mempool())
 
-	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
+	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.cfg.G().TMConfig.P2P.ListenAddress)
 	n.log.Info("Now listening for connections", "Address", fullAddr)
 
 	// Set references of various instances on the node

@@ -23,8 +23,6 @@ import (
 	"github.com/tendermint/tendermint/state"
 )
 
-var ErrSkipped = fmt.Errorf("skip")
-
 type ticketInfo struct {
 	Tx    types.BaseTx
 	index int
@@ -246,7 +244,7 @@ func (a *App) postExecChecks(
 		}
 
 		// Broadcast pushed transaction
-		a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed, o)
+		a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed, o, a.curBlock.Height.Int64())
 	}
 
 	// Register the successfully processed tx to the un-indexed tx cache.
@@ -494,7 +492,7 @@ func (a *App) createGitRepositories() error {
 	}
 
 	if a.cfg.IsValidatorNode() {
-		return ErrSkipped
+		return types.ErrSkipped
 	}
 
 	tracked := a.logic.TrackedRepoKeeper().Tracked()
@@ -502,7 +500,7 @@ func (a *App) createGitRepositories() error {
 		if len(tracked) > 0 && tracked[repoName] == nil {
 			continue
 		}
-		if err := a.logic.GetRemoteServer().CreateRepository(repoName); err != nil {
+		if err := a.logic.GetRemoteServer().InitRepository(repoName); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to create repository"))
 		}
 	}

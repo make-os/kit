@@ -591,7 +591,7 @@ var _ = Describe("Auth", func() {
 				token := base58.Encode(txDetail.Bytes())
 				res, err := DecodePushToken(token)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(txDetail))
+				Expect(res.Equal(txDetail)).To(BeTrue())
 			})
 		})
 	})
@@ -614,7 +614,7 @@ var _ = Describe("Auth", func() {
 		It("should decode token successfully", func() {
 			txD, err := DecodePushToken(token)
 			Expect(err).To(BeNil())
-			Expect(txD).To(Equal(txDetail))
+			Expect(txD.Equal(txDetail)).To(BeTrue())
 		})
 	})
 

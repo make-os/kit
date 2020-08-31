@@ -710,7 +710,7 @@ func (mr *MockStreamMockRecorder) Close() *gomock.Call {
 // Reset mocks base method
 func (m *MockStream) Reset() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Reset")
+	ret := m.ctrl.Call(m, "ResetCodec")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -718,7 +718,7 @@ func (m *MockStream) Reset() error {
 // Reset indicates an expected call of Reset
 func (mr *MockStreamMockRecorder) Reset() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockStream)(nil).Reset))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetCodec", reflect.TypeOf((*MockStream)(nil).Reset))
 }
 
 // SetDeadline mocks base method

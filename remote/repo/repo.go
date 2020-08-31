@@ -67,17 +67,30 @@ func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
 	return repo, nil
 }
 
-// GetObjectsSize returns the total size of the given objects.
-func GetObjectsSize(repo types.LocalRepo, objects []string) (uint64, error) {
-	var size int64
-	for _, hash := range objects {
-		objSize, err := repo.GetObjectSize(hash)
-		if err != nil {
-			return 0, err
-		}
-		size += objSize
+type InitRepositoryFunc func(name string, rootDir string, gitBinPath string) error
+
+// InitRepository creates a bare git repository
+func InitRepository(name, rootDir, gitBinPath string) error {
+
+	// Create the repository
+	path := filepath.Join(rootDir, name)
+	_, err := git.PlainInit(path, true)
+	if err != nil {
+		return errors.Wrap(err, "failed to create repo")
 	}
-	return uint64(size), nil
+
+	// Set config options
+	options := [][]string{
+		{"gc.auto", "0"},
+	}
+	for _, opt := range options {
+		_, err = ExecGitCmd(gitBinPath, path, append([]string{"config"}, opt...)...)
+		if err != nil {
+			return errors.Wrap(err, "failed to set config")
+		}
+	}
+
+	return err
 }
 
 // Repo provides functions for accessing and modifying

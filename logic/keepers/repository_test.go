@@ -47,7 +47,6 @@ var _ = Describe("RepoKeeper", func() {
 
 			BeforeEach(func() {
 				testRepo.AddOwner("owner", &state2.RepoOwner{})
-
 				repoKey := MakeRepoKey("repo1")
 				state.Set(repoKey, testRepo.Bytes())
 				_, _, err := state.SaveVersion()
@@ -56,7 +55,7 @@ var _ = Describe("RepoKeeper", func() {
 
 			It("should successfully return the expected repo object", func() {
 				repo := rk.Get("repo1", 0)
-				Expect(repo).To(BeEquivalentTo(testRepo))
+				Expect(repo.Bytes()).To(Equal(testRepo.Bytes()))
 			})
 		})
 
@@ -129,6 +128,8 @@ var _ = Describe("RepoKeeper", func() {
 			rk.Update(key, repo)
 
 			repo2 := rk.Get(key)
+			repo2.ResetCodec()
+			repo2.Config.ResetCodec()
 			Expect(repo2).To(Equal(repo))
 		})
 	})

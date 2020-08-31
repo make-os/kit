@@ -1,41 +1,16 @@
 package server
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"github.com/make-os/lobe/remote/repo"
 	"gopkg.in/src-d/go-git.v4"
 )
 
-// CreateRepository creates a bare git repository
-func (sv *Server) CreateRepository(name string) error {
-
-	// Create the path if it does not exist
-	path := filepath.Join(sv.rootDir, name)
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("a repository with name (%s) already exist", name)
-	}
-
-	// Create the repository
-	_, err := git.PlainInit(path, true)
-	if err != nil {
-		return errors.Wrap(err, "failed to create repo")
-	}
-
-	// Set config options
-	options := [][]string{
-		{"gc.auto", "0"},
-	}
-	for _, opt := range options {
-		_, err = execGitCmd(sv.gitBinPath, path, append([]string{"config"}, opt...)...)
-		if err != nil {
-			return errors.Wrap(err, "failed to set config")
-		}
-	}
-
-	return err
+// InitRepository creates a bare git repository
+func (sv *Server) InitRepository(name string) error {
+	return repo.InitRepository(name, sv.rootDir, sv.gitBinPath)
 }
 
 // HasRepository returns true if a valid repository exist

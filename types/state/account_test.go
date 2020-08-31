@@ -33,7 +33,7 @@ var _ = Describe("Account", func() {
 		It("should return expected account", func() {
 			res, err := NewAccountFromBytes(acct.Bytes())
 			Expect(err).To(BeNil())
-			Expect(res).To(BeEquivalentTo(acct))
+			Expect(res.Bytes()).To(BeEquivalentTo(acct.Bytes()))
 		})
 	})
 

@@ -42,7 +42,7 @@ var _ = Describe("Account", func() {
 
 			It("should successfully return the expected account object", func() {
 				acct := ak.Get("addr1", 0)
-				Expect(acct).To(BeEquivalentTo(testAcct))
+				Expect(acct.Bytes()).To(Equal(testAcct.Bytes()))
 			})
 		})
 	})

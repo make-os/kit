@@ -11,6 +11,7 @@ import (
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
+	types3 "github.com/make-os/lobe/remote/refsync/types"
 	repo3 "github.com/make-os/lobe/remote/repo"
 	testutil2 "github.com/make-os/lobe/remote/testutil"
 	types2 "github.com/make-os/lobe/remote/types"
@@ -30,7 +31,7 @@ import (
 var _ = Describe("RefSync", func() {
 	var err error
 	var cfg *config.AppConfig
-	var rs RefSyncer
+	var rs types3.RefSync
 	var ctrl *gomock.Controller
 	var mockFetcher *mocks.MockObjectFetcher
 	var repoName string
@@ -49,7 +50,7 @@ var _ = Describe("RefSync", func() {
 		mockKeepers = mocks.NewMockKeepers(ctrl)
 		mockTrackedRepoKeeper = mocks.NewMockTrackedRepoKeeper(ctrl)
 		mockKeepers.EXPECT().TrackedRepoKeeper().Return(mockTrackedRepoKeeper).AnyTimes()
-		rs = New(cfg, 1, mockFetcher, mockKeepers)
+		rs = New(cfg, mockFetcher, mockKeepers)
 
 		repoName = util.RandString(5)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
@@ -171,7 +172,7 @@ var _ = Describe("RefSync", func() {
 				mockTrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
 					"repo2": {},
 				})
-				rs.OnNewTx(&txns.TxPush{Note: &types.Note{RepoName: "repo1"}})
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{RepoName: "repo1"}}, 1)
 				Expect(rs.HasTask()).To(BeFalse())
 				Expect(rs.QueueSize()).To(Equal(0))
 			})
@@ -185,14 +186,14 @@ var _ = Describe("RefSync", func() {
 			It("should add new task to queue", func() {
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{
 					References: []*types.PushedReference{{Name: "master", Nonce: 1}},
-				}})
+				}}, 1)
 				Expect(rs.HasTask()).To(BeTrue())
 				Expect(rs.QueueSize()).To(Equal(1))
 			})
 
 			It("should not add new task to queue when task with matching ID already exist in queue", func() {
-				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
-				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}})
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}}, 1)
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}}, 1)
 				Expect(rs.HasTask()).To(BeTrue())
 				Expect(rs.QueueSize()).To(Equal(1))
 			})
@@ -200,7 +201,7 @@ var _ = Describe("RefSync", func() {
 			It("should not add task if reference new hash is zero-hash", func() {
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{
 					{Name: "master", Nonce: 1, NewHash: plumbing.ZeroHash.String()},
-				}}})
+				}}}, 1)
 				Expect(rs.HasTask()).To(BeFalse())
 				Expect(rs.QueueSize()).To(Equal(0))
 			})
@@ -211,7 +212,7 @@ var _ = Describe("RefSync", func() {
 						{Name: "refs/heads/master", Nonce: 1},
 						{Name: "refs/heads/dev", Nonce: 1},
 					},
-				}})
+				}}, 1)
 				Expect(rs.HasTask()).To(BeTrue())
 				Expect(rs.QueueSize()).To(Equal(2))
 			})
@@ -228,33 +229,33 @@ var _ = Describe("RefSync", func() {
 
 	Describe(".Do", func() {
 		It("should append task back to queue when another task with matching reference name is being finalized", func() {
-			task := &Task{Ref: &types.PushedReference{Name: "refs/heads/master"}}
+			task := &types3.RefTask{Ref: &types.PushedReference{Name: "refs/heads/master"}}
 			rs.(*RefSync).FinalizingRefs[task.Ref.Name] = struct{}{}
-			err := Do(rs.(*RefSync), task, 0)
+			err := rs.Do(task, 0)
 			Expect(err).To(BeNil())
 			Expect(rs.QueueSize()).To(Equal(1))
 		})
 
 		It("should return error when repo does not exist locally", func() {
-			task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
-			err := Do(rs.(*RefSync), task, 0)
+			task := &types3.RefTask{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
+			err := rs.Do(task, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get target repo: repository does not exist"))
 		})
 
 		It("should return error when unable to get reference from local repo", func() {
-			task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
+			task := &types3.RefTask{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 			mockRepo.EXPECT().RefGet(task.Ref.Name).Return("", fmt.Errorf("error"))
-			err := Do(rs.(*RefSync), task, 0)
+			err := rs.Do(task, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get reference from target repo: error"))
 		})
 
 		When("local reference hash and task reference old hash do not match", func() {
 			It("should set task old hash to the local hash", func() {
-				task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
+				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
@@ -267,7 +268,8 @@ var _ = Describe("RefSync", func() {
 					Expect(note).ToNot(BeNil())
 					cb(nil)
 				})
-				err := Do(rs.(*RefSync), task, 0)
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
+				err := rs.Do(task, 0)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 				Expect(task.Ref.OldHash).To(Equal(oldHash))
@@ -276,7 +278,7 @@ var _ = Describe("RefSync", func() {
 
 		When("local reference hash and task reference old hash match", func() {
 			It("should attempt to fetch objects and update repo", func() {
-				task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
+				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
@@ -289,13 +291,14 @@ var _ = Describe("RefSync", func() {
 					Expect(note).ToNot(BeNil())
 					cb(nil)
 				})
-				err := Do(rs.(*RefSync), task, 0)
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
+				err := rs.Do(task, 0)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 			})
 
 			It("should not attempt to update repo and return error if fetch attempt failed", func() {
-				task := &Task{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
+				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
@@ -308,7 +311,8 @@ var _ = Describe("RefSync", func() {
 					Expect(note).ToNot(BeNil())
 					cb(fmt.Errorf("error"))
 				})
-				err := Do(rs.(*RefSync), task, 0)
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
+				err := rs.Do(task, 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error"))
 				Expect(updated).To(BeFalse())
@@ -316,8 +320,8 @@ var _ = Describe("RefSync", func() {
 
 			It("should update repo without fetching objects if node is the creator of the push note", func() {
 				key, _ := cfg.G().PrivVal.GetKey()
-				task := &Task{
-					RepoName:    "unknown",
+				task := &types3.RefTask{
+					RepoName:    "repo1",
 					Ref:         &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
 					NoteCreator: key.PubKey().MustBytes32(),
 				}
@@ -329,15 +333,16 @@ var _ = Describe("RefSync", func() {
 					updated = true
 					return nil
 				}
-				err := Do(rs.(*RefSync), task, 0)
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
+				err := rs.Do(task, 0)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 			})
 
 			It("should update repo without fetching objects if node is an endorser of the push note", func() {
 				key, _ := cfg.G().PrivVal.GetKey()
-				task := &Task{
-					RepoName: "unknown",
+				task := &types3.RefTask{
+					RepoName: "repo1",
 					Ref:      &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
 					Endorsements: []*types.PushEndorsement{
 						{EndorserPubKey: key.PubKey().MustBytes32()},
@@ -351,8 +356,33 @@ var _ = Describe("RefSync", func() {
 					updated = true
 					return nil
 				}
-				err := Do(rs.(*RefSync), task, 0)
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
+				err := rs.Do(task, 0)
 				Expect(err).To(BeNil())
+				Expect(updated).To(BeTrue())
+			})
+		})
+
+		When("target repo is tracked", func() {
+			It("should return error when unable to update tracked repo update height", func() {
+				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}, Height: 10}
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
+				updated := false
+				rs.(*RefSync).UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
+					updated = true
+					return nil
+				}
+				mockFetcher.EXPECT().FetchAsync(gomock.Any(), gomock.Any()).Do(func(note types.PushNote, cb func(err error)) {
+					Expect(note).ToNot(BeNil())
+					cb(nil)
+				})
+				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(&core.TrackedRepo{})
+				mockTrackedRepoKeeper.EXPECT().Add(task.RepoName, uint64(task.Height)).Return(fmt.Errorf("error"))
+				err := rs.Do(task, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to update tracked repo info: error"))
 				Expect(updated).To(BeTrue())
 			})
 		})

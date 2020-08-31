@@ -70,7 +70,7 @@ var _ = Describe("PushKeyKeeper", func() {
 		})
 
 		Specify("that it returned the expected public key", func() {
-			Expect(pushKey).To(Equal(pushKey2))
+			Expect(pushKey.Bytes()).To(Equal(pushKey2.Bytes()))
 		})
 	})
 

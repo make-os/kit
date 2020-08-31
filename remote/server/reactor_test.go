@@ -151,7 +151,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(refsync.ErrUntracked)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
@@ -190,7 +190,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
@@ -228,7 +228,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(refsync.ErrUntracked)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
@@ -265,7 +265,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
@@ -287,7 +287,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
@@ -314,7 +314,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-				mockRefSyncer := mocks.NewMockRefSyncer(ctrl)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
 				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
 				svr.refSyncer = mockRefSyncer
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {

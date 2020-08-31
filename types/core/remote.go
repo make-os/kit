@@ -59,7 +59,7 @@ type RemoteServer interface {
 	Wait()
 
 	// CreateRepository creates a local git repository
-	CreateRepository(name string) error
+	InitRepository(name string) error
 
 	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)

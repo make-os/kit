@@ -134,7 +134,9 @@ func (f *BadgerFunctions) Del(key []byte) error {
 
 // Iterate finds a set of records by prefix and passes them to iterFunc
 // for further processing.
+//
 // If iterFunc returns true, the iterator is stopped and immediately released.
+//
 // If first is set to true, it begins from the first record, otherwise,
 // it will begin from the last record
 func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *Record) bool) {

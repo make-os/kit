@@ -16,7 +16,7 @@ func start(onStart func(n *node.Node)) {
 	log := cfg.G().Log.Module("main")
 
 	// Create the node
-	n := node.NewNode(cfg, tmconfig)
+	n := node.NewNode(cfg)
 
 	// Start the node
 	if err := n.Start(); err != nil {

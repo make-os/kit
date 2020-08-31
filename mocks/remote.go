@@ -252,18 +252,18 @@ func (mr *MockRemoteServerMockRecorder) Wait() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockRemoteServer)(nil).Wait))
 }
 
-// CreateRepository mocks base method
-func (m *MockRemoteServer) CreateRepository(name string) error {
+// InitRepository mocks base method
+func (m *MockRemoteServer) InitRepository(name string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateRepository", name)
+	ret := m.ctrl.Call(m, "InitRepository", name)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateRepository indicates an expected call of CreateRepository
-func (mr *MockRemoteServerMockRecorder) CreateRepository(name interface{}) *gomock.Call {
+// InitRepository indicates an expected call of InitRepository
+func (mr *MockRemoteServerMockRecorder) InitRepository(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepository", reflect.TypeOf((*MockRemoteServer)(nil).CreateRepository), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitRepository", reflect.TypeOf((*MockRemoteServer)(nil).InitRepository), name)
 }
 
 // BroadcastMsg mocks base method

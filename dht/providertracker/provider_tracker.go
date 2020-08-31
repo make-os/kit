@@ -14,7 +14,7 @@ var (
 	MaxFailureBeforeBan = 3
 
 	// BanDueToFailureDur is the duration of a ban due to failure
-	BanDueToFailureDur = 1 * time.Hour
+	BanDueToFailureDur = 15 * time.Minute
 
 	// BackOffDurAfterFailure is the backoff time before a failed provider can be good again.
 	BackOffDurAfterFailure = 15 * time.Minute

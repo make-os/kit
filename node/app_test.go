@@ -687,15 +687,15 @@ var _ = Describe("App", func() {
 		It("should skip if node is in validator mode", func() {
 			cfg.Node.Validator = true
 			app.newRepos = []string{"repo1"}
-			Expect(app.createGitRepositories()).To(Equal(ErrSkipped))
+			Expect(app.createGitRepositories()).To(Equal(types.ErrSkipped))
 		})
 
 		It("should create all repositories if no repo is being tracked", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
 			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
-			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1")
-			mockLogic.RemoteServer.EXPECT().CreateRepository("repo2")
+			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
+			mockLogic.RemoteServer.EXPECT().InitRepository("repo2")
 			app.createGitRepositories()
 		})
 
@@ -703,7 +703,7 @@ var _ = Describe("App", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
 			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
-			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1")
+			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
 			app.createGitRepositories()
 		})
 
@@ -711,7 +711,7 @@ var _ = Describe("App", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1"}
 			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
-			mockLogic.RemoteServer.EXPECT().CreateRepository("repo1").Return(fmt.Errorf("error"))
+			mockLogic.RemoteServer.EXPECT().InitRepository("repo1").Return(fmt.Errorf("error"))
 			mockLogic.AtomicLogic.EXPECT().Discard()
 			Expect(func() {
 				app.createGitRepositories()

@@ -22,7 +22,8 @@ const (
 // BareReference returns an empty reference object
 func BareReference() *Reference {
 	return &Reference{
-		Data: &ReferenceData{},
+		CodecUtil: util.CodecUtil{Version: "0.1"},
+		Data:      &ReferenceData{},
 	}
 }
 
@@ -344,12 +345,27 @@ func BareRepository() *Repository {
 // Repository represents a git repository.
 type Repository struct {
 	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
-	Balance        util.String      `json:"balance" msgpack:"balance" mapstructure:"balance"`
-	References     References       `json:"references" msgpack:"references" mapstructure:"references"`
-	Owners         RepoOwners       `json:"owners" msgpack:"owners" mapstructure:"owners"`
-	Proposals      RepoProposals    `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
-	Contributors   RepoContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
-	Config         *RepoConfig      `json:"config" msgpack:"config" mapstructure:"config"`
+
+	// Balance is the native coin balance
+	Balance util.String `json:"balance" msgpack:"balance" mapstructure:"balance"`
+
+	// References contains the repository reference information
+	References References `json:"references" msgpack:"references" mapstructure:"references"`
+
+	// Owners contains the address of the repository owners
+	Owners RepoOwners `json:"owners" msgpack:"owners" mapstructure:"owners"`
+
+	// Proposals contains the repository governance proposals
+	Proposals RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+
+	// Contributors contains push keys that can push
+	Contributors RepoContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
+
+	// Config is the repository configuration
+	Config *RepoConfig `json:"config" msgpack:"config" mapstructure:"config"`
+
+	// LastUpdated is the block height the reference was last updated
+	LastUpdated util.UInt64 `json:"lastUpdated" mapstructure:"lastUpdated" msgpack:"lastUpdated,omitempty"`
 }
 
 // GetBalance implements types.BalanceAccount
@@ -376,6 +392,8 @@ func (r *Repository) IsNil() bool {
 		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
+		len(r.Contributors) == 0 &&
+		r.LastUpdated == 0 &&
 		r.Config.IsNil()
 }
 
@@ -387,7 +405,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 		r.References,
 		r.Proposals,
 		r.Config,
-		r.Contributors)
+		r.Contributors,
+		r.LastUpdated)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -398,7 +417,8 @@ func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&r.References,
 		&r.Proposals,
 		&r.Config,
-		&r.Contributors)
+		&r.Contributors,
+		&r.LastUpdated)
 	return err
 }
 

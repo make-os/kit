@@ -39,7 +39,7 @@ var _ = Describe("NamespaceKeeper", func() {
 
 			It("should successfully return the expected namespace object", func() {
 				ns := nsKp.Get("ns1", 0)
-				Expect(ns).To(BeEquivalentTo(testNS))
+				Expect(ns.Bytes()).To(Equal(testNS.Bytes()))
 			})
 		})
 	})
@@ -54,7 +54,7 @@ var _ = Describe("NamespaceKeeper", func() {
 			nsKp.Update(key, ns)
 
 			ns2 := nsKp.Get(key)
-			Expect(ns2).To(Equal(ns))
+			Expect(ns2.Bytes()).To(Equal(ns.Bytes()))
 		})
 	})
 

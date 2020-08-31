@@ -49,7 +49,7 @@ var _ = Describe("CodecUtil", func() {
 		When("version has been decoded and EOF is returned", func() {
 			It("should return nil", func() {
 				mockDecoder := mocks.NewMockDecoder(ctrl)
-				sh.DecodedVersion = "v1"
+				sh.versionDecoded = true
 				mockDecoder.EXPECT().DecodeMulti(gomock.Any()).Return(fmt.Errorf("EOF"))
 				err := sh.DecodeMulti(mockDecoder, 1)
 				Expect(err).To(BeNil())

@@ -507,7 +507,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".GetTracked", func() {
 		It("should panic if unable to untrack repo", func() {
 			tracked := map[string]*core.TrackedRepo{
-				"repo1": {LastHeight: 10},
+				"repo1": {LastUpdated: 10},
 			}
 			mockTrackedRepoKeeper.EXPECT().Tracked().Return(tracked)
 			res := m.GetTracked()

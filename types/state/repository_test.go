@@ -54,7 +54,7 @@ var _ = Describe("Repository", func() {
 			It("should return object", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(r))
+				Expect(res.Bytes()).To(Equal(r.Bytes()))
 			})
 		})
 
@@ -72,7 +72,7 @@ var _ = Describe("Repository", func() {
 			It("should return object", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(r))
+				Expect(res.Bytes()).To(Equal(r.Bytes()))
 			})
 		})
 
@@ -94,7 +94,7 @@ var _ = Describe("Repository", func() {
 			It("should return object", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
-				Expect(r).To(Equal(res))
+				Expect(r.Bytes()).To(Equal(res.Bytes()))
 			})
 		})
 	})

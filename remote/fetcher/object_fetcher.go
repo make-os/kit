@@ -69,7 +69,6 @@ type BasicObjectFetcher struct {
 	dht                types3.DHT
 	lck                *sync.Mutex
 	queue              *queue.UniqueQueue
-	nWorkers           int
 	log                logger.Logger
 	stopped            bool
 	started            bool
@@ -83,7 +82,6 @@ func NewFetcher(dht types3.DHT, nWorkers int, cfg *config.AppConfig) *BasicObjec
 		dht:                dht,
 		lck:                &sync.Mutex{},
 		queue:              queue.NewUnique(),
-		nWorkers:           nWorkers,
 		log:                cfg.G().Log.Module("object-fetcher"),
 		cfg:                cfg,
 		PackToRepoUnpacker: plumbing.UnpackPackfileToRepo,
@@ -138,7 +136,7 @@ func (f *BasicObjectFetcher) Start() {
 		panic("already started")
 	}
 
-	for i := 0; i < f.nWorkers; i++ {
+	for i := 0; i < params.NumFetcherWorker; i++ {
 		go f.createWorker(i)
 	}
 
@@ -199,7 +197,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 			})
 			if err != nil {
 				f.log.Error("failed to fetch object(s) of reference",
-					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash)
+					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash, "Err", err)
 				cn()
 				return err
 			}
@@ -258,7 +256,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 			})
 			if err != nil {
 				f.log.Error("failed to fetch object(s) of reference",
-					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash)
+					"Name", ref.Name, "OldHash", ref.OldHash, "NewHash", ref.NewHash, "Err", err)
 				cn()
 				return err
 			}

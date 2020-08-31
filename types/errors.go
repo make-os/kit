@@ -51,3 +51,4 @@ const (
 )
 
 var ErrExit = fmt.Errorf("exit")
+var ErrSkipped = fmt.Errorf("skipped")

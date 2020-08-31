@@ -92,7 +92,7 @@ func (mr *MockPeerMockRecorder) OnStop() *gomock.Call {
 // Reset mocks base method
 func (m *MockPeer) Reset() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Reset")
+	ret := m.ctrl.Call(m, "ResetCodec")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -100,7 +100,7 @@ func (m *MockPeer) Reset() error {
 // Reset indicates an expected call of Reset
 func (mr *MockPeerMockRecorder) Reset() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockPeer)(nil).Reset))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetCodec", reflect.TypeOf((*MockPeer)(nil).Reset))
 }
 
 // OnReset mocks base method

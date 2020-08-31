@@ -38,7 +38,7 @@ var _ = Describe("Namespace", func() {
 			bz := ns.Bytes()
 			ns2, err := state.NewNamespaceFromBytes(bz)
 			Expect(err).To(BeNil())
-			Expect(ns).To(Equal(ns2))
+			Expect(ns.Bytes()).To(Equal(ns2.Bytes()))
 		})
 
 		Context("with nil target", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Namespace", func() {
 				bz := ns.Bytes()
 				ns2, err := state.NewNamespaceFromBytes(bz)
 				Expect(err).To(BeNil())
-				Expect(ns).To(Equal(ns2))
+				Expect(ns.Bytes()).To(Equal(ns2.Bytes()))
 			})
 		})
 	})

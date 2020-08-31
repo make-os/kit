@@ -79,6 +79,7 @@ var _ = Describe("CreateRepoContract", func() {
 				repo := logic.RepoKeeper().Get("repo")
 				defCfg := state.MakeDefaultRepoConfig()
 				policy.AddDefaultPolicies(defCfg)
+				repo.Config.ResetCodec()
 				Expect(repo.Config).To(Equal(defCfg))
 			})
 

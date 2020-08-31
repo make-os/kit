@@ -123,7 +123,7 @@ var _ = Describe("Contract", func() {
 			})
 		})
 
-		When("reference has nonce = 1. After a successful exec:", func() {
+		When("after a successful exec", func() {
 			BeforeEach(func() {
 				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: &remotetypes.ReferenceData{}, Fee: "1"}}
 				rawPkID := crypto2.MustDecodePushKeyID(pushKeyID)
@@ -147,6 +147,11 @@ var _ = Describe("Contract", func() {
 			Specify("that sender account nonce was incremented", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
+			})
+
+			Specify("that the repository LastUpdated field is 1", func() {
+				repo := logic.RepoKeeper().Get(repo)
+				Expect(repo.LastUpdated.UInt64()).To(Equal(uint64(1)))
 			})
 		})
 

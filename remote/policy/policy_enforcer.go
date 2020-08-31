@@ -5,15 +5,15 @@ import (
 )
 
 type policyItem struct {
-	policy *state.Policy
-	level  int
+	Policy *state.Policy
+	Level  int
 }
 
 type policyItems []*policyItem
 
 func (p *policyItems) get(sub, obj, act string) *policyItem {
 	for _, item := range *p {
-		if item.policy.Subject == sub && item.policy.Object == obj && item.policy.Action == act {
+		if item.Policy.Subject == sub && item.Policy.Object == obj && item.Policy.Action == act {
 			return item
 		}
 	}
@@ -47,13 +47,17 @@ func NewPolicyEnforcer(orderedPolicies [][]*state.Policy) *PolicyEnforcer {
 	return pol
 }
 
+func (e *PolicyEnforcer) GetPolicies() policyItems {
+	return e.policies
+}
+
 // flatten the given ordered policies
 func (e *PolicyEnforcer) flatten(orderedPolicies [][]*state.Policy) {
 	for level, policies := range orderedPolicies {
 		for _, policy := range policies {
 			existing := e.policies.get(policy.Subject, policy.Object, policy.Action)
 			if existing == nil {
-				e.policies.add(&policyItem{policy: policy, level: level})
+				e.policies.add(&policyItem{Policy: policy, Level: level})
 			}
 		}
 	}
@@ -65,5 +69,5 @@ func (e *PolicyEnforcer) Enforce(sub, obj, act string) (allowed bool, level int)
 	if found == nil {
 		return false, -1
 	}
-	return true, found.level
+	return true, found.Level
 }

@@ -20,8 +20,17 @@ type CodecUtil struct {
 	// version is added to the encoding before any other data fields.
 	Version string
 
-	// DecodeVersion is the version of the input data that was decoded.
+	// versionDecoded indicate that the version of the encoded data was decoded.
+	versionDecoded bool
+
+	// DecodeVersion is the version of the encoded data.
 	DecodedVersion string
+}
+
+func (h *CodecUtil) ResetCodec() {
+	h.Version = ""
+	h.versionDecoded = false
+	h.DecodedVersion = ""
 }
 
 // DecodeVersion decodes and returns the encoding's version
@@ -31,6 +40,7 @@ func (h *CodecUtil) DecodeVersion(dec Decoder) (string, error) {
 		return "", err
 	}
 	h.DecodedVersion = version
+	h.versionDecoded = true
 	return version, nil
 }
 
@@ -42,7 +52,7 @@ func (h *CodecUtil) DecodeMulti(dec Decoder, v ...interface{}) error {
 	var err error
 
 	// Skip version only if it has not been decoded
-	if h.DecodedVersion == "" {
+	if !h.versionDecoded {
 		_, err = h.DecodeVersion(dec)
 		if err != nil {
 			return err
