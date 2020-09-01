@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/streamer"
 	types3 "github.com/make-os/lobe/dht/streamer/types"
 	"github.com/make-os/lobe/mocks"
@@ -86,15 +87,15 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 	Describe(".Announce", func() {
 		It("should announce commit hash", func() {
-			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:]), gomock.Any())
-			cs.Announce(hash[:], nil)
+			mockDHT.EXPECT().Announce(announcer.ObjTypeAny, dht.MakeObjectKey(hash[:]), gomock.Any())
+			cs.Announce(announcer.ObjTypeAny, hash[:], nil)
 		})
 
 		It("should return error when announce attempt failed", func() {
-			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:]), gomock.Any()).Do(func(key []byte, doneCB func(error)) {
+			mockDHT.EXPECT().Announce(announcer.ObjTypeAny, dht.MakeObjectKey(hash[:]), gomock.Any()).Do(func(objType int, key []byte, doneCB func(error)) {
 				doneCB(fmt.Errorf("error"))
 			})
-			cs.Announce(hash[:], func(err error) {
+			cs.Announce(announcer.ObjTypeAny, hash[:], func(err error) {
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})

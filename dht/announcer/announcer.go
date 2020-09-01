@@ -8,15 +8,25 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dht2 "github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/util"
 	"github.com/thoas/go-funk"
 )
 
+const (
+	ObjTypeAny int = iota
+	ObjTypeGit
+	ObjTypeRepoName
+)
+
 type Announcer interface {
-	// Announce adds a key to the queue to be announced
-	Announce(key []byte, doneCB func(error))
+	// Announce queues an object to be announced.
+	// objType is the type of the object.
+	// key is the unique identifier of the object.
+	// doneCB is called after successful announcement
+	Announce(ObjType int, key []byte, doneCB func(error))
 
 	// Start starts the announcer.
 	// Panics if reference announcer is already started.
@@ -34,6 +44,7 @@ type Announcer interface {
 
 // Task represents a task
 type Task struct {
+	Type int
 	Key  util.Bytes
 	Done func(err error)
 }
@@ -47,33 +58,34 @@ func (t *Task) GetID() interface{} {
 // Announcement requests are queued up an concurrently executed by n workers.
 // When an announcement fails, it is retried several times.
 type BasicAnnouncer struct {
-	log      logger.Logger
-	nWorkers int
-	dht      *dht.IpfsDHT
-	lck      *sync.Mutex
-	queue    *queue.UniqueQueue
-	started  bool
-	stopped  bool
+	log     logger.Logger
+	dht     *dht.IpfsDHT
+	lck     *sync.Mutex
+	queue   *queue.UniqueQueue
+	started bool
+	stopped bool
 }
 
 // NewBasicAnnouncer creates an instance of BasicAnnouncer
-func NewBasicAnnouncer(dht *dht.IpfsDHT, nWorkers int, log logger.Logger) *BasicAnnouncer {
+func NewBasicAnnouncer(dht *dht.IpfsDHT, log logger.Logger) *BasicAnnouncer {
 	rs := &BasicAnnouncer{
-		dht:      dht,
-		nWorkers: nWorkers,
-		lck:      &sync.Mutex{},
-		log:      log,
-		queue:    queue.NewUnique(),
+		dht:   dht,
+		lck:   &sync.Mutex{},
+		log:   log,
+		queue: queue.NewUnique(),
 	}
 	return rs
 }
 
-// Announce adds a key to the queue to be announced
-func (a *BasicAnnouncer) Announce(key []byte, doneCB func(error)) {
+// Announce queues an object to be announced.
+// objType is the type of the object.
+// key is the unique identifier of the object.
+// doneCB is called after successful announcement
+func (a *BasicAnnouncer) Announce(objType int, key []byte, doneCB func(error)) {
 	if doneCB == nil {
 		doneCB = func(error) {}
 	}
-	a.queue.Append(&Task{Key: key, Done: doneCB})
+	a.queue.Append(&Task{Type: objType, Key: key, Done: doneCB})
 }
 
 // HasTask checks whether there are one or more unprocessed tasks.
@@ -93,7 +105,7 @@ func (a *BasicAnnouncer) Start() {
 		panic("already started")
 	}
 
-	for i := 0; i < a.nWorkers; i++ {
+	for i := 0; i < params.NumAnnouncerWorker; i++ {
 		go a.createWorker(i)
 	}
 

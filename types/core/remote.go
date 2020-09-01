@@ -71,10 +71,7 @@ type RemoteServer interface {
 	RegisterAPIHandlers(agg types2.ModulesHub)
 
 	// AnnounceObject announces a key on the DHT network
-	Announce(hash []byte, doneCB func(error))
-
-	// AnnounceRepoObjects announces all objects in a repository
-	AnnounceRepoObjects(repoName string) error
+	Announce(objType int, hash []byte, doneCB func(error))
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher

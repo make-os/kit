@@ -21,7 +21,7 @@ type DHT interface {
 	GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error)
 
 	// Announce informs the network that it can provide value for the given key
-	Announce(key []byte, doneCB func(error))
+	Announce(objType int, key []byte, doneCB func(error))
 
 	// BasicObjectStreamer returns the object streamer
 	ObjectStreamer() types.ObjectStreamer

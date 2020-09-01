@@ -84,7 +84,7 @@ func New(
 		cfg:        cfg,
 		log:        log,
 		connTicker: time.NewTicker(5 * time.Second),
-		announcer:  announcer2.NewBasicAnnouncer(server, 10, log.Module("announcer")),
+		announcer:  announcer2.NewBasicAnnouncer(server, log.Module("announcer")),
 	}
 
 	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
@@ -228,8 +228,8 @@ func (dht *Server) ObjectStreamer() types.ObjectStreamer {
 }
 
 // Announce asynchronously informs the network that it can provide value for the given key
-func (dht *Server) Announce(key []byte, doneCB func(error)) {
-	dht.announcer.Announce(key, doneCB)
+func (dht *Server) Announce(objType int, key []byte, doneCB func(error)) {
+	dht.announcer.Announce(objType, key, doneCB)
 }
 
 // Close closes the host

@@ -7,6 +7,7 @@ import (
 
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/crypto/bls"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
@@ -125,7 +126,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
 				objHash := obj.ID()
-				sv.Announce(objHash[:], nil)
+				sv.Announce(announcer.ObjTypeGit, objHash[:], nil)
 			}
 			return nil
 		})
@@ -183,7 +184,7 @@ func (sv *Server) onObjectsFetched(
 	}
 
 	// Announce interest in providing the repository objects
-	sv.Announce([]byte(repoName), nil)
+	sv.Announce(announcer.ObjTypeRepoName, []byte(repoName), nil)
 
 	return nil
 }

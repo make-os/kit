@@ -11,10 +11,14 @@ import (
 	"time"
 
 	"github.com/make-os/lobe/api/remote"
+	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/crypto"
 	types2 "github.com/make-os/lobe/dht/server/types"
 	types3 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/types"
+	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/cache"
+	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/fetcher"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
@@ -30,16 +34,9 @@ import (
 	"github.com/make-os/lobe/types/state"
 	crypto2 "github.com/make-os/lobe/util/crypto"
 	"github.com/pkg/errors"
-	plumb "gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
 
 const (
@@ -300,43 +297,8 @@ func (sv *Server) getRepoPath(name string) string {
 }
 
 // AnnounceObject announces a key on the DHT network
-func (sv *Server) Announce(hash []byte, doneCB func(error)) {
-	sv.dht.ObjectStreamer().Announce(hash, doneCB)
-}
-
-// AnnounceRepoObjects announces all objects in a repository
-func (sv *Server) AnnounceRepoObjects(repoName string) error {
-
-	// Get the repo
-	repo, err := sv.GetRepo(repoName)
-	if err != nil {
-		return err
-	}
-
-	// Announce commit objects
-	ci, err := repo.CommitObjects()
-	if err != nil {
-		return err
-	}
-	ci.ForEach(func(commit *object.Commit) error {
-		sv.dht.ObjectStreamer().Announce(commit.Hash[:], nil)
-		return nil
-	})
-
-	// Announce tag objects
-	ti, err := repo.Tags()
-	if err != nil {
-		return err
-	}
-	ti.ForEach(func(reference *plumb.Reference) error {
-		tag, _ := repo.TagObject(reference.Hash())
-		if tag != nil {
-			sv.dht.ObjectStreamer().Announce(tag.Hash[:], nil)
-		}
-		return nil
-	})
-
-	return nil
+func (sv *Server) Announce(objType int, hash []byte, doneCB func(error)) {
+	sv.dht.ObjectStreamer().Announce(objType, hash, doneCB)
 }
 
 // gitRequestsHandler handles incoming http request from a git client

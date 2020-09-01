@@ -43,7 +43,7 @@ var _ = Describe("Announcer", func() {
 		dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
 		Expect(err).To(BeNil())
 
-		ann = announcer.NewBasicAnnouncer(dhtA.DHT(), 1, cfg.G().Log)
+		ann = announcer.NewBasicAnnouncer(dhtA.DHT(), cfg.G().Log)
 	})
 
 	AfterEach(func() {
@@ -73,7 +73,7 @@ var _ = Describe("Announcer", func() {
 
 	Describe(".Announce", func() {
 		It("should add task to queue", func() {
-			ann.Announce([]byte("key"), nil)
+			ann.Announce(1, []byte("key"), nil)
 			Expect(ann.HasTask()).To(BeTrue())
 		})
 	})

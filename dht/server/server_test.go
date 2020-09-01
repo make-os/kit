@@ -10,6 +10,7 @@ import (
 	routing2 "github.com/libp2p/go-libp2p-core/routing"
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/server"
 	testutil2 "github.com/make-os/lobe/remote/testutil"
 	"github.com/phayes/freeport"
@@ -298,7 +299,7 @@ var _ = Describe("Server", func() {
 
 		When("a peer announces a key", func() {
 			BeforeEach(func() {
-				dhtA.Announce([]byte("key"), nil)
+				dhtA.Announce(announcer.ObjTypeAny, []byte("key"), nil)
 				dhtA.Start()
 				time.Sleep(2 * time.Millisecond)
 			})

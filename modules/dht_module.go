@@ -9,6 +9,7 @@ import (
 	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/server/types"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -135,7 +136,7 @@ func (m *DHTModule) Lookup(key string) interface{} {
 // ARGS:
 // key: The data query key
 func (m *DHTModule) Announce(key string) {
-	m.dht.Announce([]byte(key), nil)
+	m.dht.Announce(announcer.ObjTypeAny, []byte(key), nil)
 }
 
 // GetRepoObjectProviders returns the providers for a given repo object

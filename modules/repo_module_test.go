@@ -18,7 +18,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 var _ = Describe("RepoModule", func() {
@@ -449,24 +448,6 @@ var _ = Describe("RepoModule", func() {
 			res := m.AddContributor(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
-		})
-	})
-
-	Describe(".AnnounceObjects", func() {
-		It("should panic if target repository does not exist locally", func() {
-			mockRepoSrv.EXPECT().AnnounceRepoObjects("repo1").Return(git.ErrRepositoryNotExists)
-			err := &util.ReqError{Code: "repo_not_found", HttpCode: 404, Msg: "repository does not exist", Field: "repoName"}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.AnnounceObjects("repo1")
-			})
-		})
-
-		It("should panic if unable to announce repo object due to unknown error", func() {
-			mockRepoSrv.EXPECT().AnnounceRepoObjects("repo1").Return(fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.AnnounceObjects("repo1")
-			})
 		})
 	})
 

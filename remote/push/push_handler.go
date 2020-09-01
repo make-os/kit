@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
@@ -295,10 +296,10 @@ func (h *BasicHandler) HandleRepoSize() error {
 
 // HandleAnnouncement announces the repository name, pushed commit and tag objects.
 func (h *BasicHandler) HandleAnnouncement() {
-	h.Server.GetDHT().Announce([]byte(h.Repo.GetName()), nil)
+	h.Server.GetDHT().Announce(announcer.ObjTypeRepoName, []byte(h.Repo.GetName()), nil)
 	for _, obj := range h.PushReader.Objects {
 		if obj.Type == plumb.CommitObject || obj.Type == plumb.TagObject {
-			h.Server.GetDHT().Announce(obj.Hash[:], nil)
+			h.Server.GetDHT().Announce(announcer.ObjTypeGit, obj.Hash[:], nil)
 		}
 	}
 }

@@ -15,10 +15,8 @@ import (
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 // RepoModule provides repository functionalities to JS environment
@@ -76,11 +74,6 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 			Name:        "addContributor",
 			Value:       m.AddContributor,
 			Description: "Register one or more push key as contributors",
-		},
-		{
-			Name:        "announce",
-			Value:       m.AnnounceObjects,
-			Description: "Announce commit and tag objects of a repository",
 		},
 		{
 			Name:        "track",
@@ -460,20 +453,6 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 
 	return map[string]interface{}{
 		"hash": hash,
-	}
-}
-
-// AnnounceObjects announces commits and tags of a repository
-//
-// ARGS:
-// repoName: The name of the target repository
-func (m *RepoModule) AnnounceObjects(repoName string) {
-	err := m.logic.GetRemoteServer().AnnounceRepoObjects(repoName)
-	if err != nil {
-		if errors.Cause(err) == git.ErrRepositoryNotExists {
-			panic(se(404, StatusCodeRepoNotFound, "repoName", err.Error()))
-		}
-		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 }
 

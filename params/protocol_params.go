@@ -23,6 +23,7 @@ const (
 	PrivateKeyVersion byte = 94
 )
 
+// Block and State Config
 var (
 	// BlockTime is the number of seconds between blocks
 	BlockTime = 15
@@ -73,6 +74,25 @@ var (
 	// is unbonded
 	NumBlocksInHostThawPeriod = 10
 
+	// NumTopHostsLimit is maximum the number of top hosts
+	NumTopHostsLimit = 21
+
+	// NamespaceRegFee is the amount of native coin required to obtain a
+	// repo namespace
+	NamespaceRegFee = decimal.NewFromFloat(1)
+
+	// NamespaceTTL is the number of blocks of a namespace life span
+	NamespaceTTL = 10
+
+	// NamespaceGraceDur is the number of blocks before a namespace expires
+	NamespaceGraceDur = 10
+
+	// TreasuryAddress is the address where treasury-bound payments are deposited
+	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+)
+
+// Remote config
+var (
 	// PushPoolCap is the pool transaction capacity
 	PushPoolCap = 1000
 
@@ -91,35 +111,10 @@ var (
 	// RecentlySeenPacksCacheSize is the max size for the cache storing seen pack IDs
 	RecentlySeenPacksCacheSize = 5000
 
-	// RepoPrunerTickDur is the duration between each repo pruning operation
-	RepoPrunerTickDur = 10 * time.Second
-
 	// PushEndQuorumSize is the minimum number of PushEnds a push note requires
 	// for approval
 	PushEndorseQuorumSize = 2
 
-	// NumTopHostsLimit is maximum the number of top hosts
-	NumTopHostsLimit = 21
-
-	// NamespaceRegFee is the amount of native coin required to obtain a
-	// repo namespace
-	NamespaceRegFee = decimal.NewFromFloat(1)
-
-	// NamespaceTTL is the number of blocks of a namespace life span
-	NamespaceTTL = 10
-
-	// NamespaceGraceDur is the number of blocks before a namespace expires
-	NamespaceGraceDur = 10
-
-	// TreasuryAddress is the address where treasury-bound payments are deposited
-	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
-
-	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
-	MaxNoteObjectFetchAttempts = 5
-)
-
-// Repo config
-var (
 	// RepoProposalDur is the number of blocks a repo proposal can remain active
 	RepoProposalDur = uint64(10)
 
@@ -167,4 +162,13 @@ var (
 
 	// NumFetcherWorker is the number of workers for fetching repository objects
 	NumFetcherWorker = 10
+
+	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
+	MaxNoteObjectFetchAttempts = 5
+)
+
+// DHT Config
+var (
+	// NumAnnouncerWorker is the number of workers working on object announcement
+	NumAnnouncerWorker = 10
 )

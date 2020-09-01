@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/params"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
@@ -414,7 +415,7 @@ var _ = Describe("Reactor", func() {
 				return nil
 			}
 			mockObjStreamer := mocks.NewMockObjectStreamer(ctrl)
-			mockObjStreamer.EXPECT().Announce([]byte(repoName), nil)
+			mockObjStreamer.EXPECT().Announce(announcer.ObjTypeRepoName, []byte(repoName), nil)
 			mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).To(BeNil())

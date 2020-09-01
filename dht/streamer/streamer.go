@@ -118,8 +118,8 @@ func (c *BasicObjectStreamer) SetProviderTracker(t providertracker.ProviderTrack
 }
 
 // Announce announces an object's key
-func (c *BasicObjectStreamer) Announce(key []byte, doneCB func(error)) {
-	c.dht.Announce(dht2.MakeObjectKey(key), doneCB)
+func (c *BasicObjectStreamer) Announce(objType int, key []byte, doneCB func(error)) {
+	c.dht.Announce(objType, dht2.MakeObjectKey(key), doneCB)
 }
 
 // GetProviders find providers that may be able to provide an object.

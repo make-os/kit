@@ -8,6 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -86,7 +87,7 @@ var _ = Describe("DHTModule", func() {
 
 	Describe(".Announce", func() {
 		It("should announce the key", func() {
-			mockDHT.EXPECT().Announce([]byte("key"), nil)
+			mockDHT.EXPECT().Announce(announcer.ObjTypeAny, []byte("key"), nil)
 			m.Announce("key")
 		})
 	})
