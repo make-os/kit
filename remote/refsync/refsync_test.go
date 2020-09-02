@@ -231,14 +231,14 @@ var _ = Describe("RefSync", func() {
 		It("should append task back to queue when another task with matching reference name is being finalized", func() {
 			task := &types3.RefTask{Ref: &types.PushedReference{Name: "refs/heads/master"}}
 			rs.(*RefSync).FinalizingRefs[task.Ref.Name] = struct{}{}
-			err := rs.Do(task, 0)
+			err := rs.Do(task)
 			Expect(err).To(BeNil())
 			Expect(rs.QueueSize()).To(Equal(1))
 		})
 
 		It("should return error when repo does not exist locally", func() {
 			task := &types3.RefTask{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
-			err := rs.Do(task, 0)
+			err := rs.Do(task)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get target repo: repository does not exist"))
 		})
@@ -248,7 +248,7 @@ var _ = Describe("RefSync", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			rs.(*RefSync).RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 			mockRepo.EXPECT().RefGet(task.Ref.Name).Return("", fmt.Errorf("error"))
-			err := rs.Do(task, 0)
+			err := rs.Do(task)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get reference from target repo: error"))
 		})
@@ -269,7 +269,7 @@ var _ = Describe("RefSync", func() {
 					cb(nil)
 				})
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 				Expect(task.Ref.OldHash).To(Equal(oldHash))
@@ -292,7 +292,7 @@ var _ = Describe("RefSync", func() {
 					cb(nil)
 				})
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 			})
@@ -312,7 +312,7 @@ var _ = Describe("RefSync", func() {
 					cb(fmt.Errorf("error"))
 				})
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error"))
 				Expect(updated).To(BeFalse())
@@ -334,7 +334,7 @@ var _ = Describe("RefSync", func() {
 					return nil
 				}
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 			})
@@ -357,7 +357,7 @@ var _ = Describe("RefSync", func() {
 					return nil
 				}
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(nil)
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).To(BeNil())
 				Expect(updated).To(BeTrue())
 			})
@@ -380,7 +380,7 @@ var _ = Describe("RefSync", func() {
 				})
 				mockTrackedRepoKeeper.EXPECT().Get(task.RepoName).Return(&core.TrackedRepo{})
 				mockTrackedRepoKeeper.EXPECT().Add(task.RepoName, uint64(task.Height)).Return(fmt.Errorf("error"))
-				err := rs.Do(task, 0)
+				err := rs.Do(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to update tracked repo info: error"))
 				Expect(updated).To(BeTrue())

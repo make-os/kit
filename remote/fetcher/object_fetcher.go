@@ -9,7 +9,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/make-os/lobe/config"
 	types2 "github.com/make-os/lobe/dht/streamer/types"
-	types3 "github.com/make-os/lobe/dht/types"
+	dhttypes "github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -64,7 +64,7 @@ func NewTask(note types.PushNote, resCb func(err error)) *Task {
 // BasicObjectFetcher provides the ability to download objects from the DHT.
 type BasicObjectFetcher struct {
 	cfg                *config.AppConfig
-	dht                types3.DHT
+	dht                dhttypes.DHT
 	lck                *sync.Mutex
 	log                logger.Logger
 	stopped            bool
@@ -75,12 +75,12 @@ type BasicObjectFetcher struct {
 }
 
 // NewFetcher creates an instance of BasicObjectFetcher
-func NewFetcher(dht types3.DHT, nWorkers int, cfg *config.AppConfig) *BasicObjectFetcher {
+func NewFetcher(dht dhttypes.DHT, cfg *config.AppConfig) *BasicObjectFetcher {
 	return &BasicObjectFetcher{
 		log:                cfg.G().Log.Module("object-fetcher"),
 		dht:                dht,
 		lck:                &sync.Mutex{},
-		queue:              make(chan *Task, 1000),
+		queue:              make(chan *Task, 10000),
 		cfg:                cfg,
 		PackToRepoUnpacker: plumbing.UnpackPackfileToRepo,
 	}
@@ -94,11 +94,6 @@ func (f *BasicObjectFetcher) addTask(task *Task) {
 // IsQueueEmpty checks whether the task queue is empty
 func (f *BasicObjectFetcher) IsQueueEmpty() bool {
 	return len(f.queue) == 0
-}
-
-// getTask returns a task
-func (f *BasicObjectFetcher) getTask() *Task {
-	return <-f.queue
 }
 
 // Fetch adds a new task to the queue.

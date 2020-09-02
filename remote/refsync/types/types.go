@@ -8,7 +8,7 @@ import (
 )
 
 type Watcher interface {
-	Do(task *WatcherTask, workerID int) error
+	Do(task *WatcherTask) error
 	QueueSize() int
 	HasTask() bool
 	IsRunning() bool
@@ -34,7 +34,7 @@ type RefSync interface {
 
 	// Do takes a pushed reference task and attempts to fetch the objects
 	// required to update the reference's local state.
-	Do(task *RefTask, workerID int) error
+	Do(task *RefTask) error
 
 	// OnNewTx is called for every push transaction processed.
 	// height is the block height that contains the transaction.

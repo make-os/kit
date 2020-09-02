@@ -113,7 +113,7 @@ func New(
 	wg.Add(1)
 
 	// Create fetcher instance
-	mFetcher := fetcher.NewFetcher(dht, 10, cfg)
+	mFetcher := fetcher.NewFetcher(dht, cfg)
 
 	// Get the private validator key
 	key, _ := cfg.G().PrivVal.GetKey()

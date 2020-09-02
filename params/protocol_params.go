@@ -157,15 +157,6 @@ var (
 	// MaxRepoSize is the maximum size of a repository
 	MaxRepoSize = 1024 * 1024 * 300 // 300 MB
 
-	// NumRefSyncWorker is the number of workers used by the refsync
-	NumRefSyncWorker = 10
-
-	// NumRepoWatcherWorker is the number of workers used by the repo watcher
-	NumRepoWatcherWorker = 10
-
-	// NumFetcherWorker is the number of workers for fetching repository objects
-	NumFetcherWorker = 10
-
 	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
 	MaxNoteObjectFetchAttempts = 5
 )

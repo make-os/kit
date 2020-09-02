@@ -39,7 +39,7 @@ var _ = Describe("ObjectFetcher", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockObjStreamer = mocks.NewMockObjectStreamer(ctrl)
-		f = fetcher.NewFetcher(mockDHT, 1, cfg)
+		f = fetcher.NewFetcher(mockDHT, cfg)
 	})
 
 	AfterEach(func() {

@@ -6,25 +6,22 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/make-os/lobe/config"
 	nodetypes "github.com/make-os/lobe/node/types"
-	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/remote/fetcher"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/push/types"
-	types2 "github.com/make-os/lobe/remote/refsync/types"
+	reftypes "github.com/make-os/lobe/remote/refsync/types"
 	"github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util/crypto"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
-	"github.com/thoas/go-funk"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -39,12 +36,13 @@ type RefSync struct {
 	cfg                     *config.AppConfig
 	log                     logger.Logger
 	fetcher                 fetcher.ObjectFetcherService
-	queue                   *queue.UniqueQueue
+	queue                   chan *reftypes.RefTask
 	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
 	keepers                 core.Keepers
-	watcher                 types2.Watcher
+	watcher                 reftypes.Watcher
+	queued                  *cache.Cache
 
 	lck            *sync.Mutex
 	started        bool
@@ -54,19 +52,20 @@ type RefSync struct {
 
 // New creates an instance of RefSync
 func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers core.Keepers) *RefSync {
-	var q = queue.NewUnique()
 	rs := &RefSync{
 		fetcher:                 fetcher,
 		lck:                     &sync.Mutex{},
 		cfg:                     cfg,
 		log:                     cfg.G().Log.Module("ref-syncer"),
-		queue:                   q,
+		queue:                   make(chan *reftypes.RefTask, 10000),
 		FinalizingRefs:          make(map[string]struct{}),
 		keepers:                 keepers,
+		queued:                  cache.NewCache(1000),
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
 	}
+
 	rs.watcher = NewWatcher(cfg, rs.OnNewTx, keepers)
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
@@ -78,7 +77,7 @@ func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers co
 
 // QueueSize returns the size of the tasks queue
 func (rs *RefSync) QueueSize() int {
-	return rs.queue.Size()
+	return len(rs.queue)
 }
 
 // CanSync checks whether the target repository of a push transaction can be synchronized.
@@ -115,6 +114,12 @@ func (rs *RefSync) CanSync(namespace, repoName string) error {
 // height is the block height that contains the transaction.
 func (rs *RefSync) OnNewTx(tx *txns.TxPush, height int64) {
 
+	// Ignore already queued transaction
+	if rs.queued.Has(tx.GetID()) {
+		return
+	}
+	rs.queued.Add(tx.GetID(), struct{}{})
+
 	if rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName()) != nil {
 		return
 	}
@@ -123,14 +128,14 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, height int64) {
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue
 		}
-		rs.queue.Append(&types2.RefTask{
+		rs.queue <- &reftypes.RefTask{
 			ID:           fmt.Sprintf("%s_%d", ref.Name, ref.Nonce),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),
 			Endorsements: tx.Endorsements,
 			Ref:          ref,
 			Height:       height,
-		})
+		}
 	}
 }
 
@@ -158,7 +163,7 @@ func (rs *RefSync) removeFromFinalizing(refName string) {
 
 // HasTask checks whether there are one or more unprocessed tasks.
 func (rs *RefSync) HasTask() bool {
-	return !rs.queue.Empty()
+	return rs.QueueSize() > 0
 }
 
 // Start starts the workers.
@@ -176,9 +181,16 @@ func (rs *RefSync) Start() {
 	// Start the watcher
 	rs.watcher.Start()
 
-	for i := 0; i < params.NumRefSyncWorker; i++ {
-		go rs.createWorker(i)
-	}
+	go func() {
+		for task := range rs.queue {
+			task := task
+			go func() {
+				if err := rs.Do(task); err != nil {
+					rs.log.Error(err.Error(), "Repo", task.RepoName, "Ref", task.Ref.Name)
+				}
+			}()
+		}
+	}()
 
 	rs.lck.Lock()
 	rs.started = true
@@ -195,40 +207,11 @@ func (rs *RefSync) SetFetcher(fetcher fetcher.ObjectFetcherService) {
 	rs.fetcher = fetcher
 }
 
-// createWorker creates a worker that performs tasks in the queue
-func (rs *RefSync) createWorker(id int) {
-	for !rs.hasStopped() {
-		task := rs.getTask()
-		if task != nil {
-			if err := rs.Do(task, id); err != nil {
-				rs.log.Error(err.Error(), "Repo", task.RepoName, "Ref", task.Ref.Name)
-			}
-			continue
-		}
-		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
-	}
-}
-
-// hasStopped checks whether the syncer has been stopped
-func (rs *RefSync) hasStopped() bool {
-	rs.lck.Lock()
-	defer rs.lck.Unlock()
-	return rs.stopped
-}
-
-// getTask returns a task
-func (rs *RefSync) getTask() *types2.RefTask {
-	item := rs.queue.Head()
-	if item == nil {
-		return nil
-	}
-	return item.(*types2.RefTask)
-}
-
 // Stop stops the syncer
 func (rs *RefSync) Stop() {
 	rs.lck.Lock()
 	rs.watcher.Stop()
+	close(rs.queue)
 	rs.stopped = true
 	rs.started = false
 	rs.lck.Unlock()
@@ -236,14 +219,14 @@ func (rs *RefSync) Stop() {
 
 // Do takes a pushed reference task and attempts to fetch the objects
 // required to update the reference's local state.
-func (rs *RefSync) Do(task *types2.RefTask, workerID int) error {
+func (rs *RefSync) Do(task *reftypes.RefTask) error {
 
 	refName := task.Ref.Name
 
 	// If a matching reference is currently being processed by a different worker,
 	// put the task back to the queue to be tried another time.
 	if rs.isFinalizing(refName) {
-		rs.queue.Append(task)
+		rs.queue <- task
 		return nil
 	}
 

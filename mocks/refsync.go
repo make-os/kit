@@ -36,17 +36,17 @@ func (m *MockWatcher) EXPECT() *MockWatcherMockRecorder {
 }
 
 // Do mocks base method
-func (m *MockWatcher) Do(task *types.WatcherTask, workerID int) error {
+func (m *MockWatcher) Do(task *types.WatcherTask) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Do", task, workerID)
+	ret := m.ctrl.Call(m, "Do", task)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Do indicates an expected call of Do
-func (mr *MockWatcherMockRecorder) Do(task, workerID interface{}) *gomock.Call {
+func (mr *MockWatcherMockRecorder) Do(task interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockWatcher)(nil).Do), task, workerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockWatcher)(nil).Do), task)
 }
 
 // QueueSize mocks base method
@@ -139,17 +139,17 @@ func (m *MockRefSync) EXPECT() *MockRefSyncMockRecorder {
 }
 
 // Do mocks base method
-func (m *MockRefSync) Do(task *types.RefTask, workerID int) error {
+func (m *MockRefSync) Do(task *types.RefTask) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Do", task, workerID)
+	ret := m.ctrl.Call(m, "Do", task)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Do indicates an expected call of Do
-func (mr *MockRefSyncMockRecorder) Do(task, workerID interface{}) *gomock.Call {
+func (mr *MockRefSyncMockRecorder) Do(task interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockRefSync)(nil).Do), task, workerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockRefSync)(nil).Do), task)
 }
 
 // OnNewTx mocks base method
