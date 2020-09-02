@@ -6,7 +6,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/dht/server/types"
+	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/extensions"
 	"github.com/make-os/lobe/keystore"
 	"github.com/make-os/lobe/mempool"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/dht/server/types"
+	"github.com/make-os/lobe/dht/types"
 	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/fetcher"
@@ -71,7 +71,7 @@ type RemoteServer interface {
 	RegisterAPIHandlers(agg types2.ModulesHub)
 
 	// AnnounceObject announces a key on the DHT network
-	Announce(objType int, hash []byte, doneCB func(error))
+	Announce(objType int, repo string, hash []byte, doneCB func(error))
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher

@@ -8,8 +8,8 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/make-os/lobe/config"
-	types3 "github.com/make-os/lobe/dht/server/types"
 	types2 "github.com/make-os/lobe/dht/streamer/types"
+	types3 "github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/pkgs/queue"

@@ -88,7 +88,7 @@ func (t *TrackedRepoKeeper) Add(targets string, height ...uint64) error {
 // Tracked returns a map of repositories.
 func (t *TrackedRepoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
-	t.db.Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
+	t.db.NewTx(true, true).Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
 		var tr core.TrackedRepo
 		r.Scan(&tr)
 		res[string(common.SplitPrefix(r.GetKey())[1])] = &tr

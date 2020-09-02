@@ -25,7 +25,7 @@ var _ = Describe("PushKeyKeeper", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		dbTx := appDB.NewTx(true, true)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
 		pushKeyKeeper = NewPushKeyKeeper(state, dbTx)

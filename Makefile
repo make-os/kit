@@ -43,10 +43,9 @@ genmocks:
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks
 	mockgen -source=api/rpc/client/client.go -destination=mocks/rpc/client.go -package mocks
 	mockgen -source=rpc/server.go -destination=mocks/rpc/rpc_server.go -package mocks
-	mockgen -source=dht/server/types/types.go -destination=mocks/dht_server.go -package mocks
+	mockgen -source=dht/types/types.go -destination=mocks/dht_server.go -package mocks
 	mockgen -source=dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
 	mockgen -source=dht/streamer/types/types.go -destination=mocks/dht_streamer.go -package mocks
-	mockgen -source=dht/providertracker/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
 	mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks
 	mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks
 	mockgen -source=modules/types/modules.go -destination=mocks/modules.go -package mocks

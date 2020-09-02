@@ -29,7 +29,7 @@ var _ = Describe("Tracklist", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		dbTx := appDB.NewTx(true, true)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
 		keeper = NewTrackedRepoKeeper(dbTx, state)

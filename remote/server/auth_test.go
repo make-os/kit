@@ -12,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/repo"
@@ -59,9 +60,12 @@ var _ = Describe("Auth", func() {
 		mockLogic = mocksObjs.Logic
 
 		mockDHT := mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
 		mockMempool := mocks.NewMockMempool(ctrl)
 		mockBlockGetter := mocks.NewMockBlockGetter(ctrl)
-		svr = NewRemoteServer(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = New(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	AfterEach(func() {

@@ -21,7 +21,10 @@ type DHT interface {
 	GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error)
 
 	// Announce informs the network that it can provide value for the given key
-	Announce(objType int, key []byte, doneCB func(error))
+	Announce(objType int, repo string, key []byte, doneCB func(error))
+
+	// RegisterChecker registers an object checker to the announcer.
+	RegisterChecker(objType int, f CheckFunc)
 
 	// BasicObjectStreamer returns the object streamer
 	ObjectStreamer() types.ObjectStreamer
@@ -38,3 +41,6 @@ type DHT interface {
 	// Stop closes the host
 	Stop() error
 }
+
+// CheckFunc describes a function for checking a key
+type CheckFunc func(repo string, key []byte) bool

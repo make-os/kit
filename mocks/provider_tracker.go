@@ -7,7 +7,8 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	providertracker "github.com/make-os/lobe/dht/providertracker"
+	"github.com/make-os/lobe/dht/types"
+
 	reflect "reflect"
 	time "time"
 )
@@ -66,10 +67,10 @@ func (mr *MockProviderTrackerMockRecorder) NumProviders() *gomock.Call {
 }
 
 // Get mocks base method
-func (m *MockProviderTracker) Get(id peer.ID, cb func(*providertracker.ProviderInfo)) *providertracker.ProviderInfo {
+func (m *MockProviderTracker) Get(id peer.ID, cb func(*types.ProviderInfo)) *types.ProviderInfo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id, cb)
-	ret0, _ := ret[0].(*providertracker.ProviderInfo)
+	ret0, _ := ret[0].(*types.ProviderInfo)
 	return ret0
 }
 

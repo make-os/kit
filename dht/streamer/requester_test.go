@@ -273,7 +273,7 @@ var _ = Describe("BasicObjectRequester", func() {
 			mockStream = mocks.NewMockStream(ctrl)
 			reqArgs = streamer.RequestArgs{
 				Key:             util.RandBytes(5),
-				ProviderTracker: providertracker.NewProviderTracker(),
+				ProviderTracker: providertracker.New(),
 			}
 		})
 
@@ -374,7 +374,7 @@ var _ = Describe("BasicObjectRequester", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			reqArgs = streamer.RequestArgs{
 				Key:             util.RandBytes(5),
-				ProviderTracker: providertracker.NewProviderTracker(),
+				ProviderTracker: providertracker.New(),
 			}
 		})
 

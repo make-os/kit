@@ -12,7 +12,6 @@ import (
 // ObjectStreamer provides an interface for announcing objects and fetching
 // various object types from the underlying DHT network.
 type ObjectStreamer interface {
-	Announce(objType int, key []byte, doneCB func(error))
 	GetCommit(ctx context.Context, repo string, hash []byte) (packfile io.ReadSeekerCloser, commit *object.Commit, err error)
 	GetCommitWithAncestors(ctx context.Context, args GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error)
 	GetTaggedCommitWithAncestors(ctx context.Context, args GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error)

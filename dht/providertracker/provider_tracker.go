@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/util/crypto"
 )
@@ -20,49 +21,8 @@ var (
 	BackOffDurAfterFailure = 15 * time.Minute
 )
 
-// ProviderTracker describes a structure for tracking provider performance
-type ProviderTracker interface {
-	// Register registers a new provider so it can be tracked
-	Register(addrs ...peer.AddrInfo)
-
-	// NumProviders returns the number of registered providers.
-	NumProviders() int
-
-	// Get a provider's information. If cb is provided, it is called with the provider
-	Get(id peer.ID, cb func(*ProviderInfo)) *ProviderInfo
-
-	// IsGood checks whether the given peer has a good record.
-	IsGood(id peer.ID) bool
-
-	// Ban bans a provider for the given duration.
-	// If a peer is currently banned, the duration is added to its current ban time.
-	Ban(peer peer.ID, dur time.Duration)
-
-	// MarkFailure increments a provider's failure count.
-	// When failure count reaches a max, ban the provider.
-	MarkFailure(id peer.ID)
-
-	// MarkSeen marks the provider's last seen time and resets its failure count.
-	MarkSeen(id peer.ID)
-
-	// PeerSentNope registers a NOPE response from the given peer indicating that
-	// the object represented by the given key is unknown to it.
-	PeerSentNope(id peer.ID, key []byte)
-
-	// DidPeerSendNope checks whether the given peer previously sent NOPE for a key
-	DidPeerSendNope(id peer.ID, key []byte) bool
-}
-
-// ProviderInfo contains information about a provider
-type ProviderInfo struct {
-	Addr        *peer.AddrInfo
-	Failed      int
-	LastFailure time.Time
-	LastSeen    time.Time
-}
-
-// BasicProviderTracker is used to track status and behaviour of providers.
-type BasicProviderTracker struct {
+// ProviderTracker is used to track status and behaviour of providers.
+type ProviderTracker struct {
 	// banned contains a collection of banned peers.
 	// The key is the cache peer ID.
 	banned *cache.Cache
@@ -72,42 +32,42 @@ type BasicProviderTracker struct {
 	nopeCache *cache.Cache
 
 	lck       *sync.Mutex
-	providers map[string]*ProviderInfo
+	providers map[string]*types.ProviderInfo
 }
 
-// NewProviderTracker creates an instance of BasicProviderTracker.
-func NewProviderTracker() *BasicProviderTracker {
-	return &BasicProviderTracker{
+// New creates an instance of types.ProviderTracker.
+func New() *ProviderTracker {
+	return &ProviderTracker{
 		lck:       &sync.Mutex{},
 		banned:    cache.NewCacheWithExpiringEntry(100000),
 		nopeCache: cache.NewCacheWithExpiringEntry(100000),
-		providers: make(map[string]*ProviderInfo),
+		providers: make(map[string]*types.ProviderInfo),
 	}
 }
 
 // Register implements ProviderTracker
-func (m *BasicProviderTracker) Register(addrs ...peer.AddrInfo) {
+func (m *ProviderTracker) Register(addrs ...peer.AddrInfo) {
 	m.lck.Lock()
 	defer m.lck.Unlock()
 	for _, addr := range addrs {
 		if _, ok := m.providers[addr.ID.Pretty()]; !ok {
-			m.providers[addr.ID.Pretty()] = &ProviderInfo{Addr: &addr, LastSeen: time.Now()}
+			m.providers[addr.ID.Pretty()] = &types.ProviderInfo{Addr: &addr, LastSeen: time.Now()}
 		}
 	}
 }
 
 // NumProviders implements ProviderTracker
-func (m *BasicProviderTracker) NumProviders() int {
+func (m *ProviderTracker) NumProviders() int {
 	return len(m.providers)
 }
 
 // BanCache returns the cache containing banned peers
-func (m *BasicProviderTracker) BanCache() *cache.Cache {
+func (m *ProviderTracker) BanCache() *cache.Cache {
 	return m.banned
 }
 
 // Get implements ProviderTracker
-func (m *BasicProviderTracker) Get(id peer.ID, cb func(*ProviderInfo)) *ProviderInfo {
+func (m *ProviderTracker) Get(id peer.ID, cb func(*types.ProviderInfo)) *types.ProviderInfo {
 	m.lck.Lock()
 	defer m.lck.Unlock()
 	provider, ok := m.providers[id.Pretty()]
@@ -121,19 +81,19 @@ func (m *BasicProviderTracker) Get(id peer.ID, cb func(*ProviderInfo)) *Provider
 }
 
 // PeerSentNope implements ProviderTracker
-func (m *BasicProviderTracker) PeerSentNope(id peer.ID, key []byte) {
+func (m *ProviderTracker) PeerSentNope(id peer.ID, key []byte) {
 	cacheKey := crypto.Hash20Hex(append([]byte(id.Pretty()), key...))
 	m.nopeCache.Add(cacheKey, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
 // DidPeerSendNope implements ProviderTracker
-func (m *BasicProviderTracker) DidPeerSendNope(id peer.ID, key []byte) bool {
+func (m *ProviderTracker) DidPeerSendNope(id peer.ID, key []byte) bool {
 	cacheKey := crypto.Hash20Hex(append([]byte(id.Pretty()), key...))
 	return m.nopeCache.Has(cacheKey)
 }
 
 // IsGood implements ProviderTracker
-func (m *BasicProviderTracker) IsGood(id peer.ID) bool {
+func (m *ProviderTracker) IsGood(id peer.ID) bool {
 
 	// Return false if peer is banned
 	res := m.banned.Get(id.Pretty())
@@ -156,7 +116,7 @@ func (m *BasicProviderTracker) IsGood(id peer.ID) bool {
 }
 
 // Ban implements ProviderTracker
-func (m *BasicProviderTracker) Ban(peer peer.ID, dur time.Duration) {
+func (m *ProviderTracker) Ban(peer peer.ID, dur time.Duration) {
 
 	id := peer.Pretty()
 
@@ -172,8 +132,8 @@ func (m *BasicProviderTracker) Ban(peer peer.ID, dur time.Duration) {
 }
 
 // MarkFailure implements ProviderTracker
-func (m *BasicProviderTracker) MarkFailure(id peer.ID) {
-	m.Get(id, func(info *ProviderInfo) {
+func (m *ProviderTracker) MarkFailure(id peer.ID) {
+	m.Get(id, func(info *types.ProviderInfo) {
 		info.Failed++
 		info.LastFailure = time.Now()
 		if info.Failed >= MaxFailureBeforeBan {
@@ -183,8 +143,8 @@ func (m *BasicProviderTracker) MarkFailure(id peer.ID) {
 }
 
 // MarkSeen implements ProviderTracker
-func (m *BasicProviderTracker) MarkSeen(id peer.ID) {
-	m.Get(id, func(info *ProviderInfo) {
+func (m *ProviderTracker) MarkSeen(id peer.ID) {
+	m.Get(id, func(info *types.ProviderInfo) {
 		info.Failed = 0
 		info.LastSeen = time.Now()
 	})

@@ -100,7 +100,7 @@ func (s *Store) Add(tickets ...*types2.Ticket) error {
 // GetByHash queries a ticket by its hash
 func (s *Store) GetByHash(hash util.HexBytes) *types2.Ticket {
 	var t *types2.Ticket
-	s.db.Iterate(MakeHashKey(hash), false, func(r *common.Record) bool {
+	s.db.NewTx(true, true).Iterate(MakeHashKey(hash), false, func(r *common.Record) bool {
 		r.Scan(&t)
 		return true
 	})
@@ -120,7 +120,7 @@ func (s *Store) RemoveByHash(hash util.HexBytes) error {
 // for which the predicate returns true.
 func (s *Store) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
 	var selected *types2.Ticket
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
+	s.db.NewTx(true, true).Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {
@@ -138,7 +138,7 @@ func (s *Store) Query(predicate func(*types2.Ticket) bool,
 	queryOpt ...interface{}) []*types2.Ticket {
 	var selected []*types2.Ticket
 	var qo = getQueryOptions(queryOpt...)
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
+	s.db.NewTx(true, true).Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 
 		// Apply limit only when limit is set and sorting is not required
 		if qo.Limit > 0 && qo.Limit == len(selected) && qo.SortByHeight == 0 {
@@ -181,7 +181,7 @@ func (s *Store) FromTail() *Store {
 // Count counts tickets for which the predicate returns true.
 func (s *Store) Count(predicate func(*types2.Ticket) bool) int {
 	var count int
-	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
+	s.db.NewTx(true, true).Iterate([]byte(TagTicket), s.fromHead, func(rec *common.Record) bool {
 		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {

@@ -174,6 +174,20 @@ func ToHex(value []byte, noPrefix ...bool) string {
 	return fmt.Sprintf("0x%s", hex.EncodeToString(value))
 }
 
+// ToHexBytes encodes source to hex bytes
+func ToHexBytes(src []byte) []byte {
+	var dst = make([]byte, hex.EncodedLen(len(src)))
+	hex.Encode(dst, src)
+	return dst
+}
+
+// FromHexBytes decodes hex source to bytes
+func FromHexBytes(src []byte) []byte {
+	var dst = make([]byte, hex.DecodedLen(len(src)))
+	hex.Decode(dst, src)
+	return dst
+}
+
 // FromHex decodes hex value to bytes. If hex value is prefixed
 // with '0x' it is trimmed before the decode operation.
 func FromHex(hexValue string) ([]byte, error) {

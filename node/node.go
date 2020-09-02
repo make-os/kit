@@ -7,7 +7,7 @@ import (
 
 	rpcApi "github.com/make-os/lobe/api/rpc"
 	dhtserver "github.com/make-os/lobe/dht/server"
-	"github.com/make-os/lobe/dht/server/types"
+	"github.com/make-os/lobe/dht/types"
 	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/rpc"
@@ -155,8 +155,7 @@ func (n *Node) Start() error {
 	n.logic.SetTicketManager(n.ticketMgr)
 
 	// Create DHT reactor and add it to the switch
-	key, _ := n.cfg.G().PrivVal.GetKey()
-	n.dht, err = dhtserver.New(context.Background(), n.cfg, key.PrivKey().Key(), n.cfg.DHT.Address)
+	n.dht, err = dhtserver.New(context.Background(), n.logic, n.cfg)
 	if err != nil {
 		return err
 	}
@@ -177,7 +176,7 @@ func (n *Node) Start() error {
 	n.logic.SetMempoolReactor(mempR)
 
 	// Create remote server and pass it to logic
-	remoteServer := server.NewRemoteServer(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
+	remoteServer := server.New(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
 	n.remoteServer = remoteServer
 	n.logic.SetRemoteServer(remoteServer)
 	for _, ch := range remoteServer.GetChannels() {

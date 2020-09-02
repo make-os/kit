@@ -20,6 +20,69 @@ import (
 	reflect "reflect"
 )
 
+// MockDHTKeeper is a mock of DHTKeeper interface
+type MockDHTKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockDHTKeeperMockRecorder
+}
+
+// MockDHTKeeperMockRecorder is the mock recorder for MockDHTKeeper
+type MockDHTKeeperMockRecorder struct {
+	mock *MockDHTKeeper
+}
+
+// NewMockDHTKeeper creates a new mock instance
+func NewMockDHTKeeper(ctrl *gomock.Controller) *MockDHTKeeper {
+	mock := &MockDHTKeeper{ctrl: ctrl}
+	mock.recorder = &MockDHTKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockDHTKeeper) EXPECT() *MockDHTKeeperMockRecorder {
+	return m.recorder
+}
+
+// AddToAnnounceList mocks base method
+func (m *MockDHTKeeper) AddToAnnounceList(key []byte, repo string, objType int, announceTime int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddToAnnounceList", key, repo, objType, announceTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddToAnnounceList indicates an expected call of AddToAnnounceList
+func (mr *MockDHTKeeperMockRecorder) AddToAnnounceList(key, repo, objType, announceTime interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToAnnounceList", reflect.TypeOf((*MockDHTKeeper)(nil).AddToAnnounceList), key, repo, objType, announceTime)
+}
+
+// RemoveFromAnnounceList mocks base method
+func (m *MockDHTKeeper) RemoveFromAnnounceList(key []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveFromAnnounceList", key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveFromAnnounceList indicates an expected call of RemoveFromAnnounceList
+func (mr *MockDHTKeeperMockRecorder) RemoveFromAnnounceList(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromAnnounceList", reflect.TypeOf((*MockDHTKeeper)(nil).RemoveFromAnnounceList), key)
+}
+
+// IterateAnnounceList mocks base method
+func (m *MockDHTKeeper) IterateAnnounceList(it func([]byte, *core.AnnounceListEntry)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IterateAnnounceList", it)
+}
+
+// IterateAnnounceList indicates an expected call of IterateAnnounceList
+func (mr *MockDHTKeeperMockRecorder) IterateAnnounceList(it interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateAnnounceList", reflect.TypeOf((*MockDHTKeeper)(nil).IterateAnnounceList), it)
+}
+
 // MockSystemKeeper is a mock of SystemKeeper interface
 type MockSystemKeeper struct {
 	ctrl     *gomock.Controller
@@ -863,6 +926,20 @@ func (mr *MockAtomicLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).NamespaceKeeper))
 }
 
+// DHTKeeper mocks base method
+func (m *MockAtomicLogic) DHTKeeper() core.DHTKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DHTKeeper")
+	ret0, _ := ret[0].(core.DHTKeeper)
+	return ret0
+}
+
+// DHTKeeper indicates an expected call of DHTKeeper
+func (mr *MockAtomicLogicMockRecorder) DHTKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHTKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).DHTKeeper))
+}
+
 // Validator mocks base method
 func (m *MockAtomicLogic) Validator() core.ValidatorLogic {
 	m.ctrl.T.Helper()
@@ -1228,6 +1305,20 @@ func (mr *MockLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockLogic)(nil).NamespaceKeeper))
 }
 
+// DHTKeeper mocks base method
+func (m *MockLogic) DHTKeeper() core.DHTKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DHTKeeper")
+	ret0, _ := ret[0].(core.DHTKeeper)
+	return ret0
+}
+
+// DHTKeeper indicates an expected call of DHTKeeper
+func (mr *MockLogicMockRecorder) DHTKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHTKeeper", reflect.TypeOf((*MockLogic)(nil).DHTKeeper))
+}
+
 // Validator mocks base method
 func (m *MockLogic) Validator() core.ValidatorLogic {
 	m.ctrl.T.Helper()
@@ -1551,6 +1642,20 @@ func (m *MockKeepers) NamespaceKeeper() core.NamespaceKeeper {
 func (mr *MockKeepersMockRecorder) NamespaceKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockKeepers)(nil).NamespaceKeeper))
+}
+
+// DHTKeeper mocks base method
+func (m *MockKeepers) DHTKeeper() core.DHTKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DHTKeeper")
+	ret0, _ := ret[0].(core.DHTKeeper)
+	return ret0
+}
+
+// DHTKeeper indicates an expected call of DHTKeeper
+func (mr *MockKeepersMockRecorder) DHTKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHTKeeper", reflect.TypeOf((*MockKeepers)(nil).DHTKeeper))
 }
 
 // MockLogicCommon is a mock of LogicCommon interface

@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/modules"
@@ -87,7 +86,7 @@ var _ = Describe("DHTModule", func() {
 
 	Describe(".Announce", func() {
 		It("should announce the key", func() {
-			mockDHT.EXPECT().Announce(announcer.ObjTypeAny, []byte("key"), nil)
+			mockDHT.EXPECT().Announce(announcer.ObjTypeAny, "", []byte("key"), nil)
 			m.Announce("key")
 		})
 	})
@@ -102,7 +101,7 @@ var _ = Describe("DHTModule", func() {
 
 		It("should attempt to get providers from the DHT panic on error", func() {
 			objHash := "8be2869859870fbdf9cb1265e27f202363d6e618"
-			key := dht.MakeObjectKey(plumbing.HashToBytes(objHash))
+			key := plumbing.HashToBytes(objHash)
 			mockDHT.EXPECT().GetProviders(gomock.Any(), key).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -112,7 +111,7 @@ var _ = Describe("DHTModule", func() {
 
 		It("should return provider peers when attempt to get providers from the DHT succeeds", func() {
 			objHash := "8be2869859870fbdf9cb1265e27f202363d6e618"
-			key := dht.MakeObjectKey(plumbing.HashToBytes(objHash))
+			key := plumbing.HashToBytes(objHash)
 			peerID := peer.ID("peer-id")
 			mockDHT.EXPECT().GetProviders(gomock.Any(), key).Return([]peer.AddrInfo{
 				{ID: peerID, Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1/tcp/5000")}},

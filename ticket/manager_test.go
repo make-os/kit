@@ -40,7 +40,7 @@ var _ = Describe("Manager", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 		logic = l.New(appDB, stateTreeDB, cfg)
 		mgr = NewManager(appDB.NewTx(true, true), cfg, logic)
 		mockObjects := testutil.MockLogic(ctrl)

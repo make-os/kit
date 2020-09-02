@@ -14,8 +14,8 @@ import (
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/providertracker"
-	types4 "github.com/make-os/lobe/dht/server/types"
 	types3 "github.com/make-os/lobe/dht/streamer/types"
+	types4 "github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -79,7 +79,7 @@ type BasicObjectStreamer struct {
 	log              logger.Logger
 	reposDir         string
 	gitBinPath       string
-	tracker          providertracker.ProviderTracker
+	tracker          types4.ProviderTracker
 	OnWantHandler    func(msg []byte, s network.Stream) error
 	OnSendHandler    func(msg []byte, s network.Stream) error
 	HaveCache        HaveCache
@@ -96,7 +96,7 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 		reposDir:         cfg.GetRepoRoot(),
 		log:              cfg.G().Log.Module("object-streamer"),
 		gitBinPath:       cfg.Node.GitBinPath,
-		tracker:          providertracker.NewProviderTracker(),
+		tracker:          providertracker.New(),
 		HaveCache:        newHaveCache(1000),
 		RepoGetter:       repo.GetWithLiteGit,
 		PackObject:       plumbing.PackObject,
@@ -113,13 +113,8 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 }
 
 // SetProviderTracker overwrites the default provider tracker.
-func (c *BasicObjectStreamer) SetProviderTracker(t providertracker.ProviderTracker) {
+func (c *BasicObjectStreamer) SetProviderTracker(t types4.ProviderTracker) {
 	c.tracker = t
-}
-
-// Announce announces an object's key
-func (c *BasicObjectStreamer) Announce(objType int, key []byte, doneCB func(error)) {
-	c.dht.Announce(objType, dht2.MakeObjectKey(key), doneCB)
 }
 
 // GetProviders find providers that may be able to provide an object.
@@ -171,8 +166,7 @@ func (c *BasicObjectStreamer) GetCommit(
 	hash []byte) (io.ReadSeekerCloser, *object.Commit, error) {
 
 	// Find providers of the object
-	key := dht2.MakeObjectKey(hash)
-	providers, err := c.GetProviders(ctx, repoName, key)
+	providers, err := c.GetProviders(ctx, repoName, hash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,7 +174,7 @@ func (c *BasicObjectStreamer) GetCommit(
 	// Remove banned providers or providers that have recently sent NOPE as
 	// response to previous request for the key
 	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
-		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, key)
+		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, hash)
 	}).([]peer.AddrInfo)
 
 	// Return immediate with error if no provider was found
@@ -195,7 +189,7 @@ func (c *BasicObjectStreamer) GetCommit(
 	req := c.MakeRequester(RequestArgs{
 		Providers:       providers,
 		RepoName:        repoName,
-		Key:             key,
+		Key:             hash,
 		Host:            c.dht.Host(),
 		Log:             c.log,
 		ReposDir:        c.reposDir,
@@ -398,8 +392,7 @@ func (c *BasicObjectStreamer) GetTag(
 	hash []byte) (io.ReadSeekerCloser, *object.Tag, error) {
 
 	// Find providers of the object
-	key := dht2.MakeObjectKey(hash)
-	providers, err := c.GetProviders(ctx, repoName, key)
+	providers, err := c.GetProviders(ctx, repoName, hash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -407,7 +400,7 @@ func (c *BasicObjectStreamer) GetTag(
 	// Remove banned providers and providers that have recently
 	// sent NOPE as response to previous request for the key
 	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
-		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, key)
+		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, hash)
 	}).([]peer.AddrInfo)
 
 	// Return immediate with error if no provider was found
@@ -422,7 +415,7 @@ func (c *BasicObjectStreamer) GetTag(
 	req := c.MakeRequester(RequestArgs{
 		Providers:       providers,
 		RepoName:        repoName,
-		Key:             key,
+		Key:             hash,
 		Host:            c.dht.Host(),
 		Log:             c.log,
 		ReposDir:        c.reposDir,

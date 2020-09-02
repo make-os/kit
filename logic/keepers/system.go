@@ -54,7 +54,7 @@ func (s *SystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
 	}
 
 	var rec *common.Record
-	s.db.Iterate(MakeQueryKeyBlockInfo(), false, func(r *common.Record) bool {
+	s.db.NewTx(true, true).Iterate(MakeQueryKeyBlockInfo(), false, func(r *common.Record) bool {
 		rec = r
 		return true
 	})

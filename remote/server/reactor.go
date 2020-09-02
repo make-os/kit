@@ -126,7 +126,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
 				objHash := obj.ID()
-				sv.Announce(announcer.ObjTypeGit, objHash[:], nil)
+				sv.Announce(announcer.ObjTypeGit, repoName, objHash[:], nil)
 			}
 			return nil
 		})
@@ -184,7 +184,7 @@ func (sv *Server) onObjectsFetched(
 	}
 
 	// Announce interest in providing the repository objects
-	sv.Announce(announcer.ObjTypeRepoName, []byte(repoName), nil)
+	sv.Announce(announcer.ObjTypeRepoName, repoName, []byte(repoName), nil)
 
 	return nil
 }

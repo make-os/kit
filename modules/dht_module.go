@@ -8,9 +8,8 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
-	"github.com/make-os/lobe/dht/server/types"
+	"github.com/make-os/lobe/dht/types"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/types/constants"
@@ -136,7 +135,7 @@ func (m *DHTModule) Lookup(key string) interface{} {
 // ARGS:
 // key: The data query key
 func (m *DHTModule) Announce(key string) {
-	m.dht.Announce(announcer.ObjTypeAny, []byte(key), nil)
+	m.dht.Announce(announcer.ObjTypeAny, "", []byte(key), nil)
 }
 
 // GetRepoObjectProviders returns the providers for a given repo object
@@ -154,7 +153,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 
 	// A key is valid if it is a git SHA1 or a DHT hex-encoded object key
 	if govalidator.IsSHA1(hash) {
-		key = dht.MakeObjectKey(plumbing.HashToBytes(hash))
+		key = plumbing.HashToBytes(hash)
 	} else {
 		key, err = util.FromHex(hash)
 		if err != nil {

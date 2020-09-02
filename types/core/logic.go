@@ -33,6 +33,30 @@ type Validator struct {
 	TicketID util.HexBytes `json:"ticketID,omitempty" mapstructure:"ticketID"`
 }
 
+// DHTKeeper describes an interface for accessing and managing DHT state.
+type DHTKeeper interface {
+	// AddToAnnounceList adds a key that will be announced at a later time.
+	// key is the unique object key.
+	// repo is the name of the repo where the object exist in.
+	// objType is the object type.
+	// announceTime is the unix time when the key should be announced.
+	AddToAnnounceList(key []byte, repo string, objType int, announceTime int64) error
+
+	// RemoveFromAnnounceList removes a scheduled key announcement
+	RemoveFromAnnounceList(key []byte) error
+
+	// IterateAnnounceList iterates over all scheduled announcements, passing
+	// each of them to the provided callback function.
+	IterateAnnounceList(it func(key []byte, entry *AnnounceListEntry))
+}
+
+// AnnounceListEntry contains information about a key scheduled for announcement.
+type AnnounceListEntry struct {
+	Type     int    `json:"type" msgpack:"type"`
+	Repo     string `json:"repo" msgpack:"repo"`
+	NextTime int64  `json:"nextTime" msgpack:"nextTime"`
+}
+
 // SystemKeeper describes an interface for accessing system data
 type SystemKeeper interface {
 
@@ -361,6 +385,9 @@ type Keepers interface {
 
 	// NamespaceKeeper manages and provides access to namespace information
 	NamespaceKeeper() NamespaceKeeper
+
+	// DHTKeeper returns the DHT keeper
+	DHTKeeper() DHTKeeper
 }
 
 // LogicCommon describes a common functionalities for

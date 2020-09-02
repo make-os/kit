@@ -28,7 +28,7 @@ var _ = Describe("TxKeeper", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		dbTx := appDB.NewTx(true, true)
 		txKeeper = NewTxKeeper(dbTx)
 	})

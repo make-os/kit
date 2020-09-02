@@ -61,7 +61,7 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 }
 
 // GetDB test databases
-func GetDB(cfg *config.AppConfig) (appDB *storage.Badger, stateTreeDB *storage.Badger) {
+func GetDB() (appDB *storage.Badger, stateTreeDB *storage.Badger) {
 	appDB = storage.NewBadger()
 	if err := appDB.Init(""); err != nil {
 		panic(err)
@@ -92,6 +92,7 @@ type MockObjects struct {
 	PushKeyKeeper     *mocks.MockPushKeyKeeper
 	NamespaceKeeper   *mocks.MockNamespaceKeeper
 	BlockGetter       *mocks.MockBlockGetter
+	DHTKeeper         *mocks.MockDHTKeeper
 }
 
 // MockLogic returns logic package mocks
@@ -113,6 +114,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.NamespaceKeeper = mocks.NewMockNamespaceKeeper(ctrl)
 	mo.BlockGetter = mocks.NewMockBlockGetter(ctrl)
 	mo.TrackedRepoKeeper = mocks.NewMockTrackedRepoKeeper(ctrl)
+	mo.DHTKeeper = mocks.NewMockDHTKeeper(ctrl)
 
 	mo.Logic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.Logic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
@@ -126,6 +128,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().TrackedRepoKeeper().Return(mo.TrackedRepoKeeper).MinTimes(0)
+	mo.Logic.EXPECT().DHTKeeper().Return(mo.DHTKeeper).MinTimes(0)
 
 	mo.AtomicLogic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.AtomicLogic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
@@ -139,6 +142,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().TrackedRepoKeeper().Return(mo.TrackedRepoKeeper).MinTimes(0)
+	mo.AtomicLogic.EXPECT().DHTKeeper().Return(mo.DHTKeeper).MinTimes(0)
 
 	return mo
 }

@@ -9,7 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/make-os/lobe/config"
 	crypto "github.com/make-os/lobe/crypto"
-	types "github.com/make-os/lobe/dht/server/types"
+	types "github.com/make-os/lobe/dht/types"
 	types0 "github.com/make-os/lobe/modules/types"
 	logger "github.com/make-os/lobe/pkgs/logger"
 	fetcher "github.com/make-os/lobe/remote/fetcher"
@@ -305,15 +305,15 @@ func (mr *MockRemoteServerMockRecorder) RegisterAPIHandlers(agg interface{}) *go
 }
 
 // Announce mocks base method
-func (m *MockRemoteServer) Announce(objType int, hash []byte, doneCB func(error)) {
+func (m *MockRemoteServer) Announce(objType int, repo string, hash []byte, doneCB func(error)) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Announce", objType, hash, doneCB)
+	m.ctrl.Call(m, "Announce", objType, repo, hash, doneCB)
 }
 
 // Announce indicates an expected call of Announce
-func (mr *MockRemoteServerMockRecorder) Announce(objType, hash, doneCB interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Announce(objType, repo, hash, doneCB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockRemoteServer)(nil).Announce), objType, hash, doneCB)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockRemoteServer)(nil).Announce), objType, repo, hash, doneCB)
 }
 
 // GetFetcher mocks base method

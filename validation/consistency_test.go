@@ -46,7 +46,7 @@ var _ = Describe("TxValidator", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 
 		ctrl = gomock.NewController(GinkgoT())
 		mockObjects = testutil.MockLogic(ctrl)

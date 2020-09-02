@@ -23,7 +23,7 @@ var _ = Describe("TMDBAdapter", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		dbAdapter := storage.NewTMDBAdapter(appDB.NewTx(true, true))
 		tree = NewSafeTree(dbAdapter, 128)
 	})

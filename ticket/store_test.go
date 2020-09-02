@@ -22,7 +22,7 @@ var _ = Describe("Store", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		store = NewStore(appDB.NewTx(true, true))
 	})
 

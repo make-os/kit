@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
@@ -23,7 +24,7 @@ import (
 var _ = Describe("Server", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repoMgr *Server
+	var svr *Server
 	var path, repoName string
 	var repo types2.LocalRepo
 	var ctrl *gomock.Controller
@@ -36,14 +37,18 @@ var _ = Describe("Server", func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
-		port, _ := freeport.GetFreePort()
 		ctrl = gomock.NewController(GinkgoT())
+
 		mockLogic = testutil.MockLogic(ctrl)
-		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = NewRemoteServer(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
-			mockDHT, mockMempool, mockBlockGetter)
+
+		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
+		port, _ := freeport.GetFreePort()
+		svr = New(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
@@ -53,7 +58,7 @@ var _ = Describe("Server", func() {
 	})
 
 	AfterEach(func() {
-		repoMgr.Stop()
+		svr.Stop()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -61,7 +66,7 @@ var _ = Describe("Server", func() {
 	Describe(".GetRepoState", func() {
 		When("no objects exist", func() {
 			It("should return empty state", func() {
-				st, err := repoMgr.GetRepoState(repo)
+				st, err := svr.GetRepoState(repo)
 				Expect(err).To(BeNil())
 				Expect(st.IsEmpty()).To(BeTrue())
 			})
@@ -73,7 +78,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("should return 1 ref", func() {
-				st, err := repoMgr.GetRepoState(repo)
+				st, err := svr.GetRepoState(repo)
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
@@ -87,7 +92,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("should return 2 refs", func() {
-				st, err := repoMgr.GetRepoState(repo)
+				st, err := svr.GetRepoState(repo)
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(2)))
 			})
@@ -101,13 +106,13 @@ var _ = Describe("Server", func() {
 			})
 
 			Specify("that the repo has ref refs/heads/master", func() {
-				st, err := repoMgr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/master"))
+				st, err := svr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/master"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 
 			Specify("that the repo has ref refs/heads/dev", func() {
-				st, err := repoMgr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/dev"))
+				st, err := svr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/dev"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
@@ -121,7 +126,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("should return 1 ref", func() {
-				st, err := repoMgr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/dev"))
+				st, err := svr.GetRepoState(repo, plumbing.MatchOpt("refs/heads/dev"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
@@ -136,13 +141,13 @@ var _ = Describe("Server", func() {
 			})
 
 			Specify("that the repo has ref=refs/tags/tag", func() {
-				st, err := repoMgr.GetRepoState(repo, plumbing.MatchOpt("refs/tags/tag"))
+				st, err := svr.GetRepoState(repo, plumbing.MatchOpt("refs/tags/tag"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 
 			Specify("that the repo has ref=refs/tags/tag2", func() {
-				st, err := repoMgr.GetRepoState(repo, plumbing.MatchOpt("refs/tags/tag2"))
+				st, err := svr.GetRepoState(repo, plumbing.MatchOpt("refs/tags/tag2"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
@@ -151,44 +156,44 @@ var _ = Describe("Server", func() {
 
 	Describe(".registerNoteSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.noteSenders.Len()).To(Equal(0))
-			repoMgr.registerNoteSender("sender", "txID")
-			Expect(repoMgr.noteSenders.Len()).To(Equal(1))
+			Expect(svr.noteSenders.Len()).To(Equal(0))
+			svr.registerNoteSender("sender", "txID")
+			Expect(svr.noteSenders.Len()).To(Equal(1))
 		})
 	})
 
 	Describe(".isNoteSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.registerNoteSender("sender", "txID")
-			Expect(repoMgr.noteSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isNoteSender("sender", "txID")
+			svr.registerNoteSender("sender", "txID")
+			Expect(svr.noteSenders.Len()).To(Equal(1))
+			isSender := svr.isNoteSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isNoteSender("sender", "txID")
+			isSender := svr.isNoteSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})
 
 	Describe(".registerEndorsementSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.endorsementSenders.Len()).To(Equal(0))
-			repoMgr.registerEndorsementSender("sender", "txID")
-			Expect(repoMgr.endorsementSenders.Len()).To(Equal(1))
+			Expect(svr.endorsementSenders.Len()).To(Equal(0))
+			svr.registerEndorsementSender("sender", "txID")
+			Expect(svr.endorsementSenders.Len()).To(Equal(1))
 		})
 	})
 
 	Describe(".isEndorsementSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.registerEndorsementSender("sender", "txID")
-			Expect(repoMgr.endorsementSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isEndorsementSender("sender", "txID")
+			svr.registerEndorsementSender("sender", "txID")
+			Expect(svr.endorsementSenders.Len()).To(Equal(1))
+			isSender := svr.isEndorsementSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isEndorsementSender("sender", "txID")
+			isSender := svr.isEndorsementSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})
@@ -197,12 +202,12 @@ var _ = Describe("Server", func() {
 		When("1 Endorsement for id=abc is added", func() {
 			BeforeEach(func() {
 				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
-				repoMgr.registerEndorsementOfNote("abc", pushEnd)
+				svr.registerEndorsementOfNote("abc", pushEnd)
 			})
 
 			Specify("that id=abc has 1 Endorsement", func() {
-				Expect(repoMgr.endorsementsReceived.Len()).To(Equal(1))
-				pushEndList := repoMgr.endorsementsReceived.Get("abc")
+				Expect(svr.endorsementsReceived.Len()).To(Equal(1))
+				pushEndList := svr.endorsementsReceived.Get("abc")
 				Expect(pushEndList).To(HaveLen(1))
 			})
 		})
@@ -211,15 +216,39 @@ var _ = Describe("Server", func() {
 			BeforeEach(func() {
 				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
 				pushEnd2 := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
-				repoMgr.registerEndorsementOfNote("abc", pushEnd)
-				repoMgr.registerEndorsementOfNote("abc", pushEnd2)
+				svr.registerEndorsementOfNote("abc", pushEnd)
+				svr.registerEndorsementOfNote("abc", pushEnd2)
 			})
 
 			Specify("that id=abc has 2 Endorsement", func() {
-				Expect(repoMgr.endorsementsReceived.Len()).To(Equal(1))
-				pushEndList := repoMgr.endorsementsReceived.Get("abc")
+				Expect(svr.endorsementsReceived.Len()).To(Equal(1))
+				pushEndList := svr.endorsementsReceived.Get("abc")
 				Expect(pushEndList).To(HaveLen(2))
 			})
+		})
+	})
+
+	Describe(".checkRepo", func() {
+		It("should return false if error checking repo's existence", func() {
+			Expect(svr.checkRepo("", []byte("repo"))).To(BeFalse())
+		})
+
+		It("should return true if repo exists", func() {
+			Expect(svr.checkRepo("", []byte(repoName))).To(BeTrue())
+		})
+	})
+
+	Describe(".checkRepoObject", func() {
+		It("should return true if object exists", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			recentHash := testutil2.GetRecentCommitHash(path, "master")
+			recentHashHex, _ := util.FromHex(recentHash)
+			Expect(svr.checkRepoObject(repoName, recentHashHex)).To(BeTrue())
+		})
+
+		It("should return false if object does not exists", func() {
+			recentHashHex, _ := util.FromHex("b4952909ef739a347d6d323e0d8700bf0cc346e1")
+			Expect(svr.checkRepoObject(repoName, recentHashHex)).To(BeFalse())
 		})
 	})
 })

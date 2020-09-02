@@ -8,8 +8,8 @@ import (
 
 const (
 	// KeyPrefixSeparator is used to separate prefix and key
-	KeyPrefixSeparator = ";"
-	prefixSeparator    = ":"
+	KeyPrefixSeparator = ";;;"
+	prefixSeparator    = ":::"
 )
 
 // Record represents an item in the database

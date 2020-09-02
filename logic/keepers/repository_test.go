@@ -24,7 +24,7 @@ var _ = Describe("RepoKeeper", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB(cfg)
+		appDB, _ = testutil.GetDB()
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
 		rk = NewRepoKeeper(state, appDB)
 	})

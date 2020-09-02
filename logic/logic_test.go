@@ -25,7 +25,7 @@ var _ = Describe("Logic", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 		logic = l.New(appDB, stateTreeDB, cfg)
 	})
 

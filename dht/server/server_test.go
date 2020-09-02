@@ -9,14 +9,12 @@ import (
 	"github.com/golang/mock/gomock"
 	routing2 "github.com/libp2p/go-libp2p-core/routing"
 	record "github.com/libp2p/go-libp2p-record"
+	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/server"
+	"github.com/make-os/lobe/mocks"
 	testutil2 "github.com/make-os/lobe/remote/testutil"
-	"github.com/phayes/freeport"
-
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -52,13 +50,12 @@ func (v okValidator) Select(key string, values [][]byte) (int, error) { return 0
 
 var _ = Describe("Server", func() {
 	var err error
-	var addr string
 	var cfg, cfg2 *config.AppConfig
-	var key = crypto.NewKeyFromIntSeed(1)
 	var ctrl *gomock.Controller
-	var key2 = crypto.NewKeyFromIntSeed(2)
 	var dhtB *server.Server
 	var dhtA *server.Server
+	var keepers *mocks.MockKeepers
+	var dhtKeepers *mocks.MockDHTKeeper
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -66,8 +63,12 @@ var _ = Describe("Server", func() {
 		Expect(err).To(BeNil())
 		cfg2, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		port := freeport.GetPort()
-		addr = fmt.Sprintf("127.0.0.1:%d", port)
+		cfg.DHT.Address = testutil2.RandomAddr()
+		cfg2.DHT.Address = testutil2.RandomAddr()
+
+		keepers = mocks.NewMockKeepers(ctrl)
+		dhtKeepers = mocks.NewMockDHTKeeper(ctrl)
+		keepers.EXPECT().DHTKeeper().Return(dhtKeepers).AnyTimes()
 	})
 
 	AfterEach(func() {
@@ -90,7 +91,8 @@ var _ = Describe("Server", func() {
 	Describe(".New", func() {
 		When("address format is not valid", func() {
 			It("should return err", func() {
-				_, err = server.New(context.Background(), cfg, key.PrivKey().Key(), "invalid")
+				cfg.DHT.Address = "invalid"
+				_, err = server.New(context.Background(), keepers, cfg)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("invalid address: address invalid: missing port in address"))
 			})
@@ -98,7 +100,8 @@ var _ = Describe("Server", func() {
 
 		When("unable to create host", func() {
 			It("should return err", func() {
-				_, err = server.New(context.Background(), cfg, key.PrivKey().Key(), "0.1.1.1.0:999999")
+				cfg.DHT.Address = "0.1.1.1.0:999999"
+				_, err = server.New(context.Background(), keepers, cfg)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("failed to create host"))
 			})
@@ -106,7 +109,7 @@ var _ = Describe("Server", func() {
 
 		When("no problem", func() {
 			It("should return nil", func() {
-				_, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+				_, err = server.New(context.Background(), keepers, cfg)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -114,7 +117,7 @@ var _ = Describe("Server", func() {
 
 	Describe(".Bootstrap", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			dhtA, err = server.New(context.Background(), keepers, cfg)
 			Expect(err).To(BeNil())
 		})
 
@@ -152,7 +155,7 @@ var _ = Describe("Server", func() {
 
 		When("a reachable address exist", func() {
 			BeforeEach(func() {
-				dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
+				dhtB, err = server.New(context.Background(), nil, cfg2)
 				Expect(err).To(BeNil())
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 			})
@@ -170,7 +173,7 @@ var _ = Describe("Server", func() {
 
 	When(".Peers", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			dhtA, err = server.New(context.Background(), keepers, cfg)
 			Expect(err).To(BeNil())
 		})
 
@@ -188,7 +191,7 @@ var _ = Describe("Server", func() {
 
 		When("connected to a peer", func() {
 			BeforeEach(func() {
-				dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
+				dhtB, err = server.New(context.Background(), nil, cfg2)
 				Expect(err).To(BeNil())
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 				err = dhtA.Bootstrap()
@@ -204,10 +207,10 @@ var _ = Describe("Server", func() {
 
 	Describe(".Store", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			dhtA, err = server.New(context.Background(), keepers, cfg)
 			Expect(err).To(BeNil())
 			dhtA.DHT().Validator.(record.NamespacedValidator)[dht.ObjectNamespace] = okValidator{}
-			dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
+			dhtB, err = server.New(context.Background(), nil, cfg2)
 			Expect(err).To(BeNil())
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
@@ -234,10 +237,10 @@ var _ = Describe("Server", func() {
 
 	Describe(".Lookup", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			dhtA, err = server.New(context.Background(), keepers, cfg)
 			Expect(err).To(BeNil())
 			dhtA.DHT().Validator.(record.NamespacedValidator)[dht.ObjectNamespace] = okValidator{}
-			dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
+			dhtB, err = server.New(context.Background(), nil, cfg2)
 			Expect(err).To(BeNil())
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
@@ -286,10 +289,12 @@ var _ = Describe("Server", func() {
 	})
 
 	Describe(".Announce and .GetRepoObjectProviders", func() {
+		var key = []byte("key")
+
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			dhtA, err = server.New(context.Background(), keepers, cfg)
 			Expect(err).To(BeNil())
-			dhtB, err = server.New(context.Background(), cfg2, key2.PrivKey().Key(), testutil2.RandomAddr())
+			dhtB, err = server.New(context.Background(), nil, cfg2)
 			Expect(err).To(BeNil())
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
@@ -299,7 +304,8 @@ var _ = Describe("Server", func() {
 
 		When("a peer announces a key", func() {
 			BeforeEach(func() {
-				dhtA.Announce(announcer.ObjTypeAny, []byte("key"), nil)
+				dhtKeepers.EXPECT().AddToAnnounceList(key, "repo1", announcer.ObjTypeAny, gomock.Any())
+				dhtA.Announce(announcer.ObjTypeAny, "repo1", key, nil)
 				dhtA.Start()
 				time.Sleep(2 * time.Millisecond)
 			})
@@ -309,13 +315,13 @@ var _ = Describe("Server", func() {
 			})
 
 			It("should be returned as a provider on all connected peers", func() {
-				addrs, err := dhtA.GetProviders(context.Background(), []byte("key"))
+				addrs, err := dhtA.GetProviders(context.Background(), key)
 				Expect(err).To(BeNil())
 				Expect(addrs).To(HaveLen(1))
 				Expect(addrs[0].ID.Pretty()).To(Equal(dhtA.Host().ID().Pretty()))
 				Expect(addrs[0].Addrs).To(BeEmpty())
 
-				addrs, err = dhtB.GetProviders(context.Background(), []byte("key"))
+				addrs, err = dhtB.GetProviders(context.Background(), key)
 				Expect(err).To(BeNil())
 				Expect(addrs).To(HaveLen(1))
 				Expect(addrs[0].ID.Pretty()).To(Equal(dhtA.Host().ID().Pretty()))

@@ -31,7 +31,7 @@ var _ = Describe("CreateRepoContract", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		Expect(err).To(BeNil())
 		cfg, err = testutil.SetTestCfg()
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 
 	"github.com/golang/mock/gomock"
@@ -30,10 +31,14 @@ var _ = Describe("Create", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
+
 		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = NewRemoteServer(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
+		repoMgr = New(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	AfterEach(func() {

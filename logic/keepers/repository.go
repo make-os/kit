@@ -175,7 +175,7 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
 	var res []*core.EndingProposals
-	a.db.Iterate(key, true, func(rec *common.Record) bool {
+	a.db.NewTx(true, true).Iterate(key, true, func(rec *common.Record) bool {
 		prefixes := common.SplitPrefix(rec.GetKey())
 		res = append(res, &core.EndingProposals{
 			RepoName:   string(prefixes[2]),

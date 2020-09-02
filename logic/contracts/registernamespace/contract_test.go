@@ -32,7 +32,7 @@ var _ = Describe("Contract", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())

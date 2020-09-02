@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/remote/repo"
@@ -41,10 +42,14 @@ var _ = Describe("Reactor", func() {
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockTickMgr = mockObjects.TicketManager
-		svr = NewRemoteServer(cfg, ":9000", mockObjects.Logic,
-			mocks.NewMockDHT(ctrl),
-			mocks.NewMockMempool(ctrl),
-			mocks.NewMockBlockGetter(ctrl))
+
+		mockDHT := mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
+		svr = New(cfg, ":9000", mockObjects.Logic, mockDHT,
+			mocks.NewMockMempool(ctrl), mocks.NewMockBlockGetter(ctrl))
+
 	})
 
 	AfterEach(func() {

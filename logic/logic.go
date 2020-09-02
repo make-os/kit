@@ -56,6 +56,9 @@ type Logic struct {
 	// nsKeeper provides functionalities for managing namespace data
 	nsKeeper *keepers.NamespaceKeeper
 
+	// dhtKeeper provides functionalities for managing DHT metadata
+	dhtKeeper *keepers.DHTKeeper
+
 	// validatorKeeper provides operations for managing validator data
 	validatorKeeper *keepers.ValidatorKeeper
 
@@ -80,8 +83,12 @@ type Logic struct {
 func New(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
 	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
-	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
 	l._db = db
+
+	// Initialize keepers that do not perform atomic operations with a shared transaction.
+	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
+	l.dhtKeeper = keepers.NewDHTKeyKeeper(dbTx)
+
 	return l
 }
 
@@ -91,9 +98,10 @@ func NewAtomic(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *con
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
 
-	// Tracked repo keeper uses a managed transaction since it is not used
-	// during transaction execution and will not need its state rollback.
-	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(l._db.NewTx(true, true), l.stateTree)
+	// Initialize keepers that do not perform atomic operations with a shared transaction.
+	dbTx := l._db.NewTx(true, true)
+	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
+	l.dhtKeeper = keepers.NewDHTKeyKeeper(dbTx)
 
 	return l
 }
@@ -236,6 +244,11 @@ func (l *Logic) TrackedRepoKeeper() core.TrackedRepoKeeper {
 // NamespaceKeeper returns the namespace keeper
 func (l *Logic) NamespaceKeeper() core.NamespaceKeeper {
 	return l.nsKeeper
+}
+
+// DHTKeeper returns the DHT keeper
+func (l *Logic) DHTKeeper() core.DHTKeeper {
+	return l.dhtKeeper
 }
 
 // TxKeeper returns the transaction keeper

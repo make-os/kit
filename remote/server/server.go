@@ -13,8 +13,9 @@ import (
 	"github.com/make-os/lobe/api/remote"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
-	types2 "github.com/make-os/lobe/dht/server/types"
-	types3 "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/dht/announcer"
+	dhttypes "github.com/make-os/lobe/dht/types"
+	modtypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/cache"
@@ -26,7 +27,7 @@ import (
 	"github.com/make-os/lobe/remote/push/pool"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/remote/refsync"
-	types4 "github.com/make-os/lobe/remote/refsync/types"
+	rstypes "github.com/make-os/lobe/remote/refsync/types"
 	rr "github.com/make-os/lobe/remote/repo"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
@@ -76,14 +77,14 @@ type Server struct {
 	logic                      core.Logic                              // logic is the application logic provider
 	validatorKey               *crypto.Key                             // the node's private validator key for signing transactions
 	pushKeyGetter              core.PushKeyGetter                      // finds and returns PGP public key
-	dht                        types2.DHT                              // The dht service
+	dht                        dhttypes.DHT                            // The dht service
 	objfetcher                 fetcher.ObjectFetcher                   // The object fetcher service
 	blockGetter                types.BlockGetter                       // Provides access to blocks
 	noteSenders                *cache.Cache                            // Store senders of push notes
 	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
 	endorsementsReceived       *cache.Cache                            // Store PushEnds
-	modulesAgg                 types3.ModulesHub                       // Modules aggregator
-	refSyncer                  types4.RefSync                          // Responsible for syncing pushed references in a push transaction
+	modulesAgg                 modtypes.ModulesHub                     // Modules aggregator
+	refSyncer                  rstypes.RefSync                         // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                       // Function for performing authentication
 	checkPushNote              validation.CheckPushNoteFunc            // Function for performing PushNote validation
 	makeReferenceUpdatePack    push.MakeReferenceUpdateRequestPackFunc // Function for creating a reference update pack for updating a repository
@@ -97,12 +98,12 @@ type Server struct {
 	endorsementCreator         CreateEndorsementFunc                   // Function for creating an endorsement for a given push note
 }
 
-// NewRemoteServer creates an instance of Server
-func NewRemoteServer(
+// New creates an instance of Server
+func New(
 	cfg *config.AppConfig,
 	addr string,
 	appLogic core.Logic,
-	dht types2.DHT,
+	dht dhttypes.DHT,
 	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Server {
 
@@ -154,14 +155,15 @@ func NewRemoteServer(
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)
 
+	// Start reference synchronization and object fetcher in non-validator or test mode.
 	if !cfg.Node.Validator && cfg.Node.Mode != config.ModeTest {
-
-		// Start the fetcher service
 		server.objfetcher.Start()
-
-		// Start the reference syncer
 		server.refSyncer.Start()
 	}
+
+	// Register DHT object checkers
+	dht.RegisterChecker(announcer.ObjTypeRepoName, server.checkRepo)
+	dht.RegisterChecker(announcer.ObjTypeGit, server.checkRepoObject)
 
 	return server
 }
@@ -172,7 +174,7 @@ func (sv *Server) SetRootDir(dir string) {
 }
 
 // RegisterAPIHandlers registers server API handlers
-func (sv *Server) RegisterAPIHandlers(agg types3.ModulesHub) {
+func (sv *Server) RegisterAPIHandlers(agg modtypes.ModulesHub) {
 	sv.modulesAgg = agg
 	sv.registerAPIHandlers(sv.srv.Handler.(*http.ServeMux))
 }
@@ -189,6 +191,23 @@ func (sv *Server) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
 		return crypto.EmptyPublicKey, fmt.Errorf("push key does not exist")
 	}
 	return pk.PubKey, nil
+}
+
+// checkRepo implements dhttypes.CheckFunc for checking
+// the existence of a repository.
+func (sv *Server) checkRepo(repo string, key []byte) bool {
+	_, err := sv.GetRepo(string(key))
+	return err == nil
+}
+
+// checkRepoObject implements dhttypes.CheckFunc for checking the existence
+// of an object in the given repository.
+func (sv *Server) checkRepoObject(repo string, key []byte) bool {
+	r, err := sv.GetRepo(repo)
+	if err != nil {
+		return false
+	}
+	return r.GetStorer().HasEncodedObject(plumbing.BytesToHash(key)) == nil
 }
 
 // registerNoteSender caches a push note sender
@@ -283,7 +302,7 @@ func (sv *Server) GetMempool() core.Mempool {
 }
 
 // GetDHT returns the dht service
-func (sv *Server) GetDHT() types2.DHT {
+func (sv *Server) GetDHT() dhttypes.DHT {
 	return sv.dht
 }
 
@@ -297,8 +316,8 @@ func (sv *Server) getRepoPath(name string) string {
 }
 
 // AnnounceObject announces a key on the DHT network
-func (sv *Server) Announce(objType int, hash []byte, doneCB func(error)) {
-	sv.dht.ObjectStreamer().Announce(objType, hash, doneCB)
+func (sv *Server) Announce(objType int, repo string, hash []byte, doneCB func(error)) {
+	sv.dht.Announce(objType, repo, hash, doneCB)
 }
 
 // gitRequestsHandler handles incoming http request from a git client

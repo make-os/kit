@@ -7,22 +7,23 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht/providertracker"
+	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BasicProviderTracker", func() {
+var _ = Describe("ProviderTracker", func() {
 	var err error
 	var cfg *config.AppConfig
-	var tracker *providertracker.BasicProviderTracker
+	var tracker *providertracker.ProviderTracker
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
-		tracker = providertracker.NewProviderTracker()
+		tracker = providertracker.New()
 	})
 
 	AfterEach(func() {
@@ -46,8 +47,8 @@ var _ = Describe("BasicProviderTracker", func() {
 			peerID := peer.ID("peer1")
 			addrs := []peer.AddrInfo{{ID: peerID}}
 			tracker.Register(addrs...)
-			var found *providertracker.ProviderInfo
-			retval := tracker.Get(peerID, func(info *providertracker.ProviderInfo) {
+			var found *types.ProviderInfo
+			retval := tracker.Get(peerID, func(info *types.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(Equal(found))
@@ -60,8 +61,8 @@ var _ = Describe("BasicProviderTracker", func() {
 
 		It("should return nil if provider does not exist", func() {
 			peerID := peer.ID("peer1")
-			var found *providertracker.ProviderInfo
-			retval := tracker.Get(peerID, func(info *providertracker.ProviderInfo) {
+			var found *types.ProviderInfo
+			retval := tracker.Get(peerID, func(info *types.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(BeNil())

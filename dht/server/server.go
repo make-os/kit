@@ -9,7 +9,6 @@ import (
 
 	badger "github.com/ipfs/go-ds-badger"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
@@ -20,7 +19,9 @@ import (
 	announcer2 "github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/streamer"
 	"github.com/make-os/lobe/dht/streamer/types"
+	types2 "github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/types/core"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 )
@@ -37,23 +38,21 @@ type Server struct {
 	log            logger.Logger
 	connTicker     *time.Ticker
 	objectStreamer types.ObjectStreamer
-	announcer      announcer2.Announcer
+	announcer      types2.Announcer
 }
 
 // New creates a new Server
-func New(
-	ctx context.Context,
-	cfg *config.AppConfig,
-	key crypto.PrivKey,
-	addr string) (*Server, error) {
+func New(ctx context.Context, keepers core.Keepers, cfg *config.AppConfig) (*Server, error) {
 
-	address, port, err := net.SplitHostPort(addr)
+	key, _ := cfg.G().PrivVal.GetKey()
+
+	address, port, err := net.SplitHostPort(cfg.DHT.Address)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid address")
 	}
 
 	lAddr := libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%s", address, port))
-	h, err := libp2p.New(ctx, libp2p.Identity(key), lAddr)
+	h, err := libp2p.New(ctx, libp2p.Identity(key.PrivKey().Key()), lAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create host")
 	}
@@ -84,7 +83,7 @@ func New(
 		cfg:        cfg,
 		log:        log,
 		connTicker: time.NewTicker(5 * time.Second),
-		announcer:  announcer2.NewBasicAnnouncer(server, log.Module("announcer")),
+		announcer:  announcer2.New(server, keepers, log.Module("announcer")),
 	}
 
 	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
@@ -194,10 +193,10 @@ func (dht *Server) Lookup(ctx context.Context, key string) ([]byte, error) {
 	return dht.dht.GetValue(ctx, key)
 }
 
-// GetRepoObjectProviders finds peers that have announced their capability to
-// provide a value for the given key.
+// GetRepoObjectProviders finds peers that have announced
+// their readiness to provide a value for the given key.
 func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error) {
-	id, err := dht2.MakeCid(key)
+	id, err := dht2.MakeCID(key)
 	if err != nil {
 		return nil, err
 	}
@@ -228,11 +227,16 @@ func (dht *Server) ObjectStreamer() types.ObjectStreamer {
 }
 
 // Announce asynchronously informs the network that it can provide value for the given key
-func (dht *Server) Announce(objType int, key []byte, doneCB func(error)) {
-	dht.announcer.Announce(objType, key, doneCB)
+func (dht *Server) Announce(objType int, repo string, key []byte, doneCB func(error)) {
+	dht.announcer.Announce(objType, repo, key, doneCB)
 }
 
-// Close closes the host
+// RegisterChecker registers an object checker to the announcer.
+func (dht *Server) RegisterChecker(objType int, f types2.CheckFunc) {
+	dht.announcer.RegisterChecker(objType, f)
+}
+
+// Stop stops the server
 func (dht *Server) Stop() error {
 	var err error
 

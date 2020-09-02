@@ -59,7 +59,7 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c, stateTreeDB = testutil.GetDB(cfg)
+		c, stateTreeDB = testutil.GetDB()
 		logic = l.New(c, stateTreeDB, cfg)
 		app = NewApp(cfg, c, logic, ticketmgr)
 

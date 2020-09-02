@@ -85,7 +85,7 @@ func (g *PushKeyKeeper) Remove(pushKeyID string) bool {
 // address: The target address
 func (g *PushKeyKeeper) GetByAddress(address string) []string {
 	var pushKeyIDs []string
-	g.db.Iterate(MakeQueryPushKeyIDsOfAddress(address), true, func(rec *common.Record) bool {
+	g.db.NewTx(true, true).Iterate(MakeQueryPushKeyIDsOfAddress(address), true, func(rec *common.Record) bool {
 		parts := common.SplitPrefix(rec.Key)
 		pushKeyIDs = append(pushKeyIDs, string(parts[len(parts)-1]))
 		return false

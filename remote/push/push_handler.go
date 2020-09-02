@@ -296,10 +296,11 @@ func (h *BasicHandler) HandleRepoSize() error {
 
 // HandleAnnouncement announces the repository name, pushed commit and tag objects.
 func (h *BasicHandler) HandleAnnouncement() {
-	h.Server.GetDHT().Announce(announcer.ObjTypeRepoName, []byte(h.Repo.GetName()), nil)
+	repoName := h.Repo.GetName()
+	h.Server.Announce(announcer.ObjTypeRepoName, repoName, []byte(repoName), nil)
 	for _, obj := range h.PushReader.Objects {
 		if obj.Type == plumb.CommitObject || obj.Type == plumb.TagObject {
-			h.Server.GetDHT().Announce(announcer.ObjTypeGit, obj.Hash[:], nil)
+			h.Server.Announce(announcer.ObjTypeGit, repoName, obj.Hash[:], nil)
 		}
 	}
 }

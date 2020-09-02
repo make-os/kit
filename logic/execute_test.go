@@ -47,7 +47,7 @@ var _ = Describe("Transaction", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, stateTreeDB = testutil.GetDB(cfg)
+		appDB, stateTreeDB = testutil.GetDB()
 		logic = New(appDB, stateTreeDB, cfg)
 	})
 

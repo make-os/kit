@@ -6,20 +6,21 @@ import (
 )
 
 const (
-	TagAccount               = "a"
-	TagPushKey               = "g"
-	TagAddressPushKeyID      = "ag"
-	TagRepo                  = "r"
-	TagRepoPropVote          = "rpv"
-	TagRepoPropEndIndex      = "rei"
-	TagNS                    = "ns"
-	TagClosedProp            = "cp"
-	TagBlockInfo             = "b"
-	TagLastRepoSyncherHeight = "rh"
-	TagHelmRepo              = "hr"
-	TagValidators            = "v"
-	TagTx                    = "t"
-	TagTrackedRepo           = "tr"
+	TagAccount                 = "a"
+	TagPushKey                 = "g"
+	TagAddressPushKeyID        = "ag"
+	TagRepo                    = "r"
+	TagRepoPropVote            = "rpv"
+	TagRepoPropEndIndex        = "rei"
+	TagNS                      = "ns"
+	TagClosedProp              = "cp"
+	TagBlockInfo               = "b"
+	TagLastRepoSyncherHeight   = "rh"
+	TagHelmRepo                = "hr"
+	TagValidators              = "v"
+	TagTx                      = "t"
+	TagTrackedRepo             = "tr"
+	TagAnnouncementScheduleKey = "ak"
 )
 
 // MakeTrackedRepoKey creates a key for accessing a tracked repo.
@@ -107,8 +108,6 @@ func MakeQueryKeyBlockInfo() []byte {
 	return common.MakePrefix([]byte(TagBlockInfo))
 }
 
-// MakeNetMaturityKey creates a key indicating the network's maturity status
-
 // MakeBlockValidatorsKey creates a key for storing validators of blocks
 func MakeBlockValidatorsKey(height int64) []byte {
 	return common.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagValidators))
@@ -119,7 +118,17 @@ func MakeQueryKeyBlockValidators() []byte {
 	return common.MakePrefix([]byte(TagValidators))
 }
 
-// MakeTxKey creates a key for storing validators of blocks
+// MakeTxKey creates a key for storing a transaction
 func MakeTxKey(hash []byte) []byte {
 	return common.MakePrefix([]byte(TagTx), hash)
+}
+
+// MakeAnnounceListKey creates a key for adding DHT key announcement entry
+func MakeAnnounceListKey(key []byte, announceTime int64) []byte {
+	return common.MakeKey(util.EncodeNumber(uint64(announceTime)), []byte(TagAnnouncementScheduleKey), key)
+}
+
+// MakeQueryAnnounceListKey creates a key for accessing all DHT key announcements entries.
+func MakeQueryAnnounceListKey() []byte {
+	return common.MakePrefix([]byte(TagAnnouncementScheduleKey))
 }

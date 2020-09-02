@@ -11,7 +11,7 @@ var _ = Describe("Types", func() {
 			r := NewRecord([]byte("age"), []byte("20"), []byte("prefix"))
 			key := r.GetKey()
 			Expect(key).ToNot(BeEmpty())
-			Expect(key).To(Equal([]byte("prefix;age")))
+			Expect(key).To(Equal([]byte("prefix;;;age")))
 		})
 	})
 
@@ -42,19 +42,19 @@ var _ = Describe("Types", func() {
 
 		When("key has KeyPrefixSeparator", func() {
 			It("should return object that contains key=age, value=20, prefix=prefixA", func() {
-				o := NewFromKeyValue([]byte("prefixA;age"), []byte("20"))
+				o := NewFromKeyValue([]byte("prefixA;;;age"), []byte("20"))
 				Expect(o.Key).To(Equal([]byte("age")))
 				Expect(o.Value).To(Equal([]byte("20")))
-				Expect(o.GetKey()).To(Equal([]byte("prefixA;age")))
+				Expect(o.GetKey()).To(Equal([]byte("prefixA;;;age")))
 				Expect(o.Prefix).To(Equal([]byte("prefixA")))
 			})
 		})
 	})
 
 	Describe(".MakePrefix", func() {
-		It("should return 'prefixA:prefixB'", func() {
+		It("should return 'prefixA:::prefixB'", func() {
 			actual := MakePrefix([]byte("prefixA"), []byte("prefixB"))
-			Expect(string(actual)).To(Equal("prefixA:prefixB"))
+			Expect(string(actual)).To(Equal("prefixA:::prefixB"))
 		})
 
 		It("should return 'prefixA'", func() {
@@ -69,14 +69,14 @@ var _ = Describe("Types", func() {
 	})
 
 	Describe(".MakeKey", func() {
-		It("should return 'prefixA:prefixB;age' when key and prefixes are provided", func() {
+		It("should return 'prefixA:::prefixB;age' when key and prefixes are provided", func() {
 			actual := MakeKey([]byte("age"), []byte("prefixA"), []byte("prefixB"))
-			Expect(string(actual)).To(Equal("prefixA:prefixB;age"))
+			Expect(string(actual)).To(Equal("prefixA:::prefixB;;;age"))
 		})
 
-		It("should return only concatenated prefixes 'prefixA:prefixB' with no KeyPrefixSeparator when key is not provided", func() {
+		It("should return only concatenated prefixes 'prefixA:::prefixB' with no KeyPrefixSeparator when key is not provided", func() {
 			actual := MakeKey(nil, []byte("prefixA"), []byte("prefixB"))
-			Expect(string(actual)).To(Equal("prefixA:prefixB"))
+			Expect(string(actual)).To(Equal("prefixA:::prefixB"))
 		})
 
 		It("should return only key with no KeyPrefixSeparator when prefixes are not provided", func() {

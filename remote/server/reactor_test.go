@@ -67,12 +67,16 @@ var _ = Describe("Reactor", func() {
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
 		mockRepoKeeper = mockObjects.RepoKeeper
+
 		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockTickMgr = mockObjects.TicketManager
 		mockNS = mockObjects.NamespaceKeeper
-		svr = NewRemoteServer(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
 		mockPeer = mocks.NewMockPeer(ctrl)
 	})
@@ -414,9 +418,7 @@ var _ = Describe("Reactor", func() {
 			svr.processPushNote = func(note types.PushNote, txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc) error {
 				return nil
 			}
-			mockObjStreamer := mocks.NewMockObjectStreamer(ctrl)
-			mockObjStreamer.EXPECT().Announce(announcer.ObjTypeRepoName, []byte(repoName), nil)
-			mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
+			mockDHT.EXPECT().Announce(announcer.ObjTypeRepoName, repoName, []byte(repoName), nil)
 			err := svr.onObjectsFetched(nil, mockNote, []*remotetypes.TxDetail{}, polEnforcer)
 			Expect(err).To(BeNil())
 		})

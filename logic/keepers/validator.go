@@ -69,7 +69,7 @@ func (v *ValidatorKeeper) GetByHeight(height int64) (core.BlockValidators, error
 	var err error
 	res := make(map[util.Bytes32]*core.Validator)
 	key := MakeQueryKeyBlockValidators()
-	v.db.Iterate(key, false, func(rec *common.Record) bool {
+	v.db.NewTx(true, true).Iterate(key, false, func(rec *common.Record) bool {
 		err = rec.Scan(&res)
 		return true
 	})

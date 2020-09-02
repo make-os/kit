@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/params"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
@@ -57,11 +58,15 @@ var _ = Describe("BasicHandler", func() {
 		repo, err = repo3.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
-		mockLogic = mocks.NewMockLogic(ctrl)
 		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
+		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
+
+		mockLogic = mocks.NewMockLogic(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		svr = server.NewRemoteServer(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+
+		svr = server.New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
 		mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log)
 
