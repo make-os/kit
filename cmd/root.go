@@ -183,6 +183,7 @@ func init() {
 	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
 	rootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
 	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
+	rootCmd.PersistentFlags().StringToString("loglevel", map[string]string{}, "Set log level for modules")
 
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")
@@ -199,5 +200,6 @@ func init() {
 	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
 	viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
 	viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
+	viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
 	viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
 }

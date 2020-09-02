@@ -24,6 +24,8 @@ import (
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 
@@ -634,4 +636,24 @@ func IsGitInstalled(path string) (bool, string) {
 // Notify displays a desktop notification
 func Notify(val string) {
 	beeep.Alert("", val, "")
+}
+
+// ParseLogLevel parse value from --loglevel flag
+func ParseLogLevel(val string) (res map[string]logrus.Level) {
+	res = map[string]logrus.Level{}
+	logLev := strings.TrimRight(strings.TrimLeft(val, "["), "]")
+	for _, str := range strings.Split(logLev, ",") {
+		str = strings.TrimSpace(str)
+		parts := strings.Split(str, "=")
+		if len(parts) != 2 {
+			continue
+		}
+		module := strings.TrimSpace(parts[0])
+		lvl := strings.TrimSpace(parts[1])
+		lvlCast, err := cast.ToUint32E(lvl)
+		if err == nil {
+			res[module] = logrus.Level(lvlCast)
+		}
+	}
+	return
 }

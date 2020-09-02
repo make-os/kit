@@ -234,7 +234,7 @@ func (n *Node) Start() error {
 // startRPCServer starts RPC service
 func (n *Node) startRPCServer() {
 	if n.cfg.RPC.On {
-		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-server"), n.cfg.G().Interrupt)
 		go n.rpcServer.Serve()
 	}
 }
@@ -245,7 +245,7 @@ func (n *Node) startConsoleOnly() error {
 
 	// Create the rpc server, add APIs but don't start it.
 	// The console will need a non-nil instance to learn about the RPC methods.
-	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-server"), n.cfg.G().Interrupt)
 
 	// Initialize and start JS modules and extensions
 	n.configureInterfaces()

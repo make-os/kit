@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gobuffalo/packr"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
 	"github.com/olebedev/emitter"
-
-	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/config"
@@ -201,7 +200,8 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	logPath := path.Join(c.NetDataDir(), "logs")
 	os.MkdirAll(logPath, 0700)
 	logFile := path.Join(logPath, "main.log")
-	c.G().Log = logger.NewLogrusWithFileRotation(logFile)
+	logLevelSetting := util.ParseLogLevel(viper.GetString("loglevel"))
+	c.G().Log = logger.NewLogrusWithFileRotation(logFile, logLevelSetting)
 
 	if devMode {
 		c.G().Log.SetToDebug()

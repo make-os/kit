@@ -16,12 +16,19 @@ type Logrus struct {
 	filePath string
 	ns       string
 	noop     bool
+	nsLevel  map[string]logrus.Level
 }
 
 // NewLogrus creates a logrus backed logger
-func NewLogrus() Logger {
+func NewLogrus(namespaceLevel map[string]logrus.Level) Logger {
+
+	if namespaceLevel == nil {
+		namespaceLevel = map[string]logrus.Level{}
+	}
+
 	l := &Logrus{
-		log: logrus.New(),
+		log:     logrus.New(),
+		nsLevel: namespaceLevel,
 	}
 
 	l.log.Formatter = &logrus.TextFormatter{
@@ -37,10 +44,16 @@ func NewLogrus() Logger {
 // Two log file are created:
 // - filePath.out stores DEBUG and INFO
 // - filePath.err stores ERROR
-func NewLogrusWithFileRotation(filePath string) Logger {
+func NewLogrusWithFileRotation(filePath string, namespaceLevel map[string]logrus.Level) Logger {
+
+	if namespaceLevel == nil {
+		namespaceLevel = map[string]logrus.Level{}
+	}
+
 	l := &Logrus{
 		log:      logrus.New(),
 		filePath: filePath,
+		nsLevel:  namespaceLevel,
 	}
 
 	configureFileRotation(l)
@@ -79,8 +92,9 @@ func configureFileRotation(l *Logrus) {
 // NewLogrusNoOp creates a logrus backed logger that logs nothing
 func NewLogrusNoOp() Logger {
 	l := &Logrus{
-		log:  logrus.New(),
-		noop: true,
+		log:     logrus.New(),
+		noop:    true,
+		nsLevel: map[string]logrus.Level{},
 	}
 
 	l.log.Formatter = &logrus.JSONFormatter{}
@@ -96,9 +110,11 @@ func isValidKeyValues(kv []interface{}) error {
 	return nil
 }
 
-// Module derives a new logger from l with a namespace.
+// Module creates a new logger derived from l.
+//
 // If the current logger has file rotation configured,
 // the new logger will also be support file rotation.
+//
 // If the current logger is set to debug, then the new
 // logger is also set to debug.
 func (l *Logrus) Module(ns string) Logger {
@@ -106,15 +122,28 @@ func (l *Logrus) Module(ns string) Logger {
 		log:      logrus.New(),
 		filePath: l.filePath,
 		ns:       ns,
+		nsLevel:  l.nsLevel,
 	}
+
 	if l.noop {
 		newLog.log.Out = ioutil.Discard
 		return newLog
 	}
+
 	if newLog.filePath != "" {
 		configureFileRotation(newLog)
 	}
-	newLog.log.SetLevel(l.log.GetLevel())
+
+	if lvl, ok := l.nsLevel[ns]; ok {
+		newLog.log.SetLevel(lvl)
+	} else {
+		if lvl, ok := l.nsLevel["*"]; ok {
+			newLog.log.SetLevel(lvl)
+		} else {
+			newLog.log.SetLevel(l.log.GetLevel())
+		}
+	}
+
 	return newLog
 }
 

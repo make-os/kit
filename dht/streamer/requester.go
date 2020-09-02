@@ -112,7 +112,7 @@ func NewBasicObjectRequester(args RequestArgs) *BasicObjectRequester {
 	r.OnSendResponseHandler = r.OnSendResponse
 
 	if r.log == nil {
-		r.log = logger.NewLogrus()
+		r.log = logger.NewLogrus(nil)
 	}
 
 	return &r
