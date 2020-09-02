@@ -12,11 +12,9 @@ import (
 	types3 "github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
 	io2 "github.com/make-os/lobe/util/io"
-	"github.com/thoas/go-funk"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -68,10 +66,10 @@ type BasicObjectFetcher struct {
 	cfg                *config.AppConfig
 	dht                types3.DHT
 	lck                *sync.Mutex
-	queue              *queue.UniqueQueue
 	log                logger.Logger
 	stopped            bool
 	started            bool
+	queue              chan *Task
 	onObjFetchedCb     func(string, io.ReadSeeker)
 	PackToRepoUnpacker plumbing.PackToRepoUnpacker
 }
@@ -79,10 +77,10 @@ type BasicObjectFetcher struct {
 // NewFetcher creates an instance of BasicObjectFetcher
 func NewFetcher(dht types3.DHT, nWorkers int, cfg *config.AppConfig) *BasicObjectFetcher {
 	return &BasicObjectFetcher{
+		log:                cfg.G().Log.Module("object-fetcher"),
 		dht:                dht,
 		lck:                &sync.Mutex{},
-		queue:              queue.NewUnique(),
-		log:                cfg.G().Log.Module("object-fetcher"),
+		queue:              make(chan *Task, 1000),
 		cfg:                cfg,
 		PackToRepoUnpacker: plumbing.UnpackPackfileToRepo,
 	}
@@ -90,33 +88,28 @@ func NewFetcher(dht types3.DHT, nWorkers int, cfg *config.AppConfig) *BasicObjec
 
 // addTask appends a tasks to the task queue
 func (f *BasicObjectFetcher) addTask(task *Task) {
-	f.queue.Append(task)
+	f.queue <- task
 }
 
 // IsQueueEmpty checks whether the task queue is empty
 func (f *BasicObjectFetcher) IsQueueEmpty() bool {
-	return f.queue.Empty()
+	return len(f.queue) == 0
 }
 
 // getTask returns a task
 func (f *BasicObjectFetcher) getTask() *Task {
-	item := f.queue.Head()
-	if item == nil {
-		return nil
-	}
-	return item.(*Task)
+	return <-f.queue
 }
 
 // Fetch adds a new task to the queue.
 // cb will be called when the task has been processed.
 func (f *BasicObjectFetcher) FetchAsync(note types.PushNote, cb func(error)) {
 	f.addTask(&Task{note: note, resCb: cb})
-	return
 }
 
 // QueueSize returns the size of the queue
 func (f *BasicObjectFetcher) QueueSize() int {
-	return f.queue.Size()
+	return len(f.queue)
 }
 
 // OnPackReceived registers a callback that is called each time an object's packfile is received
@@ -124,7 +117,8 @@ func (f *BasicObjectFetcher) OnPackReceived(cb func(string, io.ReadSeeker)) {
 	f.onObjFetchedCb = cb
 }
 
-// Start starts the workers.
+// Start starts processing tasks in the queue.
+// It does not block.
 // Panics if already started
 func (f *BasicObjectFetcher) Start() {
 
@@ -136,25 +130,15 @@ func (f *BasicObjectFetcher) Start() {
 		panic("already started")
 	}
 
-	for i := 0; i < params.NumFetcherWorker; i++ {
-		go f.createWorker(i)
-	}
+	go func() {
+		for task := range f.queue {
+			go f.do(task)
+		}
+	}()
 
 	f.lck.Lock()
 	f.started = true
 	f.lck.Unlock()
-}
-
-// createWorker creates a worker that fetches tasks from the queue
-func (f *BasicObjectFetcher) createWorker(id int) {
-	for !f.hasStopped() {
-		task := f.getTask()
-		if task != nil {
-			f.do(id, task)
-			continue
-		}
-		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
-	}
 }
 
 // Operation attempts to fetch objects of the pushed references, one reference
@@ -162,7 +146,7 @@ func (f *BasicObjectFetcher) createWorker(id int) {
 // For each object fetched, the resulting packfile decoded into the repository.
 // Therefore, on error, objects of successfully fetched references will remain
 // in the repository to be garbage collected by the pruner.
-func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
+func (f *BasicObjectFetcher) Operation(task *Task) error {
 	streamer := f.dht.ObjectStreamer()
 
 	for _, ref := range task.note.GetPushedReferences() {
@@ -202,7 +186,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 				return err
 			}
 			cn()
-			f.log.Debug("Reference objects successfully fetched", "ID", id, "Ref", ref.Name)
+			f.log.Debug("Reference objects successfully fetched", "Ref", ref.Name)
 		}
 
 		if plumbing.IsTag(ref.Name) {
@@ -261,7 +245,7 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 				return err
 			}
 			cn()
-			f.log.Debug("Reference objects successfully fetched", "ID", id, "Ref", ref.Name)
+			f.log.Debug("Reference objects successfully fetched", "Ref", ref.Name)
 		}
 	}
 
@@ -272,21 +256,15 @@ func (f *BasicObjectFetcher) Operation(id int, task *Task) error {
 // Try the Operation multiple times using an exponential backoff function
 // as long as the max fetch attempt is not reached.
 // On error, call the task's callback function with the error.
-func (f *BasicObjectFetcher) do(id int, task *Task) {
+func (f *BasicObjectFetcher) do(task *Task) {
 	bf := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(params.MaxNoteObjectFetchAttempts))
-	task.resCb(backoff.Retry(func() error { return f.Operation(id, task) }, bf))
-}
-
-// hasStopped checks whether the fetcher has been stopped
-func (f *BasicObjectFetcher) hasStopped() bool {
-	f.lck.Lock()
-	defer f.lck.Unlock()
-	return f.stopped
+	task.resCb(backoff.Retry(func() error { return f.Operation(task) }, bf))
 }
 
 // Stop stops the fetcher service
 func (f *BasicObjectFetcher) Stop() {
 	f.lck.Lock()
+	close(f.queue)
 	f.stopped = true
 	f.started = false
 	f.lck.Unlock()

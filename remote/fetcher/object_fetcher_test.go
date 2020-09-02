@@ -73,7 +73,7 @@ var _ = Describe("ObjectFetcher", func() {
 			mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 			note := &types.Note{References: []*types.PushedReference{}}
 			task := fetcher.NewTask(note, func(err error) {})
-			err := f.Operation(1, task)
+			err := f.Operation(task)
 			Expect(err).To(BeNil())
 		})
 
@@ -97,7 +97,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -126,7 +126,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("bad packfile"))
 			})
@@ -155,7 +155,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).To(BeNil())
 				Expect(fetchedCalled).To(BeTrue())
 			})
@@ -184,7 +184,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).To(BeNil())
 				Expect(fetchedCalled).To(BeTrue())
 			})
@@ -203,7 +203,7 @@ var _ = Describe("ObjectFetcher", func() {
 				note.SetTargetRepo(mockRepo)
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -232,7 +232,7 @@ var _ = Describe("ObjectFetcher", func() {
 					})
 
 					task := fetcher.NewTask(note, func(err error) {})
-					err := f.Operation(1, task)
+					err := f.Operation(task)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -262,7 +262,7 @@ var _ = Describe("ObjectFetcher", func() {
 					})
 
 					task := fetcher.NewTask(note, func(err error) {})
-					err := f.Operation(1, task)
+					err := f.Operation(task)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -287,7 +287,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -317,7 +317,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("bad packfile"))
 			})
@@ -347,7 +347,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).To(BeNil())
 				Expect(fetchedCalled).To(BeTrue())
 			})
@@ -371,7 +371,7 @@ var _ = Describe("ObjectFetcher", func() {
 				})
 
 				task := fetcher.NewTask(note, func(err error) {})
-				err := f.Operation(1, task)
+				err := f.Operation(task)
 				Expect(err).To(BeNil())
 				Expect(fetchedCalled).To(BeTrue())
 			})
