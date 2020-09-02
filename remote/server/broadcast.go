@@ -40,7 +40,7 @@ func (sv *Server) BroadcastNoteAndEndorsement(note pushtypes.PushNote) error {
 
 	// Cache the Endorsement object as an endorsement of the PushNote so can use it
 	// to create a mempool-bound push transaction when enough endorsements are discovered.
-	sv.registerEndorsementOfNote(note.ID().String(), endorsement)
+	sv.registerNoteEndorsement(note.ID().String(), endorsement)
 
 	// Attempt to create a PushTx and send to the transaction pool
 	sv.makePushTx(endorsement.NoteID.HexStr())

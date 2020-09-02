@@ -130,7 +130,7 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should register endorsement to the push note", func() {
-				noteEnds := svr.endorsementsReceived.Get(note.ID().String())
+				noteEnds := svr.endorsements.Get(note.ID().String())
 				Expect(noteEnds).To(HaveLen(1))
 				Expect(noteEnds).To(HaveKey(end.ID().String()))
 			})

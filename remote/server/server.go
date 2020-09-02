@@ -82,7 +82,8 @@ type Server struct {
 	blockGetter                types.BlockGetter                       // Provides access to blocks
 	noteSenders                *cache.Cache                            // Store senders of push notes
 	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
-	endorsementsReceived       *cache.Cache                            // Store PushEnds
+	endorsements               *cache.Cache                            // Stores push endorsements
+	notesReceived              *cache.Cache                            // Stores ID of push notes recently received
 	modulesAgg                 modtypes.ModulesHub                     // Modules aggregator
 	refSyncer                  rstypes.RefSync                         // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                       // Function for performing authentication
@@ -138,7 +139,8 @@ func New(
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		noteSenders:             cache.NewCacheWithExpiringEntry(params.PushNotesEndorsementsCacheSize),
 		endorsementSenders:      cache.NewCacheWithExpiringEntry(params.PushObjectsSendersCacheSize),
-		endorsementsReceived:    cache.NewCacheWithExpiringEntry(params.RecentlySeenPacksCacheSize),
+		endorsements:            cache.NewCacheWithExpiringEntry(params.RecentlySeenPacksCacheSize),
+		notesReceived:           cache.NewCacheWithExpiringEntry(params.NotesReceivedCacheSize),
 		checkEndorsement:        validation.CheckEndorsement,
 	}
 
@@ -225,25 +227,35 @@ func (sv *Server) registerEndorsementSender(senderID string, pushEndID string) {
 // isNoteSender checks whether a push note was sent by the given sender ID
 func (sv *Server) isNoteSender(senderID string, noteID string) bool {
 	key := crypto2.Hash20Hex([]byte(senderID + noteID))
-	v := sv.noteSenders.Get(key)
-	return v == struct{}{}
+	return sv.noteSenders.Get(key) == struct{}{}
 }
 
 // isEndorsementSender checks whether a push endorsement was sent by the given sender ID
 func (sv *Server) isEndorsementSender(senderID string, pushEndID string) bool {
 	key := crypto2.Hash20Hex([]byte(senderID + pushEndID))
-	v := sv.endorsementSenders.Get(key)
-	return v == struct{}{}
+	return sv.endorsementSenders.Get(key) == struct{}{}
 }
 
-// registerEndorsementOfNote indexes a push endorsement for a given push note
-func (sv *Server) registerEndorsementOfNote(noteID string, endorsement *pushtypes.PushEndorsement) {
-	pushEndList := sv.endorsementsReceived.Get(noteID)
-	if pushEndList == nil {
-		pushEndList = map[string]*pushtypes.PushEndorsement{}
+// registerNoteEndorsement indexes a push endorsement for a given push note
+func (sv *Server) registerNoteEndorsement(noteID string, endorsement *pushtypes.PushEndorsement) {
+	entries := sv.endorsements.Get(noteID)
+	if entries == nil {
+		entries = map[string]*pushtypes.PushEndorsement{}
 	}
-	pushEndList.(map[string]*pushtypes.PushEndorsement)[endorsement.ID().String()] = endorsement
-	sv.endorsementsReceived.Add(noteID, pushEndList)
+	entries.(map[string]*pushtypes.PushEndorsement)[endorsement.ID().String()] = endorsement
+	sv.endorsements.Add(noteID, entries)
+}
+
+// markNoteAsSeen marks a note as seen
+func (sv *Server) markNoteAsSeen(noteID string) {
+	key := crypto2.Hash20Hex([]byte(noteID))
+	sv.notesReceived.Add(key, struct{}{}, time.Now().Add(5*time.Minute))
+}
+
+// isNoteSeen checks if a note has been seen
+func (sv *Server) isNoteSeen(noteID string) bool {
+	key := crypto2.Hash20Hex([]byte(noteID))
+	return sv.notesReceived.Get(key) == struct{}{}
 }
 
 // Start starts the server that serves the repos.

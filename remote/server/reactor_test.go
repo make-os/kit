@@ -97,6 +97,15 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
+		When("push note has been seen before", func() {
+			It("should return nil", func() {
+				pn := &types.Note{RepoName: "repo1"}
+				svr.markNoteAsSeen(pn.ID().String())
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+				Expect(err).To(BeNil())
+			})
+		})
+
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
@@ -333,6 +342,10 @@ var _ = Describe("Reactor", func() {
 
 			It("should return no err", func() {
 				Expect(err).To(BeNil())
+			})
+
+			It("should mark note as seen", func() {
+				Expect(svr.isNoteSeen(pn.ID().String())).To(BeTrue())
 			})
 
 			It("should register peer as note sender", func() {
@@ -681,7 +694,7 @@ var _ = Describe("Reactor", func() {
 			})
 
 			Specify("that the endorsement was register to the push note", func() {
-				ends := svr.endorsementsReceived.Get(end.NoteID.String())
+				ends := svr.endorsements.Get(end.NoteID.String())
 				Expect(ends).ToNot(BeNil())
 				Expect(ends).To(HaveKey(end.ID().String()))
 				expected := ends.(map[string]*types.PushEndorsement)[end.ID().String()]
@@ -733,6 +746,14 @@ var _ = Describe("Reactor", func() {
 		})
 	})
 
+	Describe(".markNoteAsSeen & .isNoteSeen", func() {
+		It("should return false if note was not marked as seen", func() {
+			svr.markNoteAsSeen("note1")
+			Expect(svr.isNoteSeen("note2")).To(BeFalse())
+			Expect(svr.isNoteSeen("note1")).To(BeTrue())
+		})
+	})
+
 	Describe(".createPushTx", func() {
 		When("no Endorsement for the given note", func() {
 			var pushNoteID = "note1"
@@ -750,7 +771,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 2
-				svr.registerEndorsementOfNote(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				svr.registerNoteEndorsement(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
 				err = svr.createPushTx(pushNoteID)
 			})
 
@@ -764,7 +785,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				svr.registerEndorsementOfNote(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				svr.registerNoteEndorsement(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
 				err = svr.createPushTx(pushNoteID)
 			})
 
@@ -782,7 +803,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				svr.registerEndorsementOfNote(pushNote.ID().String(), &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				svr.registerNoteEndorsement(pushNote.ID().String(), &types.PushEndorsement{SigBLS: util.RandBytes(5)})
 				err = svr.createPushTx(pushNote.ID().String())
 			})
 
@@ -804,7 +825,7 @@ var _ = Describe("Reactor", func() {
 					SigBLS:         util.RandBytes(5),
 					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
-				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				svr.registerNoteEndorsement(pushNote.ID().String(), end)
 				err = svr.createPushTx(pushNote.ID().String())
 			})
 
@@ -829,7 +850,7 @@ var _ = Describe("Reactor", func() {
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 
-				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				svr.registerNoteEndorsement(pushNote.ID().String(), end)
 				err = svr.createPushTx(pushNote.ID().String())
 			})
 
@@ -855,7 +876,7 @@ var _ = Describe("Reactor", func() {
 					SigBLS:         util.RandBytes(5),
 				}
 
-				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				svr.registerNoteEndorsement(pushNote.ID().String(), end)
 				err = svr.createPushTx(pushNote.ID().String())
 			})
 
@@ -879,12 +900,12 @@ var _ = Describe("Reactor", func() {
 				end := &types.PushEndorsement{NoteID: []byte{1, 2, 3}, EndorserPubKey: key.PubKey().MustBytes32()}
 				end.SigBLS, err = key.PrivKey().BLSKey().Sign(end.BytesForBLSSig())
 				Expect(err).To(BeNil())
-				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				svr.registerNoteEndorsement(pushNote.ID().String(), end)
 
 				end2 := &types.PushEndorsement{NoteID: []byte{1, 2, 4}, EndorserPubKey: key.PubKey().MustBytes32()}
 				end2.SigBLS, err = key.PrivKey().BLSKey().Sign(end2.BytesForBLSSig())
 				Expect(err).To(BeNil())
-				svr.registerEndorsementOfNote(pushNote.ID().String(), end2)
+				svr.registerNoteEndorsement(pushNote.ID().String(), end2)
 
 				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).DoAndReturn(func(tx types2.BaseTx) error {
 					// NoteID and SigBLS fields must be unset

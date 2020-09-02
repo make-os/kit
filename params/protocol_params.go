@@ -111,6 +111,9 @@ var (
 	// RecentlySeenPacksCacheSize is the max size for the cache storing seen pack IDs
 	RecentlySeenPacksCacheSize = 5000
 
+	// NotesReceivedCacheSize is the max size of the cache that stores IDs of notes recently received
+	NotesReceivedCacheSize = 10000
+
 	// PushEndQuorumSize is the minimum number of PushEnds a push note requires
 	// for approval
 	PushEndorseQuorumSize = 2

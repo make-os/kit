@@ -198,16 +198,16 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Describe(".registerEndorsementOfNote", func() {
+	Describe(".registerNoteEndorsement", func() {
 		When("1 Endorsement for id=abc is added", func() {
 			BeforeEach(func() {
 				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
-				svr.registerEndorsementOfNote("abc", pushEnd)
+				svr.registerNoteEndorsement("abc", pushEnd)
 			})
 
 			Specify("that id=abc has 1 Endorsement", func() {
-				Expect(svr.endorsementsReceived.Len()).To(Equal(1))
-				pushEndList := svr.endorsementsReceived.Get("abc")
+				Expect(svr.endorsements.Len()).To(Equal(1))
+				pushEndList := svr.endorsements.Get("abc")
 				Expect(pushEndList).To(HaveLen(1))
 			})
 		})
@@ -216,13 +216,13 @@ var _ = Describe("Server", func() {
 			BeforeEach(func() {
 				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
 				pushEnd2 := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
-				svr.registerEndorsementOfNote("abc", pushEnd)
-				svr.registerEndorsementOfNote("abc", pushEnd2)
+				svr.registerNoteEndorsement("abc", pushEnd)
+				svr.registerNoteEndorsement("abc", pushEnd2)
 			})
 
 			Specify("that id=abc has 2 Endorsement", func() {
-				Expect(svr.endorsementsReceived.Len()).To(Equal(1))
-				pushEndList := svr.endorsementsReceived.Get("abc")
+				Expect(svr.endorsements.Len()).To(Equal(1))
+				pushEndList := svr.endorsements.Get("abc")
 				Expect(pushEndList).To(HaveLen(2))
 			})
 		})

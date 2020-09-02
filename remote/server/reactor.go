@@ -47,18 +47,25 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// Attempt to decode message to a PushNote
-	var note pushtypes.Note
+	var note = pushtypes.Note{FromRemotePeer: true}
 	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
-	note.FromRemotePeer = true
+
+	// Ignore note if previously seen
 	noteID := note.ID().String()
+	if sv.isNoteSeen(noteID) {
+		return nil
+	}
+
+	// Mark note as 'seen'
+	sv.markNoteAsSeen(noteID)
 
 	peerID, repoName := peer.ID(), note.GetRepoName()
-	repoPath, repoState := sv.getRepoPath(repoName), sv.logic.RepoKeeper().Get(repoName)
 	sv.log.Debug("Received a push note", "PeerID", peerID, "ID", noteID)
 
 	// Ensure target repository exists
+	repoPath, repoState := sv.getRepoPath(repoName), sv.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		return fmt.Errorf("repo '%s' not found", repoName)
 	}
@@ -293,7 +300,7 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// cache the Endorsement object as an endorsement of the PushNote
-	sv.registerEndorsementOfNote(noteID, &endorsement)
+	sv.registerNoteEndorsement(noteID, &endorsement)
 
 	// Attempt to create an send a PushTx to the transaction pool
 	sv.makePushTx(noteID)
@@ -315,7 +322,7 @@ type CreatePushTxFunc func(noteID string) error
 func (sv *Server) createPushTx(noteID string) error {
 
 	// Get the list of push endorsements received for the push note
-	endorsements := sv.endorsementsReceived.Get(noteID)
+	endorsements := sv.endorsements.Get(noteID)
 	if endorsements == nil {
 		return fmt.Errorf("no endorsements yet")
 	}
