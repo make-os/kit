@@ -59,6 +59,9 @@ type RefTask struct {
 	// Height is the block height where the reference updated occurred
 	Height int64
 
+	// Timestamp is the time the transaction was created
+	Timestamp int64
+
 	// Endorsements are the endorsements in the push transaction
 	Endorsements txns.PushEndorsements
 

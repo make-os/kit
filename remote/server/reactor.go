@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/crypto/bls"
@@ -196,6 +198,14 @@ func (sv *Server) onObjectsFetched(
 	return nil
 }
 
+// cmdWaiterFunc describes function for waiting for a command
+type cmdWaiterFunc func(cmd *exec.Cmd) error
+
+// cmdWaiter wraps cmd.Wait
+func cmdWaiter(cmd *exec.Cmd) error {
+	return cmd.Wait()
+}
+
 // MaybeProcessPushNoteFunc is a function for processing a push note
 type MaybeProcessPushNoteFunc func(note pushtypes.PushNote, txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc) error
@@ -217,6 +227,8 @@ func (sv *Server) maybeProcessPushNote(
 	repoPath := note.GetTargetRepo().GetPath()
 	cmd := exec.Command(sv.gitBinPath, []string{"receive-pack", "--stateless-rpc", repoPath}...)
 	cmd.Dir = repoPath
+	out := bytes.NewBuffer(nil)
+	cmd.Stderr = out
 
 	// Get the command's stdin pipe
 	in, err := cmd.StdinPipe()
@@ -224,23 +236,23 @@ func (sv *Server) maybeProcessPushNote(
 		return errors.Wrap(err, "failed to get stdin pipe")
 	}
 
-	// Get the command's stdout pipe
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return errors.Wrap(err, "failed to get stdout pipe")
-	}
-	defer stdout.Close()
-
-	// start the command
+	// Run the command
 	err = cmd.Start()
 	if err != nil {
-		return errors.Wrap(err, "failed to start git-receive-pack command")
+		return errors.Wrap(err, "git-receive-pack failed to start")
 	}
 
 	// Read, analyse and pass the packfile to git
 	handler := sv.makePushHandler(note.GetTargetRepo(), txDetails, polEnforcer)
 	if err := handler.HandleStream(packfile, in, cmd, nil); err != nil {
 		return errors.Wrap(err, "HandleStream error")
+	}
+
+	// Wait for git-receive-pack response.
+	if err := sv.cmdWaiter(cmd); err != nil {
+		errMsg := strings.TrimSpace(out.String())
+		sv.log.Error("Failed to write update to git repository", "Err", errMsg)
+		return fmt.Errorf("git-receive-pack: write error: %s", errMsg)
 	}
 
 	// Handle repository size check

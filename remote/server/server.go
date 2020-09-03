@@ -97,6 +97,7 @@ type Server struct {
 	endorsementBroadcaster     BroadcastEndorsementFunc                // Function for broadcasting an endorsement
 	noteBroadcaster            BroadcastPushNoteFunc                   // Function for broadcasting a push note
 	endorsementCreator         CreateEndorsementFunc                   // Function for creating an endorsement for a given push note
+	cmdWaiter                  cmdWaiterFunc                           // Function for waiting for exec.Cmd completion
 }
 
 // New creates an instance of Server
@@ -142,6 +143,7 @@ func New(
 		endorsements:            cache.NewCacheWithExpiringEntry(params.RecentlySeenPacksCacheSize),
 		notesReceived:           cache.NewCacheWithExpiringEntry(params.NotesReceivedCacheSize),
 		checkEndorsement:        validation.CheckEndorsement,
+		cmdWaiter:               cmdWaiter,
 	}
 
 	// Set concrete functions for various function typed fields

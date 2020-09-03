@@ -305,49 +305,54 @@ var _ = Describe("RefSync", func() {
 				Expect(updated).To(BeFalse())
 			})
 
-			It("should update repo without fetching objects if node is the creator of the push note", func() {
-				key, _ := cfg.G().PrivVal.GetKey()
-				task := &types3.RefTask{
-					RepoName:    "repo1",
-					Ref:         &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
-					NoteCreator: key.PubKey().MustBytes32(),
-				}
-				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
-				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
-				updated := false
-				rs.UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
-					updated = true
-					return nil
-				}
-				MockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
-				err := rs.do(task)
-				Expect(err).To(BeNil())
-				Expect(updated).To(BeTrue())
+			When("push note was recently created within the recency period", func() {
+				It("should update repo without fetching objects if node is the creator of the push note", func() {
+					key, _ := cfg.G().PrivVal.GetKey()
+					task := &types3.RefTask{
+						RepoName:    "repo1",
+						Ref:         &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
+						NoteCreator: key.PubKey().MustBytes32(),
+						Timestamp:   time.Now().Add(-(NoteRecencyDur - 10*time.Minute)).Unix(), // 10 minutes before recency window elapses
+					}
+					mockRepo := mocks.NewMockLocalRepo(ctrl)
+					rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+					mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
+					updated := false
+					rs.UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
+						updated = true
+						return nil
+					}
+					MockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
+					err := rs.do(task)
+					Expect(err).To(BeNil())
+					Expect(updated).To(BeTrue())
+				})
+
+				It("should update repo without fetching objects if node is an endorser of the push note", func() {
+					key, _ := cfg.G().PrivVal.GetKey()
+					task := &types3.RefTask{
+						RepoName: "repo1",
+						Ref:      &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
+						Endorsements: []*types.PushEndorsement{
+							{EndorserPubKey: key.PubKey().MustBytes32()},
+						},
+						Timestamp: time.Now().Add(-(NoteRecencyDur - 10*time.Minute)).Unix(), // 10 minutes before recency window elapses
+					}
+					mockRepo := mocks.NewMockLocalRepo(ctrl)
+					rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+					mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
+					updated := false
+					rs.UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
+						updated = true
+						return nil
+					}
+					MockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
+					err := rs.do(task)
+					Expect(err).To(BeNil())
+					Expect(updated).To(BeTrue())
+				})
 			})
 
-			It("should update repo without fetching objects if node is an endorser of the push note", func() {
-				key, _ := cfg.G().PrivVal.GetKey()
-				task := &types3.RefTask{
-					RepoName: "repo1",
-					Ref:      &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash},
-					Endorsements: []*types.PushEndorsement{
-						{EndorserPubKey: key.PubKey().MustBytes32()},
-					},
-				}
-				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
-				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
-				updated := false
-				rs.UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
-					updated = true
-					return nil
-				}
-				MockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
-				err := rs.do(task)
-				Expect(err).To(BeNil())
-				Expect(updated).To(BeTrue())
-			})
 		})
 
 		When("target repo is tracked", func() {
@@ -401,7 +406,7 @@ var _ = Describe("RefSync", func() {
 				return buf, nil
 			}, note)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(MatchRegexp("failed to start git-receive-pack command"))
+			Expect(err.Error()).To(MatchRegexp("git-receive-pack failed to start"))
 		})
 
 		It("should return error when generated packfile is invalid", func() {

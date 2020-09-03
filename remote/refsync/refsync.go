@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/make-os/lobe/config"
 	nodetypes "github.com/make-os/lobe/node/types"
@@ -27,6 +28,11 @@ import (
 
 var (
 	ErrUntracked = fmt.Errorf("untracked repository")
+)
+
+var (
+	// NoteRecencyDur is the duration within which a note is considered recently created.
+	NoteRecencyDur = 30 * time.Minute
 )
 
 // RefSync implements RefSync. It provides the mechanism that synchronizes the state of a
@@ -66,7 +72,9 @@ func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers co
 		removeRefQueueOnEmpty:   true,
 	}
 
+	// Create and start the watcher
 	rs.watcher = NewWatcher(cfg, rs.OnNewTx, keepers)
+	rs.watcher.Start()
 
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
@@ -138,6 +146,7 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 			Ref:          ref,
 			Height:       height,
 			TxIndex:      txIndex,
+			Timestamp:    tx.GetTimestamp(),
 		})
 	}
 }
@@ -220,6 +229,7 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		RepoName:      task.RepoName,
 		References:    []*types.PushedReference{task.Ref},
 		CreatorPubKey: task.NoteCreator,
+		Timestamp:     task.Timestamp,
 	}
 
 	// doUpdate uses the push note to update the target repo
@@ -243,20 +253,25 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		return err
 	}
 
-	// If the push note was signed by the current node, we don't need to fetch
-	// anything as we expect this node to have the objects already. Instead,
-	// update the repo using the push note.
-	valKey, _ := rs.cfg.G().PrivVal.GetKey()
-	if note.CreatorPubKey.Equal(valKey.PubKey().MustBytes32()) {
-		return doUpdate()
-	}
+	// If the note was created recently, it's safe to assume that the note signers
+	// and endorsers already have the objects. No need for them to fetch the objects.
+	if time.Unix(note.Timestamp, 0).After(time.Now().Add(-NoteRecencyDur)) {
 
-	// If the push note was endorsed by the current node, we don't need to fetch
-	// anything as we expect this node to have the objects already. Instead,
-	// update the repo using the push note.
-	for _, end := range task.Endorsements {
-		if end.EndorserPubKey.Equal(valKey.PubKey().MustBytes32()) {
+		// If the push note was signed by the current node, we don't need to fetch
+		// anything as we expect this node to have the objects already. Instead,
+		// update the repo using the push note.
+		valKey, _ := rs.cfg.G().PrivVal.GetKey()
+		if note.CreatorPubKey.Equal(valKey.PubKey().MustBytes32()) {
 			return doUpdate()
+		}
+
+		// If the push note was endorsed by the current node, we don't need to fetch
+		// anything as we expect this node to have the objects already. Instead,
+		// update the repo using the push note.
+		for _, end := range task.Endorsements {
+			if end.EndorserPubKey.Equal(valKey.PubKey().MustBytes32()) {
+				return doUpdate()
+			}
 		}
 	}
 
@@ -318,7 +333,7 @@ func UpdateRepoUsingNote(
 	// start the command
 	err = cmd.Start()
 	if err != nil {
-		return errors.Wrap(err, "failed to start git-receive-pack command")
+		return errors.Wrap(err, "git-receive-pack failed to start")
 	}
 
 	io.Copy(in, updatePackfile)

@@ -232,7 +232,7 @@ func (s *State) GetChanges(y types.BareRepoRefsState) *types.Changes {
 		return &types.Changes{References: EmptyChangeResult()}
 	}
 
-	// As long as GetState y has a reference collection,
+	// As long as y has a reference collection,
 	// we can check for changes
 	if s.References != nil {
 		refChange = getRefChanges(s.References, y.GetReferences())

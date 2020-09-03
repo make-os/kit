@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
@@ -530,7 +531,7 @@ var _ = Describe("Reactor", func() {
 				note.SetTargetRepo(testRepo)
 				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to start git-receive-pack command"))
+				Expect(err.Error()).To(MatchRegexp("git-receive-pack failed to start"))
 			})
 
 			It("should return error if unable to handle incoming stream", func() {
@@ -553,9 +554,28 @@ var _ = Describe("Reactor", func() {
 					enforcer policy.EnforcerFunc) push.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+					return mockHandler
+				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error {
+					return fmt.Errorf("git-receive-pack error")
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("git-receive-pack: write error"))
+			})
+
+			It("should return error if unable to handle repo size checks", func() {
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+					enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 					mockHandler.EXPECT().HandleRepoSize().Return(fmt.Errorf("error"))
 					return mockHandler
 				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
@@ -573,6 +593,7 @@ var _ = Describe("Reactor", func() {
 					mockHandler.EXPECT().HandleReferences().Return(fmt.Errorf("error"))
 					return mockHandler
 				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
@@ -590,6 +611,7 @@ var _ = Describe("Reactor", func() {
 					mockHandler.EXPECT().HandleReferences().Return(nil)
 					return mockHandler
 				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				mockPushPool := mocks.NewMockPushPool(ctrl)
@@ -610,6 +632,7 @@ var _ = Describe("Reactor", func() {
 					mockHandler.EXPECT().HandleReferences().Return(nil)
 					return mockHandler
 				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				mockPushPool := mocks.NewMockPushPool(ctrl)
@@ -635,6 +658,7 @@ var _ = Describe("Reactor", func() {
 					mockHandler.EXPECT().HandleReferences().Return(nil)
 					return mockHandler
 				}
+				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				mockPushPool := mocks.NewMockPushPool(ctrl)
