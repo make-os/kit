@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	fetcher "github.com/make-os/lobe/remote/fetcher"
 	types "github.com/make-os/lobe/remote/refsync/types"
 	txns "github.com/make-os/lobe/types/txns"
 	reflect "reflect"
@@ -138,96 +137,16 @@ func (m *MockRefSync) EXPECT() *MockRefSyncMockRecorder {
 	return m.recorder
 }
 
-// Do mocks base method
-func (m *MockRefSync) Do(task *types.RefTask) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Do", task)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Do indicates an expected call of Do
-func (mr *MockRefSyncMockRecorder) Do(task interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockRefSync)(nil).Do), task)
-}
-
 // OnNewTx mocks base method
-func (m *MockRefSync) OnNewTx(tx *txns.TxPush, height int64) {
+func (m *MockRefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnNewTx", tx, height)
+	m.ctrl.Call(m, "OnNewTx", tx, txIndex, height)
 }
 
 // OnNewTx indicates an expected call of OnNewTx
-func (mr *MockRefSyncMockRecorder) OnNewTx(tx, height interface{}) *gomock.Call {
+func (mr *MockRefSyncMockRecorder) OnNewTx(tx, txIndex, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, height)
-}
-
-// SetFetcher mocks base method
-func (m *MockRefSync) SetFetcher(fetcher fetcher.ObjectFetcherService) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetFetcher", fetcher)
-}
-
-// SetFetcher indicates an expected call of SetFetcher
-func (mr *MockRefSyncMockRecorder) SetFetcher(fetcher interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFetcher", reflect.TypeOf((*MockRefSync)(nil).SetFetcher), fetcher)
-}
-
-// Start mocks base method
-func (m *MockRefSync) Start() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
-}
-
-// Start indicates an expected call of Start
-func (mr *MockRefSyncMockRecorder) Start() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockRefSync)(nil).Start))
-}
-
-// IsRunning mocks base method
-func (m *MockRefSync) IsRunning() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRunning")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsRunning indicates an expected call of IsRunning
-func (mr *MockRefSyncMockRecorder) IsRunning() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockRefSync)(nil).IsRunning))
-}
-
-// HasTask mocks base method
-func (m *MockRefSync) HasTask() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasTask")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasTask indicates an expected call of HasTask
-func (mr *MockRefSyncMockRecorder) HasTask() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasTask", reflect.TypeOf((*MockRefSync)(nil).HasTask))
-}
-
-// QueueSize mocks base method
-func (m *MockRefSync) QueueSize() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueueSize")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// QueueSize indicates an expected call of QueueSize
-func (mr *MockRefSyncMockRecorder) QueueSize() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueSize", reflect.TypeOf((*MockRefSync)(nil).QueueSize))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, txIndex, height)
 }
 
 // CanSync mocks base method

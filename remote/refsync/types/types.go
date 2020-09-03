@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/make-os/lobe/remote/fetcher"
 	"github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -32,29 +31,9 @@ func (t *WatcherTask) GetID() interface{} {
 // push transaction.
 type RefSync interface {
 
-	// Do takes a pushed reference task and attempts to fetch the objects
-	// required to update the reference's local state.
-	Do(task *RefTask) error
-
 	// OnNewTx is called for every push transaction processed.
 	// height is the block height that contains the transaction.
-	OnNewTx(tx *txns.TxPush, height int64)
-
-	// SetFetcher sets the object fetcher
-	SetFetcher(fetcher fetcher.ObjectFetcherService)
-
-	// Start starts the syncer.
-	// Panics if reference syncer is already started.
-	Start()
-
-	// IsRunning checks if the syncer is running.
-	IsRunning() bool
-
-	// HasTask checks whether there are one or more unprocessed tasks.
-	HasTask() bool
-
-	// QueueSize returns the size of the tasks queue
-	QueueSize() int
+	OnNewTx(tx *txns.TxPush, txIndex int, height int64)
 
 	// CanSync checks whether the target repository of a push transaction can be synchronized.
 	CanSync(namespace, repoName string) error
@@ -73,6 +52,9 @@ type RefTask struct {
 
 	// Ref is the pushed reference
 	Ref *types.PushedReference
+
+	// TxIndex is the transaction index in its containing block
+	TxIndex int
 
 	// Height is the block height where the reference updated occurred
 	Height int64

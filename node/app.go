@@ -498,7 +498,7 @@ func (a *App) createGitRepositories() error {
 		return types.ErrSkipped
 	}
 
-	tracked := a.logic.TrackedRepoKeeper().Tracked()
+	tracked := a.logic.RepoSyncInfoKeeper().Tracked()
 	for _, repoName := range a.newRepos {
 		if len(tracked) > 0 && tracked[repoName] == nil {
 			continue

@@ -33,21 +33,21 @@ var (
 // repository's reference based on push transactions in the blockchain. It reacts to newly
 // processed push transactions, processing each references to change the state of a repository.
 type RefSync struct {
-	cfg                     *config.AppConfig
-	log                     logger.Logger
-	fetcher                 fetcher.ObjectFetcherService
-	queue                   chan *reftypes.RefTask
+	cfg     *config.AppConfig
+	log     logger.Logger
+	fetcher fetcher.ObjectFetcherService
+
 	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
 	keepers                 core.Keepers
 	watcher                 reftypes.Watcher
 	queued                  *cache.Cache
+	removeRefQueueOnEmpty   bool
 
 	lck            *sync.Mutex
-	started        bool
-	stopped        bool
 	FinalizingRefs map[string]struct{}
+	queues         map[string]chan *reftypes.RefTask
 }
 
 // New creates an instance of RefSync
@@ -56,35 +56,32 @@ func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers co
 		fetcher:                 fetcher,
 		lck:                     &sync.Mutex{},
 		cfg:                     cfg,
+		queues:                  map[string]chan *reftypes.RefTask{},
 		log:                     cfg.G().Log.Module("ref-syncer"),
-		queue:                   make(chan *reftypes.RefTask, 10000),
-		FinalizingRefs:          make(map[string]struct{}),
 		keepers:                 keepers,
 		queued:                  cache.NewCache(1000),
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
+		removeRefQueueOnEmpty:   true,
 	}
 
 	rs.watcher = NewWatcher(cfg, rs.OnNewTx, keepers)
+
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
-			rs.OnNewTx(evt.Args[0].(*txns.TxPush), evt.Args[1].(int64))
+			rs.OnNewTx(evt.Args[0].(*txns.TxPush), evt.Args[2].(int), evt.Args[1].(int64))
 		}
 	}()
-	return rs
-}
 
-// QueueSize returns the size of the tasks queue
-func (rs *RefSync) QueueSize() int {
-	return len(rs.queue)
+	return rs
 }
 
 // CanSync checks whether the target repository of a push transaction can be synchronized.
 func (rs *RefSync) CanSync(namespace, repoName string) error {
 
 	// If there are no explicitly tracked repository, all repositories must be synchronized
-	var tracked = rs.keepers.TrackedRepoKeeper().Tracked()
+	var tracked = rs.keepers.RepoSyncInfoKeeper().Tracked()
 	if len(tracked) == 0 {
 		return nil
 	}
@@ -109,10 +106,13 @@ func (rs *RefSync) CanSync(namespace, repoName string) error {
 	return nil
 }
 
+type TxHandlerFunc func(*txns.TxPush, int, int64)
+
 // OnNewTx receives push transactions and adds non-delete
-// pushed references to the queue as new tasks.
+// pushed references to the task queue.
+// txIndex is the index of the transaction it its containing block.
 // height is the block height that contains the transaction.
-func (rs *RefSync) OnNewTx(tx *txns.TxPush, height int64) {
+func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 
 	// Ignore already queued transaction
 	if rs.queued.Has(tx.GetID()) {
@@ -120,121 +120,70 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, height int64) {
 	}
 	rs.queued.Add(tx.GetID(), struct{}{})
 
+	// Check if the repository is allowed to be synchronized.
 	if rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName()) != nil {
 		return
 	}
 
+	// Track all non-delete pushed references
 	for _, ref := range tx.Note.GetPushedReferences() {
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue
 		}
-		rs.queue <- &reftypes.RefTask{
+		rs.addTask(&reftypes.RefTask{
 			ID:           fmt.Sprintf("%s_%d", ref.Name, ref.Nonce),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),
 			Endorsements: tx.Endorsements,
 			Ref:          ref,
 			Height:       height,
-		}
+			TxIndex:      txIndex,
+		})
 	}
 }
 
-// addToFinalizing adds a reference name to the index of currently finalizing references
-func (rs *RefSync) addToFinalizing(refName string) {
+func (rs *RefSync) addTask(task *reftypes.RefTask) {
+
+	// Get reference queue or create a new one
 	rs.lck.Lock()
-	defer rs.lck.Unlock()
-	rs.FinalizingRefs[refName] = struct{}{}
-}
-
-// isFinalizing checks whether the given reference name is being finalized
-func (rs *RefSync) isFinalizing(refName string) bool {
-	rs.lck.Lock()
-	defer rs.lck.Unlock()
-	_, ok := rs.FinalizingRefs[refName]
-	return ok
-}
-
-// removeFromFinalizing removes the given reference name from the index of currently finalizing references
-func (rs *RefSync) removeFromFinalizing(refName string) {
-	rs.lck.Lock()
-	defer rs.lck.Unlock()
-	delete(rs.FinalizingRefs, refName)
-}
-
-// HasTask checks whether there are one or more unprocessed tasks.
-func (rs *RefSync) HasTask() bool {
-	return rs.QueueSize() > 0
-}
-
-// Start starts the workers.
-// Panics if already started.
-func (rs *RefSync) Start() {
-
-	rs.lck.Lock()
-	started := rs.started
+	queue, ok := rs.queues[task.Ref.Name]
 	rs.lck.Unlock()
 
-	if started {
-		panic("already started")
-	}
+	if !ok {
+		queue = make(chan *reftypes.RefTask, 1000)
+		rs.lck.Lock()
+		rs.queues[task.Ref.Name] = queue
+		rs.lck.Unlock()
 
-	// Start the watcher
-	rs.watcher.Start()
-
-	go func() {
-		for task := range rs.queue {
-			task := task
-			go func() {
-				if err := rs.Do(task); err != nil {
+		// For a new queue, start a goroutine process it
+		go func() {
+			for task := range queue {
+				if err := rs.do(task); err != nil {
 					rs.log.Error(err.Error(), "Repo", task.RepoName, "Ref", task.Ref.Name)
 				}
-			}()
-		}
-	}()
 
-	rs.lck.Lock()
-	rs.started = true
-	rs.lck.Unlock()
-}
+				// If the queue is empty, close it and delete it from queues map
+				if len(queue) == 0 && rs.removeRefQueueOnEmpty {
+					close(queue)
+					rs.lck.Lock()
+					delete(rs.queues, task.Ref.Name)
+					rs.lck.Unlock()
+				}
+			}
+		}()
+	}
 
-// IsRunning checks if the syncer is running.
-func (rs *RefSync) IsRunning() bool {
-	return rs.started
-}
-
-// SetFetcher sets the object fetcher
-func (rs *RefSync) SetFetcher(fetcher fetcher.ObjectFetcherService) {
-	rs.fetcher = fetcher
+	queue <- task
 }
 
 // Stop stops the syncer
 func (rs *RefSync) Stop() {
-	rs.lck.Lock()
 	rs.watcher.Stop()
-	close(rs.queue)
-	rs.stopped = true
-	rs.started = false
-	rs.lck.Unlock()
 }
 
-// Do takes a pushed reference task and attempts to fetch the objects
+// do takes a pushed reference task and attempts to fetch the objects
 // required to update the reference's local state.
-func (rs *RefSync) Do(task *reftypes.RefTask) error {
-
-	refName := task.Ref.Name
-
-	// If a matching reference is currently being processed by a different worker,
-	// put the task back to the queue to be tried another time.
-	if rs.isFinalizing(refName) {
-		rs.queue <- task
-		return nil
-	}
-
-	// Add the reference to the finalizing reference index so other workers
-	// know not to try to update the reference. Also, remove it from the index
-	// when this function exits.
-	rs.addToFinalizing(refName)
-	defer rs.removeFromFinalizing(refName)
+func (rs *RefSync) do(task *reftypes.RefTask) error {
 
 	// Get the target repo
 	repoPath := filepath.Join(rs.cfg.GetRepoRoot(), task.RepoName)
@@ -244,6 +193,7 @@ func (rs *RefSync) Do(task *reftypes.RefTask) error {
 	}
 
 	// Get the target reference
+	refName := task.Ref.Name
 	localHash, err := targetRepo.RefGet(refName)
 	if err != nil {
 		if err != plumbing.ErrRefNotFound {
@@ -281,8 +231,8 @@ func (rs *RefSync) Do(task *reftypes.RefTask) error {
 		}
 
 		// If the repository is being tracked, update its last update height
-		if trackInfo := rs.keepers.TrackedRepoKeeper().Get(task.RepoName); trackInfo != nil {
-			if err = rs.keepers.TrackedRepoKeeper().Add(task.RepoName, uint64(task.Height)); err != nil {
+		if trackInfo := rs.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName); trackInfo != nil {
+			if err = rs.keepers.RepoSyncInfoKeeper().Track(task.RepoName, uint64(task.Height)); err != nil {
 				err = errors.Wrap(err, "failed to update tracked repo info")
 			}
 		}

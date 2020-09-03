@@ -126,12 +126,13 @@ type TrackedRepo struct {
 	LastUpdated util.UInt64 `json:"lastUpdated" msgpack:"lastUpdated"`
 }
 
-// TrackedRepoKeeper describes an interface for managing tracked repositories.
-type TrackedRepoKeeper interface {
-	Add(targets string, height ...uint64) error
+// RepoSyncInfoKeeper describes an interface for managing tracking and
+// synchronization state of repositories.
+type RepoSyncInfoKeeper interface {
+	Track(repos string, height ...uint64) error
 	Tracked() (res map[string]*TrackedRepo)
-	Get(name string) *TrackedRepo
-	Remove(targets string) error
+	GetTracked(name string) *TrackedRepo
+	UnTrack(repos string) error
 }
 
 // RepoKeeper describes an interface for accessing repository data
@@ -362,8 +363,8 @@ type Keepers interface {
 	// SysKeeper provides access to system or operation information.
 	SysKeeper() SystemKeeper
 
-	// TrackedRepoKeeper returns the track list keeper
-	TrackedRepoKeeper() TrackedRepoKeeper
+	// RepoSyncInfoKeeper returns the track list keeper
+	RepoSyncInfoKeeper() RepoSyncInfoKeeper
 
 	// AccountKeeper manages and provides access to network accounts
 	AccountKeeper() AccountKeeper

@@ -461,7 +461,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 // ARGS:
 // names: A comma-separated list of repository or namespace names.
 func (m *RepoModule) Track(names string, height ...uint64) {
-	if err := m.logic.TrackedRepoKeeper().Add(names, height...); err != nil {
+	if err := m.logic.RepoSyncInfoKeeper().Track(names, height...); err != nil {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 }
@@ -471,12 +471,12 @@ func (m *RepoModule) Track(names string, height ...uint64) {
 // ARGS:
 // names: A comma-separated list of repository or namespace names.
 func (m *RepoModule) UnTrack(names string) {
-	if err := m.logic.TrackedRepoKeeper().Remove(names); err != nil {
+	if err := m.logic.RepoSyncInfoKeeper().UnTrack(names); err != nil {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 }
 
 // GetTracked returns the tracked repositories
 func (m *RepoModule) GetTracked() util.Map {
-	return util.ToBasicMap(m.logic.TrackedRepoKeeper().Tracked())
+	return util.ToBasicMap(m.logic.RepoSyncInfoKeeper().Tracked())
 }

@@ -697,7 +697,7 @@ var _ = Describe("App", func() {
 		It("should create all repositories if no repo is being tracked", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
-			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo2")
 			app.createGitRepositories()
@@ -706,7 +706,7 @@ var _ = Describe("App", func() {
 		It("should create only repositories that are being tracked when there the node tracks repos", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
-			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
+			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
 			app.createGitRepositories()
 		})
@@ -714,7 +714,7 @@ var _ = Describe("App", func() {
 		It("should panic if unable to create repository", func() {
 			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1"}
-			mockLogic.TrackedRepoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1").Return(fmt.Errorf("error"))
 			mockLogic.AtomicLogic.EXPECT().Discard()
 			Expect(func() {

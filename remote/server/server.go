@@ -160,7 +160,6 @@ func New(
 	// Start reference synchronization and object fetcher in non-validator or test mode.
 	if !cfg.Node.Validator && cfg.Node.Mode != config.ModeTest {
 		server.objfetcher.Start()
-		server.refSyncer.Start()
 	}
 
 	// Register DHT object checkers

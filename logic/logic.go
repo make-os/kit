@@ -65,8 +65,8 @@ type Logic struct {
 	// txKeeper provides operations for managing transaction data
 	txKeeper *keepers.TxKeeper
 
-	// trackedRepoKeeper provides functionalities for managing tracked repositories
-	trackedRepoKeeper *keepers.TrackedRepoKeeper
+	// RepoSyncInfoKeeper provides functionalities for managing tracked repositories
+	repoSyncInfoKeeper *keepers.RepoSyncInfoKeeper
 
 	// pushKeyKeeper provides functionalities for managing push public keys
 	pushKeyKeeper *keepers.PushKeyKeeper
@@ -86,7 +86,7 @@ func New(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.Ap
 	l._db = db
 
 	// Initialize keepers that do not perform atomic operations with a shared transaction.
-	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
+	l.repoSyncInfoKeeper = keepers.NewRepoSyncInfoKeeper(dbTx, l.stateTree)
 	l.dhtKeeper = keepers.NewDHTKeyKeeper(dbTx)
 
 	return l
@@ -100,7 +100,7 @@ func NewAtomic(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *con
 
 	// Initialize keepers that do not perform atomic operations with a shared transaction.
 	dbTx := l._db.NewTx(true, true)
-	l.trackedRepoKeeper = keepers.NewTrackedRepoKeeper(dbTx, l.stateTree)
+	l.repoSyncInfoKeeper = keepers.NewRepoSyncInfoKeeper(dbTx, l.stateTree)
 	l.dhtKeeper = keepers.NewDHTKeyKeeper(dbTx)
 
 	return l
@@ -236,9 +236,9 @@ func (l *Logic) SysKeeper() core.SystemKeeper {
 	return l.systemKeeper
 }
 
-// TrackedRepoKeeper returns the track list keeper
-func (l *Logic) TrackedRepoKeeper() core.TrackedRepoKeeper {
-	return l.trackedRepoKeeper
+// RepoSyncInfoKeeper returns the track list keeper
+func (l *Logic) RepoSyncInfoKeeper() core.RepoSyncInfoKeeper {
+	return l.repoSyncInfoKeeper
 }
 
 // NamespaceKeeper returns the namespace keeper

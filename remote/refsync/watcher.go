@@ -27,7 +27,7 @@ type Watcher struct {
 	cfg       *config.AppConfig
 	log       logger.Logger
 	queue     chan *rstypes.WatcherTask
-	txHandler func(tx *txns.TxPush, height int64)
+	txHandler TxHandlerFunc
 	keepers   core.Keepers
 	service   services.Service
 
@@ -41,7 +41,7 @@ type Watcher struct {
 }
 
 // NewWatcher creates an instance of Watcher
-func NewWatcher(cfg *config.AppConfig, txHandler func(*txns.TxPush, int64), keepers core.Keepers) *Watcher {
+func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Keepers) *Watcher {
 	w := &Watcher{
 		lck:        &sync.Mutex{},
 		cfg:        cfg,
@@ -74,7 +74,7 @@ func (w *Watcher) HasTask() bool {
 
 // addTasks adds trackable repositories that have fallen behind to the queue.
 func (w *Watcher) addTasks() {
-	for repoName, trackInfo := range w.keepers.TrackedRepoKeeper().Tracked() {
+	for repoName, trackInfo := range w.keepers.RepoSyncInfoKeeper().Tracked() {
 		repoState := w.keepers.RepoKeeper().Get(repoName)
 		if repoState.LastUpdated <= trackInfo.LastUpdated {
 			continue
@@ -190,7 +190,7 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 			}
 
 			w.log.Debug("Found update for repo", "Repo", task.RepoName, "Height", start)
-			w.txHandler(obj, int64(start))
+			w.txHandler(obj, i, int64(start))
 			foundTx = true
 		}
 
@@ -198,7 +198,7 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 		// update block height of the tracked repo. If there were transactions
 		// the tx handler will be responsible for updating the height.
 		if !foundTx {
-			w.keepers.TrackedRepoKeeper().Add(task.RepoName, start)
+			w.keepers.RepoSyncInfoKeeper().Track(task.RepoName, start)
 		}
 
 		start++

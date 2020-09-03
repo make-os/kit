@@ -375,50 +375,50 @@ func (mr *MockAccountKeeperMockRecorder) Update(address, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAccountKeeper)(nil).Update), address, upd)
 }
 
-// MockTrackedRepoKeeper is a mock of TrackedRepoKeeper interface
-type MockTrackedRepoKeeper struct {
+// MockRepoSyncInfoKeeper is a mock of RepoSyncInfoKeeper interface
+type MockRepoSyncInfoKeeper struct {
 	ctrl     *gomock.Controller
-	recorder *MockTrackedRepoKeeperMockRecorder
+	recorder *MockRepoSyncInfoKeeperMockRecorder
 }
 
-// MockTrackedRepoKeeperMockRecorder is the mock recorder for MockTrackedRepoKeeper
-type MockTrackedRepoKeeperMockRecorder struct {
-	mock *MockTrackedRepoKeeper
+// MockRepoSyncInfoKeeperMockRecorder is the mock recorder for MockRepoSyncInfoKeeper
+type MockRepoSyncInfoKeeperMockRecorder struct {
+	mock *MockRepoSyncInfoKeeper
 }
 
-// NewMockTrackedRepoKeeper creates a new mock instance
-func NewMockTrackedRepoKeeper(ctrl *gomock.Controller) *MockTrackedRepoKeeper {
-	mock := &MockTrackedRepoKeeper{ctrl: ctrl}
-	mock.recorder = &MockTrackedRepoKeeperMockRecorder{mock}
+// NewMockRepoSyncInfoKeeper creates a new mock instance
+func NewMockRepoSyncInfoKeeper(ctrl *gomock.Controller) *MockRepoSyncInfoKeeper {
+	mock := &MockRepoSyncInfoKeeper{ctrl: ctrl}
+	mock.recorder = &MockRepoSyncInfoKeeperMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTrackedRepoKeeper) EXPECT() *MockTrackedRepoKeeperMockRecorder {
+func (m *MockRepoSyncInfoKeeper) EXPECT() *MockRepoSyncInfoKeeperMockRecorder {
 	return m.recorder
 }
 
-// Add mocks base method
-func (m *MockTrackedRepoKeeper) Add(targets string, height ...uint64) error {
+// Track mocks base method
+func (m *MockRepoSyncInfoKeeper) Track(repos string, height ...uint64) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{targets}
+	varargs := []interface{}{repos}
 	for _, a := range height {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Add", varargs...)
+	ret := m.ctrl.Call(m, "Track", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Add indicates an expected call of Add
-func (mr *MockTrackedRepoKeeperMockRecorder) Add(targets interface{}, height ...interface{}) *gomock.Call {
+// Track indicates an expected call of Track
+func (mr *MockRepoSyncInfoKeeperMockRecorder) Track(repos interface{}, height ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{targets}, height...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Add), varargs...)
+	varargs := append([]interface{}{repos}, height...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).Track), varargs...)
 }
 
 // Tracked mocks base method
-func (m *MockTrackedRepoKeeper) Tracked() map[string]*core.TrackedRepo {
+func (m *MockRepoSyncInfoKeeper) Tracked() map[string]*core.TrackedRepo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Tracked")
 	ret0, _ := ret[0].(map[string]*core.TrackedRepo)
@@ -426,37 +426,66 @@ func (m *MockTrackedRepoKeeper) Tracked() map[string]*core.TrackedRepo {
 }
 
 // Tracked indicates an expected call of Tracked
-func (mr *MockTrackedRepoKeeperMockRecorder) Tracked() *gomock.Call {
+func (mr *MockRepoSyncInfoKeeperMockRecorder) Tracked() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tracked", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Tracked))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tracked", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).Tracked))
 }
 
-// Get mocks base method
-func (m *MockTrackedRepoKeeper) Get(name string) *core.TrackedRepo {
+// GetTracked mocks base method
+func (m *MockRepoSyncInfoKeeper) GetTracked(name string) *core.TrackedRepo {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", name)
+	ret := m.ctrl.Call(m, "GetTracked", name)
 	ret0, _ := ret[0].(*core.TrackedRepo)
 	return ret0
 }
 
-// Get indicates an expected call of Get
-func (mr *MockTrackedRepoKeeperMockRecorder) Get(name interface{}) *gomock.Call {
+// GetTracked indicates an expected call of GetTracked
+func (mr *MockRepoSyncInfoKeeperMockRecorder) GetTracked(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Get), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracked", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).GetTracked), name)
 }
 
-// Remove mocks base method
-func (m *MockTrackedRepoKeeper) Remove(targets string) error {
+// UnTrack mocks base method
+func (m *MockRepoSyncInfoKeeper) UnTrack(repos string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", targets)
+	ret := m.ctrl.Call(m, "UnTrack", repos)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Remove indicates an expected call of Remove
-func (mr *MockTrackedRepoKeeperMockRecorder) Remove(targets interface{}) *gomock.Call {
+// UnTrack indicates an expected call of UnTrack
+func (mr *MockRepoSyncInfoKeeperMockRecorder) UnTrack(repos interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockTrackedRepoKeeper)(nil).Remove), targets)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnTrack", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).UnTrack), repos)
+}
+
+// SetLastSyncedNonce mocks base method
+func (m *MockRepoSyncInfoKeeper) SetLastSyncedNonce(repo, ref string, nonce uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetLastSyncedNonce", repo, ref, nonce)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetLastSyncedNonce indicates an expected call of SetLastSyncedNonce
+func (mr *MockRepoSyncInfoKeeperMockRecorder) SetLastSyncedNonce(repo, ref, nonce interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastSyncedNonce", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).SetLastSyncedNonce), repo, ref, nonce)
+}
+
+// GetLastSyncedNonce mocks base method
+func (m *MockRepoSyncInfoKeeper) GetLastSyncedNonce(repo, ref string) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastSyncedNonce", repo, ref)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastSyncedNonce indicates an expected call of GetLastSyncedNonce
+func (mr *MockRepoSyncInfoKeeperMockRecorder) GetLastSyncedNonce(repo, ref interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastSyncedNonce", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).GetLastSyncedNonce), repo, ref)
 }
 
 // MockRepoKeeper is a mock of RepoKeeper interface
@@ -814,18 +843,18 @@ func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).SysKeeper))
 }
 
-// TrackedRepoKeeper mocks base method
-func (m *MockAtomicLogic) TrackedRepoKeeper() core.TrackedRepoKeeper {
+// RepoSyncInfoKeeper mocks base method
+func (m *MockAtomicLogic) RepoSyncInfoKeeper() core.RepoSyncInfoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
-	ret0, _ := ret[0].(core.TrackedRepoKeeper)
+	ret := m.ctrl.Call(m, "RepoSyncInfoKeeper")
+	ret0, _ := ret[0].(core.RepoSyncInfoKeeper)
 	return ret0
 }
 
-// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
-func (mr *MockAtomicLogicMockRecorder) TrackedRepoKeeper() *gomock.Call {
+// RepoSyncInfoKeeper indicates an expected call of RepoSyncInfoKeeper
+func (mr *MockAtomicLogicMockRecorder) RepoSyncInfoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TrackedRepoKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoSyncInfoKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).RepoSyncInfoKeeper))
 }
 
 // AccountKeeper mocks base method
@@ -1193,18 +1222,18 @@ func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
 }
 
-// TrackedRepoKeeper mocks base method
-func (m *MockLogic) TrackedRepoKeeper() core.TrackedRepoKeeper {
+// RepoSyncInfoKeeper mocks base method
+func (m *MockLogic) RepoSyncInfoKeeper() core.RepoSyncInfoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
-	ret0, _ := ret[0].(core.TrackedRepoKeeper)
+	ret := m.ctrl.Call(m, "RepoSyncInfoKeeper")
+	ret0, _ := ret[0].(core.RepoSyncInfoKeeper)
 	return ret0
 }
 
-// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
-func (mr *MockLogicMockRecorder) TrackedRepoKeeper() *gomock.Call {
+// RepoSyncInfoKeeper indicates an expected call of RepoSyncInfoKeeper
+func (mr *MockLogicMockRecorder) RepoSyncInfoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockLogic)(nil).TrackedRepoKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoSyncInfoKeeper", reflect.TypeOf((*MockLogic)(nil).RepoSyncInfoKeeper))
 }
 
 // AccountKeeper mocks base method
@@ -1532,18 +1561,18 @@ func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockKeepers)(nil).SysKeeper))
 }
 
-// TrackedRepoKeeper mocks base method
-func (m *MockKeepers) TrackedRepoKeeper() core.TrackedRepoKeeper {
+// RepoSyncInfoKeeper mocks base method
+func (m *MockKeepers) RepoSyncInfoKeeper() core.RepoSyncInfoKeeper {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TrackedRepoKeeper")
-	ret0, _ := ret[0].(core.TrackedRepoKeeper)
+	ret := m.ctrl.Call(m, "RepoSyncInfoKeeper")
+	ret0, _ := ret[0].(core.RepoSyncInfoKeeper)
 	return ret0
 }
 
-// TrackedRepoKeeper indicates an expected call of TrackedRepoKeeper
-func (mr *MockKeepersMockRecorder) TrackedRepoKeeper() *gomock.Call {
+// RepoSyncInfoKeeper indicates an expected call of RepoSyncInfoKeeper
+func (mr *MockKeepersMockRecorder) RepoSyncInfoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackedRepoKeeper", reflect.TypeOf((*MockKeepers)(nil).TrackedRepoKeeper))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoSyncInfoKeeper", reflect.TypeOf((*MockKeepers)(nil).RepoSyncInfoKeeper))
 }
 
 // AccountKeeper mocks base method

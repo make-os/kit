@@ -15,15 +15,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TrackedRepoKeeper manages information about repositories that the node has subscribed to.
-type TrackedRepoKeeper struct {
+// RepoSyncInfoKeeper manages information about repositories that are being tracked.
+type RepoSyncInfoKeeper struct {
 	db    storagetypes.Tx
 	state *tree.SafeTree
 }
 
-// NewTrackedRepoKeeper creates an instance of TrackedRepoKeeper
-func NewTrackedRepoKeeper(db storagetypes.Tx, state *tree.SafeTree) *TrackedRepoKeeper {
-	return &TrackedRepoKeeper{db: db, state: state}
+// NewRepoSyncInfoKeeper creates an instance of RepoSyncInfoKeeper
+func NewRepoSyncInfoKeeper(db storagetypes.Tx, state *tree.SafeTree) *RepoSyncInfoKeeper {
+	return &RepoSyncInfoKeeper{db: db, state: state}
 }
 
 // Add adds repositories to the track list.
@@ -35,7 +35,7 @@ func NewTrackedRepoKeeper(db storagetypes.Tx, state *tree.SafeTree) *TrackedRepo
 // If height is provided, it will be used as the last update height.
 //
 // If will not re-add an already repo
-func (t *TrackedRepoKeeper) Add(targets string, height ...uint64) error {
+func (t *RepoSyncInfoKeeper) Track(targets string, height ...uint64) error {
 
 	var final = []string{}
 	for _, target := range strings.Split(targets, ",") {
@@ -86,7 +86,7 @@ func (t *TrackedRepoKeeper) Add(targets string, height ...uint64) error {
 }
 
 // Tracked returns a map of repositories.
-func (t *TrackedRepoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
+func (t *RepoSyncInfoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
 	t.db.NewTx(true, true).Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
 		var tr core.TrackedRepo
@@ -97,10 +97,10 @@ func (t *TrackedRepoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	return
 }
 
-// Get returns a repo.
+// GetTracked returns a repo.
 //
 // Returns nil if not found
-func (t *TrackedRepoKeeper) Get(name string) *core.TrackedRepo {
+func (t *RepoSyncInfoKeeper) GetTracked(name string) *core.TrackedRepo {
 	rec, err := t.db.Get(MakeTrackedRepoKey(name))
 	if err != nil {
 		if err == storage.ErrRecordNotFound {
@@ -118,7 +118,7 @@ func (t *TrackedRepoKeeper) Get(name string) *core.TrackedRepo {
 // Target can be one or more comma-separated list of repositories or user namespaces.
 //
 // If a user namespace is provided, all repository targets are removed.
-func (t *TrackedRepoKeeper) Remove(targets string) error {
+func (t *RepoSyncInfoKeeper) UnTrack(targets string) error {
 	var final = []string{}
 	for _, target := range strings.Split(targets, ",") {
 		target = strings.TrimSpace(target)
