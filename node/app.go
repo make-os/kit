@@ -33,6 +33,12 @@ type mergeProposalInfo struct {
 	proposalID string
 }
 
+// blockTx represents a tx in a block
+type blockTx struct {
+	tx    types.BaseTx
+	index int
+}
+
 // App implements tendermint ABCI interface to
 type App struct {
 	db                        storagetypes.Engine
@@ -49,10 +55,10 @@ type App struct {
 	isCurrentBlockProposer    bool
 	unsavedValidators         []*core.Validator
 	heightToSaveNewValidators int64
-	unIdxTxs                  []types.BaseTx
-	unIdxRepoPropVotes        []*txns.TxRepoProposalVote
+	okTxs                     []blockTx
+	repoPropTxs               []*txns.TxRepoProposalVote
 	newRepos                  []string
-	unIdxClosedMergeProposal  []*mergeProposalInfo
+	closedMergeProps          []*mergeProposalInfo
 }
 
 // NewApp creates an instance of App
@@ -230,26 +236,23 @@ func (a *App) postExecChecks(
 		a.newRepos = append(a.newRepos, o.Name)
 
 	case *txns.TxRepoProposalVote:
-		a.unIdxRepoPropVotes = append(a.unIdxRepoPropVotes, o)
+		a.repoPropTxs = append(a.repoPropTxs, o)
 
 	case *txns.TxPush:
 		for _, ref := range o.Note.GetPushedReferences() {
 			if ref.MergeProposalID == "" {
 				continue
 			}
-			a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
+			a.closedMergeProps = append(a.closedMergeProps, &mergeProposalInfo{
 				repo:       o.Note.GetRepoName(),
 				proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
 			})
 		}
-
-		// Broadcast pushed transaction
-		a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed, o, a.curBlock.Height.Int64())
 	}
 
 	// Register the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
-	a.unIdxTxs = append(a.unIdxTxs, tx)
+	a.okTxs = append(a.okTxs, blockTx{tx, a.txIndex})
 
 	return resp
 }
@@ -456,10 +459,10 @@ func (a *App) reset() {
 	a.unbondHostReqs = []util.HexBytes{}
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
-	a.unIdxTxs = []types.BaseTx{}
-	a.unIdxRepoPropVotes = []*txns.TxRepoProposalVote{}
+	a.okTxs = []blockTx{}
+	a.repoPropTxs = []*txns.TxRepoProposalVote{}
 	a.newRepos = []string{}
-	a.unIdxClosedMergeProposal = []*mergeProposalInfo{}
+	a.closedMergeProps = []*mergeProposalInfo{}
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.
@@ -510,7 +513,7 @@ func (a *App) createGitRepositories() error {
 
 // markMergeProposalAsClosed marks a merge proposal as closed.
 func (a *App) markMergeProposalAsClosed() {
-	for _, info := range a.unIdxClosedMergeProposal {
+	for _, info := range a.closedMergeProps {
 		if err := a.logic.RepoKeeper().MarkProposalAsClosed(info.repo, info.proposalID); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to mark merge proposal as closed"))
 		}
@@ -526,7 +529,7 @@ func (a *App) expireHostTickets() {
 
 // indexProposalVotes indexes a vote for on a proposal
 func (a *App) indexProposalVotes() {
-	for _, v := range a.unIdxRepoPropVotes {
+	for _, v := range a.repoPropTxs {
 		if err := a.logic.RepoKeeper().IndexProposalVote(v.RepoName, v.ProposalID,
 			v.GetFrom().String(), v.Vote); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index repository proposal vote"))
@@ -536,9 +539,16 @@ func (a *App) indexProposalVotes() {
 
 // indexTransactions indexes transactions
 func (a *App) indexTransactions() {
-	for _, t := range a.unIdxTxs {
-		if err := a.logic.TxKeeper().Index(t); err != nil {
+	for _, btx := range a.okTxs {
+
+		if err := a.logic.TxKeeper().Index(btx.tx); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
+		}
+
+		// Broadcast pushed transaction
+		if btx.tx.Is(txns.TxTypePush) {
+			a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed,
+				btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
 		}
 	}
 }

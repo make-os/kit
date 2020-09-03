@@ -6,6 +6,7 @@ import (
 
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/logic/contracts/mergerequest"
+	types2 "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	storagetypes "github.com/make-os/lobe/storage/types"
@@ -496,7 +497,8 @@ var _ = Describe("App", func() {
 			})
 
 			It("should add tx to un-indexed cache", func() {
-				Expect(app.unIdxTxs).To(ContainElement(tx))
+				Expect(app.okTxs).To(HaveLen(1))
+				Expect(app.okTxs[0].tx).To(Equal(tx))
 			})
 		})
 
@@ -511,12 +513,13 @@ var _ = Describe("App", func() {
 			})
 
 			It("should add repo name to new repo index", func() {
-				Expect(app.unIdxRepoPropVotes).To(HaveLen(1))
-				Expect(app.unIdxRepoPropVotes).To(ContainElement(tx))
+				Expect(app.repoPropTxs).To(HaveLen(1))
+				Expect(app.repoPropTxs).To(ContainElement(tx))
 			})
 
 			It("should add tx to un-indexed cache", func() {
-				Expect(app.unIdxTxs).To(ContainElement(tx))
+				Expect(app.okTxs).To(HaveLen(1))
+				Expect(app.okTxs[0].tx).To(Equal(tx))
 			})
 		})
 
@@ -534,12 +537,13 @@ var _ = Describe("App", func() {
 			})
 
 			It("should add repo and proposal id to closable proposals", func() {
-				Expect(app.unIdxClosedMergeProposal).To(HaveLen(1))
-				Expect(app.unIdxClosedMergeProposal).To(ContainElement(&mergeProposalInfo{"repo1", mergerequest.MakeMergeRequestProposalID("0001")}))
+				Expect(app.closedMergeProps).To(HaveLen(1))
+				Expect(app.closedMergeProps).To(ContainElement(&mergeProposalInfo{"repo1", mergerequest.MakeMergeRequestProposalID("0001")}))
 			})
 
 			It("should add tx to un-indexed cache", func() {
-				Expect(app.unIdxTxs).To(ContainElement(tx))
+				Expect(app.okTxs).To(HaveLen(1))
+				Expect(app.okTxs[0].tx).To(Equal(tx))
 			})
 		})
 	})
@@ -575,7 +579,7 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
 				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
 				app.logic = mockLogic.AtomicLogic
-				app.unIdxTxs = append(app.unIdxTxs, txns.NewBareTxCoinTransfer())
+				app.okTxs = append(app.okTxs, blockTx{txns.NewBareTxCoinTransfer(), 0})
 			})
 
 			It("should panic", func() {
@@ -661,7 +665,7 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				mergePropInfo = &mergeProposalInfo{repo: "repo1", proposalID: "0001"}
-				app.unIdxClosedMergeProposal = append(app.unIdxClosedMergeProposal, mergePropInfo)
+				app.closedMergeProps = append(app.closedMergeProps, mergePropInfo)
 
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
 				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
@@ -716,6 +720,30 @@ var _ = Describe("App", func() {
 			Expect(func() {
 				app.createGitRepositories()
 			}).To(Panic())
+		})
+	})
+
+	Describe(".indexTransactions", func() {
+		It("should panic when unable to index transaction", func() {
+			tx := txns.NewBareTxCoinTransfer()
+			tx.Value = "10"
+			app.okTxs = []blockTx{{tx, 0}}
+			mockLogic.TxKeeper.EXPECT().Index(tx).Return(fmt.Errorf("error"))
+			mockLogic.AtomicLogic.EXPECT().Discard()
+			app.logic = mockLogic.AtomicLogic
+			Expect(func() { app.indexTransactions() }).To(Panic())
+		})
+
+		It("should broadcast push transaction", func() {
+			tx := txns.NewBareTxPush()
+			tx.Nonce = 100
+			app.okTxs = []blockTx{{tx, 0}}
+			go app.indexTransactions()
+			evt := <-cfg.G().Bus.On(types2.EvtTxPushProcessed)
+			Expect(evt.Args).To(HaveLen(3))
+			Expect(evt.Args[0]).To(Equal(tx))
+			Expect(evt.Args[1]).To(Equal(app.curBlock.Height.Int64()))
+			Expect(evt.Args[2]).To(Equal(0))
 		})
 	})
 })
