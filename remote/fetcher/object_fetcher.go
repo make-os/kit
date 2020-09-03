@@ -38,12 +38,16 @@ type ObjectFetcher interface {
 	Stop()
 }
 
-// ObjectFetcherService is like ObjectFetcher but exposes only commands
-// necessary for safe use by other packages.
+// ObjectFetcherService is like ObjectFetcher but exposes limited methods.
 type ObjectFetcherService interface {
+
 	// FetchAsync adds a new task to the queue.
 	// cb will be called when the task has been processed.
 	FetchAsync(note types.PushNote, cb func(err error))
+
+	// OnPackReceived registers a callback that is called each time a packfile
+	// of an object is fetched
+	OnPackReceived(cb func(hash string, packfile io.ReadSeeker))
 }
 
 // Task represents a fetch task

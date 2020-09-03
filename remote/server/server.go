@@ -134,7 +134,7 @@ func New(
 		objfetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
-		refSyncer:               refsync.New(cfg, mFetcher, appLogic),
+		refSyncer:               refsync.New(cfg, mFetcher, dht, appLogic),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,

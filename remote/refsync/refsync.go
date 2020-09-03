@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht/announcer"
+	anntypes "github.com/make-os/lobe/dht/types"
 	nodetypes "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
@@ -24,6 +26,8 @@ import (
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
+	packfile2 "gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (
@@ -39,10 +43,10 @@ var (
 // repository's reference based on push transactions in the blockchain. It reacts to newly
 // processed push transactions, processing each references to change the state of a repository.
 type RefSync struct {
-	cfg     *config.AppConfig
-	log     logger.Logger
-	fetcher fetcher.ObjectFetcherService
-
+	cfg                     *config.AppConfig
+	log                     logger.Logger
+	fetcher                 fetcher.ObjectFetcherService
+	announcer               anntypes.AnnouncerService
 	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
@@ -50,14 +54,17 @@ type RefSync struct {
 	watcher                 reftypes.Watcher
 	queued                  *cache.Cache
 	removeRefQueueOnEmpty   bool
-
-	lck            *sync.Mutex
-	FinalizingRefs map[string]struct{}
-	queues         map[string]chan *reftypes.RefTask
+	lck                     *sync.Mutex
+	FinalizingRefs          map[string]struct{}
+	queues                  map[string]chan *reftypes.RefTask
 }
 
 // New creates an instance of RefSync
-func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers core.Keepers) *RefSync {
+func New(cfg *config.AppConfig,
+	fetcher fetcher.ObjectFetcherService,
+	announcer anntypes.AnnouncerService,
+	keepers core.Keepers) *RefSync {
+
 	rs := &RefSync{
 		fetcher:                 fetcher,
 		lck:                     &sync.Mutex{},
@@ -70,11 +77,14 @@ func New(cfg *config.AppConfig, fetcher fetcher.ObjectFetcherService, keepers co
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
 		removeRefQueueOnEmpty:   true,
+		announcer:               announcer,
 	}
 
 	// Create and start the watcher
 	rs.watcher = NewWatcher(cfg, rs.OnNewTx, keepers)
-	rs.watcher.Start()
+	if cfg.Node.Mode != config.ModeTest {
+		rs.watcher.Start()
+	}
 
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
@@ -275,9 +285,20 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		}
 	}
 
-	// FetchAsync objects required to apply the push note updates successfully.
-	// Since fetching is asynchronous, we use an error channel to learn about
-	// problems and also to wait for the fetch operation to finish.
+	// Announce fetched objects as they are fetched.
+	rs.fetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
+		plumbing.UnpackPackfile(packfile, func(header *packfile2.ObjectHeader, read func() (object.Object, error)) error {
+			obj, _ := read()
+			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
+				objHash := obj.ID()
+				rs.announcer.Announce(announcer.ObjTypeGit, note.RepoName, objHash[:], nil)
+			}
+			return nil
+		})
+	})
+
+	// FetchAsync objects that are required to apply the push note updates successfully.
+	// Since fetching is asynchronous, we use an error channel wait for it to complete.
 	var errCh = make(chan error, 1)
 	rs.fetcher.FetchAsync(note, func(err error) {
 

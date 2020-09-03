@@ -17,10 +17,20 @@ type Announcer interface {
 	// HasTask checks whether there are one or more unprocessed tasks.
 	HasTask() bool
 
-	// Stops the announcer
+	// Stop stops the announcer and releases resources
 	Stop()
 
 	// RegisterChecker allows external caller to register existence checker
 	// for a given object type. Only one checker per object type.
 	RegisterChecker(objType int, checker CheckFunc)
+}
+
+// AnnouncerService is like Announcer but exposes limited methods
+type AnnouncerService interface {
+
+	// Announce queues an object to be announced.
+	// objType is the type of the object.
+	// key is the unique identifier of the object.
+	// doneCB is called after successful announcement
+	Announce(objType int, repo string, key []byte, doneCB func(error))
 }

@@ -33,7 +33,7 @@ const (
 	KeyReannounceDur = 5 * time.Hour
 
 	// ReannouncerInterval is the duration between each reannoucement process.
-	ReannouncerInterval = 1 * time.Hour
+	ReannouncerInterval = 30 * time.Second
 )
 
 // MaxRetry is the number of times to try to reannounce a key
