@@ -156,7 +156,7 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteClose
 	h.pktEnc.Encode(plumbing.SidebandInfo("reading objects and references"))
 
 	// Read the packfile objects
-	if err = h.PushReader.Read(gitReceiveCmd); err != nil {
+	if err = h.PushReader.Read(); err != nil {
 		return err
 	}
 

@@ -88,6 +88,7 @@ func (t *RepoSyncInfoKeeper) Track(targets string, height ...uint64) error {
 // Tracked returns a map of repositories.
 func (t *RepoSyncInfoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
+	t.db.Discard()
 	t.db.NewTx(true, true).Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
 		var tr core.TrackedRepo
 		r.Scan(&tr)

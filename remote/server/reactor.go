@@ -227,8 +227,8 @@ func (sv *Server) maybeProcessPushNote(
 	repoPath := note.GetTargetRepo().GetPath()
 	cmd := exec.Command(sv.gitBinPath, []string{"receive-pack", "--stateless-rpc", repoPath}...)
 	cmd.Dir = repoPath
-	out := bytes.NewBuffer(nil)
-	cmd.Stderr = out
+	stderr := bytes.NewBuffer(nil)
+	cmd.Stderr = stderr
 
 	// Get the command's stdin pipe
 	in, err := cmd.StdinPipe()
@@ -236,7 +236,7 @@ func (sv *Server) maybeProcessPushNote(
 		return errors.Wrap(err, "failed to get stdin pipe")
 	}
 
-	// Run the command
+	// Start the command
 	err = cmd.Start()
 	if err != nil {
 		return errors.Wrap(err, "git-receive-pack failed to start")
@@ -250,9 +250,7 @@ func (sv *Server) maybeProcessPushNote(
 
 	// Wait for git-receive-pack response.
 	if err := sv.cmdWaiter(cmd); err != nil {
-		errMsg := strings.TrimSpace(out.String())
-		sv.log.Error("Failed to write update to git repository", "Err", errMsg)
-		return fmt.Errorf("git-receive-pack: write error: %s", errMsg)
+		return fmt.Errorf("git-receive-pack: write error: %s", strings.TrimSpace(stderr.String()))
 	}
 
 	// Handle repository size check

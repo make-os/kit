@@ -89,7 +89,7 @@ var _ = Describe("PushReader", func() {
 			Expect(err).To(BeNil())
 
 			io.Copy(pr, reader)
-			err = pr.Read(nil)
+			err = pr.Read()
 		})
 
 		It("should return no error", func() {

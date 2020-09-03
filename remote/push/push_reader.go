@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/types"
@@ -139,7 +138,7 @@ func (r *Reader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
 
 // Read reads the packfile, extracting object and reference information
 // and finally writes the read data to a provided destination
-func (r *Reader) Read(gitCmd *exec.Cmd) error {
+func (r *Reader) Read() error {
 
 	var err error
 
@@ -189,11 +188,6 @@ writeInput:
 	r.packFile.Seek(0, 0)
 	if _, err = io.Copy(r.dst, r.packFile); err != nil {
 		return err
-	}
-
-	// Wait for the git process to finish only if the git command is set
-	if gitCmd != nil {
-		gitCmd.Process.Wait()
 	}
 
 	return nil
