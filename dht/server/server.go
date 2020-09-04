@@ -39,6 +39,7 @@ type Server struct {
 	connTicker     *time.Ticker
 	objectStreamer types.ObjectStreamer
 	announcer      types2.Announcer
+	stopped        bool
 }
 
 // New creates a new Server
@@ -87,6 +88,15 @@ func New(ctx context.Context, keepers core.Keepers, cfg *config.AppConfig) (*Ser
 	}
 
 	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
+
+	go func() {
+		for {
+			if cfg.G().Interrupt.IsClosed() {
+				node.Stop()
+				break
+			}
+		}
+	}()
 
 	return node, err
 }
@@ -161,7 +171,7 @@ func (dht *Server) Start() error {
 	go dht.connector()
 	dht.announcer.Start()
 
-	for {
+	for !dht.stopped {
 		if len(dht.Peers()) == 0 {
 			time.Sleep(1 * time.Second)
 			continue
@@ -250,6 +260,8 @@ func (dht *Server) RegisterChecker(objType int, f types2.CheckFunc) {
 // Stop stops the server
 func (dht *Server) Stop() error {
 	var err error
+
+	dht.stopped = true
 
 	if dht.connTicker != nil {
 		dht.connTicker.Stop()
