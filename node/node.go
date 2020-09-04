@@ -154,13 +154,15 @@ func (n *Node) Start() error {
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
 	n.logic.SetTicketManager(n.ticketMgr)
 
-	// Create DHT reactor and add it to the switch
-	n.dht, err = dhtserver.New(context.Background(), n.logic, n.cfg)
-	if err != nil {
-		return err
-	}
-	if err = n.dht.Start(); err != nil {
-		return err
+	// Initialize and start the DHT module (only in non-validator mode)
+	if !n.cfg.IsValidatorNode() {
+		n.dht, err = dhtserver.New(context.Background(), n.logic, n.cfg)
+		if err != nil {
+			return err
+		}
+		if err = n.dht.Start(); err != nil {
+			return err
+		}
 	}
 
 	// Create the ABCI app and wrap with a ClientCreator

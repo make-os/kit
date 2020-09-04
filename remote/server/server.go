@@ -165,8 +165,10 @@ func New(
 	}
 
 	// Register DHT object checkers
-	dht.RegisterChecker(announcer.ObjTypeRepoName, server.checkRepo)
-	dht.RegisterChecker(announcer.ObjTypeGit, server.checkRepoObject)
+	if dht != nil {
+		dht.RegisterChecker(announcer.ObjTypeRepoName, server.checkRepo)
+		dht.RegisterChecker(announcer.ObjTypeGit, server.checkRepoObject)
+	}
 
 	return server
 }
