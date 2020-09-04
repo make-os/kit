@@ -161,6 +161,7 @@ var _ = Describe("RefSync", func() {
 			It("should add only one queue per reference", func() {
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}}, 0, 1)
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 2}}}}, 1, 1)
+				time.Sleep(1 * time.Millisecond)
 				Expect(len(rs.queues)).To(Equal(1))
 				Expect(rs.queues).To(HaveKey("master"))
 			})
@@ -168,24 +169,20 @@ var _ = Describe("RefSync", func() {
 			It("should not add new task to queue when task with matching ID already exist in queue", func() {
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}}, 0, 1)
 				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1}}}}, 0, 1)
+				time.Sleep(1 * time.Millisecond)
 				Expect(len(rs.queues)).To(Equal(1))
 				Expect(rs.queues).To(HaveKey("master"))
 			})
 
 			It("should not add task if reference new hash is zero-hash", func() {
-				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{
-					{Name: "master", Nonce: 1, NewHash: plumbing.ZeroHash.String()},
-				}}}, 0, 1)
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "master", Nonce: 1, NewHash: plumbing.ZeroHash.String()}}}}, 0, 1)
+				time.Sleep(1 * time.Millisecond)
 				Expect(len(rs.queues)).To(Equal(0))
 			})
 
 			It("should add two tasks if push transaction contains 2 different references", func() {
-				rs.OnNewTx(&txns.TxPush{Note: &types.Note{
-					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1},
-						{Name: "refs/heads/dev", Nonce: 1},
-					},
-				}}, 0, 1)
+				rs.OnNewTx(&txns.TxPush{Note: &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master", Nonce: 1}, {Name: "refs/heads/dev", Nonce: 1}}}}, 0, 1)
+				time.Sleep(1 * time.Millisecond)
 				Expect(len(rs.queues)).To(Equal(2))
 			})
 

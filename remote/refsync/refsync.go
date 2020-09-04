@@ -148,7 +148,7 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue
 		}
-		rs.addTask(&reftypes.RefTask{
+		go rs.addTask(&reftypes.RefTask{
 			ID:           fmt.Sprintf("%s_%d", ref.Name, ref.Nonce),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -134,6 +135,8 @@ func (c *BasicObjectStreamer) GetProviders(ctx context.Context, repoName string,
 		return nil, errors.Wrap(err, "failed to get providers of target object")
 	}
 
+	pp.Println(">>INCEP", len(objProviders), len(c.dht.Peers()))
+
 	// Get providers that can provide the repository.
 	// When an error occurred, only return it if no providers so far.
 	repoProviders, err := c.dht.GetProviders(ctx, []byte(repoName))
@@ -171,11 +174,13 @@ func (c *BasicObjectStreamer) GetCommit(
 		return nil, nil, err
 	}
 
+	pp.Println(">>BEFORE", len(providers))
 	// Remove banned providers or providers that have recently sent NOPE as
 	// response to previous request for the key
 	providers = funk.Filter(providers, func(p peer.AddrInfo) bool {
 		return c.tracker.IsGood(p.ID) && !c.tracker.DidPeerSendNope(p.ID, hash)
 	}).([]peer.AddrInfo)
+	pp.Println(">>AFTER", len(providers))
 
 	// Return immediate with error if no provider was found
 	if len(providers) == 0 {
