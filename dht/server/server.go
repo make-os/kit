@@ -142,6 +142,8 @@ func (dht *Server) Bootstrap() error {
 		ctx, cn := context.WithTimeout(context.Background(), 30*time.Second)
 		if err := dht.host.Connect(ctx, *info); err != nil {
 			dht.log.Error("failed to connect to peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
+			cn()
+			continue
 		}
 		cn()
 
@@ -154,10 +156,19 @@ func (dht *Server) Bootstrap() error {
 	return nil
 }
 
-// Start starts the DHT
+// Start starts the DHT. Blocks until a connection is made.
 func (dht *Server) Start() error {
 	go dht.connector()
 	dht.announcer.Start()
+
+	for {
+		if len(dht.Peers()) == 0 {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
+	}
+
 	return nil
 }
 
@@ -165,7 +176,7 @@ func (dht *Server) Start() error {
 // if the routing table has no peer
 func (dht *Server) connector() {
 	for range dht.connTicker.C {
-		if len(dht.dht.RoutingTable().ListPeers()) == 0 {
+		if len(dht.Peers()) == 0 {
 			dht.Bootstrap()
 		}
 	}

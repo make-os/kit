@@ -302,7 +302,7 @@ var _ = Describe("Server", func() {
 			time.Sleep(10 * time.Millisecond)
 		})
 
-		When("a peer announces a key", func() {
+		FWhen("a peer announces a key", func() {
 			BeforeEach(func() {
 				dhtKeepers.EXPECT().AddToAnnounceList(key, "repo1", announcer.ObjTypeAny, gomock.Any())
 				dhtA.Announce(announcer.ObjTypeAny, "repo1", key, nil)
