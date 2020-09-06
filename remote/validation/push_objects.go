@@ -24,6 +24,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
+// ErrCodePushRefAndLocalHashMismatch is the code describing an error
+// that occurs when a pushed reference old hash does not match its
+// corresponding local hash.
+const ErrCodePushRefAndLocalHashMismatch = "pushRefLocalMismatch"
+
 // CheckPushedReferenceConsistency validates pushed references.
 //
 // targetRepo is a reference to the local repo. If unset, the pushed
@@ -58,7 +63,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 		}
 		if ref.OldHash != localRef.Hash().String() {
 			msg := fmt.Sprintf("reference '%s' old hash does not match its local version", name)
-			return fe(-1, "references", msg)
+			return fe(-1, "references", msg, ErrCodePushRefAndLocalHashMismatch, ref.Name)
 		}
 	}
 

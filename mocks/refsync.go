@@ -48,6 +48,18 @@ func (mr *MockWatcherMockRecorder) Do(task interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockWatcher)(nil).Do), task)
 }
 
+// Watch mocks base method
+func (m *MockWatcher) Watch(repo, reference string, startHeight, endHeight uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+}
+
+// Watch indicates an expected call of Watch
+func (mr *MockWatcherMockRecorder) Watch(repo, reference, startHeight, endHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Watch", reflect.TypeOf((*MockWatcher)(nil).Watch), repo, reference, startHeight, endHeight)
+}
+
 // QueueSize mocks base method
 func (m *MockWatcher) QueueSize() int {
 	m.ctrl.T.Helper()
@@ -138,15 +150,27 @@ func (m *MockRefSync) EXPECT() *MockRefSyncMockRecorder {
 }
 
 // OnNewTx mocks base method
-func (m *MockRefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
+func (m *MockRefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnNewTx", tx, txIndex, height)
+	m.ctrl.Call(m, "OnNewTx", tx, targetRef, txIndex, height)
 }
 
 // OnNewTx indicates an expected call of OnNewTx
-func (mr *MockRefSyncMockRecorder) OnNewTx(tx, txIndex, height interface{}) *gomock.Call {
+func (mr *MockRefSyncMockRecorder) OnNewTx(tx, targetRef, txIndex, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, txIndex, height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, targetRef, txIndex, height)
+}
+
+// Watch mocks base method
+func (m *MockRefSync) Watch(repo, reference string, startHeight, endHeight uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+}
+
+// Watch indicates an expected call of Watch
+func (mr *MockRefSyncMockRecorder) Watch(repo, reference, startHeight, endHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Watch", reflect.TypeOf((*MockRefSync)(nil).Watch), repo, reference, startHeight, endHeight)
 }
 
 // CanSync mocks base method

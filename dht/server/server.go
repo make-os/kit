@@ -27,7 +27,8 @@ import (
 )
 
 var (
-	ProtocolPrefix = dht.ProtocolPrefix("/make-os")
+	ProtocolPrefix        = dht.ProtocolPrefix("/make-os")
+	ConnectTickerInterval = 5 * time.Second
 )
 
 // Server provides distributed hash table functionalities.
@@ -83,19 +84,15 @@ func New(ctx context.Context, keepers core.Keepers, cfg *config.AppConfig) (*Ser
 		dht:        server,
 		cfg:        cfg,
 		log:        log,
-		connTicker: time.NewTicker(5 * time.Second),
-		announcer:  announcer2.New(server, keepers, log.Module("announcer")),
+		connTicker: time.NewTicker(ConnectTickerInterval),
+		announcer:  announcer2.New(cfg, server, keepers),
 	}
 
 	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
 
 	go func() {
-		for {
-			if cfg.G().Interrupt.IsClosed() {
-				node.Stop()
-				break
-			}
-		}
+		cfg.G().Interrupt.Wait()
+		node.Stop()
 	}()
 
 	return node, err
@@ -166,18 +163,14 @@ func (dht *Server) Bootstrap() error {
 	return nil
 }
 
-// Start starts the DHT. Blocks until a connection is made.
+// Start starts the DHT
 func (dht *Server) Start() error {
-	go dht.connector()
-	dht.announcer.Start()
 
-	for !dht.stopped {
-		if len(dht.Peers()) == 0 {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		break
-	}
+	// Attempt to connect the network
+	go dht.connector()
+
+	// Start the announcer
+	dht.announcer.Start()
 
 	return nil
 }

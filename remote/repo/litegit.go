@@ -496,7 +496,12 @@ func (lg *LiteGit) GC(pruneExpire ...string) error {
 	}
 	cmd := exec.Command(lg.gitBinPath, args...)
 	cmd.Dir = lg.path
-	return cmd.Run()
+	errBuf := bytes.NewBuffer(nil)
+	cmd.Stderr = errBuf
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, errBuf.String())
+	}
+	return nil
 }
 
 // Size returns the size of all packed, loose and garbage objects

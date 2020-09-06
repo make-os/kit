@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
@@ -160,6 +161,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
+				pp.Println(err.Error())
 				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})

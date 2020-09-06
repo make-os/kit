@@ -1,10 +1,11 @@
 package push
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/make-os/lobe/dht/announcer"
@@ -12,9 +13,10 @@ import (
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push/types"
-	types2 "github.com/make-os/lobe/remote/types"
+	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
 	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
@@ -24,8 +26,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Handler describes an interface for handling push updates,
-// pre-consensus dry run and authorization checks.
+// Handler describes an interface for handling incoming push updates.
 type Handler interface {
 
 	// HandleStream starts the process of handling a pushed packfile.
@@ -37,7 +38,7 @@ type Handler interface {
 	// Access the git-receive-pack process using gitReceiveCmd.
 	//
 	// pktEnc provides access to the git output encoder.
-	HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitReceiveCmd *exec.Cmd, pktEnc *pktline.Encoder) error
+	HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error
 
 	// EnsureReferencesHaveTxDetail checks that each pushed reference
 	// have a transaction detail that provide more information about
@@ -52,8 +53,7 @@ type Handler interface {
 	// HandleAuthorization performs authorization checks on all pushed references.
 	HandleAuthorization(ur *packp.ReferenceUpdateRequest) error
 
-	// HandleReferences validates all pushed references and reverts changes
-	// introduced by HandleStream's processing of the references.
+	// HandleReferences process pushed references.
 	HandleReferences() error
 
 	// HandleRepoSize performs garbage collection and repo size validation.
@@ -62,41 +62,44 @@ type Handler interface {
 	//
 	// It will also reload the repository handle since GC makes
 	// go-git internal state stale.
-	HandleRepoSize() error
+	HandleGCAndSizeCheck() error
 
 	// HandleUpdate creates a push note to represent the push operation and
 	// adds it to the push pool and then have it broadcast to peers.
-	HandleUpdate() error
+	HandleUpdate(targetNote types.PushNote) error
 
 	// HandleReference performs validation and update reversion for a single pushed reference.
 	// // When revertOnly is true, only reversion operation is performed.
-	HandleReference(ref string, revertOnly bool) []error
+	HandleReference(ref string) []error
+
+	// HandleReversion reverts the pushed references back to their pre-push state.
+	HandleReversion() []error
 }
 
 // BasicHandler implements Handler. It provides handles all phases of a push operation.
 type BasicHandler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
-	Repo                 types2.LocalRepo                    // The target repository
+	Repo                 remotetypes.LocalRepo               // The target repository
 	Server               core.RemoteServer                   // The repository remote server
-	OldState             types2.BareRepoRefsState            // The old state of the repo before the current push was written
+	OldState             remotetypes.BareRepoRefsState       // The old state of the repo before the current push was written
 	PushReader           *Reader                             // The push reader for reading pushed git objects
 	NoteID               string                              // The push note unique ID
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
 	MergeChecker         validation.MergeComplianceCheckFunc // Merge request checker function
 	polEnforcer          policy.EnforcerFunc                 // Authorization policy enforcer function for the repository
-	TxDetails            types2.ReferenceTxDetails           // Map of references to their transaction details
-	ReferenceHandler     RefHandler                          // Pushed reference handler function
-	AuthorizationHandler AuthorizationHandler                // Authorization handler function
+	TxDetails            remotetypes.ReferenceTxDetails      // Map of references to their transaction details
+	ReferenceHandler     HandleReferenceFunc                 // Pushed reference handler function
+	AuthorizationHandler HandleAuthorizationFunc             // Authorization handler function
 	PolicyChecker        policy.PolicyChecker                // Policy checker function
 	pktEnc               *pktline.Encoder
 }
 
 // NewHandler returns an instance of BasicHandler
 func NewHandler(
-	repo types2.LocalRepo,
-	txDetails []*types2.TxDetail,
+	repo remotetypes.LocalRepo,
+	txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *BasicHandler {
 	h := &BasicHandler{
@@ -105,7 +108,7 @@ func NewHandler(
 		log:             rMgr.Log().Module("push-handler"),
 		polEnforcer:     polEnforcer,
 		PushReader:      &Reader{},
-		TxDetails:       types2.ToReferenceTxDetails(txDetails),
+		TxDetails:       remotetypes.ToReferenceTxDetails(txDetails),
 		ChangeValidator: validation.ValidateChange,
 		Reverter:        plumbing.Revert,
 		MergeChecker:    validation.CheckMergeCompliance,
@@ -117,16 +120,15 @@ func NewHandler(
 	return h
 }
 
-// HandleStream implements Handler
-func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitReceiveCmd *exec.Cmd, pktEnc *pktline.Encoder) error {
-
-	var err error
+// HandleStream implements Handler. It reads the packfile and pipes it to git.
+func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error {
 
 	if pktEnc != nil {
 		h.pktEnc = pktEnc
 	}
 
 	// Get the repository state and record it as the old state
+	var err error
 	if h.OldState == nil {
 		h.OldState, err = h.Server.GetRepoState(h.Repo)
 		if err != nil {
@@ -134,16 +136,13 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteClose
 		}
 	}
 
-	// Create a push reader to read, analyse and extract info.
-	// Also, pass the git writer so the pack data is written to it.
 	h.PushReader, err = NewPushReader(gitReceive, h.Repo)
 	if err != nil {
 		return errors.Wrap(err, "unable to create push reader")
 	}
 
-	// Perform actions that should happen before git consumes the stream.
-	// - Authorization
-	h.PushReader.OnReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
+	// Register to use the git reference update to perform authorization checks
+	h.PushReader.UseReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
 		h.pktEnc.Encode(plumbing.SidebandInfo("performing authorization checks"))
 		return errors.Wrap(h.AuthorizationHandler(ur), "authorization")
 	})
@@ -156,14 +155,22 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteClose
 	h.pktEnc.Encode(plumbing.SidebandInfo("reading objects and references"))
 
 	// Read the packfile objects
+	gitRcvErr := bytes.NewBuffer(nil)
+	gitRcvCmd.SetStderr(gitRcvErr)
 	if err = h.PushReader.Read(); err != nil {
 		return err
+	}
+
+	// Wait for git-receive-pack to finish
+	if err := gitRcvCmd.ProcessWait(); err != nil {
+		return fmt.Errorf("git-receive-pack: write error: %s", strings.TrimSpace(gitRcvErr.String()))
 	}
 
 	return nil
 }
 
-// EnsureReferencesHaveTxDetail implements Handler
+// EnsureReferencesHaveTxDetail implements Handler. It ensures each references
+// have a signed push transaction detail.
 func (h *BasicHandler) EnsureReferencesHaveTxDetail() error {
 	for _, ref := range h.PushReader.References.Names() {
 		if h.TxDetails.Get(ref) == nil {
@@ -214,7 +221,7 @@ func (h *BasicHandler) enforcePolicy(cmd *packp.Command) error {
 	return nil
 }
 
-// DoAuth implements Handler.
+// DoAuth implements Handler. It performs access-level checks.
 func (h *BasicHandler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error {
 	for _, cmd := range ur.Commands {
 		if targetRef != "" && targetRef != cmd.Name.String() {
@@ -233,8 +240,8 @@ func (h *BasicHandler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string
 	return nil
 }
 
-// AuthorizationHandler describes a function for checking authorization to access a reference
-type AuthorizationHandler func(ur *packp.ReferenceUpdateRequest) error
+// HandleAuthorizationFunc describes a function for checking authorization to access a reference
+type HandleAuthorizationFunc func(ur *packp.ReferenceUpdateRequest) error
 
 // HandleAuthorization implements Handler
 func (h *BasicHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
@@ -244,19 +251,16 @@ func (h *BasicHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) err
 	return h.DoAuth(ur, "", true)
 }
 
-// HandleReferences implements Handler
+// HandleReferences implements Handler. It processes pushed references.
 func (h *BasicHandler) HandleReferences() error {
 
-	// Expect old state to have been captured before the push was processed
 	if h.OldState == nil {
 		return fmt.Errorf("expected old state to have been captured")
 	}
 
 	var errs []error
 	for _, ref := range h.PushReader.References.Names() {
-		// When the previous reference handling returned errors, the only handling operation
-		// to perform on the current and future references is a revert operation only
-		errs = append(errs, h.ReferenceHandler(ref, len(errs) > 0)...)
+		errs = append(errs, h.ReferenceHandler(ref)...)
 	}
 
 	if len(errs) > 0 {
@@ -266,8 +270,8 @@ func (h *BasicHandler) HandleReferences() error {
 	return nil
 }
 
-// HandleRepoSize implements Handler
-func (h *BasicHandler) HandleRepoSize() error {
+// HandleRepoSize implements Handler. Performs garbage collection and repo size limit check.
+func (h *BasicHandler) HandleGCAndSizeCheck() error {
 
 	// Perform garbage collection to:
 	// - pack loose objects
@@ -306,35 +310,46 @@ func (h *BasicHandler) HandleAnnouncement() {
 }
 
 // HandleUpdate implements Handler
-func (h *BasicHandler) HandleUpdate() error {
+func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
+	var err error
 
+	// At the end, revert updates and if everything went well, output tx hash.
+	defer func() {
+		h.HandleReversion()
+		if err == nil {
+			h.pktEnc.Encode(plumbing.SidebandProgress("hash: " + h.NoteID))
+		}
+	}()
+
+	// Perform garbage collection and repo size limit check.
+	if err = h.HandleGCAndSizeCheck(); err != nil {
+		return err
+	}
+
+	// Process the pushed references
 	h.pktEnc.Encode(plumbing.SidebandInfo("performing repo and references validation"))
-
-	// Check repository size check
-	if err := h.HandleRepoSize(); err != nil {
-		return err
-	}
-
-	// Validate the pushed references
-	err := h.HandleReferences()
+	err = h.HandleReferences()
 	if err != nil {
 		return err
 	}
 
-	// Construct a push note
-	h.pktEnc.Encode(plumbing.SidebandInfo("creating push note"))
-	note, err := h.createPushNote()
-	if err != nil {
-		return err
+	// Create and sign push notification only if a target note was not provided.
+	var note = targetNote
+	if note == nil {
+		h.pktEnc.Encode(plumbing.SidebandInfo("creating push note"))
+		note, err = h.createPushNote()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Add the push note to the push pool
 	h.pktEnc.Encode(plumbing.SidebandInfo("adding push note to the pushpool"))
-	if err := h.Server.GetPushPool().Add(note); err != nil {
+	if err = h.Server.GetPushPool().Add(note); err != nil {
 		return err
 	}
 
-	// Announce the pushed objects to the DHT
+	// Announce the pushed objects
 	h.HandleAnnouncement()
 
 	// Broadcast the push note
@@ -342,8 +357,6 @@ func (h *BasicHandler) HandleUpdate() error {
 	if err = h.Server.BroadcastNoteAndEndorsement(note); err != nil {
 		h.log.Error("Failed to broadcast push note", "Err", err)
 	}
-
-	h.pktEnc.Encode(plumbing.SidebandProgress("hash: " + h.NoteID))
 
 	return nil
 }
@@ -399,38 +412,70 @@ func (h *BasicHandler) createPushNote() (*types.Note, error) {
 	return note, nil
 }
 
-// RefHandler describes a function for processing a reference
-type RefHandler func(ref string, revertOnly bool) []error
-
-// HandleReference implements Handler
-func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
-
+// HandleReversion reverts the pushed references back to their pre-push state.
+func (h *BasicHandler) HandleReversion() []error {
 	var errs []error
-	var detail = h.TxDetails.Get(ref)
+	for _, ref := range h.PushReader.References.Names() {
+		// Get the old version of the reference prior to the push
+		// and create a lone state object of the old state
+		oldState := plumbing.MakeStateFromItem(h.OldState.GetReferences().Get(ref))
+
+		// Get the current state of the repository; limit the query to only the target reference
+		curState, err := h.Server.GetRepoState(h.Repo, plumbing.MatchOpt(ref))
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "%s: failed to get current state", ref))
+			return errs
+		}
+
+		// Now, compute the changes from the target reference old state to its current.
+		changes := oldState.GetChanges(curState.(*plumbing.State))
+
+		// Revert to old state
+		h.pktEnc.Encode(plumbing.SidebandInfo(fmt.Sprintf("%s: reverting to pre-push state", ref)))
+		changes, err = h.Reverter(h.Repo, oldState, plumbing.MatchOpt(ref), plumbing.ChangesOpt(changes))
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "%s: failed to revert to old state", ref))
+		}
+	}
+	return errs
+}
+
+// GetChange computes and returns the change made to the given reference
+func (h *BasicHandler) GetChange(ref string) (*remotetypes.ItemChange, error) {
 
 	// Get the old version of the reference prior to the push
 	// and create a lone state object of the old state
-	oldRef := h.OldState.GetReferences().Get(ref)
-	oldRefState := plumbing.MakeStateFromItem(oldRef)
+	oldRefState := plumbing.MakeStateFromItem(h.OldState.GetReferences().Get(ref))
 
 	// Get the current state of the repository; limit the query to only the target reference
 	curState, err := h.Server.GetRepoState(h.Repo, plumbing.MatchOpt(ref))
 	if err != nil {
-		errs = append(errs, errors.Wrap(err, "failed to get current state"))
-		return errs
+		return nil, errors.Wrap(err, "failed to get current state")
 	}
 
 	// Now, compute the changes from the target reference old state to its current.
 	changes := oldRefState.GetChanges(curState.(*plumbing.State))
-	var change *types2.ItemChange
+	var change *remotetypes.ItemChange
 	if len(changes.References.Changes) > 0 {
 		change = changes.References.Changes[0]
 	}
 
-	// Jump to revert label if only reversion is requested.
-	if revertOnly {
-		goto revert
+	return change, nil
+}
+
+// HandleReferenceFunc describes a function for processing a reference
+type HandleReferenceFunc func(ref string) []error
+
+// HandleReference implements Handler
+func (h *BasicHandler) HandleReference(ref string) (errs []error) {
+
+	// Get the changes made to the reference
+	change, err := h.GetChange(ref)
+	if err != nil {
+		return []error{err}
 	}
+
+	var detail = h.TxDetails.Get(ref)
 
 	// Here, we need to validate the change for non-delete request.
 	if !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
@@ -460,17 +505,6 @@ func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 		if err = h.DoAuth(h.PushReader.GetUpdateRequest(), ref, false); err != nil {
 			errs = append(errs, errors.Wrap(err, "authorization"))
 		}
-	}
-
-revert:
-	// As with all push operations, we must revert the changes made to the
-	// repository since we do not consider them final. Here we attempt to revert
-	// the repository to the old reference state. We passed the changes as an
-	// option so Revert doesn't recompute it
-	h.pktEnc.Encode(plumbing.SidebandInfo(fmt.Sprintf("%s: reverting to pre-push state", ref)))
-	changes, err = h.Reverter(h.Repo, oldRefState, plumbing.MatchOpt(ref), plumbing.ChangesOpt(changes))
-	if err != nil {
-		errs = append(errs, errors.Wrap(err, "failed to revert to old state"))
 	}
 
 	return errs

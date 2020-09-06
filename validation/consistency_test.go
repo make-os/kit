@@ -306,7 +306,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, msg:ticket is already expireing"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket is already expiring"))
 			})
 		})
 

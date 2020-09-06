@@ -25,6 +25,7 @@ import (
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util"
+	mocks2 "github.com/make-os/lobe/util/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -45,6 +46,7 @@ var _ = Describe("BasicHandler", func() {
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockDHT *mocks.MockDHT
+	var mockGitRcvCmd *mocks2.MockCmd
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -65,6 +67,7 @@ var _ = Describe("BasicHandler", func() {
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
+		mockGitRcvCmd = mocks2.NewMockCmd(ctrl)
 
 		svr = server.New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
@@ -97,7 +100,8 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				oldState := &plumbing2.State{}
 				mockRemoteSrv.EXPECT().GetRepoState(repo).Return(oldState, nil)
-				err = handler.HandleStream(strings.NewReader("invalid"), nil, nil, nil)
+				mockGitRcvCmd.EXPECT().SetStderr(gomock.Any())
+				err = handler.HandleStream(strings.NewReader("invalid"), nil, mockGitRcvCmd, nil)
 			})
 
 			It("should return err", func() {
@@ -110,7 +114,7 @@ var _ = Describe("BasicHandler", func() {
 			var packfile io.ReadSeeker
 
 			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
 				note := &types2.Note{
 					TargetRepo: repo,
@@ -125,7 +129,7 @@ var _ = Describe("BasicHandler", func() {
 			When("old state is unset", func() {
 				It("should return error when unable to get repo state", func() {
 					mockRemoteSrv.EXPECT().GetRepoState(handler.Repo).Return(nil, fmt.Errorf("error"))
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, mockGitRcvCmd, nil)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("error"))
 				})
@@ -137,7 +141,8 @@ var _ = Describe("BasicHandler", func() {
 					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 						return fmt.Errorf("auth failed badly")
 					}
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
+					mockGitRcvCmd.EXPECT().SetStderr(gomock.Any())
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, mockGitRcvCmd, nil)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("authorization: auth failed badly"))
 				})
@@ -146,11 +151,23 @@ var _ = Describe("BasicHandler", func() {
 			When("authorization succeeds", func() {
 				It("should return no error", func() {
 					handler.OldState = &plumbing2.State{}
-					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
-						return nil
-					}
-					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, nil, nil)
+					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error { return nil }
+					mockGitRcvCmd.EXPECT().SetStderr(gomock.Any())
+					mockGitRcvCmd.EXPECT().ProcessWait()
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, mockGitRcvCmd, nil)
 					Expect(err).To(BeNil())
+				})
+			})
+
+			When("git-receive-pack failed", func() {
+				It("should return error", func() {
+					handler.OldState = &plumbing2.State{}
+					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error { return nil }
+					mockGitRcvCmd.EXPECT().SetStderr(gomock.Any())
+					mockGitRcvCmd.EXPECT().ProcessWait().Return(fmt.Errorf("process error"))
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)}, mockGitRcvCmd, nil)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("git-receive-pack: write error: "))
 				})
 			})
 		})
@@ -421,7 +438,7 @@ var _ = Describe("BasicHandler", func() {
 			var err error
 			BeforeEach(func() {
 				handler.OldState = plumbing2.GetRepoState(repo)
-				handler.ReferenceHandler = func(ref string, revertOnly bool) []error {
+				handler.ReferenceHandler = func(ref string) []error {
 					return []error{fmt.Errorf("bad error")}
 				}
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {}}
@@ -434,14 +451,30 @@ var _ = Describe("BasicHandler", func() {
 				Expect(err.Error()).To(Equal("bad error"))
 			})
 		})
+
+		When("it succeeds", func() {
+			var err error
+			BeforeEach(func() {
+				handler.OldState = plumbing2.GetRepoState(repo)
+				handler.ReferenceHandler = func(ref string) []error {
+					return nil
+				}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {}}
+				err = handler.HandleReferences()
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 
-	Describe(".HandleRepoSize", func() {
+	Describe(".HandleGCAndSizeCheck", func() {
 		It("should return error when garbage collection execution failed", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().GC("1 day ago").Return(fmt.Errorf("error"))
 			handler.Repo = mockRepo
-			err := handler.HandleRepoSize()
+			err := handler.HandleGCAndSizeCheck()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to run garbage collection: error"))
 		})
@@ -451,7 +484,7 @@ var _ = Describe("BasicHandler", func() {
 			mockRepo.EXPECT().GC("1 day ago").Return(nil)
 			mockRepo.EXPECT().Size().Return(float64(0), fmt.Errorf("error"))
 			handler.Repo = mockRepo
-			err := handler.HandleRepoSize()
+			err := handler.HandleGCAndSizeCheck()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get repo size: error"))
 		})
@@ -462,7 +495,7 @@ var _ = Describe("BasicHandler", func() {
 			mockRepo.EXPECT().GC("1 day ago").Return(nil)
 			mockRepo.EXPECT().Size().Return(float64(1000), nil)
 			handler.Repo = mockRepo
-			err := handler.HandleRepoSize()
+			err := handler.HandleGCAndSizeCheck()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("size error: repository size has exceeded the network limit"))
 		})
@@ -474,7 +507,7 @@ var _ = Describe("BasicHandler", func() {
 			mockRepo.EXPECT().Reload().Return(fmt.Errorf("error"))
 			mockRepo.EXPECT().Size().Return(float64(1000), nil)
 			handler.Repo = mockRepo
-			err := handler.HandleRepoSize()
+			err := handler.HandleGCAndSizeCheck()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to reload repo handle: error"))
 		})
@@ -486,18 +519,108 @@ var _ = Describe("BasicHandler", func() {
 			mockRepo.EXPECT().Reload().Return(nil)
 			mockRepo.EXPECT().Size().Return(float64(1000), nil)
 			handler.Repo = mockRepo
-			err := handler.HandleRepoSize()
+			err := handler.HandleGCAndSizeCheck()
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".HandleReversion", func() {
+		var errs []error
+		When("there is only one reference in the push reader and reversion failed", func() {
+			BeforeEach(func() {
+				handler.Server = svr
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+					return nil, fmt.Errorf("failed revert")
+				}
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				errs = handler.HandleReversion()
+			})
+
+			It("should return 1 error", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("refs/heads/master: failed to revert to old state: failed revert"))
+			})
+		})
+
+		When("unable to get repo state", func() {
+			BeforeEach(func() {
+				mockRemoteSrv.EXPECT().GetRepoState(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
+				handler.Server = mockRemoteSrv
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+					return nil, fmt.Errorf("failed revert")
+				}
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				errs = handler.HandleReversion()
+			})
+
+			It("should return 1 error", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("refs/heads/master: failed to get current state: error"))
+			})
+		})
+
+		When("there are two references in the push reader and reversion failed for both", func() {
+			BeforeEach(func() {
+				handler.Server = svr
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{
+					"refs/heads/master": {NewHash: util.RandString(40)},
+					"refs/heads/dev":    {NewHash: util.RandString(40)},
+				}
+				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+					return nil, fmt.Errorf("failed revert")
+				}
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				errs = handler.HandleReversion()
+			})
+
+			It("should return 2 errors", func() {
+				Expect(errs).To(HaveLen(2))
+				expected := Or(
+					Equal("refs/heads/master: failed to revert to old state: failed revert"),
+					Equal("refs/heads/dev: failed to revert to old state: failed revert"),
+				)
+				Expect(errs[0].Error()).To(expected)
+				Expect(errs[1].Error()).To(expected)
+			})
+		})
+
+		When("there is one reference in the push reader and reversion succeeded", func() {
+			BeforeEach(func() {
+				handler.Server = svr
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				errs = handler.HandleReversion()
+			})
+
+			It("should return no errors", func() {
+				Expect(errs).To(HaveLen(0))
+			})
+
+			Specify("that repo state was reverted to old state", func() {
+				curState := plumbing2.GetRepoState(repo)
+				Expect(curState).To(Equal(handler.OldState))
+			})
 		})
 	})
 
 	Describe(".HandleReference", func() {
 		var errs []error
+
 		Describe("when unable to get state of the repository", func() {
 			BeforeEach(func() {
 				handler.OldState = plumbing2.GetRepoState(repo)
 				mockRemoteSrv.EXPECT().GetRepoState(repo, plumbing2.MatchOpt("refs/heads/master")).Return(nil, fmt.Errorf("error"))
-				errs = handler.HandleReference("refs/heads/master", false)
+				errs = handler.HandleReference("refs/heads/master")
 			})
 
 			It("should return error", func() {
@@ -514,9 +637,9 @@ var _ = Describe("BasicHandler", func() {
 					return fmt.Errorf("bad reference change")
 				}
 
-				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				errs = handler.HandleReference("refs/heads/master", false)
+				errs = handler.HandleReference("refs/heads/master")
 			})
 
 			It("should return error", func() {
@@ -530,171 +653,71 @@ var _ = Describe("BasicHandler", func() {
 			})
 		})
 
-		Context("check reversion", func() {
-			Describe("when a reference failed change validation and reversion failed", func() {
-				BeforeEach(func() {
-					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return fmt.Errorf("bad reference change")
-					}
-					handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
-						return nil, fmt.Errorf("failed revert")
-					}
+		Describe("when a reference is a post reference and update policy is required", func() {
+			var policyChecked bool
+			BeforeEach(func() {
+				ref := plumbing2.MakeIssueReference(1)
 
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.HandleReference("refs/heads/master", false)
-				})
+				handler.Server = svr
+				handler.Repo.SetState(state.BareRepository())
+				handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
+				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
+					return nil
+				}
 
-				It("should return 2 error", func() {
-					Expect(errs).To(HaveLen(2))
-					Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
-					Expect(errs[1].Error()).To(Equal("failed to revert to old state: failed revert"))
-				})
+				handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
+				handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
+					policyChecked = true
+					return nil
+				}
+
+				testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+				testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+				errs = handler.HandleReference(ref)
+				Expect(errs).To(HaveLen(0))
 			})
 
-			Describe("when a reference failed change validation and reversion succeeds", func() {
-				BeforeEach(func() {
-					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return fmt.Errorf("bad reference change")
-					}
+			Specify("that policy was enforced", func() {
+				Expect(policyChecked).To(BeTrue())
+			})
+		})
 
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.HandleReference("refs/heads/master", false)
-				})
+		Describe("when a reference is a post reference and update policy is required and policy enforcement is failed", func() {
+			var policyChecked bool
+			BeforeEach(func() {
+				ref := plumbing2.MakeIssueReference(1)
 
-				It("should return 1 error", func() {
-					Expect(errs).To(HaveLen(1))
-					Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
-				})
+				handler.Server = svr
+				handler.Repo.SetState(state.BareRepository())
+				handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
+				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
+					return nil
+				}
 
-				Specify("that repo state was reverted to old state", func() {
-					curState := plumbing2.GetRepoState(repo)
-					Expect(curState).To(Equal(handler.OldState))
-				})
+				handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
+				handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
+					policyChecked = true
+					return fmt.Errorf("policy failed")
+				}
+
+				testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+				testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+				errs = handler.HandleReference(ref)
 			})
 
-			Describe("when a reference failed change validation but revertOnly is true", func() {
-				BeforeEach(func() {
-					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return fmt.Errorf("bad reference change")
-					}
-
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.HandleReference("refs/heads/master", true)
-				})
-
-				It("should return no error since validation is skipped", func() {
-					Expect(errs).To(HaveLen(0))
-				})
-
-				Specify("that repo state was reverted to old state", func() {
-					curState := plumbing2.GetRepoState(repo)
-					Expect(curState).To(Equal(handler.OldState))
-				})
+			Specify("that policy was enforced", func() {
+				Expect(policyChecked).To(BeTrue())
 			})
 
-			Describe("when a reference passed change validation and reversion succeeds", func() {
-				BeforeEach(func() {
-					handler.Server = svr
-					handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {}}
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return nil
-					}
-
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.HandleReference("refs/heads/master", false)
-				})
-
-				It("should return no error", func() {
-					Expect(errs).To(HaveLen(0))
-				})
-
-				Specify("that repo state was reverted to old state", func() {
-					curState := plumbing2.GetRepoState(repo)
-					Expect(curState).To(Equal(handler.OldState))
-				})
-			})
-
-			Describe("when a reference is a post reference and update policy is required", func() {
-				var policyChecked bool
-				BeforeEach(func() {
-					ref := plumbing2.MakeIssueReference(1)
-
-					handler.Server = svr
-					handler.Repo.SetState(state.BareRepository())
-					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return nil
-					}
-
-					handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
-					handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
-						policyChecked = true
-						return nil
-					}
-
-					testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
-					testutil2.AppendCommit(path, "body", "hello world", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
-					errs = handler.HandleReference(ref, false)
-					Expect(errs).To(HaveLen(0))
-				})
-
-				Specify("that policy was enforced", func() {
-					Expect(policyChecked).To(BeTrue())
-				})
-			})
-
-			Describe("when a reference is a post reference and update policy is required and policy enforcement is failed", func() {
-				var policyChecked bool
-				BeforeEach(func() {
-					ref := plumbing2.MakeIssueReference(1)
-
-					handler.Server = svr
-					handler.Repo.SetState(state.BareRepository())
-					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-						return nil
-					}
-
-					handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
-					handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
-						policyChecked = true
-						return fmt.Errorf("policy failed")
-					}
-
-					testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
-					testutil2.AppendCommit(path, "body", "hello world", "commit 1")
-					handler.OldState = plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
-					errs = handler.HandleReference(ref, false)
-				})
-
-				Specify("that policy was enforced", func() {
-					Expect(policyChecked).To(BeTrue())
-				})
-
-				Specify("that policy was enforced", func() {
-					Expect(errs).To(HaveLen(1))
-					Expect(errs[0].Error()).To(Equal("authorization: policy failed"))
-				})
+			Specify("that policy was enforced", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("authorization: policy failed"))
 			})
 		})
 
@@ -710,16 +733,34 @@ var _ = Describe("BasicHandler", func() {
 					return fmt.Errorf("failed merge check")
 				}
 
-				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 2")
-				errs = handler.HandleReference("refs/heads/master", false)
+				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				errs = handler.HandleReference("refs/heads/master")
 			})
 
 			It("should return 1 error", func() {
 				Expect(errs).To(HaveLen(1))
 				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): failed merge check"))
 			})
+		})
+	})
+
+	Describe(".HandleAnnouncement", func() {
+		It("should announce repo name, commit and tag objects", func() {
+			handler.Server = mockRemoteSrv
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
+			c1Hash := plumbing.NewHash("49b3d65702d8dec55a7afa91513e80dcec82707b")
+			t1Hash := plumbing.NewHash("db54d1823c36611a4450086fbdf07e5ff29036bb")
+			b1Hash := plumbing.NewHash("1cd2897a8322731901acd4545bd1d81ab666e316")
+			handler.PushReader.Objects = append(handler.PushReader.Objects,
+				&push.PackObject{Type: plumbing.CommitObject, Hash: c1Hash},
+				&push.PackObject{Type: plumbing.TagObject, Hash: t1Hash},
+				&push.PackObject{Type: plumbing.BlobObject, Hash: b1Hash},
+			)
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), c1Hash[:], nil)
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), t1Hash[:], nil)
+			handler.HandleAnnouncement()
 		})
 	})
 })

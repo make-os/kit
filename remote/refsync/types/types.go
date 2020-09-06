@@ -8,6 +8,7 @@ import (
 
 type Watcher interface {
 	Do(task *WatcherTask) error
+	Watch(repo, reference string, startHeight, endHeight uint64)
 	QueueSize() int
 	HasTask() bool
 	IsRunning() bool
@@ -17,9 +18,10 @@ type Watcher interface {
 
 // WatcherTask represents a watcher task
 type WatcherTask struct {
-	RepoName    string
-	StartHeight uint64
-	EndHeight   uint64
+	RepoName    string // The name of the repository
+	Reference   string // The target reference to be watched
+	StartHeight uint64 // The block height to start syncing from
+	EndHeight   uint64 // The block height to end syncing
 }
 
 func (t *WatcherTask) GetID() interface{} {
@@ -31,9 +33,15 @@ func (t *WatcherTask) GetID() interface{} {
 // push transaction.
 type RefSync interface {
 
-	// OnNewTx is called for every push transaction processed.
+	// OnNewTx receives push transactions and adds non-delete
+	// pushed references to the task queue.
+	// targetRef is the specific pushed reference that will be queued. If unset, all references are queued.
+	// txIndex is the index of the transaction it its containing block.
 	// height is the block height that contains the transaction.
-	OnNewTx(tx *txns.TxPush, txIndex int, height int64)
+	OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64)
+
+	// Watch adds a repository to the watch queue
+	Watch(repo, reference string, startHeight, endHeight uint64)
 
 	// CanSync checks whether the target repository of a push transaction can be synchronized.
 	CanSync(namespace, repoName string) error
@@ -67,6 +75,9 @@ type RefTask struct {
 
 	// NoteCreator is the public key of the note creator
 	NoteCreator util.Bytes32
+
+	// Done is called when the task has been completed
+	Done func()
 }
 
 func (t *RefTask) GetID() interface{} {

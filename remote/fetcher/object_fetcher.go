@@ -185,7 +185,7 @@ func (f *BasicObjectFetcher) Operation(task *Task) error {
 				return err
 			}
 			cn()
-			f.log.Debug("Reference objects successfully fetched", "Ref", ref.Name)
+			f.log.Debug("Reference object(s) successfully fetched", "Ref", ref.Name)
 		}
 
 		if plumbing.IsTag(ref.Name) {
@@ -244,7 +244,7 @@ func (f *BasicObjectFetcher) Operation(task *Task) error {
 				return err
 			}
 			cn()
-			f.log.Debug("Reference objects successfully fetched", "Ref", ref.Name)
+			f.log.Debug("Reference object(s) successfully fetched", "Ref", ref.Name)
 		}
 	}
 

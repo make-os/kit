@@ -43,7 +43,9 @@ genmocks:
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks
 	mockgen -source=api/rpc/client/client.go -destination=mocks/rpc/client.go -package mocks
 	mockgen -source=rpc/server.go -destination=mocks/rpc/rpc_server.go -package mocks
-	mockgen -source=dht/types/types.go -destination=mocks/dht_server.go -package mocks
+	mockgen -source=dht/types/dht.go -destination=mocks/dht_server.go -package mocks
+	mockgen -source=dht/types/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
+	mockgen -source=dht/types/announcer.go -destination=mocks/announcer.go -package mocks
 	mockgen -source=dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
 	mockgen -source=dht/streamer/types/types.go -destination=mocks/dht_streamer.go -package mocks
 	mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks
@@ -54,4 +56,5 @@ genmocks:
 	mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks
 	mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks
 	mockgen -source=util/serialize_helper.go -destination=util/mocks/serialize_helper.go -package mocks
+	mockgen -source=util/wrapped_cmd.go -destination=util/mocks/wrapped_cmd.go -package mocks
 	mockgen -source=testutil/io_interfaces.go -destination=mocks/io_interfaces.go -package mocks

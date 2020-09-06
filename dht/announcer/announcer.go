@@ -8,6 +8,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/params"
@@ -69,15 +70,21 @@ type Announcer struct {
 }
 
 // New creates an instance of Announcer
-func New(dht *dht.IpfsDHT, keepers core.Keepers, log logger.Logger) *Announcer {
+func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announcer {
 	rs := &Announcer{
 		keepers:  keepers,
 		dht:      dht,
 		checkers: &sync.Map{},
 		lck:      &sync.Mutex{},
-		log:      log,
+		log:      cfg.G().Log.Module("announcer"),
 		queue:    queue.NewUnique(),
 	}
+
+	go func() {
+		cfg.G().Interrupt.Wait()
+		rs.Stop()
+	}()
+
 	return rs
 }
 

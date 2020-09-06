@@ -160,3 +160,22 @@ func (t *RepoSyncInfoKeeper) UnTrack(targets string) error {
 
 	return nil
 }
+
+// SetLastSyncedNonce sets the last synchronized nonce of repo's reference.
+func (t *RepoSyncInfoKeeper) UpdateRefLastSyncHeight(repo, ref string, height uint64) error {
+	data := util.EncodeNumber(height)
+	rec := common.NewFromKeyValue(MakeRepoRefLastSyncHeightKey(repo, ref), data)
+	return t.db.Put(rec)
+}
+
+// GetLastSyncedNonce returns the last synchronized nonce of the given repo's reference
+func (t *RepoSyncInfoKeeper) GetRefLastSyncHeight(repo, ref string) (uint64, error) {
+	rec, err := t.db.Get(MakeRepoRefLastSyncHeightKey(repo, ref))
+	if err != nil {
+		if err == storage.ErrRecordNotFound {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return util.DecodeNumber(rec.Value), nil
+}

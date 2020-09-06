@@ -69,14 +69,6 @@ type SystemKeeper interface {
 	// GetBlockInfo returns block information at a given height
 	GetBlockInfo(height int64) (*BlockInfo, error)
 
-	// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
-	// object synchronizer
-	SetLastRepoObjectsSyncHeight(height uint64) error
-
-	// GetLastRepoObjectsSyncHeight returns the last block that was processed by the
-	// repo object synchronizer
-	GetLastRepoObjectsSyncHeight() (uint64, error)
-
 	// SetHelmRepo sets the governing repository of the network
 	SetHelmRepo(name string) error
 
@@ -133,6 +125,8 @@ type RepoSyncInfoKeeper interface {
 	Tracked() (res map[string]*TrackedRepo)
 	GetTracked(name string) *TrackedRepo
 	UnTrack(repos string) error
+	UpdateRefLastSyncHeight(repo, ref string, height uint64) error
+	GetRefLastSyncHeight(repo, ref string) (uint64, error)
 }
 
 // RepoKeeper describes an interface for accessing repository data

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
@@ -47,11 +46,13 @@ var _ = Describe("Reactor", func() {
 	var mockPeer *mocks.MockPeer
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockBlockGetter *mocks.MockBlockGetter
+	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 	var mockDHT *mocks.MockDHT
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = crypto.NewKeyFromIntSeed(1)
 	var testRepo remotetypes.LocalRepo
+	var refname = "refs/heads/master"
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -68,6 +69,7 @@ var _ = Describe("Reactor", func() {
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
 		mockRepoKeeper = mockObjects.RepoKeeper
+		mockRepoSyncInfoKeeper = mockObjects.RepoSyncInfoKeeper
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
@@ -309,14 +311,41 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
-					return fmt.Errorf("error")
+					return util.FieldErrorWithIndex(-1, "", "error")
 				}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed push note validation: error"))
+				Expect(err.Error()).To(Equal("failed push note validation: field:, msg:error"))
+			})
+		})
+
+		When("push note validation fail due to mismatch pushed reference hash and local reference hash mismatch", func() {
+			var reSyncScheduled bool
+			It("should schedule repo resync", func() {
+				pn := &types.Note{RepoName: repoName}
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+				mockRefSyncer := mocks.NewMockRefSync(ctrl)
+				mockRefSyncer.EXPECT().CanSync(pn.Namespace, pn.RepoName).Return(nil)
+				svr.refSyncer = mockRefSyncer
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
+					return nil, nil
+				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					return util.FieldErrorWithIndex(-1, "", "error", validation.ErrCodePushRefAndLocalHashMismatch, "ref/heads/master")
+				}
+				svr.scheduleReSync = func(note types.PushNote, ref string) error {
+					reSyncScheduled = true
+					return nil
+				}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+				Expect(err).ToNot(BeNil())
+				Expect(reSyncScheduled).To(BeTrue())
 			})
 		})
 
@@ -439,53 +468,14 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".createEndorsement", func() {
-		It("should return error when unable to get reference from repo", func() {
-			note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
-			mockRepo := mocks.NewMockLocalRepo(ctrl)
-			mockRepo.EXPECT().RefGet(note.References[0].Name).Return("", fmt.Errorf("error"))
-			note.SetTargetRepo(mockRepo)
-			_, err := createEndorsement(svr.validatorKey, note)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get hash of reference (refs/heads/master): error"))
-		})
-
-		When("a pushed reference does not exist locally", func() {
-			var err error
-			var end *types.PushEndorsement
-			BeforeEach(func() {
-				note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
-				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				mockRepo.EXPECT().RefGet(note.References[0].Name).Return("", plumbing2.ErrRefNotFound)
-				note.SetTargetRepo(mockRepo)
-				end, err = createEndorsement(svr.validatorKey, note)
-			})
-
-			It("should return no error", func() {
-				Expect(err).To(BeNil())
-			})
-
-			It("should create endorsement with 1 reference", func() {
-				Expect(end.References).To(HaveLen(1))
-			})
-
-			Specify("that the reference hash is unset", func() {
-				Expect(end.References[0].Hash).To(BeEmpty())
-			})
-
-			Specify("that the endorsement is signed", func() {
-				Expect(end.SigBLS).To(HaveLen(64))
-			})
-		})
-
 		When("a pushed reference exists locally", func() {
 			var err error
 			var end *types.PushEndorsement
 			var refHash = "8d998c7de21bbe561f7992bb983cef4b1554993b"
 
 			BeforeEach(func() {
-				note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
+				note := &types.Note{References: []*types.PushedReference{{Name: refname, OldHash: refHash}}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				mockRepo.EXPECT().RefGet(note.References[0].Name).Return(refHash, nil)
 				note.SetTargetRepo(mockRepo)
 				end, err = createEndorsement(svr.validatorKey, note)
 			})
@@ -504,6 +494,123 @@ var _ = Describe("Reactor", func() {
 		})
 	})
 
+	Describe(".maybeScheduleReSync", func() {
+		It("should return error when unable to get reference", func() {
+			note := &types.Note{}
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			note.SetTargetRepo(mockRepo)
+			mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(nil, fmt.Errorf("error"))
+			err := svr.maybeScheduleReSync(note, refname)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return nil when the target reference's local and network hash match", func() {
+			refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+			note := &types.Note{}
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			repoState := state.BareRepository()
+			repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+			mockRepo.EXPECT().GetState().Return(repoState)
+			note.SetTargetRepo(mockRepo)
+			refObj := plumbing.NewReferenceFromStrings(refname, refHash)
+			mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+			err := svr.maybeScheduleReSync(note, refname)
+			Expect(err).To(BeNil())
+		})
+
+		When("the target reference's local and network do not match", func() {
+			It("should return error when unable to get the reference last sync height", func() {
+				refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+				refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+				note := &types.Note{RepoName: "repo1"}
+				repoState := state.BareRepository()
+				repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().GetState().Return(repoState)
+				note.SetTargetRepo(mockRepo)
+
+				mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(0), fmt.Errorf("error"))
+
+				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+				err := svr.maybeScheduleReSync(note, refname)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
+			})
+
+			It("should return error when unable to get the reference last update height", func() {
+				refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+				refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+				note := &types.Note{RepoName: "repo1"}
+				repoState := state.BareRepository()
+				repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().GetState().Return(repoState)
+				note.SetTargetRepo(mockRepo)
+
+				mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(0), fmt.Errorf("error"))
+
+				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+				err := svr.maybeScheduleReSync(note, refname)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
+			})
+
+			It("should send task to the watcher", func() {
+				refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+				refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+				note := &types.Note{RepoName: "repo1"}
+				repoState := state.BareRepository()
+				repoState.LastUpdated = 200
+				repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().GetState().Return(repoState)
+				note.SetTargetRepo(mockRepo)
+
+				mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
+				mockRefSync := mocks.NewMockRefSync(ctrl)
+				mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(100), repoState.LastUpdated.UInt64())
+				svr.refSyncer = mockRefSync
+
+				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+				err := svr.maybeScheduleReSync(note, refname)
+				Expect(err).To(BeNil())
+			})
+
+			When("reference last update height is the same as the repo's last update height", func() {
+				It("should send task to the watcher with start height set at zero", func() {
+					refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+					refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+					note := &types.Note{RepoName: "repo1"}
+					repoState := state.BareRepository()
+					repoState.LastUpdated = 100
+					repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+					mockRepo := mocks.NewMockLocalRepo(ctrl)
+					mockRepo.EXPECT().GetState().Return(repoState)
+					note.SetTargetRepo(mockRepo)
+
+					mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
+					mockRefSync := mocks.NewMockRefSync(ctrl)
+					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(0), repoState.LastUpdated.UInt64())
+					svr.refSyncer = mockRefSync
+
+					refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+					mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+					err := svr.maybeScheduleReSync(note, refname)
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+
+	})
+
 	Describe(".maybeProcessPushNote", func() {
 		It("should return error when unable to create a packfile from push note", func() {
 			svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return nil, fmt.Errorf("error") }
@@ -517,7 +624,7 @@ var _ = Describe("Reactor", func() {
 
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+				commitHash := testutil2.GetRecentCommitHash(path, refname)
 				commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
 				p, _, err := plumbing2.PackObject(testRepo, &plumbing2.PackObjectArgs{Obj: commit})
 				Expect(err).To(BeNil())
@@ -548,130 +655,35 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(MatchError("HandleStream error: error"))
 			})
 
-			It("should return error if unable to handle repo size checks", func() {
+			It("should return error if unable to handle the pushed updates", func() {
+				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+					mockHandler.EXPECT().HandleUpdate(note).Return(fmt.Errorf("error"))
 					return mockHandler
 				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error {
-					return fmt.Errorf("git-receive-pack error")
-				}
-				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("git-receive-pack: write error"))
+				Expect(err).To(MatchError("HandleUpdate error: error"))
 			})
 
-			It("should return error if unable to handle repo size checks", func() {
+			It("should return no error on success", func() {
+				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					mockHandler.EXPECT().HandleRepoSize().Return(fmt.Errorf("error"))
+					mockHandler.EXPECT().HandleUpdate(note).Return(nil)
 					return mockHandler
 				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
-				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
 				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("HandleRepoSize error: error"))
-			})
-
-			It("should return error if unable to handle references", func() {
-				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
-					mockHandler := mocks.NewMockHandler(ctrl)
-					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					mockHandler.EXPECT().HandleRepoSize().Return(nil)
-					mockHandler.EXPECT().HandleReferences().Return(fmt.Errorf("error"))
-					return mockHandler
-				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
-				note := &types.Note{}
-				note.SetTargetRepo(testRepo)
-				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("HandleReferences error: error"))
-			})
-
-			It("should return error if unable to add note to push pool", func() {
-				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
-					mockHandler := mocks.NewMockHandler(ctrl)
-					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					mockHandler.EXPECT().HandleRepoSize().Return(nil)
-					mockHandler.EXPECT().HandleReferences().Return(nil)
-					return mockHandler
-				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
-				note := &types.Note{}
-				note.SetTargetRepo(testRepo)
-				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().Add(note, true).Return(fmt.Errorf("error"))
-				svr.pushPool = mockPushPool
-				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("failed to add push note to push pool: error"))
-			})
-
-			It("should broadcast note and return no error", func() {
-				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
-					mockHandler := mocks.NewMockHandler(ctrl)
-					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					mockHandler.EXPECT().HandleRepoSize().Return(nil)
-					mockHandler.EXPECT().HandleReferences().Return(nil)
-					return mockHandler
-				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
-				note := &types.Note{}
-				note.SetTargetRepo(testRepo)
-				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().Add(note, true).Return(nil)
-				svr.pushPool = mockPushPool
-				broadcast := false
-				svr.noteAndEndorserBroadcaster = func(types.PushNote) error {
-					broadcast = true
-					return nil
-				}
-				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
 				Expect(err).To(BeNil())
-				Expect(broadcast).To(BeTrue())
-			})
-
-			It("should return no error if note failed broadcast", func() {
-				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
-					mockHandler := mocks.NewMockHandler(ctrl)
-					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-					mockHandler.EXPECT().HandleRepoSize().Return(nil)
-					mockHandler.EXPECT().HandleReferences().Return(nil)
-					return mockHandler
-				}
-				svr.cmdWaiter = func(cmd *exec.Cmd) error { return nil }
-				note := &types.Note{}
-				note.SetTargetRepo(testRepo)
-				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().Add(note, true).Return(nil)
-				svr.pushPool = mockPushPool
-				broadcastDone := false
-				svr.noteAndEndorserBroadcaster = func(types.PushNote) error {
-					broadcastDone = true
-					return fmt.Errorf("error")
-				}
-				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
-				Expect(err).To(BeNil())
-				Expect(broadcastDone).To(BeTrue())
 			})
 		})
 	})
@@ -823,7 +835,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
 				var pushNote = &types.Note{RepoName: repoName}
-				err = svr.pushPool.Add(pushNote, true)
+				err = svr.pushPool.Add(pushNote)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
@@ -841,7 +853,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
 				var pushNote = &types.Note{RepoName: repoName}
-				err = svr.pushPool.Add(pushNote, true)
+				err = svr.pushPool.Add(pushNote)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
@@ -863,7 +875,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
 				var pushNote = &types.Note{RepoName: repoName}
-				err = svr.pushPool.Add(pushNote, true)
+				err = svr.pushPool.Add(pushNote)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
@@ -888,7 +900,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
 				var pushNote = &types.Note{RepoName: repoName}
-				err = svr.pushPool.Add(pushNote, true)
+				err = svr.pushPool.Add(pushNote)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
@@ -914,7 +926,7 @@ var _ = Describe("Reactor", func() {
 			It("should return no error", func() {
 				params.PushEndorseQuorumSize = 1
 				var pushNote = &types.Note{RepoName: repoName}
-				err = svr.pushPool.Add(pushNote, true)
+				err = svr.pushPool.Add(pushNote)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{

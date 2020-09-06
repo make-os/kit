@@ -11,6 +11,7 @@ import (
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/core"
 	state2 "github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -216,6 +217,28 @@ var _ = Describe("Tracklist", func() {
 			Expect(res).To(HaveKey("repo1"))
 			Expect(res).To(HaveKey("repo2"))
 			Expect(res["repo2"].LastUpdated.UInt64()).To(Equal(uint64(1200)))
+		})
+	})
+
+	Describe(".UpdateRefLastSyncHeight", func() {
+		It("should update height", func() {
+			err := keeper.UpdateRefLastSyncHeight("repo1", "ref/heads/master", 10)
+			Expect(err).To(BeNil())
+			rec, err := appDB.Get(MakeRepoRefLastSyncHeightKey("repo1", "ref/heads/master"))
+			Expect(err).To(BeNil())
+			Expect(rec).ToNot(BeNil())
+			height := util.DecodeNumber(rec.Value)
+			Expect(height).To(Equal(uint64(10)))
+		})
+	})
+
+	Describe(".GetRefLastSyncHeight", func() {
+		It("should update height", func() {
+			err := keeper.UpdateRefLastSyncHeight("repo1", "ref/heads/master", 10)
+			Expect(err).To(BeNil())
+			height, err := keeper.GetRefLastSyncHeight("repo1", "ref/heads/master")
+			Expect(err).To(BeNil())
+			Expect(height).To(Equal(uint64(10)))
 		})
 	})
 })

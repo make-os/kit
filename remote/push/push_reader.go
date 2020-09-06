@@ -119,10 +119,10 @@ func (r *Reader) Write(p []byte) (int, error) {
 	return r.packFile.Write(p)
 }
 
-// OnReferenceUpdateRequestRead sets a callback that is called after the
+// UseReferenceUpdateRequestRead sets a callback that is called after the
 // push requested has been decoded but yet to be written to git.
 // If the callback returns an error, the push request is aborted.
-func (r *Reader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpdateRequest) error) {
+func (r *Reader) UseReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpdateRequest) error) {
 	r.updateReqCB = cb
 }
 

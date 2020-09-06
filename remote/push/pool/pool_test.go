@@ -1,7 +1,6 @@
 package pool
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -9,26 +8,15 @@ import (
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/types/core"
 	crypto2 "github.com/make-os/lobe/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func txCheckNoIssue(tx types.PushNote, logic core.Logic) error {
-	return nil
-}
-
-func txCheckErr(err error) func(tx types.PushNote, logic core.Logic) error {
-	return func(tx types.PushNote, logic core.Logic) error {
-		return err
-	}
-}
-
 var _ = Describe("PushPool", func() {
 	var pool *PushPool
-	var tx *types.Note
-	var tx2 *types.Note
+	var note *types.Note
+	var note2 *types.Note
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var pushKeyID = crypto.NewKeyFromIntSeed(1).PushAddr().String()
@@ -45,7 +33,7 @@ var _ = Describe("PushPool", func() {
 	})
 
 	BeforeEach(func() {
-		tx = &types.Note{
+		note = &types.Note{
 			RepoName:        "repo",
 			RemoteNodeSig:   []byte("sig"),
 			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
@@ -54,7 +42,7 @@ var _ = Describe("PushPool", func() {
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
 			},
 		}
-		tx2 = &types.Note{
+		note2 = &types.Note{
 			RepoName:        "repo2",
 			RemoteNodeSig:   []byte("sig_2"),
 			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID2),
@@ -71,8 +59,7 @@ var _ = Describe("PushPool", func() {
 		When("pool has one item and pool TTL is 10ms", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(1, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 				params.PushPoolItemTTL = 10 * time.Millisecond
 				time.Sleep(params.PushPoolItemTTL)
@@ -82,8 +69,8 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.container).ToNot(BeEmpty())
 				pool.removeOld()
 				Expect(pool.container).To(BeEmpty())
-				Expect(pool.index).To(BeEmpty())
-				Expect(pool.refIndex).To(BeEmpty())
+				Expect(pool.noteIdx).To(BeEmpty())
+				Expect(pool.refIdx).To(BeEmpty())
 				Expect(pool.refNonceIdx).To(BeEmpty())
 			})
 		})
@@ -105,10 +92,9 @@ var _ = Describe("PushPool", func() {
 		When("pool has reached capacity", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(1, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
-				err = pool.Add(tx2)
+				err = pool.Add(note2)
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -120,10 +106,9 @@ var _ = Describe("PushPool", func() {
 		When("tx already exist in pool", func() {
 			It("should return nil and it should not add duplicate to the pool", func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 				Expect(pool.Len()).To(Equal(1))
 			})
@@ -132,8 +117,7 @@ var _ = Describe("PushPool", func() {
 		When("tx doesn't already exist", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 			})
 
 			It("should return nil", func() {
@@ -145,22 +129,21 @@ var _ = Describe("PushPool", func() {
 			})
 
 			Specify("that the container index has 1 item which is the tx", func() {
-				Expect(pool.index).To(HaveLen(1))
-				Expect(pool.index).To(HaveKey(tx.ID().HexStr()))
+				Expect(pool.noteIdx).To(HaveLen(1))
+				Expect(pool.noteIdx).To(HaveKey(note.ID().HexStr()))
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
-			"that already exist in the pool and tx_X and tx_Y have equal total fee", func() {
+		When("a reference (ref0) in new tx (txA) match an identical reference (ref0) of tx (tx_Y) "+
+			"that already exist in the pool and txA and tx_Y have equal total fee", func() {
 			BeforeEach(func() {
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 
 				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.2", Nonce: 1})
-				tx_X := baseNote
+				txA := baseNote
 
-				err = pool.Add(tx_X)
+				err = pool.Add(txA)
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -170,57 +153,54 @@ var _ = Describe("PushPool", func() {
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
+		When("a reference (ref0) in new tx (txA) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but ref0 has a higher nonce", func() {
 			BeforeEach(func() {
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 
 				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 2})
-				tx_X := baseNote
+				txA := baseNote
 
-				pool.refIndex = map[string]*containerItem{}
-				err = pool.Add(tx_X)
+				pool.refIdx = map[string]*containerItem{}
+				err = pool.Add(txA)
 				Expect(err).ToNot(BeNil())
 			})
 
 			It("should return err", func() {
-				Expect(err.Error()).To(Equal("rejected because an identical reference with a lower nonce has been staged"))
+				Expect(err.Error()).To(Equal("rejected: pool has existing reference with a lower nonce"))
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
+		When("a reference (ref0) in new tx (txA) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
-			var tx_X *types.Note
+			var txA *types.Note
 			BeforeEach(func() {
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 
 				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
-				tx_X = baseNote
-				pool.refIndex = map[string]*containerItem{}
+				txA = baseNote
+				pool.refIdx = map[string]*containerItem{}
 			})
 
 			It("should panic", func() {
 				Expect(func() {
-					pool.Add(tx_X)
+					pool.Add(txA)
 				}).To(Panic())
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
-			"that already exist in the pool and tx_X has a lower fee", func() {
+		When("a reference (ref0) in new tx (txA) match an identical reference (ref0) of tx (tx_Y) "+
+			"that already exist in the pool and txA has a lower fee", func() {
 			BeforeEach(func() {
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 
 				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
-				tx_X := baseNote
+				txA := baseNote
 
-				err = pool.Add(tx_X)
+				err = pool.Add(txA)
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -230,18 +210,17 @@ var _ = Describe("PushPool", func() {
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
-			"that already exist in the pool and tx_X has a higher fee", func() {
-			var tx_X *types.Note
+		When("a reference (ref0) in new tx (txA) match an identical reference (ref0) of tx (tx_Y) "+
+			"that already exist in the pool and txA has a higher fee", func() {
+			var txA *types.Note
 			BeforeEach(func() {
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 
 				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.5", Nonce: 1})
-				tx_X = baseNote
+				txA = baseNote
 
-				err = pool.Add(tx_X)
+				err = pool.Add(txA)
 			})
 
 			It("should return nil", func() {
@@ -249,16 +228,16 @@ var _ = Describe("PushPool", func() {
 			})
 
 			Specify("that tx (tx_Y) was removed", func() {
-				Expect(pool.index).ShouldNot(HaveKey(tx.ID().HexStr()))
+				Expect(pool.noteIdx).ShouldNot(HaveKey(note.ID().HexStr()))
 			})
 
-			Specify("that tx (tx_X) was added", func() {
-				Expect(pool.index).Should(HaveKey(tx_X.ID().HexStr()))
+			Specify("that tx (txA) was added", func() {
+				Expect(pool.noteIdx).Should(HaveKey(txA.ID().HexStr()))
 			})
 		})
 
-		When("a reference (ref0) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
-			"that already exist in the pool and tx_X has a higher total fee", func() {
+		When("a reference (ref0) in new tx (txA) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
+			"that already exist in the pool and txA has a higher total fee", func() {
 			var txX, txY, txZ *types.Note
 			BeforeEach(func() {
 				txY = &types.Note{
@@ -295,7 +274,6 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -308,17 +286,17 @@ var _ = Describe("PushPool", func() {
 			})
 
 			Specify("that tx (tx_Y and tx_Z) were removed", func() {
-				Expect(pool.index).ShouldNot(HaveKey(txY.ID().HexStr()))
-				Expect(pool.index).ShouldNot(HaveKey(txZ.ID().HexStr()))
+				Expect(pool.noteIdx).ShouldNot(HaveKey(txY.ID().HexStr()))
+				Expect(pool.noteIdx).ShouldNot(HaveKey(txZ.ID().HexStr()))
 			})
 
-			Specify("that tx (tx_X) was added", func() {
-				Expect(pool.index).Should(HaveKey(txX.ID().HexStr()))
+			Specify("that tx (txA) was added", func() {
+				Expect(pool.noteIdx).Should(HaveKey(txX.ID().HexStr()))
 			})
 		})
 
-		When("references (ref0, ref1) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
-			"that already exist in the pool and tx_X has lower total fee", func() {
+		When("references (ref0, ref1) in new tx (txA) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
+			"that already exist in the pool and txA has lower total fee", func() {
 			var txX, txY, txZ *types.Note
 			BeforeEach(func() {
 				txY = &types.Note{
@@ -355,7 +333,6 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -365,50 +342,7 @@ var _ = Describe("PushPool", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("replace-by-fee on multiple push notes not allowed due to inferior fee."))
-			})
-		})
-
-		When("validation check fails", func() {
-			var txX *types.Note
-			BeforeEach(func() {
-				txX = &types.Note{
-					RepoName: "repo", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
-					Timestamp:       100000000,
-					PusherAcctNonce: 2,
-					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01"},
-					},
-				}
-
-				pool.noteChecker = txCheckErr(fmt.Errorf("check failed"))
-				err = pool.Add(txX)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("push note validation failed: check failed"))
-			})
-		})
-
-		When("noValidation argument is true", func() {
-			var txX *types.Note
-			BeforeEach(func() {
-				txX = &types.Note{
-					RepoName: "repo", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
-					Timestamp:       100000000,
-					PusherAcctNonce: 2,
-					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01"},
-					},
-				}
-
-				pool.noteChecker = txCheckErr(fmt.Errorf("check failed"))
-				err = pool.Add(txX, true)
-			})
-
-			It("should return no err", func() {
-				Expect(err).To(BeNil())
+				Expect(err.Error()).To(Equal("replace-by-fee on multiple push notes not allowed due to inferior fee"))
 			})
 		})
 	})
@@ -419,25 +353,23 @@ var _ = Describe("PushPool", func() {
 		When("note exist", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 			})
 
 			It("should return the push note", func() {
-				note := pool.Get(tx.ID().String())
-				Expect(note).To(Equal(tx))
+				note := pool.Get(note.ID().String())
+				Expect(note).To(Equal(note))
 			})
 		})
 
 		When("note does not exist", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
 			})
 
 			It("should return the push note", func() {
-				note := pool.Get(tx.ID().String())
+				note := pool.Get(note.ID().String())
 				Expect(note).To(BeNil())
 			})
 		})
@@ -449,47 +381,41 @@ var _ = Describe("PushPool", func() {
 		When("pool has a tx", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 				Expect(pool.container).To(HaveLen(1))
-				Expect(pool.index).To(HaveLen(1))
-				Expect(pool.refIndex).To(HaveLen(1))
+				Expect(pool.noteIdx).To(HaveLen(1))
+				Expect(pool.refIdx).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
-				Expect(pool.repoNotesIdx).To(HaveLen(1))
-				pool.remove(tx)
+				pool.remove(note)
 			})
 
 			Specify("that the container and all indexes are empty", func() {
 				Expect(pool.container).To(HaveLen(0))
-				Expect(pool.index).To(HaveLen(0))
-				Expect(pool.refIndex).To(HaveLen(0))
+				Expect(pool.noteIdx).To(HaveLen(0))
+				Expect(pool.refIdx).To(HaveLen(0))
 				Expect(pool.refNonceIdx).To(HaveLen(0))
-				Expect(pool.repoNotesIdx).To(BeEmpty())
 			})
 		})
 
 		When("pool has two txs", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
-				err = pool.Add(tx2)
+				err = pool.Add(note)
+				err = pool.Add(note2)
 				Expect(err).To(BeNil())
 				Expect(pool.container).To(HaveLen(2))
-				Expect(pool.index).To(HaveLen(2))
-				Expect(pool.refIndex).To(HaveLen(2))
+				Expect(pool.noteIdx).To(HaveLen(2))
+				Expect(pool.refIdx).To(HaveLen(2))
 				Expect(pool.refNonceIdx).To(HaveLen(2))
-				Expect(pool.repoNotesIdx).To(HaveLen(2))
-				pool.remove(tx)
+				pool.remove(note)
 			})
 
 			Specify("that the container and all indexes have 1 item in them", func() {
 				Expect(pool.container).To(HaveLen(1))
-				Expect(pool.index).To(HaveLen(1))
-				Expect(pool.refIndex).To(HaveLen(1))
+				Expect(pool.noteIdx).To(HaveLen(1))
+				Expect(pool.refIdx).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
-				Expect(pool.repoNotesIdx).To(HaveLen(1))
 			})
 		})
 	})
@@ -500,8 +426,7 @@ var _ = Describe("PushPool", func() {
 		When("pool has a tx", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockLogic)
-				pool.noteChecker = txCheckNoIssue
-				err = pool.Add(tx)
+				err = pool.Add(note)
 				Expect(err).To(BeNil())
 			})
 
@@ -518,6 +443,22 @@ var _ = Describe("PushPool", func() {
 			It("should return 0", func() {
 				Expect(pool.Len()).To(Equal(0))
 			})
+		})
+	})
+
+	Describe(".HasSeen", func() {
+		It("should return true if tx was added to the pool", func() {
+			pool = NewPushPool(2, mockLogic)
+			err := pool.Add(note)
+			Expect(err).To(BeNil())
+			pool.Remove(note)
+			Expect(pool.Len()).To(Equal(0))
+			Expect(pool.HasSeen(note.ID().String())).To(BeTrue())
+		})
+
+		It("should return false when tx was not added to the pool", func() {
+			pool = NewPushPool(2, mockLogic)
+			Expect(pool.HasSeen(note.ID().String())).To(BeFalse())
 		})
 	})
 })

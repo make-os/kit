@@ -104,22 +104,17 @@ func (m *MockPushPool) EXPECT() *MockPushPoolMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockPushPool) Add(tx types.PushNote, noValidation ...bool) error {
+func (m *MockPushPool) Add(note types.PushNote) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{tx}
-	for _, a := range noValidation {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Add", varargs...)
+	ret := m.ctrl.Call(m, "Add", note)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add
-func (mr *MockPushPoolMockRecorder) Add(tx interface{}, noValidation ...interface{}) *gomock.Call {
+func (mr *MockPushPoolMockRecorder) Add(note interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{tx}, noValidation...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPushPool)(nil).Add), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPushPool)(nil).Add), note)
 }
 
 // Full mocks base method
@@ -134,20 +129,6 @@ func (m *MockPushPool) Full() bool {
 func (mr *MockPushPoolMockRecorder) Full() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Full", reflect.TypeOf((*MockPushPool)(nil).Full))
-}
-
-// RepoHasPushNote mocks base method
-func (m *MockPushPool) RepoHasPushNote(repo string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RepoHasPushNote", repo)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// RepoHasPushNote indicates an expected call of RepoHasPushNote
-func (mr *MockPushPoolMockRecorder) RepoHasPushNote(repo interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoHasPushNote", reflect.TypeOf((*MockPushPool)(nil).RepoHasPushNote), repo)
 }
 
 // Get mocks base method
@@ -188,6 +169,20 @@ func (m *MockPushPool) Remove(pushNote types.PushNote) {
 func (mr *MockPushPoolMockRecorder) Remove(pushNote interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushPool)(nil).Remove), pushNote)
+}
+
+// HasSeen mocks base method
+func (m *MockPushPool) HasSeen(noteID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasSeen", noteID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasSeen indicates an expected call of HasSeen
+func (mr *MockPushPoolMockRecorder) HasSeen(noteID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasSeen", reflect.TypeOf((*MockPushPool)(nil).HasSeen), noteID)
 }
 
 // MockPushNote is a mock of PushNote interface

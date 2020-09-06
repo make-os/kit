@@ -59,6 +59,11 @@ func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Kee
 	}
 	w.service = service
 
+	go func() {
+		cfg.G().Interrupt.Wait()
+		w.Stop()
+	}()
+
 	return w
 }
 
@@ -72,18 +77,30 @@ func (w *Watcher) HasTask() bool {
 	return w.QueueSize() > 0
 }
 
-// addTasks adds trackable repositories that have fallen behind to the queue.
-func (w *Watcher) addTasks() {
+// addTrackedRepos adds trackable repositories that have fallen behind to the queue.
+func (w *Watcher) addTrackedRepos() {
 	for repoName, trackInfo := range w.keepers.RepoSyncInfoKeeper().Tracked() {
 		repoState := w.keepers.RepoKeeper().Get(repoName)
 		if repoState.LastUpdated <= trackInfo.LastUpdated {
 			continue
 		}
-		w.queue <- &rstypes.WatcherTask{
-			RepoName:    repoName,
-			StartHeight: trackInfo.LastUpdated.UInt64() + 1,
-			EndHeight:   repoState.LastUpdated.UInt64(),
+
+		startHeight := trackInfo.LastUpdated.UInt64()
+		if startHeight == 0 {
+			startHeight = 1
 		}
+
+		w.Watch(repoName, "", startHeight, repoState.LastUpdated.UInt64())
+	}
+}
+
+// Watch adds a repository to the watch queue
+func (w *Watcher) Watch(repo, reference string, startHeight, endHeight uint64) {
+	w.queue <- &rstypes.WatcherTask{
+		RepoName:    repo,
+		StartHeight: startHeight,
+		EndHeight:   endHeight,
+		Reference:   reference,
 	}
 }
 
@@ -98,7 +115,9 @@ func (w *Watcher) Start() {
 	w.ticker = time.NewTicker(5 * time.Second)
 	go func() {
 		for range w.ticker.C {
-			w.addTasks()
+			if !w.stopped {
+				w.addTrackedRepos()
+			}
 		}
 	}()
 
@@ -147,8 +166,9 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	w.processing.Add(task.RepoName, struct{}{})
 	defer w.processing.Remove(task.RepoName)
 
-	w.log.Debug("Scanning chain for new updates",
-		"Repo", task.RepoName, "EndHeight", task.EndHeight)
+	w.log.Debug("Scanning chain for new updates", "Repo", task.RepoName, "EndHeight", task.EndHeight)
+
+	isRepoTracked := w.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName) != nil
 
 	// Walk up the blocks until the task's end height.
 	// Find push transactions addressed to the target repository.
@@ -190,14 +210,13 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 			}
 
 			w.log.Debug("Found update for repo", "Repo", task.RepoName, "Height", start)
-			w.txHandler(obj, i, int64(start))
+			w.txHandler(obj, task.Reference, i, int64(start))
 			foundTx = true
 		}
 
-		// If no push transaction was found in this block, update the last
-		// update block height of the tracked repo. If there were transactions
-		// the tx handler will be responsible for updating the height.
-		if !foundTx {
+		// If no push transaction was found in this block and the repo is being tracked,
+		// update the last synced block height of the tracked repo.
+		if !foundTx && isRepoTracked {
 			w.keepers.RepoSyncInfoKeeper().Track(task.RepoName, start)
 		}
 

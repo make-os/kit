@@ -88,30 +88,6 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
 	return &blockInfo, nil
 }
 
-// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
-// object synchronizer
-func (s *SystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
-	data := util.ToBytes(height)
-	record := common.NewFromKeyValue(MakeKeyRepoSyncerHeight(), data)
-	return s.db.Put(record)
-}
-
-// GetLastRepoObjectsSyncHeight returns the last block that was processed by the
-// repo object synchronizer
-func (s *SystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
-	record, err := s.db.Get(MakeKeyRepoSyncerHeight())
-	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return 0, nil
-		}
-		return 0, err
-	}
-
-	var height uint64
-	record.Scan(&height)
-	return height, nil
-}
-
 // SetHelmRepo sets the governing repository of the network
 func (s *SystemKeeper) SetHelmRepo(name string) error {
 	data := []byte(name)

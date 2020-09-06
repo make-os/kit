@@ -41,7 +41,7 @@ var _ = Describe("Announcer", func() {
 
 		logic := testutil.MockLogic(ctrl)
 		mockDHTKeeper = logic.DHTKeeper
-		ann = announcer.New(dhtA.DHT(), logic.Logic, cfg.G().Log)
+		ann = announcer.New(cfg, dhtA.DHT(), logic.Logic)
 	})
 
 	AfterEach(func() {

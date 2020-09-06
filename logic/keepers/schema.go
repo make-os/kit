@@ -15,13 +15,19 @@ const (
 	TagNS                      = "ns"
 	TagClosedProp              = "cp"
 	TagBlockInfo               = "b"
-	TagLastRepoSyncherHeight   = "rh"
+	TagLastRepoSyncHeight      = "rh"
 	TagHelmRepo                = "hr"
 	TagValidators              = "v"
 	TagTx                      = "t"
 	TagTrackedRepo             = "tr"
 	TagAnnouncementScheduleKey = "ak"
+	TagRepoRefLastSyncHeight   = "rrh"
 )
+
+// MakeRepoRefLastSyncHeightKey creates a key for storing a repo's reference last successful synchronized height.
+func MakeRepoRefLastSyncHeightKey(repo, reference string) []byte {
+	return common.MakePrefix([]byte(TagRepoRefLastSyncHeight), []byte(repo), []byte(reference))
+}
 
 // MakeTrackedRepoKey creates a key for accessing a tracked repo.
 func MakeTrackedRepoKey(name string) []byte {
@@ -92,10 +98,9 @@ func MakeKeyBlockInfo(height int64) []byte {
 	return common.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagBlockInfo))
 }
 
-// MakeKeyRepoSyncerHeight creates a key for accessing last height synch-ed by
-// the repo syncer
-func MakeKeyRepoSyncerHeight() []byte {
-	return common.MakePrefix([]byte(TagLastRepoSyncherHeight))
+// MakeKeyRepoSyncHeight creates a key for accessing last height successfully synchronized by the repo syncer
+func MakeKeyRepoSyncHeight() []byte {
+	return common.MakePrefix([]byte(TagLastRepoSyncHeight))
 }
 
 // MakeKeyHelmRepo creates a key for getting/setting the helm repo

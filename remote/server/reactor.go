@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/crypto/bls"
@@ -43,6 +42,46 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 			sv.log.Error("failed to handle push endorsement", "Err", err.Error())
 		}
 	}
+}
+
+type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string) error
+
+// maybeScheduleReSync checks whether the local repository needs to be scheduled for synchronized.
+// note is the note containing the problematic ref.
+// ref is the name of the reference that may be out of sync.
+func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string) error {
+
+	localRef, err := note.GetTargetRepo().Reference(plumbing2.ReferenceName(ref), false)
+	if err != nil {
+		return err
+	}
+	localRefHash := localRef.Hash()
+
+	// Check if the reference's local and network hash match.
+	// If yes, no resync needs to happen.
+	repoState := note.GetTargetRepo().GetState()
+	if bytes.Equal(repoState.References.Get(ref).Hash.Bytes(), localRefHash[:]) {
+		return nil
+	}
+
+	// Get last synchronized
+	refLastSyncHeight, err := sv.logic.RepoSyncInfoKeeper().GetRefLastSyncHeight(note.GetRepoName(), ref)
+	if err != nil {
+		return err
+	}
+
+	// If the last successful synced reference height equal the last successful synced
+	// height for the entire repo, it means something unnatural/external messed the repo
+	// history. We react by resyncing the repo from height 0
+	repoLastUpdated := repoState.LastUpdated.UInt64()
+	if refLastSyncHeight == repoLastUpdated {
+		refLastSyncHeight = 0
+	}
+
+	// Add the repo to the refsync watcher
+	sv.refSyncer.Watch(note.GetRepoName(), ref, refLastSyncHeight, repoLastUpdated)
+
+	return nil
 }
 
 // onPushNoteReceived handles incoming Note messages
@@ -123,6 +162,13 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// Validate the push note.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
+
+		// If we get an error about a pushed reference and local reference mismatch,
+		// we need to determine whether to schedule the repository for a resynchronization.
+		if funk.ContainsString(err.(*util.BadFieldError).Data, validation.ErrCodePushRefAndLocalHashMismatch) {
+			sv.scheduleReSync(&note, err.(*util.BadFieldError).Data[1])
+		}
+
 		return errors.Wrap(err, "failed push note validation")
 	}
 
@@ -198,16 +244,9 @@ func (sv *Server) onObjectsFetched(
 	return nil
 }
 
-// cmdWaiterFunc describes function for waiting for a command
-type cmdWaiterFunc func(cmd *exec.Cmd) error
-
-// cmdWaiter wraps cmd.Wait
-func cmdWaiter(cmd *exec.Cmd) error {
-	return cmd.Wait()
-}
-
 // MaybeProcessPushNoteFunc is a function for processing a push note
-type MaybeProcessPushNoteFunc func(note pushtypes.PushNote, txDetails []*remotetypes.TxDetail,
+type MaybeProcessPushNoteFunc func(note pushtypes.PushNote,
+	txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc) error
 
 // maybeProcessPushNote validates and dry-run the push note.
@@ -227,8 +266,6 @@ func (sv *Server) maybeProcessPushNote(
 	repoPath := note.GetTargetRepo().GetPath()
 	cmd := exec.Command(sv.gitBinPath, []string{"receive-pack", "--stateless-rpc", repoPath}...)
 	cmd.Dir = repoPath
-	stderr := bytes.NewBuffer(nil)
-	cmd.Stderr = stderr
 
 	// Get the command's stdin pipe
 	in, err := cmd.StdinPipe()
@@ -244,36 +281,12 @@ func (sv *Server) maybeProcessPushNote(
 
 	// Read, analyse and pass the packfile to git
 	handler := sv.makePushHandler(note.GetTargetRepo(), txDetails, polEnforcer)
-	if err := handler.HandleStream(packfile, in, cmd, nil); err != nil {
+	if err := handler.HandleStream(packfile, in, util.NewWrappedCmd(cmd), nil); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
 
-	// Wait for git-receive-pack response.
-	if err := sv.cmdWaiter(cmd); err != nil {
-		return fmt.Errorf("git-receive-pack: write error: %s", strings.TrimSpace(stderr.String()))
-	}
-
-	// Handle repository size check
-	if err := handler.HandleRepoSize(); err != nil {
-		return errors.Wrap(err, "HandleRepoSize error")
-	}
-
-	// Handle transaction validation and revert changes
-	err = handler.HandleReferences()
-	if err != nil {
-		return errors.Wrap(err, "HandleReferences error")
-	}
-
-	// Add the note to the push pool
-	if err := sv.GetPushPool().Add(note, true); err != nil {
-		return errors.Wrap(err, "failed to add push note to push pool")
-	}
-
-	sv.log.Info("Added valid push note to push pool", "ID", note.ID().String())
-
-	// Broadcast the push note and pushed objects
-	if err = sv.noteAndEndorserBroadcaster(note); err != nil {
-		sv.log.Error("Failed to broadcast push note", "Err", err)
+	if err := handler.HandleUpdate(note); err != nil {
+		return errors.Wrap(err, "HandleUpdate error")
 	}
 
 	return nil
@@ -432,16 +445,9 @@ func createEndorsement(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pus
 
 	// Set the hash of the endorsement equal the local hash of the reference
 	for _, ref := range note.GetPushedReferences() {
-		hash, err := note.GetTargetRepo().RefGet(ref.Name)
-		if err != nil && err != plumbing.ErrRefNotFound {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to get hash of reference (%s)", ref.Name))
-		}
-
-		ref := &pushtypes.EndorsedReference{}
-		e.References = append(e.References, ref)
-		if err == nil {
-			ref.Hash = util.MustFromHex(hash)
-		}
+		end := &pushtypes.EndorsedReference{}
+		end.Hash = util.MustFromHex(ref.OldHash)
+		e.References = append(e.References, end)
 	}
 
 	// Sign the endorsement using our BLS key

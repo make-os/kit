@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/crypto/bls"
 	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/validation"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
@@ -119,7 +120,7 @@ func CheckTxUnbondTicketConsistency(
 	// Ensure the ticket is still active
 	expireBy := ticket.ExpireBy
 	if expireBy != 0 && expireBy > uint64(bi.Height) {
-		return feI(index, "hash", "ticket is already expireing")
+		return feI(index, "hash", "ticket is already expiring")
 	} else if expireBy != 0 && expireBy <= uint64(bi.Height) {
 		return feI(index, "hash", "ticket has already expired")
 	}
@@ -256,8 +257,8 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 			// But when reference exist, we expect the hash to match the endorsement hash
 			curRefHash := repoState.References.Get(ref.Name).Hash
 			if !bytes.Equal(endorsement.Hash, curRefHash) {
-				msg := fmt.Sprintf("hash (%x) of endorsed reference (%s) is not the expected hash (%x)",
-					endorsement.Hash, ref.Name, curRefHash)
+				msg := fmt.Sprintf("hash (%x) of endorsed reference (%s) is not the expected hash (%s)",
+					endorsement.Hash, ref.Name, plumbing.BytesToHex(curRefHash))
 				return feI(index, "endorsements.hash", msg)
 			}
 		}
@@ -460,7 +461,7 @@ func CheckTxVoteConsistency(
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
-	// If the proposal is targetted at repo owners and
+	// If the proposal is targeted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
 	if proposal.GetVoterType() == state.VoterOwner &&
 		tx.Vote == state.ProposalVoteNoWithVeto && !senderOwner.Veto {

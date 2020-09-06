@@ -6,10 +6,11 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	types "github.com/make-os/lobe/remote/push/types"
+	util "github.com/make-os/lobe/util"
 	pktline "gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	packp "gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 	io "io"
-	exec "os/exec"
 	reflect "reflect"
 )
 
@@ -37,17 +38,17 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 }
 
 // HandleStream mocks base method
-func (m *MockHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitReceiveCmd *exec.Cmd, pktEnc *pktline.Encoder) error {
+func (m *MockHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleStream", packfile, gitReceive, gitReceiveCmd, pktEnc)
+	ret := m.ctrl.Call(m, "HandleStream", packfile, gitReceive, gitRcvCmd, pktEnc)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleStream indicates an expected call of HandleStream
-func (mr *MockHandlerMockRecorder) HandleStream(packfile, gitReceive, gitReceiveCmd, pktEnc interface{}) *gomock.Call {
+func (mr *MockHandlerMockRecorder) HandleStream(packfile, gitReceive, gitRcvCmd, pktEnc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleStream", reflect.TypeOf((*MockHandler)(nil).HandleStream), packfile, gitReceive, gitReceiveCmd, pktEnc)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleStream", reflect.TypeOf((*MockHandler)(nil).HandleStream), packfile, gitReceive, gitRcvCmd, pktEnc)
 }
 
 // EnsureReferencesHaveTxDetail mocks base method
@@ -106,44 +107,58 @@ func (mr *MockHandlerMockRecorder) HandleReferences() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReferences", reflect.TypeOf((*MockHandler)(nil).HandleReferences))
 }
 
-// HandleRepoSize mocks base method
-func (m *MockHandler) HandleRepoSize() error {
+// HandleGCAndSizeCheck mocks base method
+func (m *MockHandler) HandleGCAndSizeCheck() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleRepoSize")
+	ret := m.ctrl.Call(m, "HandleGCAndSizeCheck")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// HandleRepoSize indicates an expected call of HandleRepoSize
-func (mr *MockHandlerMockRecorder) HandleRepoSize() *gomock.Call {
+// HandleGCAndSizeCheck indicates an expected call of HandleGCAndSizeCheck
+func (mr *MockHandlerMockRecorder) HandleGCAndSizeCheck() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRepoSize", reflect.TypeOf((*MockHandler)(nil).HandleRepoSize))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleGCAndSizeCheck", reflect.TypeOf((*MockHandler)(nil).HandleGCAndSizeCheck))
 }
 
 // HandleUpdate mocks base method
-func (m *MockHandler) HandleUpdate() error {
+func (m *MockHandler) HandleUpdate(targetNote types.PushNote) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleUpdate")
+	ret := m.ctrl.Call(m, "HandleUpdate", targetNote)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleUpdate indicates an expected call of HandleUpdate
-func (mr *MockHandlerMockRecorder) HandleUpdate() *gomock.Call {
+func (mr *MockHandlerMockRecorder) HandleUpdate(targetNote interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleUpdate", reflect.TypeOf((*MockHandler)(nil).HandleUpdate))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleUpdate", reflect.TypeOf((*MockHandler)(nil).HandleUpdate), targetNote)
 }
 
 // HandleReference mocks base method
-func (m *MockHandler) HandleReference(ref string, revertOnly bool) []error {
+func (m *MockHandler) HandleReference(ref string) []error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleReference", ref, revertOnly)
+	ret := m.ctrl.Call(m, "HandleReference", ref)
 	ret0, _ := ret[0].([]error)
 	return ret0
 }
 
 // HandleReference indicates an expected call of HandleReference
-func (mr *MockHandlerMockRecorder) HandleReference(ref, revertOnly interface{}) *gomock.Call {
+func (mr *MockHandlerMockRecorder) HandleReference(ref interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReference", reflect.TypeOf((*MockHandler)(nil).HandleReference), ref, revertOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReference", reflect.TypeOf((*MockHandler)(nil).HandleReference), ref)
+}
+
+// HandleReversion mocks base method
+func (m *MockHandler) HandleReversion() []error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleReversion")
+	ret0, _ := ret[0].([]error)
+	return ret0
+}
+
+// HandleReversion indicates an expected call of HandleReversion
+func (mr *MockHandlerMockRecorder) HandleReversion() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReversion", reflect.TypeOf((*MockHandler)(nil).HandleReversion))
 }

@@ -58,6 +58,8 @@ var _ = Describe("Server", func() {
 	var dhtKeepers *mocks.MockDHTKeeper
 
 	BeforeEach(func() {
+		server.ConnectTickerInterval = 1 * time.Millisecond
+
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
@@ -302,12 +304,12 @@ var _ = Describe("Server", func() {
 			time.Sleep(10 * time.Millisecond)
 		})
 
-		FWhen("a peer announces a key", func() {
+		When("a peer announces a key", func() {
 			BeforeEach(func() {
 				dhtKeepers.EXPECT().AddToAnnounceList(key, "repo1", announcer.ObjTypeAny, gomock.Any())
 				dhtA.Announce(announcer.ObjTypeAny, "repo1", key, nil)
 				dhtA.Start()
-				time.Sleep(2 * time.Millisecond)
+				time.Sleep(1 * time.Millisecond)
 			})
 
 			It("should return no error", func() {

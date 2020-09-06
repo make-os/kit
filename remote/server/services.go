@@ -17,6 +17,7 @@ import (
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
 	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
@@ -286,13 +287,13 @@ func serveService(s *RequestContext) error {
 	}
 
 	// Read, analyse and pass the packfile to git
-	if err := s.PushHandler.HandleStream(reader, in, cmd, s.pktEnc); err != nil {
+	if err := s.PushHandler.HandleStream(reader, in, util.NewWrappedCmd(cmd), s.pktEnc); err != nil {
 		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
 		return errors.Wrap(err, "HandleStream error")
 	}
 
 	// Handle validate, revert and broadcast the changes
-	if err := s.PushHandler.HandleUpdate(); err != nil {
+	if err := s.PushHandler.HandleUpdate(nil); err != nil {
 		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
 		return errors.Wrap(err, "HandleUpdate error")
 	}

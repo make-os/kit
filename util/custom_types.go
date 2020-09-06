@@ -29,12 +29,12 @@ func (b Bytes) Bytes() []byte {
 	return b
 }
 
-func (u Bytes) MarshalJSON() ([]byte, error) {
+func (b Bytes) MarshalJSON() ([]byte, error) {
 	var result string
-	if u == nil {
+	if b == nil {
 		result = "null"
 	} else {
-		result = strings.Join(strings.Fields(fmt.Sprintf("%d", u)), ",")
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", b)), ",")
 	}
 	return []byte(result), nil
 }
@@ -43,7 +43,7 @@ func (u Bytes) MarshalJSON() ([]byte, error) {
 func (b Bytes) Big() *big.Int { return new(big.Int).SetBytes(b.Bytes()) }
 
 // Equal checks equality between h and o
-func (b Bytes) Equal(o Bytes32) bool { return bytes.Equal(b.Bytes(), o.Bytes()) }
+func (b Bytes) Equal(o Bytes) bool { return bytes.Equal(b.Bytes(), o.Bytes()) }
 
 func (b Bytes) String() string { return b.HexStr() }
 

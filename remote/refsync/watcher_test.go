@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func handleTx(*txns.TxPush, int, int64) {}
+func handleTx(*txns.TxPush, string, int, int64) {}
 
 var _ = Describe("Watcher", func() {
 	var err error
@@ -28,7 +28,7 @@ var _ = Describe("Watcher", func() {
 	var w *Watcher
 	var ctrl *gomock.Controller
 	var mockKeepers *mocks.MockKeepers
-	var MockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
+	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockService *mocks.MockService
 
@@ -38,9 +38,9 @@ var _ = Describe("Watcher", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockKeepers = mocks.NewMockKeepers(ctrl)
-		MockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
+		mockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
-		mockKeepers.EXPECT().RepoSyncInfoKeeper().Return(MockRepoSyncInfoKeeper).AnyTimes()
+		mockKeepers.EXPECT().RepoSyncInfoKeeper().Return(mockRepoSyncInfoKeeper).AnyTimes()
 		mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 		mockService = mocks.NewMockService(ctrl)
 		w = NewWatcher(cfg, handleTx, mockKeepers)
@@ -83,26 +83,37 @@ var _ = Describe("Watcher", func() {
 
 	Describe(".addTask", func() {
 		It("should not add any task if no tracked repository exist", func() {
-			MockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
-			w.addTasks()
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
+			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(BeZero())
 		})
 
 		It("should add tracked repo if its last updated height is less than the repo's last update height", func() {
-			MockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
 				"repo1": {LastUpdated: 1000},
 			})
 			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1001})
-			w.addTasks()
+			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(Equal(1))
 		})
 
+		It("should set start height to 1 if track repo last updated height is 0", func() {
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+				"repo1": {LastUpdated: 0},
+			})
+			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1001})
+			w.addTrackedRepos()
+			Expect(w.QueueSize()).To(Equal(1))
+			task := <-w.queue
+			Expect(task.StartHeight).To(Equal(uint64(1)))
+		})
+
 		It("should not add tracked repo if its last updated height is equal to the repo's last update height", func() {
-			MockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
 				"repo1": {LastUpdated: 1000},
 			})
 			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1000})
-			w.addTasks()
+			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(BeZero())
 		})
 	})
@@ -118,6 +129,7 @@ var _ = Describe("Watcher", func() {
 
 		It("should return error when unable to get block at a specific height", func() {
 			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(nil, fmt.Errorf("error"))
 			err := w.Do(task)
 			Expect(err).ToNot(BeNil())
@@ -130,9 +142,10 @@ var _ = Describe("Watcher", func() {
 				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+2)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+2)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+2)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 				err := w.Do(task)
 				Expect(err).To(BeNil())
 			})
@@ -153,8 +166,9 @@ var _ = Describe("Watcher", func() {
 					},
 				}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				err := w.Do(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to decode transaction: illegal base64 data at input byte 3"))
@@ -174,8 +188,9 @@ var _ = Describe("Watcher", func() {
 					},
 				}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				err := w.Do(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("unable to decode transaction #0 in height 1"))
@@ -198,8 +213,9 @@ var _ = Describe("Watcher", func() {
 				},
 			}, nil)
 			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-			MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-			MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 			err := w.Do(task)
 			Expect(err).To(BeNil())
 		})
@@ -220,8 +236,30 @@ var _ = Describe("Watcher", func() {
 				},
 			}, nil)
 			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-			MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-			MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+			err := w.Do(task)
+			Expect(err).To(BeNil())
+		})
+
+		It("should not update repo's track height if repo is not tracked", func() {
+			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			tx := txns.NewBareTxPush()
+			tx.Note = &types2.Note{RepoName: "repo2"}
+			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
+				"result": map[string]interface{}{
+					"block": map[string]interface{}{
+						"data": map[string]interface{}{
+							"txs": []interface{}{
+								base64.StdEncoding.EncodeToString(tx.Bytes()),
+							},
+						},
+					},
+				},
+			}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
 			err := w.Do(task)
 			Expect(err).To(BeNil())
 		})
@@ -234,7 +272,7 @@ var _ = Describe("Watcher", func() {
 				var didInitRepo = false
 				var didHandleTx = false
 
-				w = NewWatcher(cfg, func(push *txns.TxPush, index int, i int64) {
+				w = NewWatcher(cfg, func(push *txns.TxPush, ref string, index int, i int64) {
 					didHandleTx = true
 				}, mockKeepers)
 				w.service = mockService
@@ -254,8 +292,9 @@ var _ = Describe("Watcher", func() {
 					},
 				}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				err := w.Do(task)
 				Expect(err).To(BeNil())
 				Expect(didInitRepo).To(BeTrue())
@@ -283,8 +322,9 @@ var _ = Describe("Watcher", func() {
 					},
 				}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				err := w.Do(task)
 				Expect(err).To(BeNil())
 				Expect(didInitRepo).To(BeTrue())
@@ -311,8 +351,9 @@ var _ = Describe("Watcher", func() {
 					},
 				}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				MockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
+				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				err := w.Do(task)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to initialize repository: error"))

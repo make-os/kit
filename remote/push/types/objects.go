@@ -374,13 +374,10 @@ type PushPool interface {
 	// combined fee rate of the replaceable transactions.
 	//
 	// noValidation disables tx validation
-	Add(tx PushNote, noValidation ...bool) error
+	Add(note PushNote) error
 
 	// Full returns true if the pool is full
 	Full() bool
-
-	// RepoHasPushNote returns true if the given repo has a transaction in the pool
-	RepoHasPushNote(repo string) bool
 
 	// Get finds and returns a push note
 	Get(noteID string) *Note
@@ -390,6 +387,9 @@ type PushPool interface {
 
 	// Remove removes a push note
 	Remove(pushNote PushNote)
+
+	// HasSeen checks whether a note with the given ID was recently added
+	HasSeen(noteID string) bool
 }
 
 type PushNote interface {

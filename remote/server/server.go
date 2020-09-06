@@ -97,7 +97,7 @@ type Server struct {
 	endorsementBroadcaster     BroadcastEndorsementFunc                // Function for broadcasting an endorsement
 	noteBroadcaster            BroadcastPushNoteFunc                   // Function for broadcasting a push note
 	endorsementCreator         CreateEndorsementFunc                   // Function for creating an endorsement for a given push note
-	cmdWaiter                  cmdWaiterFunc                           // Function for waiting for exec.Cmd completion
+	scheduleReSync             ScheduleReSyncFunc                      // Function for scheduling a resync of a repository
 }
 
 // New creates an instance of Server
@@ -119,6 +119,9 @@ func New(
 	// Get the private validator key
 	key, _ := cfg.G().PrivVal.GetKey()
 
+	// Create the push pool
+	pushPool := pool.NewPushPool(params.PushPoolCap, appLogic)
+
 	// Create an instance of Server
 	server := &Server{
 		cfg:                     cfg,
@@ -127,14 +130,14 @@ func New(
 		rootDir:                 cfg.GetRepoRoot(),
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
-		pushPool:                pool.NewPushPool(params.PushPoolCap, appLogic),
+		pushPool:                pushPool,
 		logic:                   appLogic,
 		validatorKey:            key,
 		dht:                     dht,
 		objfetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
-		refSyncer:               refsync.New(cfg, mFetcher, dht, appLogic),
+		refSyncer:               refsync.New(cfg, pushPool, mFetcher, dht, appLogic),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
@@ -143,7 +146,6 @@ func New(
 		endorsements:            cache.NewCacheWithExpiringEntry(params.RecentlySeenPacksCacheSize),
 		notesReceived:           cache.NewCacheWithExpiringEntry(params.NotesReceivedCacheSize),
 		checkEndorsement:        validation.CheckEndorsement,
-		cmdWaiter:               cmdWaiter,
 	}
 
 	// Set concrete functions for various function typed fields
@@ -155,6 +157,7 @@ func New(
 	server.noteBroadcaster = server.broadcastPushNote
 	server.endorsementCreator = createEndorsement
 	server.processPushNote = server.maybeProcessPushNote
+	server.scheduleReSync = server.maybeScheduleReSync
 
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)

@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht/announcer"
@@ -34,11 +33,6 @@ var (
 	ErrUntracked = fmt.Errorf("untracked repository")
 )
 
-var (
-	// NoteRecencyDur is the duration within which a note is considered recently created.
-	NoteRecencyDur = 30 * time.Minute
-)
-
 // RefSync implements RefSync. It provides the mechanism that synchronizes the state of a
 // repository's reference based on push transactions in the blockchain. It reacts to newly
 // processed push transactions, processing each references to change the state of a repository.
@@ -54,6 +48,7 @@ type RefSync struct {
 	watcher                 reftypes.Watcher
 	queued                  *cache.Cache
 	removeRefQueueOnEmpty   bool
+	pool                    types.PushPool
 	lck                     *sync.Mutex
 	FinalizingRefs          map[string]struct{}
 	queues                  map[string]chan *reftypes.RefTask
@@ -61,7 +56,7 @@ type RefSync struct {
 
 // New creates an instance of RefSync
 func New(cfg *config.AppConfig,
-	fetcher fetcher.ObjectFetcherService,
+	pool types.PushPool, fetcher fetcher.ObjectFetcherService,
 	announcer anntypes.AnnouncerService,
 	keepers core.Keepers) *RefSync {
 
@@ -72,10 +67,11 @@ func New(cfg *config.AppConfig,
 		queues:                  map[string]chan *reftypes.RefTask{},
 		log:                     cfg.G().Log.Module("ref-syncer"),
 		keepers:                 keepers,
-		queued:                  cache.NewCache(1000),
+		queued:                  cache.NewCache(10000),
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
 		RepoGetter:              repo.GetWithLiteGit,
 		UpdateRepoUsingNote:     UpdateRepoUsingNote,
+		pool:                    pool,
 		removeRefQueueOnEmpty:   true,
 		announcer:               announcer,
 	}
@@ -88,7 +84,7 @@ func New(cfg *config.AppConfig,
 
 	go func() {
 		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
-			rs.OnNewTx(evt.Args[0].(*txns.TxPush), evt.Args[2].(int), evt.Args[1].(int64))
+			rs.OnNewTx(evt.Args[0].(*txns.TxPush), "", evt.Args[2].(int), evt.Args[1].(int64))
 		}
 	}()
 
@@ -124,13 +120,19 @@ func (rs *RefSync) CanSync(namespace, repoName string) error {
 	return nil
 }
 
-type TxHandlerFunc func(*txns.TxPush, int, int64)
+// Watch adds a repository to the watch queue
+func (rs *RefSync) Watch(repo, reference string, startHeight, endHeight uint64) {
+	rs.watcher.Watch(repo, reference, startHeight, endHeight)
+}
+
+type TxHandlerFunc func(*txns.TxPush, string, int, int64)
 
 // OnNewTx receives push transactions and adds non-delete
 // pushed references to the task queue.
+// targetRef is the specific pushed reference that will be queued. If unset, all references are queued.
 // txIndex is the index of the transaction it its containing block.
 // height is the block height that contains the transaction.
-func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
+func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64) {
 
 	// Ignore already queued transaction
 	if rs.queued.Has(tx.GetID()) {
@@ -145,11 +147,19 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 
 	// Track all non-delete pushed references
 	for _, ref := range tx.Note.GetPushedReferences() {
+
+		// If target reference is set, skip pushed reference if it does not match it
+		if targetRef != "" && targetRef != ref.Name {
+			continue
+		}
+
+		// Skip delete requesting pushed reference
 		if plumbing.IsZeroHash(ref.NewHash) {
 			continue
 		}
+
 		go rs.addTask(&reftypes.RefTask{
-			ID:           fmt.Sprintf("%s_%d", ref.Name, ref.Nonce),
+			ID:           tx.GetID(),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),
 			Endorsements: tx.Endorsements,
@@ -157,6 +167,9 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, txIndex int, height int64) {
 			Height:       height,
 			TxIndex:      txIndex,
 			Timestamp:    tx.GetTimestamp(),
+			Done: func() {
+				rs.queued.Remove(tx.GetID())
+			},
 		})
 	}
 }
@@ -203,6 +216,9 @@ func (rs *RefSync) Stop() {
 // do takes a pushed reference task and attempts to fetch the objects
 // required to update the reference's local state.
 func (rs *RefSync) do(task *reftypes.RefTask) error {
+	if task.Done != nil {
+		defer task.Done()
+	}
 
 	// Get the target repo
 	repoPath := filepath.Join(rs.cfg.GetRepoRoot(), task.RepoName)
@@ -211,13 +227,19 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		return errors.Wrap(err, "failed to get target repo")
 	}
 
-	// Get the target reference
+	// Get the local reference
 	refName := task.Ref.Name
 	localHash, err := targetRepo.RefGet(refName)
-	if err != nil {
-		if err != plumbing.ErrRefNotFound {
-			return errors.Wrap(err, "failed to get reference from target repo")
-		}
+	if err != nil && err != plumbing.ErrRefNotFound {
+		return errors.Wrap(err, "failed to get reference from target repo")
+	}
+
+	// We need to skip this task if the local hash is non-zero and:
+	// - Local hash and the incoming new reference hash match.
+	// - Local hash is a child of the new reference hash.
+	if localHash != "" && (task.Ref.NewHash == localHash ||
+		targetRepo.IsAncestor(task.Ref.NewHash, localHash) == nil) {
+		return nil
 	}
 
 	// If reference does not exist locally, use zero hash as the local hash.
@@ -251,9 +273,17 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		}
 
 		// If the repository is being tracked, update its last update height
-		if trackInfo := rs.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName); trackInfo != nil {
+		if rs.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName) != nil {
 			if err = rs.keepers.RepoSyncInfoKeeper().Track(task.RepoName, uint64(task.Height)); err != nil {
 				err = errors.Wrap(err, "failed to update tracked repo info")
+			}
+		}
+
+		// Update the reference's last sync height
+		if err == nil {
+			err = rs.keepers.RepoSyncInfoKeeper().UpdateRefLastSyncHeight(task.RepoName, task.Ref.Name, uint64(task.Height))
+			if err != nil {
+				err = errors.Wrap(err, "unable to update last reference sync height")
 			}
 		}
 
@@ -263,26 +293,10 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		return err
 	}
 
-	// If the note was created recently, it's safe to assume that the note signers
-	// and endorsers already have the objects. No need for them to fetch the objects.
-	if time.Unix(note.Timestamp, 0).After(time.Now().Add(-NoteRecencyDur)) {
-
-		// If the push note was signed by the current node, we don't need to fetch
-		// anything as we expect this node to have the objects already. Instead,
-		// update the repo using the push note.
-		valKey, _ := rs.cfg.G().PrivVal.GetKey()
-		if note.CreatorPubKey.Equal(valKey.PubKey().MustBytes32()) {
-			return doUpdate()
-		}
-
-		// If the push note was endorsed by the current node, we don't need to fetch
-		// anything as we expect this node to have the objects already. Instead,
-		// update the repo using the push note.
-		for _, end := range task.Endorsements {
-			if end.EndorserPubKey.Equal(valKey.PubKey().MustBytes32()) {
-				return doUpdate()
-			}
-		}
+	// If the note is in the push pool, it's safe to say the objects
+	// already exist locally, therefore no need to fetch them again.
+	if !rs.cfg.IsDev() && rs.pool.HasSeen(task.ID) {
+		return doUpdate()
 	}
 
 	// Announce fetched objects as they are fetched.

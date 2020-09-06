@@ -150,35 +150,6 @@ func (mr *MockSystemKeeperMockRecorder) GetBlockInfo(height interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockInfo", reflect.TypeOf((*MockSystemKeeper)(nil).GetBlockInfo), height)
 }
 
-// SetLastRepoObjectsSyncHeight mocks base method
-func (m *MockSystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetLastRepoObjectsSyncHeight", height)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetLastRepoObjectsSyncHeight indicates an expected call of SetLastRepoObjectsSyncHeight
-func (mr *MockSystemKeeperMockRecorder) SetLastRepoObjectsSyncHeight(height interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastRepoObjectsSyncHeight", reflect.TypeOf((*MockSystemKeeper)(nil).SetLastRepoObjectsSyncHeight), height)
-}
-
-// GetLastRepoObjectsSyncHeight mocks base method
-func (m *MockSystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastRepoObjectsSyncHeight")
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLastRepoObjectsSyncHeight indicates an expected call of GetLastRepoObjectsSyncHeight
-func (mr *MockSystemKeeperMockRecorder) GetLastRepoObjectsSyncHeight() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRepoObjectsSyncHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastRepoObjectsSyncHeight))
-}
-
 // SetHelmRepo mocks base method
 func (m *MockSystemKeeper) SetHelmRepo(name string) error {
 	m.ctrl.T.Helper()
@@ -459,33 +430,33 @@ func (mr *MockRepoSyncInfoKeeperMockRecorder) UnTrack(repos interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnTrack", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).UnTrack), repos)
 }
 
-// SetLastSyncedNonce mocks base method
-func (m *MockRepoSyncInfoKeeper) SetLastSyncedNonce(repo, ref string, nonce uint64) error {
+// UpdateRefLastSyncHeight mocks base method
+func (m *MockRepoSyncInfoKeeper) UpdateRefLastSyncHeight(repo, ref string, height uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetLastSyncedNonce", repo, ref, nonce)
+	ret := m.ctrl.Call(m, "UpdateRefLastSyncHeight", repo, ref, height)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetLastSyncedNonce indicates an expected call of SetLastSyncedNonce
-func (mr *MockRepoSyncInfoKeeperMockRecorder) SetLastSyncedNonce(repo, ref, nonce interface{}) *gomock.Call {
+// UpdateRefLastSyncHeight indicates an expected call of UpdateRefLastSyncHeight
+func (mr *MockRepoSyncInfoKeeperMockRecorder) UpdateRefLastSyncHeight(repo, ref, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastSyncedNonce", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).SetLastSyncedNonce), repo, ref, nonce)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRefLastSyncHeight", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).UpdateRefLastSyncHeight), repo, ref, height)
 }
 
-// GetLastSyncedNonce mocks base method
-func (m *MockRepoSyncInfoKeeper) GetLastSyncedNonce(repo, ref string) (uint64, error) {
+// GetRefLastSyncHeight mocks base method
+func (m *MockRepoSyncInfoKeeper) GetRefLastSyncHeight(repo, ref string) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastSyncedNonce", repo, ref)
+	ret := m.ctrl.Call(m, "GetRefLastSyncHeight", repo, ref)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLastSyncedNonce indicates an expected call of GetLastSyncedNonce
-func (mr *MockRepoSyncInfoKeeperMockRecorder) GetLastSyncedNonce(repo, ref interface{}) *gomock.Call {
+// GetRefLastSyncHeight indicates an expected call of GetRefLastSyncHeight
+func (mr *MockRepoSyncInfoKeeperMockRecorder) GetRefLastSyncHeight(repo, ref interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastSyncedNonce", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).GetLastSyncedNonce), repo, ref)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefLastSyncHeight", reflect.TypeOf((*MockRepoSyncInfoKeeper)(nil).GetRefLastSyncHeight), repo, ref)
 }
 
 // MockRepoKeeper is a mock of RepoKeeper interface
