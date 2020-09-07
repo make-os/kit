@@ -15,6 +15,7 @@ import (
 	testutil2 "github.com/make-os/lobe/remote/testutil"
 	types2 "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,6 +33,7 @@ var _ = Describe("Server", func() {
 	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
+	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -40,8 +42,8 @@ var _ = Describe("Server", func() {
 		ctrl = gomock.NewController(GinkgoT())
 
 		mockLogic = testutil.MockLogic(ctrl)
-		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
+		mockRepoSyncInfoKeeper = mockLogic.RepoSyncInfoKeeper
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
@@ -249,6 +251,33 @@ var _ = Describe("Server", func() {
 		It("should return false if object does not exists", func() {
 			recentHashHex, _ := util.FromHex("b4952909ef739a347d6d323e0d8700bf0cc346e1")
 			Expect(svr.checkRepoObject(repoName, recentHashHex)).To(BeFalse())
+		})
+	})
+
+	Describe(".applyRepoTrackingConfig", func() {
+		It("should track repos provided in Config.Repo.Track", func() {
+			cfg.Repo.Track = []string{"repo1", "repo2"}
+			mockRepoSyncInfoKeeper.EXPECT().Track("repo1")
+			mockRepoSyncInfoKeeper.EXPECT().Track("repo2")
+			svr.applyRepoTrackingConfig()
+		})
+
+		It("should track repos provided in Config.Repo.UnTrack", func() {
+			cfg.Repo.Untrack = []string{"repo1", "repo2"}
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1")
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo2")
+			svr.applyRepoTrackingConfig()
+		})
+
+		It("should track repos provided in Config.Repo.Track", func() {
+			cfg.Repo.UntrackAll = true
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
+				"repo1": {},
+				"repo2": {},
+			})
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1")
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo2")
+			svr.applyRepoTrackingConfig()
 		})
 	})
 })

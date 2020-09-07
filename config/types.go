@@ -36,11 +36,21 @@ type NodeConfig struct {
 	// ExtensionsArgs contains arguments for extensions
 	ExtensionsArgs map[string]string `json:"extsargs" mapstructure:"extsargs"`
 
-	// ReposToTrack contains
-	ReposToTrack []string `json:"track" mapstructure:"track"`
-
 	// Validator indicates whether to run the node in validator capacity
 	Validator bool `json:"validator" mapstructure:"validator"`
+}
+
+// RepoConfig represents repo-related configuration
+type RepoConfig struct {
+
+	// Track contains names of repositories to be tracked
+	Track []string `json:"track" mapstructure:"track"`
+
+	// Untrack contains the names of repositories to be untracked
+	Untrack []string `json:"untrack" mapstructure:"untrack"`
+
+	// UntrackAll indicates that all currently tracked repositories are to be untracked
+	UntrackAll bool `json:"untrackall" mapstructure:"untrackall"`
 }
 
 // VersionInfo describes the clients
@@ -123,6 +133,9 @@ type AppConfig struct {
 	// Node holds the node configurations
 	Node *NodeConfig `json:"node" mapstructure:"node"`
 
+	// Repo holds repo-related configuration
+	Repo *RepoConfig `json:"repo" mapstructure:"repo"`
+
 	// Net holds network configurations
 	Net *NetConfig `json:"net" mapstructure:"net"`
 
@@ -177,6 +190,7 @@ func EmptyAppConfig() AppConfig {
 	return AppConfig{
 		Node:               &NodeConfig{},
 		Net:                &NetConfig{},
+		Repo:               &RepoConfig{},
 		RPC:                &RPCConfig{},
 		DHT:                &DHTConfig{},
 		Remote:             &RemoteConfig{},

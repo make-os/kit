@@ -173,16 +173,30 @@ func New(
 		dht.RegisterChecker(announcer.ObjTypeGit, server.checkRepoObject)
 	}
 
-	// Add tracked repositories if any
-	server.addTrackedRepo()
+	// Apply repo tracking configurations
+	server.applyRepoTrackingConfig()
 
 	return server
 }
 
-// addTrackedRepo adds repos to the tracking list.
-func (sv *Server) addTrackedRepo() {
-	for _, repo := range sv.cfg.Node.ReposToTrack {
+// applyRepoTrackingConfig handles repo tracking related configs
+func (sv *Server) applyRepoTrackingConfig() {
+
+	// Add repositories to the tracking list
+	for _, repo := range sv.cfg.Repo.Track {
 		sv.logic.RepoSyncInfoKeeper().Track(repo)
+	}
+
+	// Remove repositories from tracking list
+	for _, repo := range sv.cfg.Repo.Untrack {
+		sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+	}
+
+	// If request to untrack all repos is enabled, untrack all.
+	if sv.cfg.Repo.UntrackAll {
+		for repo := range sv.logic.RepoSyncInfoKeeper().Tracked() {
+			sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+		}
 	}
 }
 
