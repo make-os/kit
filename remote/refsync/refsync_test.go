@@ -248,6 +248,7 @@ var _ = Describe("RefSync", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(newHash, nil)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
 				err := rs.do(task)
 				Expect(err).To(BeNil())
 			})
@@ -260,6 +261,7 @@ var _ = Describe("RefSync", func() {
 				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(localHash, nil)
 				mockRepo.EXPECT().IsAncestor(newHash, localHash).Return(nil)
+				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
 				err := rs.do(task)
 				Expect(err).To(BeNil())
 			})

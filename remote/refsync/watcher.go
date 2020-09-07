@@ -87,10 +87,9 @@ func (w *Watcher) addTrackedRepos() {
 			continue
 		}
 
-		startHeight := trackInfo.UpdatedAt.UInt64()
-
 		// If this is the first time tracking this repo, set
 		// the start height to the creation height of the repo.
+		startHeight := trackInfo.UpdatedAt.UInt64()
 		if startHeight == 0 {
 			startHeight = repoState.CreatedAt.UInt64()
 		}
@@ -179,7 +178,6 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	// Find push transactions addressed to the target repository.
 	start := task.StartHeight
 	for start <= task.EndHeight {
-
 		res, err := w.service.GetBlock(int64(start))
 		if err != nil {
 			return errors.Wrapf(err, "failed to get block (height=%d)", start)

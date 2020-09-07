@@ -213,6 +213,17 @@ func (rs *RefSync) Stop() {
 	rs.watcher.Stop()
 }
 
+// updatedTrackInfo updates the track info height of a task's repo.
+// Does nothing if the task's repo is not being tracked.
+func (rs *RefSync) updatedTrackInfo(task *reftypes.RefTask) (err error) {
+	if rs.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName) != nil {
+		if err = rs.keepers.RepoSyncInfoKeeper().Track(task.RepoName, uint64(task.Height)); err != nil {
+			err = errors.Wrap(err, "failed to update tracked repo info")
+		}
+	}
+	return
+}
+
 // do takes a pushed reference task and attempts to fetch the objects
 // required to update the reference's local state.
 func (rs *RefSync) do(task *reftypes.RefTask) error {
@@ -237,9 +248,8 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 	// We need to skip this task if the local hash is non-zero and:
 	// - Local hash and the incoming new reference hash match.
 	// - Local hash is a child of the new reference hash.
-	if localHash != "" && (task.Ref.NewHash == localHash ||
-		targetRepo.IsAncestor(task.Ref.NewHash, localHash) == nil) {
-		return nil
+	if localHash != "" && (task.Ref.NewHash == localHash || targetRepo.IsAncestor(task.Ref.NewHash, localHash) == nil) {
+		return rs.updatedTrackInfo(task)
 	}
 
 	// If reference does not exist locally, use zero hash as the local hash.
@@ -273,11 +283,7 @@ func (rs *RefSync) do(task *reftypes.RefTask) error {
 		}
 
 		// If the repository is being tracked, update its last update height
-		if rs.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName) != nil {
-			if err = rs.keepers.RepoSyncInfoKeeper().Track(task.RepoName, uint64(task.Height)); err != nil {
-				err = errors.Wrap(err, "failed to update tracked repo info")
-			}
-		}
+		err = rs.updatedTrackInfo(task)
 
 		// Update the reference's last sync height
 		if err == nil {
