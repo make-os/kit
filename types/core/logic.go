@@ -115,7 +115,7 @@ type AccountKeeper interface {
 
 // TrackedRepo stores status info about a tracked repository or
 type TrackedRepo struct {
-	LastUpdated util.UInt64 `json:"lastUpdated" msgpack:"lastUpdated"`
+	UpdatedAt util.UInt64 `json:"updatedAt" msgpack:"updatedAt"`
 }
 
 // RepoSyncInfoKeeper describes an interface for managing tracking and

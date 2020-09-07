@@ -75,7 +75,7 @@ func (t *RepoSyncInfoKeeper) Track(targets string, height ...uint64) error {
 	}
 
 	for _, repo := range final {
-		data := core.TrackedRepo{LastUpdated: util.UInt64(h)}
+		data := core.TrackedRepo{UpdatedAt: util.UInt64(h)}
 		rec := common.NewFromKeyValue(MakeTrackedRepoKey(repo), util.ToBytes(data))
 		if err := t.db.Put(rec); err != nil {
 			return errors.Wrap(err, "failed to add repo")

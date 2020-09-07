@@ -125,7 +125,7 @@ func (c *Contract) execReference(repo *state.Repository, repoName string, ref *p
 	r.Nonce = r.Nonce + 1
 	r.Hash = util.MustFromHex(ref.NewHash)
 	repo.References[ref.Name] = r
-	repo.LastUpdated = util.UInt64(c.chainHeight + 1)
+	repo.UpdatedAt = util.UInt64(c.chainHeight + 1)
 
 	return nil
 }

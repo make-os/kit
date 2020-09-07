@@ -81,16 +81,16 @@ func (w *Watcher) HasTask() bool {
 func (w *Watcher) addTrackedRepos() {
 	for repoName, trackInfo := range w.keepers.RepoSyncInfoKeeper().Tracked() {
 		repoState := w.keepers.RepoKeeper().Get(repoName)
-		if repoState.LastUpdated <= trackInfo.LastUpdated {
+		if repoState.UpdatedAt <= trackInfo.UpdatedAt {
 			continue
 		}
 
-		startHeight := trackInfo.LastUpdated.UInt64()
+		startHeight := trackInfo.UpdatedAt.UInt64()
 		if startHeight == 0 {
 			startHeight = 1
 		}
 
-		w.Watch(repoName, "", startHeight, repoState.LastUpdated.UInt64())
+		w.Watch(repoName, "", startHeight, repoState.UpdatedAt.UInt64())
 	}
 }
 

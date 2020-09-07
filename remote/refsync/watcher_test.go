@@ -90,18 +90,18 @@ var _ = Describe("Watcher", func() {
 
 		It("should add tracked repo if its last updated height is less than the repo's last update height", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
-				"repo1": {LastUpdated: 1000},
+				"repo1": {UpdatedAt: 1000},
 			})
-			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1001})
+			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{UpdatedAt: 1001})
 			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(Equal(1))
 		})
 
 		It("should set start height to 1 if track repo last updated height is 0", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
-				"repo1": {LastUpdated: 0},
+				"repo1": {UpdatedAt: 0},
 			})
-			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1001})
+			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{UpdatedAt: 1001})
 			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(Equal(1))
 			task := <-w.queue
@@ -110,9 +110,9 @@ var _ = Describe("Watcher", func() {
 
 		It("should not add tracked repo if its last updated height is equal to the repo's last update height", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
-				"repo1": {LastUpdated: 1000},
+				"repo1": {UpdatedAt: 1000},
 			})
-			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{LastUpdated: 1000})
+			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{UpdatedAt: 1000})
 			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(BeZero())
 		})

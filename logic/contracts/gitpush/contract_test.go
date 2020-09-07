@@ -151,7 +151,7 @@ var _ = Describe("Contract", func() {
 
 			Specify("that the repository LastUpdated field is 1", func() {
 				repo := logic.RepoKeeper().Get(repo)
-				Expect(repo.LastUpdated.UInt64()).To(Equal(uint64(1)))
+				Expect(repo.UpdatedAt.UInt64()).To(Equal(uint64(1)))
 			})
 		})
 

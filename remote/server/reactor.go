@@ -73,7 +73,7 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string) error
 	// If the last successful synced reference height equal the last successful synced
 	// height for the entire repo, it means something unnatural/external messed the repo
 	// history. We react by resyncing the repo from height 0
-	repoLastUpdated := repoState.LastUpdated.UInt64()
+	repoLastUpdated := repoState.UpdatedAt.UInt64()
 	if refLastSyncHeight == repoLastUpdated {
 		refLastSyncHeight = 0
 	}

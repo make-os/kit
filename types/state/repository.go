@@ -364,8 +364,11 @@ type Repository struct {
 	// Config is the repository configuration
 	Config *RepoConfig `json:"config" msgpack:"config" mapstructure:"config"`
 
-	// LastUpdated is the block height the reference was last updated
-	LastUpdated util.UInt64 `json:"lastUpdated" mapstructure:"lastUpdated" msgpack:"lastUpdated,omitempty"`
+	// CreatedAt is the block height the reference was created
+	CreatedAt util.UInt64 `json:"createdAt" mapstructure:"createdAt" msgpack:"createdAt,omitempty"`
+
+	// UpdatedAt is the block height the reference was last updated
+	UpdatedAt util.UInt64 `json:"updatedAt" mapstructure:"updatedAt" msgpack:"updatedAt,omitempty"`
 }
 
 // GetBalance implements types.BalanceAccount
@@ -393,7 +396,8 @@ func (r *Repository) IsNil() bool {
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
 		len(r.Contributors) == 0 &&
-		r.LastUpdated == 0 &&
+		r.CreatedAt == 0 &&
+		r.UpdatedAt == 0 &&
 		r.Config.IsNil()
 }
 
@@ -406,7 +410,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 		r.Proposals,
 		r.Config,
 		r.Contributors,
-		r.LastUpdated)
+		r.CreatedAt,
+		r.UpdatedAt)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -418,7 +423,8 @@ func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&r.Proposals,
 		&r.Config,
 		&r.Contributors,
-		&r.LastUpdated)
+		&r.CreatedAt,
+		&r.UpdatedAt)
 	return err
 }
 

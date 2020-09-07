@@ -565,7 +565,7 @@ var _ = Describe("Reactor", func() {
 				refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
 				note := &types.Note{RepoName: "repo1"}
 				repoState := state.BareRepository()
-				repoState.LastUpdated = 200
+				repoState.UpdatedAt = 200
 				repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
 
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
@@ -574,7 +574,7 @@ var _ = Describe("Reactor", func() {
 
 				mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
 				mockRefSync := mocks.NewMockRefSync(ctrl)
-				mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(100), repoState.LastUpdated.UInt64())
+				mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(100), repoState.UpdatedAt.UInt64())
 				svr.refSyncer = mockRefSync
 
 				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
@@ -589,7 +589,7 @@ var _ = Describe("Reactor", func() {
 					refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
 					note := &types.Note{RepoName: "repo1"}
 					repoState := state.BareRepository()
-					repoState.LastUpdated = 100
+					repoState.UpdatedAt = 100
 					repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
 
 					mockRepo := mocks.NewMockLocalRepo(ctrl)
@@ -598,7 +598,7 @@ var _ = Describe("Reactor", func() {
 
 					mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
 					mockRefSync := mocks.NewMockRefSync(ctrl)
-					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(0), repoState.LastUpdated.UInt64())
+					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(0), repoState.UpdatedAt.UInt64())
 					svr.refSyncer = mockRefSync
 
 					refObj := plumbing.NewReferenceFromStrings(refname, refHash2)

@@ -70,13 +70,18 @@ var _ = Describe("CreateRepoContract", func() {
 		})
 
 		Context("on successful", func() {
+			var repo *state.Repository
 			BeforeEach(func() {
 				createrepo.NewContract().Init(logic, tx, 0).Exec()
 				Expect(err).To(BeNil())
+				repo = logic.RepoKeeper().Get("repo")
+			})
+
+			It("should set CreatedAt height to 1", func() {
+				Expect(repo.CreatedAt.UInt64()).To(Equal(uint64(1)))
 			})
 
 			Specify("that repo config is the default", func() {
-				repo := logic.RepoKeeper().Get("repo")
 				defCfg := state.MakeDefaultRepoConfig()
 				policy.AddDefaultPolicies(defCfg)
 				repo.Config.ResetCodec()
@@ -89,7 +94,6 @@ var _ = Describe("CreateRepoContract", func() {
 			})
 
 			Specify("that the tx value is added to the repo's balance", func() {
-				repo := logic.RepoKeeper().Get("repo")
 				Expect(repo.Balance).To(Equal(util.String("4")))
 			})
 
