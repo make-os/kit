@@ -17,6 +17,7 @@ import (
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer
@@ -254,8 +255,14 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 				continue
 			}
 
-			// But when reference exist, we expect the hash to match the endorsement hash
+			// Get the current state hash of the reference.
+			// If unset, use zero hash.
 			curRefHash := repoState.References.Get(ref.Name).Hash
+			if curRefHash.IsEmpty() {
+				curRefHash = plumbing2.ZeroHash[:]
+			}
+
+			// We expect the reference hash to match the endorsement hash.
 			if !bytes.Equal(endorsement.Hash, curRefHash) {
 				msg := fmt.Sprintf("hash (%x) of endorsed reference (%s) is not the expected hash (%s)",
 					endorsement.Hash, ref.Name, plumbing.BytesToHex(curRefHash))
