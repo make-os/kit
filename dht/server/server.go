@@ -115,30 +115,36 @@ func (dht *Server) Addr() string {
 
 func (dht *Server) getBootstrapPeers() []string {
 	if dht.cfg.DHT.BootstrapPeers == "" {
-		return []string{}
+		return nil
 	}
 	return strings.Split(dht.cfg.DHT.BootstrapPeers, ",")
 }
 
 // Bootstrap attempts to connect to peers from the list of bootstrap peers
-func (dht *Server) Bootstrap() error {
+func (dht *Server) Bootstrap() (err error) {
 
-	// Get bootstrap addresses
 	addrs := dht.getBootstrapPeers()
 	if len(addrs) == 0 {
 		return fmt.Errorf("no bootstrap peers to connect to")
 	}
 
-	// Attempt to connect to the bootstrap addresses and add them to the routing table
 	for _, addr := range addrs {
-		maddr, err := multiaddr.NewMultiaddr(addr)
-		if err != nil {
-			return errors.Wrap(err, "invalid dht bootstrap address")
+		if addr == "" {
+			continue
 		}
 
-		info, err := peer.AddrInfoFromP2pAddr(maddr)
+		var maddr multiaddr.Multiaddr
+		maddr, err = multiaddr.NewMultiaddr(addr)
 		if err != nil {
-			return errors.Wrap(err, "invalid dht bootstrap address")
+			dht.log.Error("Invalid bootstrap address", "Addr", addr, "Err", err)
+			continue
+		}
+
+		var info *peer.AddrInfo
+		info, err = peer.AddrInfoFromP2pAddr(maddr)
+		if err != nil {
+			dht.log.Error("Invalid bootstrap address", "Addr", addr, "Err", err)
+			continue
 		}
 
 		if info.ID == dht.host.ID() {
@@ -147,20 +153,20 @@ func (dht *Server) Bootstrap() error {
 
 		dht.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
 		ctx, cn := context.WithTimeout(context.Background(), 30*time.Second)
-		if err := dht.host.Connect(ctx, *info); err != nil {
-			dht.log.Error("failed to connect to peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
+		if err = dht.host.Connect(ctx, *info); err != nil {
+			dht.log.Error("Failed to connect to peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
 			cn()
 			continue
 		}
 		cn()
 
-		if _, err := dht.dht.RoutingTable().TryAddPeer(info.ID, true); err != nil {
+		if _, err = dht.dht.RoutingTable().TryAddPeer(info.ID, true); err != nil {
 			dht.log.Error("failed to add peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
 			continue
 		}
 	}
 
-	return nil
+	return err
 }
 
 // Start starts the DHT

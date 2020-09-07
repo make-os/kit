@@ -125,6 +125,7 @@ var _ = Describe("Server", func() {
 
 		When("no bootstrap address exist", func() {
 			It("should return error", func() {
+				cfg.DHT.BootstrapPeers = ""
 				err = dhtA.Bootstrap()
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("no bootstrap peers to connect to"))
@@ -133,16 +134,10 @@ var _ = Describe("Server", func() {
 
 		When("an address is not a valid P2p multi addr", func() {
 			It("should return error", func() {
-				cfg.DHT.BootstrapPeers = "invalid/addr"
+				cfg.DHT.BootstrapPeers = "/invalid/addr"
 				err = dhtA.Bootstrap()
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid dht bootstrap address: failed to parse multiaddr"))
-			})
-			It("should return error", func() {
-				cfg.DHT.BootstrapPeers = "invalid/addr"
-				err = dhtA.Bootstrap()
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid dht bootstrap address: failed to parse multiaddr"))
+				Expect(err.Error()).To(ContainSubstring("unknown protocol invalid"))
 			})
 		})
 
@@ -151,7 +146,8 @@ var _ = Describe("Server", func() {
 				addr := "/ip4/127.0.0.1/tcp/9111/p2p/12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd"
 				cfg.DHT.BootstrapPeers = addr
 				err = dhtA.Bootstrap()
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to dial 12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd: all dials failed"))
 			})
 		})
 

@@ -58,10 +58,15 @@ var (
 	// NoColorFormatting indicates that stdout/stderr output should have no color
 	NoColorFormatting = false
 
-	// PersistentPeers are peers are trusted, permanent peers to connect us to the network.
+	// PersistentSeedPeers are peers are trusted, permanent peers to connect us to the network.
 	// They will be redialed on connection failure.
-	PersistentPeers = []string{
+	PersistentSeedPeers = []string{
 		"aba9f171986276b6a0f43f89cae96941f77819b6@127.0.0.1:7000",
+	}
+
+	// SeedDHTPeers are DHT seed peers to connect to.
+	SeedDHTPeers = []string{
+		"/ip4/127.0.0.1/tcp/9003/p2p/12D3KooWHo3qkVVjErFR4tkFGdn4exeD2nbfidQFYFPfN2usVzim",
 	}
 )
 
@@ -237,8 +242,10 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	// Use some of the native config to override tendermint's config
 	tmcfg.P2P.ListenAddress = c.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !devMode
-	tmcfg.P2P.PersistentPeers = c.Node.PersistentPeers + "," + strings.Join(PersistentPeers, ",")
+	tmcfg.P2P.PersistentPeers = c.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
 	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
+
+	c.DHT.BootstrapPeers = c.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
 
 	if c.DHT.Address != "" && c.DHT.Address[:1] == ":" {
 		c.DHT.Address = "0.0.0.0" + c.DHT.Address
