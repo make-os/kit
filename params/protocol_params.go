@@ -100,7 +100,7 @@ var (
 	PushPoolCleanUpInt = 30 * time.Minute
 
 	// PushPoolItemTTL is the maximum life time of an item in the push pool
-	PushPoolItemTTL = 24 * 3 * time.Hour
+	PushPoolItemTTL = 1 * time.Hour
 
 	// PushObjectsSendersCacheSize is the max size for push note senders cache
 	PushObjectsSendersCacheSize = 5000
