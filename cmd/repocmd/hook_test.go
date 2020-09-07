@@ -119,6 +119,25 @@ var _ = Describe(".HookCmd", func() {
 				err := HookCmd(cfg, mockRepo, args)
 				Expect(err).To(BeNil())
 			})
+
+			Context("with two references", func() {
+				It("should return no error if commit signer succeeded", func() {
+					timesCalled := 0
+					in := bytes.NewBuffer([]byte("refs/heads/master 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/heads/master 0000000000000000000000000000000000000000\n"))
+					in.Write([]byte("refs/heads/dev fbbefce3f78361968fcce78cc44b5a6dbebe4952 refs/heads/dev 0000000000000000000000000000000000000000\n"))
+					args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
+					args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+						timesCalled++
+						return nil
+					}
+					repoCfg := config2.NewConfig()
+					mockRepo.EXPECT().Config().Return(repoCfg, nil)
+					mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+					err := HookCmd(cfg, mockRepo, args)
+					Expect(err).To(BeNil())
+					Expect(timesCalled).To(Equal(2))
+				})
+			})
 		})
 
 		When("reference is a merge or issue branch", func() {

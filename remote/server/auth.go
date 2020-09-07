@@ -182,7 +182,6 @@ type SetRemotePushTokenArgs struct {
 // if ResetTokens is true. If TargetRemote is not set, all remotes
 // will be updated with the new token.
 func SetRemotePushToken(repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
-
 	if args.Stderr == nil {
 		args.Stderr = ioutil.Discard
 	}

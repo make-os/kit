@@ -87,7 +87,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	// Sign each reference
 	for _, ref := range references {
 		if ref.IsBranch() {
-			return args.CommitSigner(cfg, repo, &signcmd.SignCommitArgs{
+			if err := args.CommitSigner(cfg, repo, &signcmd.SignCommitArgs{
 				Branch:             ref.String(),
 				ForceCheckout:      false,
 				AmendCommit:        plumbing2.IsMergeRequestReference(ref.String()) || plumbing2.IsIssueReference(ref.String()),
@@ -99,12 +99,14 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 
 		if ref.IsTag() {
 			name := strings.Replace(ref.String(), "refs/tags/", "", 1)
-			return args.TagSigner(cfg, []string{name}, repo, &signcmd.SignTagArgs{
+			if err := args.TagSigner(cfg, []string{name}, repo, &signcmd.SignTagArgs{
 				Remote:             args.Args[0],
 				NoPrompt:           true,
 				Force:              true,
@@ -114,11 +116,13 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 
 		if ref.IsNote() {
-			return args.NoteSigner(cfg, repo, &signcmd.SignNoteArgs{
+			if err := args.NoteSigner(cfg, repo, &signcmd.SignNoteArgs{
 				Name:               strings.Replace(ref.String(), "refs/notes/", "", 1),
 				Remote:             args.Args[0],
 				NoPrompt:           true,
@@ -128,7 +132,9 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 

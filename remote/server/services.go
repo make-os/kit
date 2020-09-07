@@ -266,13 +266,15 @@ func serveService(s *RequestContext) error {
 		return errors.Wrap(err, "failed to start command")
 	}
 
-	// If the request is compressed, we need to uncompress
+	// If the request is compressed, we need to decompress
 	// before we feed it to the git.
 	var reader io.ReadCloser
 	switch r.Header.Get("Content-Encoding") {
 	case "gzip":
 		reader, err = gzip.NewReader(r.Body)
-		defer reader.Close()
+		if reader != nil {
+			defer reader.Close()
+		}
 	default:
 		reader = r.Body
 		defer reader.Close()
