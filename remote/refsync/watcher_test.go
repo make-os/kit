@@ -97,15 +97,15 @@ var _ = Describe("Watcher", func() {
 			Expect(w.QueueSize()).To(Equal(1))
 		})
 
-		It("should set start height to 1 if track repo last updated height is 0", func() {
+		It("should set start height to repo's start height if track repo last updated height is 0", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{
 				"repo1": {UpdatedAt: 0},
 			})
-			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{UpdatedAt: 1001})
+			mockRepoKeeper.EXPECT().Get("repo1").Return(&state.Repository{CreatedAt: 10, UpdatedAt: 1001})
 			w.addTrackedRepos()
 			Expect(w.QueueSize()).To(Equal(1))
 			task := <-w.queue
-			Expect(task.StartHeight).To(Equal(uint64(1)))
+			Expect(task.StartHeight).To(Equal(uint64(10)))
 		})
 
 		It("should not add tracked repo if its last updated height is equal to the repo's last update height", func() {

@@ -77,17 +77,22 @@ func (w *Watcher) HasTask() bool {
 	return w.QueueSize() > 0
 }
 
-// addTrackedRepos adds trackable repositories that have fallen behind to the queue.
+// addTrackedRepos adds trackable repositories to the queue.
 func (w *Watcher) addTrackedRepos() {
 	for repoName, trackInfo := range w.keepers.RepoSyncInfoKeeper().Tracked() {
+
+		// Skip repo if it is not stale
 		repoState := w.keepers.RepoKeeper().Get(repoName)
-		if repoState.UpdatedAt <= trackInfo.UpdatedAt {
+		if repoState.UpdatedAt == trackInfo.UpdatedAt {
 			continue
 		}
 
 		startHeight := trackInfo.UpdatedAt.UInt64()
+
+		// If this is the first time tracking this repo, set
+		// the start height to the creation height of the repo.
 		if startHeight == 0 {
-			startHeight = 1
+			startHeight = repoState.CreatedAt.UInt64()
 		}
 
 		w.Watch(repoName, "", startHeight, repoState.UpdatedAt.UInt64())
