@@ -33,8 +33,11 @@ type NodeConfig struct {
 	// Extensions contains list of extensions to run on startup
 	Extensions []string `json:"exts" mapstructure:"exts"`
 
-	// ExtensionsArgs constains arguments for extensions
+	// ExtensionsArgs contains arguments for extensions
 	ExtensionsArgs map[string]string `json:"extsargs" mapstructure:"extsargs"`
+
+	// ReposToTrack contains
+	ReposToTrack []string `json:"track" mapstructure:"track"`
 
 	// Validator indicates whether to run the node in validator capacity
 	Validator bool `json:"validator" mapstructure:"validator"`

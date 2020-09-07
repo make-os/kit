@@ -173,7 +173,17 @@ func New(
 		dht.RegisterChecker(announcer.ObjTypeGit, server.checkRepoObject)
 	}
 
+	// Add tracked repositories if any
+	server.addTrackedRepo()
+
 	return server
+}
+
+// addTrackedRepo adds repos to the tracking list.
+func (sv *Server) addTrackedRepo() {
+	for _, repo := range sv.cfg.Node.ReposToTrack {
+		sv.logic.RepoSyncInfoKeeper().Track(repo)
+	}
 }
 
 // SetRootDir sets the directory where repositories are stored
