@@ -77,6 +77,12 @@ var (
 	// NumTopHostsLimit is maximum the number of top hosts
 	NumTopHostsLimit = 21
 
+	// TreasuryAddress is the address where treasury-bound payments are deposited
+	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+)
+
+// Namespace config
+var (
 	// NamespaceRegFee is the amount of native coin required to obtain a
 	// repo namespace
 	NamespaceRegFee = decimal.NewFromFloat(1)
@@ -86,9 +92,6 @@ var (
 
 	// NamespaceGraceDur is the number of blocks before a namespace expires
 	NamespaceGraceDur = 10
-
-	// TreasuryAddress is the address where treasury-bound payments are deposited
-	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
 )
 
 // Remote config
@@ -114,37 +117,34 @@ var (
 	// NotesReceivedCacheSize is the max size of the cache that stores IDs of notes recently received
 	NotesReceivedCacheSize = 10000
 
-	// PushEndQuorumSize is the minimum number of PushEnds a push note requires
-	// for approval
+	// PushEndQuorumSize is the minimum number of PushEnds a push note requires for approval
 	PushEndorseQuorumSize = 2
 
-	// RepoProposalDur is the number of blocks a repo proposal can remain active
-	RepoProposalDur = uint64(10)
+	// RepoProposalTTL is the number of blocks a repo proposal can remain active
+	RepoProposalTTL = uint64(10)
 
-	// RepoProposalQuorum is the minimum percentage of voters required to
-	// consider a proposal valid.
-	RepoProposalQuorum = float64(10)
+	// DefaultRepoProposalQuorum is the minimum percentage of voters required to consider a proposal valid.
+	DefaultRepoProposalQuorum = float64(10)
 
-	// RepoProposalThreshold is the minimum percentage required to consider a
+	// DefaultRepoProposalThreshold is the minimum percentage required to consider a
 	// proposal accepted ("YES" voted)
-	RepoProposalThreshold = float64(51)
+	DefaultRepoProposalThreshold = float64(51)
 
-	// RepoProposalVetoQuorum is the minimum percentage required for veto
+	// DefaultRepoProposalVetoQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum
-	RepoProposalVetoQuorum = float64(33)
+	DefaultRepoProposalVetoQuorum = float64(33)
 
-	// RepoProposalVetoOwnersQuorum is the minimum percentage required for veto
+	// DefaultRepoProposalVetoOwnersQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum in a proposal where stakeholders and
 	// owners are eligible to vote
-	RepoProposalVetoOwnersQuorum = float64(0)
+	DefaultRepoProposalVetoOwnersQuorum = float64(0)
 
-	// MinProposalFee is the minimum fee to be paid for each new proposal
+	// DefaultMinProposalFee is the minimum fee to be paid for each new proposal
 	// NOTE: This should probably be set to zero, otherwise every proposal (even
 	// by owners) will require an additional fee.
-	MinProposalFee = float64(0)
+	DefaultMinProposalFee = float64(0)
 
-	// HelmProposalFeeSplit is the percentage of proposal fee distributed to the
-	// helm repo
+	// HelmProposalFeeSplit is the percentage of proposal fee distributed to the helm repo
 	HelmProposalFeeSplit = 0.2
 
 	// TargetRepoProposalFeeSplit is the percentage of proposal fee distributed to the
@@ -157,7 +157,7 @@ var (
 	// MaxRepoSize is the maximum size of a repository
 	MaxRepoSize = 1024 * 1024 * 300 // 300 MB
 
-	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
+	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note.
 	MaxNoteObjectFetchAttempts = 3
 )
 

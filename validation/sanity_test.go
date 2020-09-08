@@ -32,7 +32,7 @@ var _ = Describe("TxValidator", func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		params.FeePerByte = decimal.NewFromFloat(0.001)
-		params.MinProposalFee = float64(0)
+		params.DefaultMinProposalFee = float64(0)
 	})
 
 	AfterEach(func() {
@@ -708,7 +708,7 @@ var _ = Describe("TxValidator", func() {
 				"desc": "proposal fee is below minimum value",
 				"err":  "field:governance.propFee, msg:cannot be lower than network minimum",
 				"before": func() {
-					params.MinProposalFee = float64(400)
+					params.DefaultMinProposalFee = float64(400)
 				},
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterOwner,
@@ -1315,7 +1315,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *txns.TxRepoProposalUpsertOwner
 
 		BeforeEach(func() {
-			params.MinProposalFee = 10
+			params.DefaultMinProposalFee = 10
 			tx = txns.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
 			tx.Value = "11"
@@ -1368,7 +1368,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		It("should return error when value below minimum network proposal fee", func() {
-			params.MinProposalFee = 100
+			params.DefaultMinProposalFee = 100
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
 			err := validation.CheckTxRepoProposalUpsertOwner(tx, -1)
@@ -1566,7 +1566,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		It("should return error when value below minimum network proposal fee", func() {
-			params.MinProposalFee = 100
+			params.DefaultMinProposalFee = 100
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
 			err := validation.CheckTxRepoProposalUpdate(tx, -1)
@@ -1647,7 +1647,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		It("should return error when value below minimum network proposal fee", func() {
-			params.MinProposalFee = 100
+			params.DefaultMinProposalFee = 100
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)

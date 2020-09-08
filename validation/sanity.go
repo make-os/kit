@@ -269,7 +269,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.PropFee < params.MinProposalFee {
+	if govCfg.PropFee < params.DefaultMinProposalFee {
 		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
 	}
 
@@ -683,7 +683,7 @@ func checkRepoName(name string, index int) error {
 func checkProposalFee(fee util.String, index int) error {
 	if err := checkValue(&txns.TxValue{Value: fee}, index); err != nil {
 		return err
-	} else if fee.Decimal().LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
+	} else if fee.Decimal().LessThan(decimal.NewFromFloat(params.DefaultMinProposalFee)) {
 		return feI(index, "value", "proposal creation fee cannot be "+
 			"less than network minimum")
 	}
