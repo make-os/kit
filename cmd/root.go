@@ -110,6 +110,7 @@ otherwise visit https://git-scm.com/downloads to download and install it.`,
 			fmt.Println("Client:", BuildVersion)
 			fmt.Println("Build:", BuildCommit)
 			fmt.Println("Go:", GoVersion)
+			fmt.Println("NodeID:", cfg.G().NodeKey.ID())
 			return
 		}
 
