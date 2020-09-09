@@ -31,7 +31,7 @@ run-tn:
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
 run-tn-dist:
-	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.local --build-arg version=v$(v) --build-arg vKey=$(vKey) .
+	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.local --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -d makeos/lobe
 	docker logs -f makeos
 
