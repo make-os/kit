@@ -29,9 +29,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
-	github.com/gobuffalo/envy v1.9.0 // indirect
-	github.com/gobuffalo/packr v1.30.1
-	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.4.3
@@ -50,7 +47,6 @@ require (
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
-	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/kr/pretty v0.2.0
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
@@ -59,7 +55,6 @@ require (
 	github.com/libp2p/go-libp2p-kad-dht v0.8.1
 	github.com/libp2p/go-libp2p-record v0.1.3
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
-	github.com/markbates/pkger v0.17.1
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/mr-tron/base58 v1.2.0
@@ -77,7 +72,6 @@ require (
 	github.com/prometheus/common v0.6.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
-	github.com/rogpeppe/go-internal v1.6.2 // indirect
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337
 	github.com/sirupsen/logrus v1.6.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
@@ -89,6 +83,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/stumble/gorocksdb v0.0.3 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
+	github.com/tendermint/go-amino v0.14.1
 	github.com/tendermint/iavl v0.12.4
 	github.com/tendermint/tendermint v0.32.6
 	github.com/tendermint/tm-db v0.2.0

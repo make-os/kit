@@ -16,12 +16,39 @@ import (
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
+	tmcrypto "github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
+
+var cdc = amino.NewCodec()
+
+func init() {
+	cdc.RegisterInterface((*tmcrypto.PrivKey)(nil), nil)
+	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoName, nil)
+}
+
+func genNodeKey(filePath string, pk ed25519.PrivKeyEd25519) (*p2p.NodeKey, error) {
+	nodeKey := &p2p.NodeKey{
+		PrivKey: pk,
+	}
+
+	jsonBytes, err := cdc.MarshalJSON(nodeKey)
+	if err != nil {
+		return nil, err
+	}
+	err = ioutil.WriteFile(filePath, jsonBytes, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return nodeKey, nil
+}
 
 // tendermintInit initializes tendermint
 //
@@ -32,6 +59,7 @@ import (
 // If non is provided, the node will be the sole initial validator.
 //
 // genesisTime: sets the genesis file time. If zero, current UTC time is used.
+// TODO:
 func tendermintInit(validatorKey string, genesisValidators []string, genesisState string, genesisTime uint64) error {
 
 	// Do nothing if already initialized
@@ -109,6 +137,15 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 		pv.Key.Address = vk.PubKey().Address()
 		pv.Key.PubKey = vk.PubKey()
 		pv.Save()
+
+		// Overwrite node key file with one derived from the validator key.
+		// TODO: find a way to do this directly without letting tendermint have a
+		//  chance to do it before us or submit a PR to upstream for a third-party friendly approach
+		nodeKeyFile := tmconfig.NodeKeyFile()
+		os.RemoveAll(nodeKeyFile)
+		if _, err = genNodeKey(nodeKeyFile, vk); err != nil {
+			golog.Fatalf("Failed to create node key file", err.Error())
+		}
 	}
 
 	return nil
