@@ -24,10 +24,16 @@ install:
 	cd cmd/lobe && go install
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
-test-v1:
+run-tn:
 	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
-	docker start makeos-node1 || docker run --name=makeos-node1 -d makeos/lobe
-	docker logs -f makeos-node1
+	docker start makeos || docker run --name=makeos -d makeos/lobe
+	docker logs -f makeos
+
+# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
+run-tn-dist:
+	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.local --build-arg version=v$(v) --build-arg vKey=$(vKey) .
+	docker start makeos || docker run --name=makeos -d makeos/lobe
+	docker logs -f makeos
 
 genmocks:
 	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit
