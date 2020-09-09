@@ -53,6 +53,10 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 	if len(genesisValidators) > 0 {
 		genDoc.Validators = []tmtypes.GenesisValidator{}
 		for _, pubKey := range genesisValidators {
+			pubKey = strings.TrimSpace(pubKey)
+			if pubKey == "" {
+				continue
+			}
 			pk, err := crypto.ConvertBase58PubKeyToTMPubKey(pubKey)
 			if err != nil {
 				golog.Fatalf("Failed to decode genesis validator public key %s", pubKey)
