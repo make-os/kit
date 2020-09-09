@@ -1,8 +1,10 @@
-[
+package data
+
+const GenesisData = `[
     {
         "type": "account",
         "address": "os1qfrysysaawvjlgfz5ecqv569adkkw7sxudy36u",
-        "balance": "2000000"
+        "balance": "1000000"
     },
     {
         "type": "repo",
@@ -18,3 +20,4 @@
         "config": {}
     }
 ]
+`

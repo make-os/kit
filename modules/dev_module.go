@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/gobuffalo/packr"
 	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/data"
 	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/util"
 	"github.com/pkg/errors"
@@ -64,12 +63,7 @@ func (m *DevModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // GetDevUserAccountKey returns the development account key
 func (m *DevModule) GetDevUserAccountKey() string {
-	box := packr.NewBox("../" + params.EmbeddableDataDir)
-	devKey, err := box.FindString("dev_account_key")
-	if err != nil {
-		panic(errors.Wrap(err, "failed to read dev account key"))
-	}
-	return devKey
+	return data.DevAccountKey
 }
 
 // GetDevUserAddress returns the development account address

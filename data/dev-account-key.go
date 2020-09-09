@@ -1,0 +1,3 @@
+package data
+
+const DevAccountKey = "wXVFmgEmKumxVnQGSnL67krnWkiBBj4QzY9WPytoiNakD5zTKWQW711nkfK4b7UnmARiUWtSNSJ6pVhmk1ppiPQPGrD8F3"

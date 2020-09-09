@@ -29,7 +29,9 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
+	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/packr v1.30.1
+	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.4.3
@@ -48,6 +50,7 @@ require (
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
+	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/kr/pretty v0.2.0
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
@@ -56,6 +59,7 @@ require (
 	github.com/libp2p/go-libp2p-kad-dht v0.8.1
 	github.com/libp2p/go-libp2p-record v0.1.3
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
+	github.com/markbates/pkger v0.17.1
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/mr-tron/base58 v1.2.0
@@ -73,11 +77,12 @@ require (
 	github.com/prometheus/common v0.6.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
+	github.com/rogpeppe/go-internal v1.6.2 // indirect
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/spf13/cast v1.3.1
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/objx v0.2.0
@@ -92,11 +97,11 @@ require (
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	go.dedis.ch/kyber/v3 v3.0.11
 	go.uber.org/zap v1.15.0 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
-	golang.org/x/sys v0.0.0-20200724161237-0e2f3a69832c // indirect
+	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
 	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/tools v0.0.0-20200908211811-12e1bf57a112 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1

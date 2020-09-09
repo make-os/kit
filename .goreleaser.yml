@@ -13,9 +13,6 @@ builds:
     goarm:
       - "6"
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.goversion={{.Env.GOVERSION}}
-    hooks:
-      pre: packr
-      post: packr clean
 archives:
   -
     replacements:
@@ -32,7 +29,7 @@ brews:
       name: homebrew-makeos
     commit_author:
       name: Kennedy Idialu
-      email: hello@makeos.org
+      email: contact@makeos.org
     folder: Formula
     homepage: "https://makeos.org/"
     description: ""

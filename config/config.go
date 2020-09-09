@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/packr"
+	"github.com/make-os/lobe/data"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
 	"github.com/olebedev/emitter"
@@ -82,18 +82,10 @@ func RawStateToGenesisData(state json.RawMessage) []*GenDataEntry {
 // GenesisData returns the genesis data in raw JSON format.
 // If devMode is true, the development genesis file is used.
 func GetRawGenesisData(devMode bool) json.RawMessage {
-
-	genesisFileName := "genesis.json"
-	if devMode {
-		genesisFileName = "genesis_dev.json"
+	if !devMode {
+		return []byte(data.GenesisData)
 	}
-
-	box := packr.NewBox("../" + params.EmbeddableDataDir)
-	genesisData, err := box.FindString(genesisFileName)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to read genesis file"))
-	}
-	return []byte(genesisData)
+	return []byte(data.GenesisDataDev)
 }
 
 // setDefaultViperConfig sets default viper config values.

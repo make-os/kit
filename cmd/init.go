@@ -100,9 +100,9 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 
 	// Set validator key if provided
 	if validatorKey != "" {
-		vk, err := crypto.ConvertBase58PrivKeyToTMPrivKey(validatorKey)
+		vk, err := crypto.ConvertBase58PrivKeyToTMPrivKey(strings.TrimSpace(validatorKey))
 		if err != nil {
-			golog.Fatalf("Failed to decode validator private key")
+			golog.Fatalf("Failed to decode validator private key", err.Error())
 		}
 		pv := privval.GenFilePV(tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
 		pv.Key.PrivKey = vk
