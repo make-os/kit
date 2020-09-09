@@ -31,9 +31,6 @@ var (
 	// DefaultDataDir is the path to the data directory
 	DefaultDataDir = os.ExpandEnv("$HOME/." + AppName)
 
-	// DefaultDevDataDir is the path to the data directory in development mode
-	DefaultDevDataDir = os.ExpandEnv("$HOME/." + AppName + "_dev")
-
 	// KeystoreDirName is the name of the directory where accounts are stored
 	KeystoreDirName = "keystore"
 
@@ -61,7 +58,10 @@ var (
 	// PersistentSeedPeers are peers are trusted, permanent peers to connect us to the network.
 	// They will be redialed on connection failure.
 	PersistentSeedPeers = []string{
-		"aba9f171986276b6a0f43f89cae96941f77819b6@127.0.0.1:7000",
+		"aba9f171986276b6a0f43f89cae96941f77819b6@s1.seeders.live:9000",
+		"aba9f171986276b6a0f43f89cae96941f77819b6@s2.seeders.live:9000",
+		"aba9f171986276b6a0f43f89cae96941f77819b6@s3.seeders.live:9000",
+		"aba9f171986276b6a0f43f89cae96941f77819b6@s4.seeders.live:9000",
 	}
 
 	// SeedDHTPeers are DHT seed peers to connect to.
@@ -153,9 +153,6 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	if devMode {
 		c.Node.Mode = ModeDev
 		ExecName = AppName
-		if devDataDirPrefix == "" {
-			dataDir = DefaultDevDataDir
-		}
 	}
 
 	// Create the data directory and other sub directories
