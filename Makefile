@@ -3,14 +3,13 @@ GOVERSION := $(shell go version | cut -d" " -f3)
 # Run tests
 test:
 	go test ./...
-	
+
+vet:
+	go vet ./...
+
 # Run tests (with ginkgo)
 ginkgo:
 	ginkgo ./...
-
-# Install source code and binary dependencies
-deps:
-	go get github.com/gobuffalo/packr/packr
 
 # Create a release 
 release:
@@ -20,12 +19,15 @@ release:
 release-tagged:
 	env GOVERSION=$(GOVERSION) goreleaser release --rm-dist
 
-
+# Install from source
 install:
 	cd cmd/lobe && go install
 
-vet:
-	go vet ./...
+# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
+test-v1:
+	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
+	docker start makeos-node1 || docker run --name=makeos-node1 -d makeos/lobe
+	docker logs -f makeos-node1
 
 genmocks:
 	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit
