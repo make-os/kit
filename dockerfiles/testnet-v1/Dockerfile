@@ -11,11 +11,9 @@ ENV version $version
 ARG vKey
 ENV vKey $vKey
 
-COPY dist/lobe_${version}_Linux_x86_64.tar.gz .
-
 # Download Lobe binary and its dependencies
 RUN apt-get update && apt-get install git
-RUN tar -xvf lobe_${version}_Linux_x86_64.tar.gz
+RUN curl https://storage.googleapis.com/lobe-bin/lobe_${version}_Linux_x86_64.tar.gz | tar -xz
 RUN mv ./lob /usr/bin/lob
 
 # Initialize lobe for testnet v1 with 4 validators.
