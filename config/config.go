@@ -38,19 +38,19 @@ var (
 	AppEnvPrefix = AppName
 
 	// DefaultNodeAddress is the default Node listening address
-	DefaultNodeAddress = "127.0.0.1:9000"
+	DefaultNodeAddress = ":9000"
 
 	// DefaultTMRPCAddress is the default RPC listening address for the tendermint
 	DefaultTMRPCAddress = "127.0.0.1:9001"
 
 	// DefaultRPCAddress is the default RPC listening address
-	DefaultRPCAddress = "127.0.0.1:9002"
+	DefaultRPCAddress = ":9002"
 
 	// DefaultDHTAddress is the default DHT listening address
-	DefaultDHTAddress = "127.0.0.1:9003"
+	DefaultDHTAddress = ":9003"
 
 	// DefaultRemoteServerAddress is the default remote server listening address
-	DefaultRemoteServerAddress = "127.0.0.1:9004"
+	DefaultRemoteServerAddress = ":9004"
 
 	// NoColorFormatting indicates that stdout/stderr output should have no color
 	NoColorFormatting = false
@@ -71,12 +71,11 @@ var (
 )
 
 // RawStateToGenesisData returns the genesis data
-func RawStateToGenesisData(state json.RawMessage) []*GenDataEntry {
-	var data []*GenDataEntry
-	if err := json.Unmarshal(state, &data); err != nil {
+func RawStateToGenesisData(state json.RawMessage) (entries []*GenDataEntry) {
+	if err := json.Unmarshal(state, &entries); err != nil {
 		panic(errors.Wrap(err, "failed to decoded genesis file"))
 	}
-	return data
+	return entries
 }
 
 // GenesisData returns the genesis data in raw JSON format.
@@ -246,6 +245,10 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	if c.RPC.User == "" && c.RPC.Password == "" {
 		c.RPC.DisableAuth = true
+	}
+
+	if tmcfg.P2P.ListenAddress != "" && tmcfg.P2P.ListenAddress[:1] == ":" {
+		tmcfg.P2P.ListenAddress = "0.0.0.0" + tmcfg.P2P.ListenAddress
 	}
 
 	c.G().Bus = emitter.New(0)

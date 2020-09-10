@@ -14,7 +14,7 @@ ginkgo:
 # Create a release 
 release:
 	env GOVERSION=$(GOVERSION) goreleaser --snapshot --rm-dist
-	
+
 # Create a tagged release 
 release-tagged:
 	env GOVERSION=$(GOVERSION) goreleaser release --rm-dist
@@ -26,14 +26,20 @@ install:
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
 run-tn:
 	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
-	docker start makeos || docker run --name=makeos -d makeos/lobe
-	docker logs -f makeos
+	docker start makeos || docker run --name=makeos -P -d makeos/lobe
+	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
 run-tn-dist:
 	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.local --build-arg version=$(v) --build-arg vKey=$(vKey) .
-	docker start makeos || docker run --name=makeos -d makeos/lobe
-	docker logs -f makeos
+	docker start makeos || docker run --name=makeos -P -d makeos/lobe
+	docker logs -f makeos --tail=1000
+
+# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
+run-tn-src:
+	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.source --build-arg version=$(v) --build-arg vKey=$(vKey) .
+	docker start makeos || docker run --name=makeos -P -d makeos/lobe
+	docker logs -f makeos --tail=1000
 
 genmocks:
 	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit
