@@ -23,7 +23,7 @@ var userCmd = &cobra.Command{
 // userSend represents a sub-command to send coins
 var userSend = &cobra.Command{
 	Use:   "send [flags] <address>",
-	Short: "Send coins from a user account to another user or a repository account",
+	Short: "Send coins from user account to another user account or a repository",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return fmt.Errorf("user or repository address is required")
