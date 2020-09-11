@@ -59,24 +59,19 @@ func (m *TicketModule) methods() []*types.VMMember {
 			Description: "Get validator tickets assigned to a proposer",
 		},
 		{
-			Name:        "listRecent",
-			Value:       m.ListRecent,
-			Description: "List most recent tickets up to the given limit",
+			Name:        "getAll",
+			Value:       m.GetAll,
+			Description: "Get all validator and host tickets",
 		},
 		{
-			Name:        "stats",
-			Value:       m.TicketStats,
-			Description: "Get ticket stats of network and a public key",
+			Name:        "getStats",
+			Value:       m.GetStats,
+			Description: "Get ticket statistics",
 		},
 		{
-			Name:        "listTopValidators",
-			Value:       m.ListTopValidators,
-			Description: "List tickets of top network validators up to the given limit",
-		},
-		{
-			Name:        "listTopHosts",
-			Value:       m.ListTopHosts,
-			Description: "List tickets of top network hosts up to the given limit",
+			Name:        "top",
+			Value:       m.GetTopValidators,
+			Description: "Get top validator tickets",
 		},
 	}
 }
@@ -97,7 +92,12 @@ func (m *TicketModule) hostFuncs() []*types.VMMember {
 		{
 			Name:        "unbond",
 			Value:       m.UnbondHostTicket,
-			Description: "Invalidate a host ticket and unbond the staked coins",
+			Description: "Unbond a host ticket",
+		},
+		{
+			Name:        "top",
+			Value:       m.GetTopHosts,
+			Description: "Get a list of top host tickets",
 		},
 	}
 }
@@ -135,20 +135,19 @@ func (m *TicketModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // BuyValidatorTicket creates a transaction to acquire a validator ticket
 //
-// ARGS:
 // params <map>
-// params.value 		<number|string>: 	The amount to pay for the ticket
-// params.delegate 		<string>: 			A base58 public key of an active delegate
-// params.nonce 		<number|string>: 	The senders next account nonce
-// params.fee 			<number|string>: 	The transaction fee to pay
-// params.timestamp 	<number>: 			The unix timestamp
+//  - value <number|string>: The amount to pay for the ticket
+//  - delegate <string>: A base58 public key of an active delegate
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+//  - hash <string>: The transaction hash
 func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -174,20 +173,19 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 
 // BuyHostTicket creates a transaction to acquire a host ticket
 //
-// ARGS:
 // params <map>
-// params.value 		<number|string>: 	The amount to pay for the ticket
-// params.delegate 		<string>: 			A base58 public key of an active delegate
-// params.nonce 		<number|string>: 	The senders next account nonce
-// params.fee 			<number|string>: 	The transaction fee to pay
-// params.timestamp 	<number>: 			The unix timestamp
+//  - value <number|string>: The amount to pay for the ticket
+//  - delegate <string>: A base58 public key of an active delegate
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// 	- hash <string>: 				The transaction hash
 func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -218,15 +216,13 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 	}
 }
 
-// ListValidatorTicketsByProposer finds validator tickets where the given public
-// key is the proposer; By default it will filter out expired tickets. Use query
-// option to override this behaviour
+// GetValidatorTicketsByProposer finds active validator tickets where the given public
+// key is the proposer
 //
-// ARGS:
 // proposerPubKey: The public key of the target proposer
 //
 // [queryOpts] <map>
-// [queryOpts].expired 	<bool>	Forces only expired tickets to be returned
+//  - expired <bool> Forces only expired tickets to be returned
 //
 // RETURNS <[]types.Ticket>
 func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map {
@@ -256,17 +252,18 @@ func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, quer
 	return util.StructSliceToMap(tickets)
 }
 
-// ListHostTicketsByProposer finds host tickets where the given public
-// key is the proposer
+// GetHostTicketsByProposer finds host tickets where the
+// given public key is the proposer.
 //
-// ARGS:
-// proposerPubKey: 				The public key of the target proposer
+// proposerPubKey: The public key of the target proposer
 //
-// [queryOpts] 		<map>
-// - immature		<bool>		Return immature tickets
-// - mature			<bool>		Return mature tickets
-// - expired		<bool>		Return expired tickets
-// - unexpired		<bool>		Return expired tickets
+// [queryOpts] <map>
+//  - immature <bool> Return immature tickets
+//  - mature <bool> Return mature tickets
+//  - expired <bool> Return expired tickets
+//  - unexpired <bool> Return expired tickets
+//
+// RETURNS <[]types.Ticket>
 func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map {
 
 	var qo tickettypes.QueryOptions
@@ -292,13 +289,14 @@ func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts
 	return util.StructSliceToMap(tickets)
 }
 
-// ListTopValidators returns top n validators
+// ListTopValidators returns top validator tickets
 //
-// ARGS:
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) ListTopValidators(limit ...int) []util.Map {
+//
+// RETURNS <[]types.Ticket>
+func (m *TicketModule) GetTopValidators(limit ...int) []util.Map {
 
-	n := 0
+	var n int
 	if len(limit) > 0 {
 		n = limit[0]
 	}
@@ -315,12 +313,13 @@ func (m *TicketModule) ListTopValidators(limit ...int) []util.Map {
 	return util.StructSliceToMap(tickets)
 }
 
-// ListTopHosts returns top n hosts
+// ListTopHosts returns top host tickets
 //
-// ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) ListTopHosts(limit ...int) []util.Map {
-	n := 0
+//
+// RETURNS <[]types.Ticket>
+func (m *TicketModule) GetTopHosts(limit ...int) []util.Map {
+	var n int
 	if len(limit) > 0 {
 		n = limit[0]
 	}
@@ -337,19 +336,18 @@ func (m *TicketModule) ListTopHosts(limit ...int) []util.Map {
 	return util.StructSliceToMap(tickets)
 }
 
-// TicketStats returns ticket statistics of the network.
-// If proposerPubKey is provided, ticket stats for the
-// proposer public key is returned instead.
+// TicketStats returns various statistics about tickets.
+// If proposerPubKey is provided, stats will be personalized
+// to the given proposer public key.
 //
-// ARGS:
-// [proposerPubKey] 	<string>: 	Public key of a proposer
+// [proPubKey] <string>: Public key of a proposer
 //
-// RETURNS res <map>
-// result.nonDelegated 	<number>: 	The total value of non-delegated tickets owned by the proposer
-// result.delegated 	<number>: 	The total value of tickets delegated to the proposer
-// result.power 		<number>: 	The total value of staked coins assigned to the proposer
-// result.all 			<number>: 	The total value of all tickets
-func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
+// RETURNS result <map>
+//  - nonDelegated 	<number>: The total value of non-delegated tickets owned by the proposer
+//  - delegated <number>: The total value of tickets delegated to the proposer
+//  - power <number>: The total value of staked coins assigned to the proposer
+//  - all <number>: The total value of all tickets
+func (m *TicketModule) GetStats(proPubKey ...string) (result util.Map) {
 
 	valNonDel, valDel := float64(0), float64(0)
 	res := make(map[string]interface{})
@@ -362,12 +360,12 @@ func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 	}
 
 	// Return if no proposer public key was specified.
-	if len(proposerPubKey) == 0 {
+	if len(proPubKey) == 0 {
 		return res
 	}
 
 	// At this point, we need to get stats for the given proposer public key.
-	pk, err := crypto.PubKeyFromBase58(proposerPubKey[0])
+	pk, err := crypto.PubKeyFromBase58(proPubKey[0])
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
@@ -391,12 +389,13 @@ func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 	return res
 }
 
-// ListRecent returns most recently acquired tickets
+// ListAll returns all tickets, sorted by the most recently added.
 //
-// ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) ListRecent(limit ...int) []util.Map {
-	n := 0
+//
+// RETURNS <[]types.Ticket>
+func (m *TicketModule) GetAll(limit ...int) []util.Map {
+	var n int
 	if len(limit) > 0 {
 		n = limit[0]
 	}
@@ -411,22 +410,20 @@ func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 	return util.StructSliceToMap(res)
 }
 
-// unbondHostTicket initiates the release of stake associated with a host
-// ticket
+// unbondHostTicket unbonds a host ticket
 //
-// ARGS:
 // params <map>
-// params.hash 			<string>: 			A hash of the host ticket
-// params.nonce 		<number|string>: 	The senders next account nonce
-// params.fee 			<number|string>: 	The transaction fee to pay
-// params.timestamp 	<number>: 			The unix timestamp
+//  - hash <string>: A hash of the host ticket
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+//  - hash <string>: The transaction hash
 func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 

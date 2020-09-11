@@ -49,12 +49,12 @@ func (m *NamespaceModule) methods() []*types.VMMember {
 		{
 			Name:        "getTarget",
 			Value:       m.GetTarget,
-			Description: "Lookup the target of a full namespace path",
+			Description: "Return the target of a namespace URI",
 		},
 		{
 			Name:        "updateDomain",
 			Value:       m.UpdateDomain,
-			Description: "Update one or more domains for a namespace",
+			Description: "Update one or more domains of a namespace",
 		},
 	}
 }
@@ -129,21 +129,21 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 	return nsMap
 }
 
-// getTarget looks up the target of a full namespace path
+// getTarget returns the target of a namespace URI
 
 // ARGS:
-// path: The path to look up.
+// uri: The full namespace URI to look up.
 // [height]: The block height to query
 //
 // RETURNS: <string>: A domain's target
-func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
+func (m *NamespaceModule) GetTarget(uri string, height ...uint64) string {
 
-	var targetHeight uint64
+	var blockHeight uint64
 	if len(height) > 0 {
-		targetHeight = height[0]
+		blockHeight = height[0]
 	}
 
-	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)
+	target, err := m.logic.NamespaceKeeper().GetTarget(uri, blockHeight)
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
@@ -155,20 +155,20 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 //
 // ARGS:
 // params <map>
-// params.name <string>:				The name of the namespace
-// params.value <string>:				The cost of the namespace.
-// [params.to] <string>:				Set the account or repository that will take ownership
-// [params.domains] <map[string]string>:The initial domain->target mapping
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
+// - params.name <string>: The name of the namespace
+// - params.value <string>: The cost of the namespace.
+// - [params.to] <string>: Set the account or repository that will take ownership
+// - [params.domains] <map[string]string>:The initial domain->target mapping
+// - params.nonce <number|string>: The senders next account nonce
+// - params.fee <number|string>: The transaction fee to pay
+// - params.timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// - options[0] key <string>: The signer's private key
+// - options[1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: The transaction hash
+// - hash <string>: The transaction hash
 func (m *NamespaceModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 

@@ -3,8 +3,8 @@ package rpc
 import (
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )
@@ -19,12 +19,12 @@ func NewPushKeyAPI(mods *modulestypes.Modules) *PushKeyAPI {
 	return &PushKeyAPI{mods: mods}
 }
 
-// find finds a push key by its ID
+// find finds a push key by its address
 func (a *PushKeyAPI) find(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 	keyID := o.Get("id").Str()
 	blockHeight := cast.ToUint64(o.Get("height").Inter())
-	key := a.mods.PushKey.Get(keyID, blockHeight)
+	key := a.mods.PushKey.Find(keyID, blockHeight)
 	return rpc.Success(key)
 }
 
@@ -37,13 +37,26 @@ func (a *PushKeyAPI) getOwner(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(account)
 }
 
-// registerPushKey creates a transaction to registers a public key as a push key
-func (a *PushKeyAPI) registerPushKey(params interface{}) (resp *rpc.Response) {
-	p, ok := params.(map[string]interface{})
-	if !ok {
-		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a map", "")
-	}
-	return rpc.Success(a.mods.PushKey.Register(p))
+// register creates a transaction to registers a public key as a push key
+func (a *PushKeyAPI) register(params interface{}) (resp *rpc.Response) {
+	return rpc.Success(a.mods.PushKey.Register(cast.ToStringMap(params)))
+}
+
+// unregister creates a transaction to registers a public key as a push key
+func (a *PushKeyAPI) unregister(params interface{}) (resp *rpc.Response) {
+	return rpc.Success(a.mods.PushKey.Unregister(cast.ToStringMap(params)))
+}
+
+// getByAddress returns a list of push key addresses owned by the given user address
+func (a *PushKeyAPI) getByAddress(params interface{}) (resp *rpc.Response) {
+	return rpc.Success(util.Map{
+		"addresses": a.mods.PushKey.GetByAddress(cast.ToString(params)),
+	})
+}
+
+// update updates a push key
+func (a *PushKeyAPI) update(params interface{}) (resp *rpc.Response) {
+	return rpc.Success(a.mods.PushKey.Update(cast.ToStringMap(params)))
 }
 
 // APIs returns all API handlers
@@ -52,20 +65,38 @@ func (a *PushKeyAPI) APIs() rpc.APISet {
 		{
 			Name:        "find",
 			Namespace:   constants.NamespacePushKey,
-			Description: "Find a push key",
 			Func:        a.find,
+			Description: "Find a push key",
 		},
 		{
 			Name:        "getOwner",
 			Namespace:   constants.NamespacePushKey,
-			Description: "Get the account of a push key owner",
 			Func:        a.getOwner,
+			Description: "Get the account of a push key owner",
 		},
 		{
 			Name:        "register",
 			Namespace:   constants.NamespacePushKey,
+			Func:        a.register,
 			Description: "Register a public key on the network",
-			Func:        a.registerPushKey,
+		},
+		{
+			Name:        "unregister",
+			Namespace:   constants.NamespacePushKey,
+			Func:        a.unregister,
+			Description: "Remove a public key from the network",
+		},
+		{
+			Name:        "getByAddress",
+			Namespace:   constants.NamespacePushKey,
+			Func:        a.getByAddress,
+			Description: "Get push keys belonging to a user address",
+		},
+		{
+			Name:        "update",
+			Namespace:   constants.NamespacePushKey,
+			Func:        a.update,
+			Description: "Update a push key",
 		},
 	}
 }

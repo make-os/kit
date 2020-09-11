@@ -3,7 +3,6 @@ package rpc
 import (
 	modtypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/util"
 	"github.com/spf13/cast"
@@ -42,11 +41,14 @@ func (a *UserAPI) getAccount(params interface{}) (resp *rpc.Response) {
 
 // sendCoin creates a transaction to transfer coin from a user account to a user/repo account.
 func (a *UserAPI) sendCoin(params interface{}) (resp *rpc.Response) {
-	p, ok := params.(map[string]interface{})
-	if !ok {
-		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a map", "")
-	}
-	return rpc.Success(a.mods.User.SendCoin(p))
+	return rpc.Success(a.mods.User.SendCoin(cast.ToStringMap(params)))
+}
+
+// getKeys returns a list of addresses of keys on the keystore.
+func (a *UserAPI) getKeys(interface{}) (resp *rpc.Response) {
+	return rpc.Success(util.Map{
+		"addresses": a.mods.User.GetKeys(),
+	})
 }
 
 // APIs returns all API handlers
@@ -69,6 +71,13 @@ func (a *UserAPI) APIs() rpc.APISet {
 			Namespace:   constants.NamespaceUser,
 			Description: "Send coins to another user account or a repository",
 			Func:        a.sendCoin,
+		},
+		{
+			Name:        "getKeys",
+			Namespace:   constants.NamespaceUser,
+			Private:     true,
+			Description: "Get a list of addresses of keys on the keystore",
+			Func:        a.getKeys,
 		},
 	}
 }

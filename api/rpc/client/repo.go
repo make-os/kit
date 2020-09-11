@@ -99,7 +99,7 @@ func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types
 		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
-	resp, statusCode, err := c.call("repo_addContributors", tx.ToMap())
+	resp, statusCode, err := c.call("repo_addContributor", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

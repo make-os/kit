@@ -15,10 +15,14 @@ func APIs(modulesHub types.ModulesHub, rpcServer *rpc.RPCServer) rpc.APISet {
 	var apiSets = []rpc.APISet{
 		NewAccountAPI(modules).APIs(),
 		NewPushKeyAPI(modules).APIs(),
-		NewLocalAccountAPI(modules).APIs(),
 		NewTransactionAPI(modules).APIs(),
 		NewRPCManagerAPI(rpcServer).APIs(),
 		NewRepoAPI(modules).APIs(),
+		NewChainAPI(modules).APIs(),
+		NewDHTAPI(modules).APIs(),
+		NewNamespaceAPI(modules).APIs(),
+		NewPoolAPI(modules).APIs(),
+		NewTicketAPI(modules).APIs(),
 	}
 
 	var mainSet = []rpc.APIInfo{}

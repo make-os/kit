@@ -8,6 +8,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/types"
 	modulestypes "github.com/make-os/lobe/modules/types"
@@ -109,7 +110,7 @@ func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 func (m *DHTModule) Store(key string, val string) {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
-	if err := m.dht.Store(ctx, key, []byte(val)); err != nil {
+	if err := m.dht.Store(ctx, dht.MakeKey(key), []byte(val)); err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
@@ -119,11 +120,11 @@ func (m *DHTModule) Store(key string, val string) {
 // ARGS:
 // key: The data query key
 //
-// RETURNS: <[]bytes> - The data stored on the key
+// RETURNS: <[]bytes>: The data stored on the key
 func (m *DHTModule) Lookup(key string) interface{} {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
-	bz, err := m.dht.Lookup(ctx, key)
+	bz, err := m.dht.Lookup(ctx, dht.MakeKey(key))
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
@@ -144,8 +145,8 @@ func (m *DHTModule) Announce(key string) {
 // hash: The repo object's hash or DHT object hex-encoded key
 //
 // RETURNS: resp <[]map[string]interface{}>
-// resp.id <string>: The peer ID of the provider
-// resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
+// - resp.id <string>: The peer ID of the provider
+// - resp.addresses: <[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interface{}) {
 
 	var err error
@@ -187,8 +188,8 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 // hash: The data key
 //
 // RETURNS: resp <[]map[string]interface{}>
-// resp.id <string>: The peer ID of the provider
-// resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
+// - resp.id <string>: The peer ID of the provider
+// - resp.addresses: <[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
@@ -209,8 +210,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 	return
 }
 
-// getPeers returns a list of all connected peers
+// getPeers returns a list of DHT peer IDs
 func (m *DHTModule) GetPeers() (peers []string) {
-	peers = m.dht.Peers()
-	return
+	return m.dht.Peers()
 }

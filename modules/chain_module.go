@@ -48,7 +48,7 @@ func (m *ChainModule) methods() []*types.VMMember {
 		{
 			Name:        "getBlock",
 			Value:       m.GetBlock,
-			Description: "Send the native coin from an account to a destination account",
+			Description: "Get full block data at a given height",
 		},
 		{
 			Name:        "getHeight",
@@ -58,7 +58,7 @@ func (m *ChainModule) methods() []*types.VMMember {
 		{
 			Name:        "getBlockInfo",
 			Value:       m.GetBlockInfo,
-			Description: "Get summary block information of a given height",
+			Description: "Get summarized block information at a given height",
 		},
 		{
 			Name:        "getValidators",
@@ -119,7 +119,7 @@ func (m *ChainModule) GetHeight() string {
 	return cast.ToString(bi.Height.Int64())
 }
 
-// getBlockInfo get summary block information of a given height
+// getBlockInfo Get summarized block information at a given height
 func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 	var err error
@@ -144,10 +144,10 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 // height: The target block height
 //
 // RETURNS res []Map
-// res.publicKey <string>: 	The base58 public key of validator
-// res.address <string>: 	The bech32 address of the validator
-// res.tmAddress <string>: 	The tendermint address and the validator
-// res.ticketId <string>: 	The id of the validator ticket
+// res.publicKey <string>: The base58 public key of validator
+// res.address <string>: The bech32 address of the validator
+// res.tmAddress <string>: The tendermint address and the validator
+// res.ticketId <string>: The id of the validator ticket
 func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 	var err error

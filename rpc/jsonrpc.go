@@ -126,6 +126,11 @@ func Success(result util.Map) *Response {
 	return &Response{JSONRPCVersion: "2.0", Result: result}
 }
 
+// StatusOK creates a success response with data `{status:true}`
+func StatusOK() *Response {
+	return &Response{JSONRPCVersion: "2.0", Result: util.Map{"status": true}}
+}
+
 // newRPCServer creates a JSON-RPC 2.0 server
 func newRPCServer(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRPC {
 	jsonrpc := &JSONRPC{

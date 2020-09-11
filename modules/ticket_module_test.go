@@ -265,19 +265,19 @@ var _ = Describe("TicketModule", func() {
 		})
 	})
 
-	Describe(".ListTopValidators", func() {
+	Describe(".GetTopValidators", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopValidators(0).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListTopValidators()
+				m.GetTopValidators()
 			})
 		})
 
 		It("should return empty result when no top validators was returned", func() {
 			tickets := []*types.SelectedTicket{}
 			mockTicketMgr.EXPECT().GetTopValidators(0).Return(tickets, nil)
-			res := m.ListTopValidators()
+			res := m.GetTopValidators()
 			Expect(res).To(BeEmpty())
 		})
 
@@ -286,24 +286,24 @@ var _ = Describe("TicketModule", func() {
 				{Ticket: &types.Ticket{Type: txns.TxTypeHostTicket}},
 			}
 			mockTicketMgr.EXPECT().GetTopValidators(1).Return(tickets, nil)
-			res := m.ListTopValidators(1)
+			res := m.GetTopValidators(1)
 			Expect(res).To(HaveLen(1))
 		})
 	})
 
-	Describe(".ListTopHosts()", func() {
+	Describe(".GetTopHosts()", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopHosts(0).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListTopHosts()
+				m.GetTopHosts()
 			})
 		})
 
 		It("should return empty result when no top validators was returned", func() {
 			tickets := []*types.SelectedTicket{}
 			mockTicketMgr.EXPECT().GetTopHosts(0).Return(tickets, nil)
-			res := m.ListTopHosts()
+			res := m.GetTopHosts()
 			Expect(res).To(BeEmpty())
 		})
 
@@ -312,23 +312,23 @@ var _ = Describe("TicketModule", func() {
 				{Ticket: &types.Ticket{Type: txns.TxTypeHostTicket}},
 			}
 			mockTicketMgr.EXPECT().GetTopHosts(1).Return(tickets, nil)
-			res := m.ListTopHosts(1)
+			res := m.GetTopHosts(1)
 			Expect(res).To(HaveLen(1))
 		})
 	})
 
-	Describe(".TicketStats", func() {
+	Describe(".GetStats", func() {
 		It("should panic when unable to get all tickets value", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(0), fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.TicketStats()
+				m.GetStats()
 			})
 		})
 
 		It("should return value of 'all' tickets only if proposer public key is not provided", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
-			res := m.TicketStats()
+			res := m.GetStats()
 			Expect(res).To(HaveLen(1))
 			Expect(res).To(HaveKey("all"))
 			Expect(res["all"]).To(Equal(float64(123.44)))
@@ -338,7 +338,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.TicketStats("invalid_pub_key")
+				m.GetStats("invalid_pub_key")
 			})
 		})
 
@@ -347,7 +347,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.TicketStats(pk.PubKey().Base58())
+				m.GetStats(pk.PubKey().Base58())
 			})
 		})
 
@@ -357,7 +357,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.TicketStats(pk.PubKey().Base58())
+				m.GetStats(pk.PubKey().Base58())
 			})
 		})
 
@@ -365,7 +365,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(230), nil)
 			mockTicketMgr.EXPECT().ValueOfDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(100), nil)
-			res := m.TicketStats(pk.PubKey().Base58())
+			res := m.GetStats(pk.PubKey().Base58())
 			Expect(res).ToNot(BeEmpty())
 			Expect(res).To(Equal(util.Map{
 				"delegated":    100.000000,
@@ -376,12 +376,12 @@ var _ = Describe("TicketModule", func() {
 		})
 	})
 
-	Describe(".ListRecent", func() {
+	Describe(".GetAll", func() {
 		It("should return tickets", func() {
 			tickets := []*types.Ticket{{Type: txns.TxTypeHostTicket, Hash: util.StrToHexBytes("hash1")}}
 			qo := types.QueryOptions{Limit: 1, SortByHeight: -1}
 			mockTicketMgr.EXPECT().Query(gomock.Any(), qo).Return(tickets)
-			res := m.ListRecent(1)
+			res := m.GetAll(1)
 			Expect(res).To(HaveLen(1))
 			Expect(res).To(Equal(util.StructSliceToMap(tickets)))
 		})
@@ -390,7 +390,7 @@ var _ = Describe("TicketModule", func() {
 			tickets := []*types.Ticket{}
 			qo := types.QueryOptions{Limit: 0, SortByHeight: -1}
 			mockTicketMgr.EXPECT().Query(gomock.Any(), qo).Return(tickets)
-			res := m.ListRecent(0)
+			res := m.GetAll(0)
 			Expect(res).To(HaveLen(0))
 		})
 	})

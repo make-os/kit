@@ -16,8 +16,8 @@ import (
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
 	modulestypes.ModuleCommon
-	reactor  core.MempoolReactor
-	pushPool types.PushPool
+	mempoolReactor core.MempoolReactor
+	pushPool       types.PushPool
 }
 
 // NewAttachablePoolModule creates an instance of PoolModule suitable in attach mode
@@ -27,7 +27,7 @@ func NewAttachablePoolModule(client client.Client) *PoolModule {
 
 // NewPoolModule creates an instance of PoolModule
 func NewPoolModule(reactor core.MempoolReactor, pushPool types.PushPool) *PoolModule {
-	return &PoolModule{reactor: reactor, pushPool: pushPool}
+	return &PoolModule{mempoolReactor: reactor, pushPool: pushPool}
 }
 
 // globals are functions exposed in the VM's global namespace
@@ -81,13 +81,13 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
-	return util.ToMap(m.reactor.GetPoolSize())
+	return util.ToMap(m.mempoolReactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) GetTop(n int) []util.Map {
 	var res = []util.Map{}
-	for _, tx := range m.reactor.GetTop(n) {
+	for _, tx := range m.mempoolReactor.GetTop(n) {
 		res = append(res, tx.ToMap())
 	}
 	return res

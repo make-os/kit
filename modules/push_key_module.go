@@ -58,14 +58,14 @@ func (m *PushKeyModule) methods() []*modulestypes.VMMember {
 			Description: "Update a previously registered push key",
 		},
 		{
-			Name:        "get",
-			Value:       m.Get,
-			Description: "Get a push key by its key unique ID",
+			Name:        "find",
+			Value:       m.Find,
+			Description: "Find a push key",
 		},
 		{
 			Name:        "getByAddress",
 			Value:       m.GetByAddress,
-			Description: "Get registered push keys belonging to an address",
+			Description: "Get push keys belonging to a user address",
 		},
 		{
 			Name:        "getOwner",
@@ -108,20 +108,20 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 //
 // ARGS:
 // params <map>
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
-// params.pubKey <string>:				The public key
-// params.scopes <string|[]string>:		A list of repo or namespace where the key can be used.
-// params.feeCap <number|string>:		The max. amount of fee the key can spend
+// - params.nonce <number|string>: he senders next account nonce
+// - params.fee <number|string>: The transaction fee to pay
+// - params.timestamp <number>: The unix timestamp
+// - params.pubKey <string>:The public key
+// - params.scopes <string|[]string>:	A list of repo or namespace where the key can be used.
+// - params.feeCap <number|string>: The max. amount of fee the key can spend
 //
 // options <[]interface{}>
-// options[0] key 			<string>: 	The signer's private key
-// options[1] payloadOnly 	<bool>: 	When true, returns the payload only, without sending the tx.
+// - options[0] key <string>: The signer's private key
+// - options[1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>:
-// object.hash <string>: 				The transaction hash
-// object.address <string>: 			The  push key address
+// - hash <string>: The transaction hash
+// - address <string>: The push key address
 func (m *PushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -167,20 +167,20 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 //
 // ARGS:
 // params <map>
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
-// params.id <string>:					The target push key ID
-// params.addScopes <string|[]string>:	Register a repo names or namespace where the key can be used.
-// params.removeScopes <int|[]int>:		Select indices of existing scopes to be deleted.
-// params.feeCap <number|string>:		The max. amount of fee the key can spend
+// - params.nonce <number|string>: The senders next account nonce
+// - params.fee <number|string>: The transaction fee to pay
+// - params.timestamp <number>: The unix timestamp
+// - params.id <string>: The target push key ID
+// - params.addScopes <string|[]string>: Provide repo names or namespaces where the key can be used.
+// - params.removeScopes <int|[]int>: Select indices of existing scopes to be deleted.
+// - params.feeCap <number|string>: The max. amount of fee the key can spend
 //
 // options <[]interface{}>
-// options[0] key 			<string>: 	The signer's private key
-// options[1] payloadOnly 	<bool>: 	When true, returns the payload only, without sending the tx.
+// - options[0] key <string>: The signer's private key
+// - options[1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>:
-// object.hash <string>: 				The transaction hash
+// - hash <string>: The transaction hash
 func (m *PushKeyModule) Update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -209,18 +209,18 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 // Unregister removes a push key from the network
 //
 // ARGS:
-// params <map>
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
-// params.id <string>:					The target push key ID
+// - params <map>
+// - params.nonce <number|string>: The senders next account nonce
+// - params.fee <number|string>: The transaction fee to pay
+// - params.timestamp <number>: The unix timestamp
+// - params.id <string>: The target push key ID
 //
 // options <[]interface{}>
-// options[0] key 			<string>: 	The signer's private key
-// options[1] payloadOnly 	<bool>: 	When true, returns the payload only, without sending the tx.
+// - options[0] key <string>: The signer's private key
+// - options[1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>:
-// object.hash <string>: 				The transaction hash
+// - hash <string>: The transaction hash
 func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -249,14 +249,14 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	}
 }
 
-// Get fetches a push key by its address
+// Find finds and returns a push key
 //
 // ARGS:
-// address: 	he push key address
-// [height]: 	The target block height to query (default: latest)
+// address: The push key address
+// [height]: The target block height to query (default: latest)
 //
 // RETURNS state.PushKey
-func (m *PushKeyModule) Get(address string, height ...uint64) util.Map {
+func (m *PushKeyModule) Find(address string, height ...uint64) util.Map {
 
 	if address == "" {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
@@ -307,7 +307,7 @@ func (m *PushKeyModule) GetAccountOfOwner(address string, height ...uint64) util
 		return util.ToMap(resp)
 	}
 
-	pushKey := m.Get(address, height...)
+	pushKey := m.Find(address, height...)
 	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), h)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", types.ErrAccountUnknown.Error()))

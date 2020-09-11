@@ -40,56 +40,16 @@ func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic co
 // methods are functions exposed in the special namespace of this module.
 func (m *RepoModule) methods() []*modulestypes.VMMember {
 	return []*modulestypes.VMMember{
-		{
-			Name:        "create",
-			Value:       m.Create,
-			Description: "Create a git repository on the network",
-		},
-		{
-			Name:        "get",
-			Value:       m.Get,
-			Description: "Get and return a repository",
-		},
-		{
-			Name:        "update",
-			Value:       m.Update,
-			Description: "Update a repository",
-		},
-		{
-			Name:        "upsertOwner",
-			Value:       m.UpsertOwner,
-			Description: "Create a proposal to add or update a repository owner",
-		},
-		{
-			Name:        "vote",
-			Value:       m.Vote,
-			Description: "Vote for or against a proposal",
-		},
-		{
-			Name:        "depositPropFee",
-			Value:       m.DepositProposalFee,
-			Description: "Deposit fees into a proposal",
-		},
-		{
-			Name:        "addContributor",
-			Value:       m.AddContributor,
-			Description: "Register one or more push key as contributors",
-		},
-		{
-			Name:        "track",
-			Value:       m.Track,
-			Description: "Track one or more repositories",
-		},
-		{
-			Name:        "untrack",
-			Value:       m.UnTrack,
-			Description: "Untrack one or more repositories",
-		},
-		{
-			Name:        "tracked",
-			Value:       m.GetTracked,
-			Description: "Returns the tracked repositories",
-		},
+		{Name: "create", Value: m.Create, Description: "Create a git repository on the network"},
+		{Name: "get", Value: m.Get, Description: "Get and return a repository"},
+		{Name: "update", Value: m.Update, Description: "Update a repository"},
+		{Name: "upsertOwner", Value: m.UpsertOwner, Description: "Create a proposal to add or update a repository owner"},
+		{Name: "vote", Value: m.Vote, Description: "Vote for or against a proposal"},
+		{Name: "depositPropFee", Value: m.DepositProposalFee, Description: "Deposit fees into a proposal"},
+		{Name: "addContributor", Value: m.AddContributor, Description: "Register one or more push keys as contributors"},
+		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
+		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
+		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
 	}
 }
 
@@ -123,23 +83,22 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // create registers a git repository on the network
 //
-// ARGS:
 // params <map>
-// params.name <string>:					The name of the namespace
-// params.value <string>:					The amount to pay for initial resources
-// params.nonce <number|string>: 			The senders next account nonce
-// params.fee <number|string>: 				The transaction fee to pay
-// params.timestamp <number>: 				The unix timestamp
-// params.config <object>  					The repo configuration
-// params.sig <String>						The transaction signature
+//  - name <string>: The name of the namespace
+//  - value <string>: The amount to pay for initial resources
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
+//  - config <object>: The repo configuration
+//  - sig <String>: The transaction signature
 //
 // options <[]interface{}>
-// options[0] key <string>: 				The signer's private key
-// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 					The transaction hash
-// object.address <string: 					The address of the repository
+// RETURN object <map>
+//  - hash <string>: The transaction hash
+//  - address <string: The address of the repository
 func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) util.Map {
 
 	var tx = txns.NewBareTxRepoCreate()
@@ -180,22 +139,19 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 
 // upsertOwner creates a proposal to add or update a repository owner
 //
-// ARGS:
 // params <map>
-// params.id 		<string>: 					A unique proposal id
-// params.addresses <string>: 					A comma separated list of addresses
-// params.veto 		<bool>: 					The senders next account nonce
-// params.fee 		<number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 					The unix timestamp
+//  - id <string>: A unique proposal id
+//  - addresses <string>: A comma separated list of addresses
+//  - veto <bool>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 					The signer's private key
-// options[1] payloadOnly <bool>: 				When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS <map>: 								When payloadOnly is false
-// hash <string>: 								The transaction hash
-//
-// RETURNS <core.TxRepoProposalUpsertOwner>: 	When payloadOnly is true, returns signed transaction object
+// RETURN <map>: When payloadOnly is false
+//  - hash <string>: The transaction hash
 func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -220,21 +176,20 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 
 // voteOnProposal sends a TxTypeRepoCreate transaction to create a git repository
 //
-// ARGS:
 // params <map>
-// params.id 		<string>: 			The proposal ID to vote on
-// params.name 		<string>: 			The name of the repository
-// params.vote 		<uint>: 			The vote choice (1) yes (0) no (2) vote no with veto (3) abstain
-// params.nonce 	<number|string>: 	The senders next account nonce
-// params.fee 		<number|string>: 	The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
+//  - id <string>: The proposal ID to vote on
+//  - name <string>: The name of the repository
+//  - vote <uint>: The vote choice (1) yes (0) no (2) vote no with veto (3) abstain
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// RETURN object <map>
+//  - hash <string>: The transaction hash
 func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -259,14 +214,13 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 
 // Get finds and returns a repository.
 //
-// ARGS:
 // name: The name of the repository
 //
 // opts <map>: fetch options
-// opts.height: Query a specific block
-// opts.noProps: When true, the result will not include proposals
+//  - opts.height: Query a specific block
+//  - opts.noProps: When true, the result will not include proposals
 //
-// RETURNS <map>
+// RETURN <state.Repository>
 func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {
 	var blockHeight uint64
 	var noProposals bool
@@ -311,22 +265,21 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 
 // Update creates a proposal to update a repository
 //
-// ARGS:
 // params <map>
-// params.name 		<string>: 				The name of the repository
-// params.id 		<string>: 				A unique proposal ID
-// params.value 	<string|number>:		The proposal fee
-// params.config 	<map[string]string>: 	The updated repository config
-// params.nonce 	<number|string>: 		The senders next account nonce
-// params.fee 		<number|string>: 		The transaction fee to pay
-// params.timestamp <number>: 				The unix timestamp
+//  - name <string>: The name of the repository
+//  - id <string>: A unique proposal ID
+//  - value <string|number>: The proposal fee
+//  - config <map[string]string>: The updated repository config
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 				The signer's private key
-// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 					The transaction hash
+// RETURN object <map>
+//  - hash <string>: The transaction hash
 func (m *RepoModule) Update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -351,21 +304,20 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 
 // DepositProposalFee creates a transaction to deposit a fee to a proposal
 //
-// ARGS:
 // params <map>
-// params.name 		<string>: 				The name of the repository
-// params.id 		<string>: 				A unique proposal ID
-// params.value 	<string|number>:		The amount to add
-// params.nonce 	<number|string>: 		The senders next account nonce
-// params.fee 		<number|string>: 		The transaction fee to pay
-// params.timestamp <number>: 				The unix timestamp
+//  - params.name <string>: The name of the repository
+//  - params.id <string>: A unique proposal ID
+//  - params.value <string|number>: The amount to add
+//  - params.nonce <number|string>: The senders next account nonce
+//  - params.fee <number|string>: The transaction fee to pay
+//  - params.timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 				The signer's private key
-// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 					The transaction hash
+// RETURN object <map>
+//  - hash <string>: The transaction hash
 func (m *RepoModule) DepositProposalFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -390,28 +342,27 @@ func (m *RepoModule) DepositProposalFee(params map[string]interface{}, options .
 
 // Register creates a proposal to register one or more push keys
 //
-// ARGS:
 // params <map>
-// params.name 					<string>: 						The name of the repository
-// params.id 					<string>: 						A unique proposal ID
-// params.ids 					<string|[]string>: 				A list or comma separated list of push key IDs to add
-// params.policies 				<[]map[string]interface{}>: 	A list of policies
-//	- sub 						<string>:						The policy's subject
-//	- obj 						<string>:						The policy's object
-//	- act 						<string>:						The policy's action
-// params.value 				<string|number>:				The proposal fee to pay
-// params.nonce 				<number|string>: 				The senders next account nonce
-// params.fee 					<number|string>: 				The transaction fee to pay
-// params.timestamp 			<number>: 						The unix timestamp
-// params.namespace 			<string>: 						A namespace to also register the key to
-// params.namespaceOnly 		<string>: 						Like namespace but key will not be registered to the repo.
+//  - name 	<string>: The name of the repository
+//  - id <string>: A unique proposal ID
+//  - ids <string|[]string>: A list or comma separated list of push key IDs to add
+//  - policies <[]map[string]interface{}>: A list of policies
+// 	 - sub <string>:	The policy's subject
+//	 - obj <string>:	The policy's object
+//	 - act <string>:	The policy's action
+//  - value <string|number>: The proposal fee to pay
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - timestamp <number>: The unix timestamp
+//  - namespace <string>: A namespace to also register the key to
+//  - namespaceOnly <string>: Like namespace but key will not be registered to the repo.
 //
 // options 			<[]interface{}>
-// options[0] 		key <string>: 					The signer's private key
-// options[1] 		payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
+//  - [0] 		key <string>: The signer's private key
+//  - [1] 		payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 							The transaction hash
+// RETURN object <map>
+//  - hash <string>: 							The transaction hash
 func (m *RepoModule) AddContributor(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -457,9 +408,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 }
 
 // Track adds a repository to the track list.
-//
-// ARGS:
-// names: A comma-separated list of repository or namespace names.
+//  - names: A comma-separated list of repository or namespace names.
 func (m *RepoModule) Track(names string, height ...uint64) {
 	if err := m.logic.RepoSyncInfoKeeper().Track(names, height...); err != nil {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
@@ -467,9 +416,7 @@ func (m *RepoModule) Track(names string, height ...uint64) {
 }
 
 // UnTrack removes a repository from the track list.
-//
-// ARGS:
-// names: A comma-separated list of repository or namespace names.
+//  - names: A comma-separated list of repository or namespace names.
 func (m *RepoModule) UnTrack(names string) {
 	if err := m.logic.RepoSyncInfoKeeper().UnTrack(names); err != nil {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))

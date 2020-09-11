@@ -3,9 +3,8 @@ package rpc
 import (
 	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	"github.com/spf13/cast"
 )
 
 // TransactionAPI provides RPC methods for various local account management functionality.
@@ -20,21 +19,12 @@ func NewTransactionAPI(mods *types2.Modules) *TransactionAPI {
 
 // sendPayload sends a signed transaction object to the mempool
 func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
-	txMap, ok := params.(map[string]interface{})
-	if !ok {
-		msg := util.FieldError("params", util.WrongFieldValueMsg("map", params)).Error()
-		return rpc.Error(types.RPCErrCodeInvalidParamValue, msg, nil)
-	}
-	return rpc.Success(t.mods.Tx.SendPayload(txMap))
+	return rpc.Success(t.mods.Tx.SendPayload(cast.ToStringMap(params)))
 }
 
 // getTransaction gets a transaction by its hash
 func (a *TransactionAPI) getTransaction(params interface{}) (resp *rpc.Response) {
-	hash, ok := params.(string)
-	if !ok {
-		return rpc.Error(types.RPCErrCodeInvalidParamType, "param must be a string", "")
-	}
-	return rpc.Success(a.mods.Tx.Get(hash))
+	return rpc.Success(a.mods.Tx.Get(cast.ToString(params)))
 }
 
 // APIs returns all API handlers

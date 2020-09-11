@@ -244,7 +244,7 @@ var _ = Describe("PushKeyModule", func() {
 			id := ""
 			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "push key id is required", Field: "id"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Get(id, 0)
+				m.Find(id, 0)
 			})
 		})
 
@@ -253,7 +253,7 @@ var _ = Describe("PushKeyModule", func() {
 			err := &util.ReqError{Code: "push_key_not_found", HttpCode: 404, Msg: "push key not found", Field: ""}
 			mockPushKeyKeeper.EXPECT().Get(id, uint64(0)).Return(state.BarePushKey())
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Get(id, 0)
+				m.Find(id, 0)
 			})
 		})
 
@@ -264,7 +264,7 @@ var _ = Describe("PushKeyModule", func() {
 			pushKey.PubKey = key.PubKey().ToPublicKey()
 			pushKey.Address = key.Addr()
 			mockPushKeyKeeper.EXPECT().Get(id, uint64(0)).Return(pushKey)
-			res := m.Get(id, 0)
+			res := m.Find(id, 0)
 			Expect(res["pubKey"]).To(Equal(key.PubKey().ToPublicKey()))
 			Expect(res["address"]).To(Equal(key.Addr()))
 			Expect(res["feeUsed"]).To(Equal(util.String("0")))

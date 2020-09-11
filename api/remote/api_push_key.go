@@ -15,7 +15,7 @@ func (r *API) GetPushKey(w http.ResponseWriter, req *http.Request) {
 	id := query.Get("id").String()
 
 	blockHeight := cast.ToUint64(query.Get("height").Inter())
-	pk := r.Modules().PushKey.Get(id, blockHeight)
+	pk := r.Modules().PushKey.Find(id, blockHeight)
 
 	util.WriteJSON(w, 200, pk)
 }

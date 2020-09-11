@@ -89,7 +89,7 @@ type PoolModule interface {
 type UserModule interface {
 	Module
 	GetKeys() []string
-	GetKey(address string, passphrase ...string) string
+	GetPrivKey(address string, passphrase ...string) string
 	GetPublicKey(address string, passphrase ...string) string
 	GetNonce(address string, height ...uint64) string
 	GetAccount(address string, height ...uint64) util.Map
@@ -103,7 +103,8 @@ type UserModule interface {
 type PushKeyModule interface {
 	Module
 	Register(params map[string]interface{}, options ...interface{}) util.Map
-	Get(id string, blockHeight ...uint64) util.Map
+	Update(params map[string]interface{}, options ...interface{}) util.Map
+	Find(id string, blockHeight ...uint64) util.Map
 	Unregister(params map[string]interface{}, options ...interface{}) util.Map
 	GetByAddress(address string) []string
 	GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map
@@ -128,10 +129,10 @@ type TicketModule interface {
 	BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map
 	GetValidatorTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map
 	GetHostTicketsByProposer(proposerPubKey string, queryOpts ...util.Map) []util.Map
-	ListTopValidators(limit ...int) []util.Map
-	ListTopHosts(limit ...int) []util.Map
-	TicketStats(proposerPubKey ...string) (result util.Map)
-	ListRecent(limit ...int) []util.Map
+	GetTopValidators(limit ...int) []util.Map
+	GetTopHosts(limit ...int) []util.Map
+	GetStats(proposerPubKey ...string) (result util.Map)
+	GetAll(limit ...int) []util.Map
 	UnbondHostTicket(params map[string]interface{}, options ...interface{}) util.Map
 }
 
@@ -149,6 +150,9 @@ type RepoModule interface {
 	Update(params map[string]interface{}, options ...interface{}) util.Map
 	DepositProposalFee(params map[string]interface{}, options ...interface{}) util.Map
 	AddContributor(params map[string]interface{}, options ...interface{}) util.Map
+	Track(names string, height ...uint64)
+	UnTrack(names string)
+	GetTracked() util.Map
 }
 type NamespaceModule interface {
 	Module

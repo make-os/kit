@@ -58,11 +58,11 @@ func (m *UserModule) methods() []*types.VMMember {
 		{
 			Name:        "getKeys",
 			Value:       m.GetKeys,
-			Description: "List keys on the keystore",
+			Description: "Get address of keys on the keystore",
 		},
 		{
-			Name:        "getKey",
-			Value:       m.GetKey,
+			Name:        "getPrivKey",
+			Value:       m.GetPrivKey,
 			Description: "Get the private key of a key (supports interactive mode)",
 		},
 		{
@@ -143,7 +143,7 @@ func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// ListLocalAccounts lists all accounts on this node
+// GetKeys returns a list of address of keys on the keystore
 func (m *UserModule) GetKeys() []string {
 	accounts, err := m.keystore.List()
 	if err != nil {
@@ -205,14 +205,15 @@ unlock:
 	return acct.GetKey()
 }
 
-// GetKey returns the private key of an account.
+// GetPrivKey returns the private key of an account.
 // The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
 // address: The address corresponding the the local key
+//
 // [passphrase]: The passphrase of the local key
-func (m *UserModule) GetKey(address string, passphrase ...string) string {
+func (m *UserModule) GetPrivKey(address string, passphrase ...string) string {
 	return m.getKey(address, passphrase...).PrivKey().Base58()
 }
 
@@ -232,11 +233,20 @@ func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
+
+	if m.InAttachMode() {
+		acct, err := m.AttachedClient.GetAccount(address, height...)
+		if err != nil {
+			panic(err)
+		}
+		return cast.ToString(acct.Nonce.UInt64())
+	}
+
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
-	return fmt.Sprintf("%d", acct.Nonce)
+	return cast.ToString(acct.Nonce)
 }
 
 // Get returns the account of the given address
@@ -268,6 +278,16 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
+
+	if m.InAttachMode() {
+		// acct, err := m.AttachedClient.GetAccount(address, height...)
+		// if err != nil {
+		// 	panic(err)
+		// }
+
+		// return acct.GetAvailableBalance()
+	}
+
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))

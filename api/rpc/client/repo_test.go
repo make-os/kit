@@ -151,7 +151,7 @@ var _ = Describe("Client", func() {
 
 		It("should return ReqError when call failed", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
-				Expect(method).To(Equal("repo_addContributors"))
+				Expect(method).To(Equal("repo_addContributor"))
 				Expect(params).To(And(
 					HaveKey("sig"),
 					HaveKey("timestamp"),
