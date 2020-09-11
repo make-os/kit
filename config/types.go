@@ -186,8 +186,8 @@ type AppConfig struct {
 }
 
 // EmptyAppConfig returns an empty Config Object
-func EmptyAppConfig() AppConfig {
-	return AppConfig{
+func EmptyAppConfig() *AppConfig {
+	return &AppConfig{
 		Node:               &NodeConfig{},
 		Net:                &NetConfig{},
 		Repo:               &RepoConfig{},

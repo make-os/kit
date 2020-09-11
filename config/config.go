@@ -130,9 +130,9 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	viper.AutomaticEnv()
 
 	// Create app config and populate with default values
-	var c = EmptyAppConfig()
-	c.Node.Mode = ModeProd
-	c.g.Interrupt = itr
+	// var c = EmptyAppConfig()
+	cfg.Node.Mode = ModeProd
+	cfg.g.Interrupt = itr
 	dataDir := viper.GetString("home")
 	devDataDirPrefix := viper.GetString("home.prefix")
 	devMode := viper.GetBool("dev")
@@ -145,7 +145,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	// In development mode, use the development data directory.
 	if devMode {
-		c.Node.Mode = ModeDev
+		cfg.Node.Mode = ModeDev
 		ExecName = AppName
 	}
 
@@ -175,7 +175,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	}
 
 	// Read the loaded config into AppConfig
-	if err := viper.Unmarshal(&c); err != nil {
+	if err := viper.Unmarshal(&cfg); err != nil {
 		golog.Fatalf("Failed to unmarshal configuration file: %s", err)
 	}
 
@@ -185,28 +185,28 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	SetVersions(uint64(viper.GetInt64("net.version")))
 
 	// Set data and network directories
-	c.dataDir = dataDir
-	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
-	c.keystoreDir = path.Join(c.DataDir(), KeystoreDirName)
-	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
-	c.repoDir = path.Join(c.NetDataDir(), "data", "repos")
-	c.extensionDir = path.Join(c.DataDir(), "extensions")
-	os.MkdirAll(c.extensionDir, 0700)
+	cfg.dataDir = dataDir
+	cfg.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
+	cfg.keystoreDir = path.Join(cfg.DataDir(), KeystoreDirName)
+	cfg.consoleHistoryPath = path.Join(cfg.DataDir(), ".console_history")
+	cfg.repoDir = path.Join(cfg.NetDataDir(), "data", "repos")
+	cfg.extensionDir = path.Join(cfg.DataDir(), "extensions")
+	os.MkdirAll(cfg.extensionDir, 0700)
 
-	os.MkdirAll(c.NetDataDir(), 0700)
-	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
-	os.MkdirAll(path.Join(c.NetDataDir(), "data", "repos"), 0700)
-	os.MkdirAll(path.Join(c.NetDataDir(), "config"), 0700)
+	os.MkdirAll(cfg.NetDataDir(), 0700)
+	os.MkdirAll(path.Join(cfg.NetDataDir(), "data"), 0700)
+	os.MkdirAll(path.Join(cfg.NetDataDir(), "data", "repos"), 0700)
+	os.MkdirAll(path.Join(cfg.NetDataDir(), "config"), 0700)
 
 	// Create logger with file rotation enabled
-	logPath := path.Join(c.NetDataDir(), "logs")
+	logPath := path.Join(cfg.NetDataDir(), "logs")
 	os.MkdirAll(logPath, 0700)
 	logFile := path.Join(logPath, "main.log")
 	logLevelSetting := util.ParseLogLevel(viper.GetString("loglevel"))
-	c.G().Log = logger.NewLogrusWithFileRotation(logFile, logLevelSetting)
+	cfg.G().Log = logger.NewLogrusWithFileRotation(logFile, logLevelSetting)
 
 	if devMode {
-		c.G().Log.SetToDebug()
+		cfg.G().Log.SetToDebug()
 		tmcfg.P2P.AllowDuplicateIP = true
 	}
 
@@ -214,7 +214,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	noLog := viper.GetBool("no-log")
 	if noLog {
 		tmcfg.LogLevel = fmt.Sprintf("*:error")
-		c.G().Log.SetToError()
+		cfg.G().Log.SetToError()
 	}
 
 	// Set block time
@@ -224,40 +224,40 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	tmcfg.TxIndex.Indexer = "null"
 
 	// Set default version information
-	c.VersionInfo = &VersionInfo{}
-	c.VersionInfo.BuildCommit = ""
-	c.VersionInfo.BuildDate = ""
-	c.VersionInfo.GoVersion = "go1.12.4"
-	c.VersionInfo.BuildVersion = ""
+	cfg.VersionInfo = &VersionInfo{}
+	cfg.VersionInfo.BuildCommit = ""
+	cfg.VersionInfo.BuildDate = ""
+	cfg.VersionInfo.GoVersion = "go1.12.4"
+	cfg.VersionInfo.BuildVersion = ""
 
 	// Use some of the native config to override tendermint's config
-	tmcfg.P2P.ListenAddress = c.Node.ListeningAddr
+	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !devMode
-	tmcfg.P2P.PersistentPeers = c.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
-	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
+	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
-	c.DHT.BootstrapPeers = c.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
-
-	if c.DHT.Address != "" && c.DHT.Address[:1] == ":" {
-		c.DHT.Address = "0.0.0.0" + c.DHT.Address
+	// In production mode, add seed peers
+	if cfg.IsProd() {
+		tmcfg.P2P.PersistentPeers = cfg.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
+		cfg.DHT.BootstrapPeers = cfg.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
 	}
 
-	if c.RPC.Address != "" && c.RPC.Address[:1] == ":" {
-		c.RPC.Address = "0.0.0.0" + c.RPC.Address
+	if cfg.DHT.Address != "" && cfg.DHT.Address[:1] == ":" {
+		cfg.DHT.Address = "0.0.0.0" + cfg.DHT.Address
 	}
 
-	if c.RPC.User == "" && c.RPC.Password == "" {
-		c.RPC.DisableAuth = true
+	if cfg.RPC.Address != "" && cfg.RPC.Address[:1] == ":" {
+		cfg.RPC.Address = "0.0.0.0" + cfg.RPC.Address
+	}
+
+	if cfg.RPC.User == "" && cfg.RPC.Password == "" {
+		cfg.RPC.DisableAuth = true
 	}
 
 	if tmcfg.P2P.ListenAddress != "" && tmcfg.P2P.ListenAddress[:1] == ":" {
 		tmcfg.P2P.ListenAddress = "0.0.0.0" + tmcfg.P2P.ListenAddress
 	}
 
-	c.G().Bus = emitter.New(0)
-	c.G().TMConfig = tmcfg
-	*cfg = c
-	*tmcfg = *tmcfg.SetRoot(cfg.NetDataDir())
-
-	return
+	cfg.G().Bus = emitter.New(0)
+	cfg.G().TMConfig = tmcfg
+	tmcfg.SetRoot(cfg.NetDataDir())
 }
