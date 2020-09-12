@@ -10,8 +10,13 @@ import (
 	"github.com/spf13/cast"
 )
 
-// CreateRepo creates a new repository
-func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
+// RepoAPI provides access to the repo-related RPC methods
+type RepoAPI struct {
+	client *RPCClient
+}
+
+// Create creates a new repository
+func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -36,7 +41,7 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
-	resp, statusCode, err := c.call("repo_create", tx.ToMap())
+	resp, statusCode, err := c.client.call("repo_create", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -47,15 +52,15 @@ func (c *RPCClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoRes
 	return &r, nil
 }
 
-// GetRepo finds and returns a repository
-func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
+// Get finds and returns a repository
+func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}
 	}
 
 	params := util.Map{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals}
-	resp, statusCode, err := c.call("repo_get", params)
+	resp, statusCode, err := c.client.call("repo_get", params)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -68,8 +73,8 @@ func (c *RPCClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.Get
 	return &r, nil
 }
 
-// AddRepoContributors creates transaction to create a add repo contributors
-func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
+// AddContributors creates transaction to create a add repo contributors
+func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -99,7 +104,7 @@ func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types
 		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
-	resp, statusCode, err := c.call("repo_addContributor", tx.ToMap())
+	resp, statusCode, err := c.client.call("repo_addContributor", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -110,8 +115,8 @@ func (c *RPCClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types
 	return &r, nil
 }
 
-// VoteRepoProposal creates transaction to vote for/against a repository's proposal
-func (c *RPCClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+// VoteProposal creates transaction to vote for/against a repository's proposal
+func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -132,7 +137,7 @@ func (c *RPCClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashRespo
 		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
-	resp, statusCode, err := c.call("repo_vote", tx.ToMap())
+	resp, statusCode, err := c.client.call("repo_vote", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

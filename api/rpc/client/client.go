@@ -13,7 +13,6 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/rpc/v2/json"
-	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/rpc"
 	"github.com/make-os/lobe/util"
 )
@@ -30,18 +29,30 @@ const (
 
 // Client represents a JSON-RPC client
 type Client interface {
-	SendTxPayload(data map[string]interface{}) (*types.HashResponse, error)
-	GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error)
-	GetTransaction(hash string) (*types.GetTxResponse, error)
-	GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error)
-	RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error)
-	CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error)
-	VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error)
-	GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error)
-	AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error)
-	SendCoin(body *types.SendCoinBody) (*types.HashResponse, error)
+
+	// GetOptions returns the client's option
 	GetOptions() *Options
+
+	// Call calls a method on the RPCClient service.
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
+
+	// ChainAPI exposes methods for accessing chain information
+	Chain() Chain
+
+	// PushKeyAPI exposes methods for managing push keys
+	PushKey() PushKey
+
+	// RepoAPI exposes methods for managing repositories
+	Repo() Repo
+
+	// RPC exposes methods for managing the RPC server
+	RPC() RPC
+
+	// Tx exposes methods for creating and accessing the transactions
+	Tx() Tx
+
+	// User exposes methods for accessing user information
+	User() User
 }
 
 // Options describes the options used to
@@ -100,11 +111,42 @@ func (c *RPCClient) GetOptions() *Options {
 	return c.opts
 }
 
+// ChainAPI exposes methods for accessing chain information
+func (c *RPCClient) Chain() Chain {
+	return &ChainAPI{client: c}
+}
+
+// PushKeyAPI exposes methods for managing push keys
+func (c *RPCClient) PushKey() PushKey {
+	return &PushKeyAPI{client: c}
+}
+
+// RepoAPI exposes methods for managing repositories
+func (c *RPCClient) Repo() Repo {
+	return &RepoAPI{client: c}
+}
+
+// RPC exposes methods for managing the RPC server
+func (c *RPCClient) RPC() RPC {
+	return &RPCAPI{client: c}
+}
+
+// Tx exposes methods for creating and accessing the transactions
+func (c *RPCClient) Tx() Tx {
+	return &TxAPI{client: c}
+}
+
+// User exposes methods for accessing user information
+func (c *RPCClient) User() User {
+	return &UserAPI{client: c}
+}
+
 // Call calls a method on the RPCClient service.
-// Returns:
-// res: JSON-RPC 2.0 success response
-// statusCode: RPCServer response code
-// err: Client error or JSON-RPC 2.0 error response.
+//
+// RETURNS:
+//  - res: JSON-RPC 2.0 success response
+//  - statusCode: RPCServer response code
+//  - err: Client error or JSON-RPC 2.0 error response.
 //      0 = Client error
 func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statusCode int, err error) {
 

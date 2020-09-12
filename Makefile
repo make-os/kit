@@ -72,3 +72,6 @@ genmocks:
 	mockgen -source=util/serialize_helper.go -destination=util/mocks/serialize_helper.go -package mocks
 	mockgen -source=util/wrapped_cmd.go -destination=util/mocks/wrapped_cmd.go -package mocks
 	mockgen -source=testutil/io_interfaces.go -destination=mocks/io_interfaces.go -package mocks
+	mockgen -source=api/rpc/client/types.go -destination=mocks/rpc-client/types.go -package mocks
+	mockgen -source=api/remote/client/types.go -destination=mocks/remote-client/types.go -package mocks
+

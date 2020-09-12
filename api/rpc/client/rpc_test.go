@@ -28,7 +28,7 @@ var _ = Describe("RPC", func() {
 				Expect(method).To(Equal("rpc_methods"))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.GetMethods()
+			_, err := client.RPC().GetMethods()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
@@ -43,7 +43,7 @@ var _ = Describe("RPC", func() {
 				Expect(method).To(Equal("rpc_methods"))
 				return map[string]interface{}{"methods": 100}, 0, nil
 			}
-			_, err := client.GetMethods()
+			_, err := client.RPC().GetMethods()
 			Expect(err).ToNot(BeNil())
 			Expect(err.(*util.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("RPC", func() {
 					{"name": "get"},
 				}}, 0, nil
 			}
-			resp, err := client.GetMethods()
+			resp, err := client.RPC().GetMethods()
 			Expect(err).To(BeNil())
 			Expect(resp.Methods).To(HaveLen(1))
 			Expect(resp.Methods[0].Name).To(Equal("get"))

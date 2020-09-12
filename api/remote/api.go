@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/make-os/lobe/api/remote/client"
 	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/pkgs/logger"
@@ -49,23 +50,18 @@ func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w 
 
 // RegisterEndpoints registers handlers to endpoints
 func (r *API) RegisterEndpoints(s ServeMux) {
-	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameNonce), r.get(r.GetAccountNonce))
-	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameAccount), r.get(r.GetAccount))
-	s.HandleFunc(V1Path(constants.NamespaceUser, apitypes.MethodNameSendCoin), r.post(r.SendCoin))
-	s.HandleFunc(V1Path(constants.NamespaceTx, apitypes.MethodNameSendPayload), r.post(r.SendTxPayload))
-	s.HandleFunc(V1Path(constants.NamespaceTx, apitypes.MethodNameGetTx), r.get(r.GetTransaction))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyFind), r.get(r.GetPushKey))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameCreateRepo), r.post(r.CreateRepo))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameGetRepo), r.get(r.GetRepo))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameAddRepoContribs), r.post(r.AddRepoContributors))
-	s.HandleFunc(V1Path(constants.NamespaceRepo, apitypes.MethodNameRepoPropVote), r.post(r.RepoVote))
-}
-
-// V1Path creates a REST API v1 path
-func V1Path(ns, method string) string {
-	return fmt.Sprintf("/v1/%s/%s", ns, method)
+	s.HandleFunc(client.V1Path(constants.NamespaceUser, apitypes.MethodNameNonce), r.get(r.GetAccountNonce))
+	s.HandleFunc(client.V1Path(constants.NamespaceUser, apitypes.MethodNameAccount), r.get(r.GetAccount))
+	s.HandleFunc(client.V1Path(constants.NamespaceUser, apitypes.MethodNameSendCoin), r.post(r.SendCoin))
+	s.HandleFunc(client.V1Path(constants.NamespaceTx, apitypes.MethodNameSendPayload), r.post(r.SendTxPayload))
+	s.HandleFunc(client.V1Path(constants.NamespaceTx, apitypes.MethodNameGetTx), r.get(r.GetTransaction))
+	s.HandleFunc(client.V1Path(constants.NamespacePushKey, apitypes.MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
+	s.HandleFunc(client.V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyFind), r.get(r.GetPushKey))
+	s.HandleFunc(client.V1Path(constants.NamespacePushKey, apitypes.MethodNamePushKeyRegister), r.post(r.RegisterPushKey))
+	s.HandleFunc(client.V1Path(constants.NamespaceRepo, apitypes.MethodNameCreateRepo), r.post(r.CreateRepo))
+	s.HandleFunc(client.V1Path(constants.NamespaceRepo, apitypes.MethodNameGetRepo), r.get(r.GetRepo))
+	s.HandleFunc(client.V1Path(constants.NamespaceRepo, apitypes.MethodNameAddRepoContribs), r.post(r.AddRepoContributors))
+	s.HandleFunc(client.V1Path(constants.NamespaceRepo, apitypes.MethodNameRepoPropVote), r.post(r.RepoVote))
 }
 
 // APIHandler wraps http handlers, providing panic recovery

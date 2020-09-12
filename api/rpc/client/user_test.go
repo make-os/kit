@@ -25,13 +25,13 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GetAccount", func() {
+	Describe(".Get", func() {
 		It("should return ReqError when RPC call returns an error", func() {
 			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("user_get"))
 				return nil, 0, fmt.Errorf("error")
 			})
-			_, err := client.GetAccount("addr", 100)
+			_, err := client.User().Get("addr", 100)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
@@ -46,7 +46,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("user_get"))
 				return util.Map{"balance": 1000}, 0, nil
 			})
-			_, err := client.GetAccount("addr", 100)
+			_, err := client.User().Get("addr", 100)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     "decode_error",
@@ -61,15 +61,15 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("user_get"))
 				return util.Map{"balance": "1000"}, 0, nil
 			})
-			acct, err := client.GetAccount("addr", 100)
+			acct, err := client.User().Get("addr", 100)
 			Expect(err).To(BeNil())
 			Expect(acct.Balance).To(Equal(util.String("1000")))
 		})
 	})
 
-	Describe(".SendCoin()", func() {
+	Describe(".Send()", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.SendCoin(&types.SendCoinBody{
+			_, err := client.User().Send(&types.SendCoinBody{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -95,7 +95,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.SendCoin(&types.SendCoinBody{
+			_, err := client.User().Send(&types.SendCoinBody{
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
@@ -116,7 +116,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("user_send"))
 				return util.Map{"hash": "0x123"}, 0, nil
 			}
-			resp, err := client.SendCoin(&types.SendCoinBody{
+			resp, err := client.User().Send(&types.SendCoinBody{
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,

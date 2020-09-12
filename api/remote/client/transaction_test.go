@@ -16,10 +16,10 @@ import (
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var client *ClientV1
+	var client *RemoteClient
 
 	BeforeEach(func() {
-		client = &ClientV1{apiRoot: ""}
+		client = &RemoteClient{apiRoot: ""}
 		ctrl = gomock.NewController(GinkgoT())
 	})
 
@@ -42,7 +42,7 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			resp, err := client.SendTxPayload(map[string]interface{}{"type": 1})
+			resp, err := client.Tx().Send(map[string]interface{}{"type": 1})
 			Expect(err).To(BeNil())
 			Expect(resp.Hash).To(Equal("0x12345"))
 		})
@@ -61,7 +61,7 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			_, err := client.SendTxPayload(map[string]interface{}{"type": 1})
+			_, err := client.Tx().Send(map[string]interface{}{"type": 1})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal(`{"hash":"0x12345"}`))
 		})
@@ -75,7 +75,7 @@ var _ = Describe("Account", func() {
 				Expect(params["hash"]).To(Equal("0x123"))
 				return resp, fmt.Errorf("error")
 			}
-			_, err := client.GetTransaction("0x123")
+			_, err := client.Tx().Get("0x123")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -94,7 +94,7 @@ var _ = Describe("Account", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.GetTransaction("repo1")
+			resp, err := client.Tx().Get("repo1")
 			Expect(err).To(BeNil())
 			Expect(resp.Status).To(Equal(modules.TxStatusInMempool))
 			Expect(resp.Data).To(Equal(map[string]interface{}{"key": "value"}))

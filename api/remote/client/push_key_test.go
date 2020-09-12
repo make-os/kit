@@ -18,11 +18,11 @@ import (
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var client *ClientV1
+	var client *RemoteClient
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
-		client = &ClientV1{apiRoot: ""}
+		client = &RemoteClient{apiRoot: ""}
 		ctrl = gomock.NewController(GinkgoT())
 	})
 
@@ -30,7 +30,7 @@ var _ = Describe("Account", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GetPushKeyOwnerNonce", func() {
+	Describe(".GetOwnerNonce", func() {
 		It("should send key id and block height in request and receive nonce from server", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				Expect(endpoint).To(Equal("/v1/pk/owner-nonce"))
@@ -48,13 +48,13 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			resp, err := client.GetPushKeyOwnerNonce("addr1", 100)
+			resp, err := client.PushKey().GetOwnerNonce("addr1", 100)
 			Expect(err).To(BeNil())
 			Expect(resp.Nonce).To(Equal("123"))
 		})
 	})
 
-	Describe(".GetPushKey", func() {
+	Describe(".Get", func() {
 		It("should send keys id and block height in request and receive nonce from server", func() {
 			expectedPubKey, _ := crypto.PubKeyFromBase58("49G1iGk8fY7RQcJQ7LfQdThdyfaN8dKfxhGQSh8uuNaK35CgazZ")
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
@@ -73,7 +73,7 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			resp, err := client.GetPushKey("pushKeyID", 100)
+			resp, err := client.PushKey().Get("pushKeyID", 100)
 			Expect(err).To(BeNil())
 			Expect(resp.Address).To(Equal(identifier.Address("addr1")))
 			Expect(resp.PubKey).To(Equal(expectedPubKey.ToPublicKey()))
@@ -85,7 +85,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.RegisterPushKey(&types.RegisterPushKeyBody{})
+			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -112,7 +112,7 @@ var _ = Describe("Account", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.RegisterPushKey(&types.RegisterPushKeyBody{
+			resp, err := client.PushKey().Register(&types.RegisterPushKeyBody{
 				Nonce:      1,
 				Fee:        1,
 				Scopes:     []string{"ns/repo", "repo1"},
@@ -129,7 +129,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.RegisterPushKey(&types.RegisterPushKeyBody{SigningKey: key})
+			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})

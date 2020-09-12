@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/make-os/lobe/api/remote"
 	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/state"
@@ -13,15 +12,20 @@ import (
 	"github.com/spf13/cast"
 )
 
+// PushKeyAPI provides access to the pushkey-related remote APIs.
+type PushKeyAPI struct {
+	c *RemoteClient
+}
+
 // GetPushKeyOwnerNonce returns the nonce of the push key owner account
-func (c *ClientV1) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+func (a *PushKeyAPI) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
 	params := M{"id": pushKeyID, "height": height}
-	resp, err := c.get(remote.V1Path(constants.NamespacePushKey, types.MethodNameOwnerNonce), params)
+	resp, err := a.c.get(V1Path(constants.NamespacePushKey, types.MethodNameOwnerNonce), params)
 	if err != nil {
 		return nil, err
 	}
@@ -30,9 +34,9 @@ func (c *ClientV1) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64)
 	return &result, resp.ToJSON(&result)
 }
 
-// GetPushKey finds a push key by its ID.
+// Get finds a push key by its ID.
 // If blockHeight is specified, only the block at the given height is searched.
-func (c *ClientV1) GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error) {
+func (a *PushKeyAPI) Get(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error) {
 
 	height := uint64(0)
 	if len(blockHeight) > 0 {
@@ -40,7 +44,7 @@ func (c *ClientV1) GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.G
 	}
 
 	params := M{"id": pushKeyID, "height": height}
-	resp, err := c.get(remote.V1Path(constants.NamespacePushKey, types.MethodNamePushKeyFind), params)
+	resp, err := a.c.get(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyFind), params)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +58,7 @@ func (c *ClientV1) GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.G
 }
 
 // Register creates a transaction to register a push key
-func (c *ClientV1) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+func (a *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
 	}
@@ -77,7 +81,7 @@ func (c *ClientV1) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Regi
 		return nil, err
 	}
 
-	resp, err := c.post(remote.V1Path(constants.NamespacePushKey, types.MethodNamePushKeyRegister), tx.ToMap())
+	resp, err := a.c.post(V1Path(constants.NamespacePushKey, types.MethodNamePushKeyRegister), tx.ToMap())
 	if err != nil {
 		return nil, err
 	}

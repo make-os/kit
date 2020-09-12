@@ -13,6 +13,7 @@ import (
 	"github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/testutil"
 	types2 "github.com/make-os/lobe/types"
@@ -259,8 +260,11 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetAccount", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetAccount("os1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
+
+			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccount("os1abc", 1)
@@ -269,8 +273,10 @@ var _ = Describe("UserModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetAccount("os1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
+			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccount("os1abc", 1)
 			})
@@ -416,9 +422,8 @@ var _ = Describe("UserModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"commission": 90.2}
-			res := m.SetCommission(params, key, payloadOnly)
+			res := m.SetCommission(params, key, true)
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res).To(And(
 				HaveKey("timestamp"),
@@ -461,11 +466,9 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
-			key := ""
-			payloadOnly := true
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			params := tx.ToMap()
-			res := m.SendCoin(params, key, payloadOnly)
+			res := m.SendCoin(params, "", true)
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res).To(And(
 				HaveKey("nonce"),
@@ -481,8 +484,11 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().SendCoin(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+			mockUserClient.EXPECT().Send(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			params := map[string]interface{}{"value": "10"}
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -492,9 +498,12 @@ var _ = Describe("UserModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"value": "10"}
-			mockClient.EXPECT().SendCoin(gomock.Any()).Return(&apitypes.HashResponse{}, nil)
+
+			mockUserClient.EXPECT().Send(gomock.Any()).Return(&apitypes.HashResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendCoin(params)
 			})

@@ -10,15 +10,20 @@ import (
 	"github.com/spf13/cast"
 )
 
-// GetAccount gets an account corresponding to a given address
-func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+// UserAPI provides access to user-related RPC methods
+type UserAPI struct {
+	client *RPCClient
+}
+
+// Get gets an account corresponding to a given address
+func (u *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	resp, statusCode, err := c.call("user_get", util.Map{"address": address, "height": height})
+	resp, statusCode, err := u.client.call("user_get", util.Map{"address": address, "height": height})
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -31,8 +36,8 @@ func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*types.Ge
 	return r, nil
 }
 
-// SendCoin creates a new repository
-func (c *RPCClient) SendCoin(body *types.SendCoinBody) (*types.HashResponse, error) {
+// Send sends coins from a user account to another account or repository
+func (u *UserAPI) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -53,7 +58,7 @@ func (c *RPCClient) SendCoin(body *types.SendCoinBody) (*types.HashResponse, err
 		return nil, util.ReqErr(400, ErrCodeClient, "privKey", err.Error())
 	}
 
-	resp, statusCode, err := c.call("user_send", tx.ToMap())
+	resp, statusCode, err := u.client.call("user_send", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

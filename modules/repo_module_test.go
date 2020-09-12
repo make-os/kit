@@ -7,6 +7,7 @@ import (
 	types2 "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/types/constants"
@@ -70,9 +71,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"name": "repo1"}
-			res := m.Create(params, key, payloadOnly)
+			res := m.Create(params, key, true)
 			Expect(res).To(HaveKey("name"))
 			Expect(res["name"]).To(Equal("repo1"))
 			Expect(res).ToNot(HaveKey("hash"))
@@ -92,8 +92,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().CreateRepo(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+			mockRepoClient.EXPECT().Create(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			params := map[string]interface{}{"name": "repo1"}
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -103,8 +106,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().CreateRepo(gomock.Any()).Return(&types2.CreateRepoResponse{}, nil)
+
+			mockRepoClient.EXPECT().Create(gomock.Any()).Return(&types2.CreateRepoResponse{}, nil)
 			params := map[string]interface{}{"name": "repo1"}
 			assert.NotPanics(GinkgoT(), func() {
 				m.Create(params)
@@ -142,9 +148,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"addresses": []string{"addr1"}}
-			res := m.UpsertOwner(params, key, payloadOnly)
+			res := m.UpsertOwner(params, key, true)
 			Expect(res).To(HaveKey("addresses"))
 			Expect(res["addresses"]).To(Equal([]interface{}{"addr1"}))
 			Expect(res["veto"]).To(BeFalse())
@@ -192,9 +197,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"name": "repo1"}
-			res := m.Vote(params, key, payloadOnly)
+			res := m.Vote(params, key, true)
 			Expect(res["name"]).To(Equal("repo1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalVote)))
@@ -248,8 +252,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetRepo("repo1", &types2.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
+
+			mockRepoClient.EXPECT().Get("repo1", &types2.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1", types.GetOptions{Height: 1})
@@ -258,8 +265,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetRepo("repo1", &types2.GetRepoOpts{Height: 1}).Return(&types2.GetRepoResponse{}, nil)
+
+			mockRepoClient.EXPECT().Get("repo1", &types2.GetRepoOpts{Height: 1}).Return(&types2.GetRepoResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("repo1", types.GetOptions{Height: 1})
 			})
@@ -295,9 +305,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"id": 1}
-			res := m.Update(params, key, payloadOnly)
+			res := m.Update(params, key, true)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalUpdate)))
@@ -343,9 +352,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"id": 1}
-			res := m.DepositProposalFee(params, key, payloadOnly)
+			res := m.DepositProposalFee(params, key, true)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalSendFee)))
@@ -390,9 +398,8 @@ var _ = Describe("RepoModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"id": 1}
-			res := m.AddContributor(params, key, payloadOnly)
+			res := m.AddContributor(params, key, true)
 			Expect(res["id"]).To(Equal("1"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRepoProposalRegisterPushKey)))
@@ -413,8 +420,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().AddRepoContributors(gomock.Any()).Return(&types2.HashResponse{}, fmt.Errorf("error"))
+
+			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&types2.HashResponse{}, fmt.Errorf("error"))
 			params := map[string]interface{}{"id": 1}
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -424,8 +434,11 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().AddRepoContributors(gomock.Any()).Return(&types2.HashResponse{}, nil)
+
+			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&types2.HashResponse{}, nil)
 			params := map[string]interface{}{"id": 1}
 			assert.NotPanics(GinkgoT(), func() {
 				m.AddContributor(params)

@@ -130,7 +130,6 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	viper.AutomaticEnv()
 
 	// Create app config and populate with default values
-	// var c = EmptyAppConfig()
 	cfg.Node.Mode = ModeProd
 	cfg.g.Interrupt = itr
 	dataDir := viper.GetString("home")

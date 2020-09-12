@@ -10,15 +10,20 @@ import (
 	"github.com/spf13/cast"
 )
 
-// GetPushKeyOwner gets the account that owns a push key
-func (c *RPCClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+// PushKeyAPI provides access to the pushkey-related RPC methods
+type PushKeyAPI struct {
+	client *RPCClient
+}
+
+// GetOwner gets the account that owns the given push key
+func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	out, statusCode, err := c.call("pk_getOwner", util.Map{"id": id, "height": height})
+	out, statusCode, err := pk.client.call("pk_getOwner", util.Map{"id": addr, "height": height})
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -31,8 +36,8 @@ func (c *RPCClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*types.Ge
 	return r, nil
 }
 
-// RegisterPushKey creates a new repository
-func (c *RPCClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+// Register registers a public key as a push key
+func (pk *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -57,7 +62,7 @@ func (c *RPCClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.Reg
 	}
 
 	// call RPC method: repo_create
-	resp, statusCode, err := c.call("pk_register", tx.ToMap())
+	resp, statusCode, err := pk.client.call("pk_register", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

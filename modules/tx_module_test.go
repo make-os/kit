@@ -9,6 +9,7 @@ import (
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	types3 "github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/types"
@@ -58,8 +59,11 @@ var _ = Describe("TxModule", func() {
 	Describe(".Get", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetTransaction("0x123").Return(nil, fmt.Errorf("error"))
+
+			mockTxClient.EXPECT().Get("0x123").Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("0x123")
@@ -68,8 +72,11 @@ var _ = Describe("TxModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
-			mockClient.EXPECT().GetTransaction("0x123").Return(&types2.GetTxResponse{}, nil)
+
+			mockTxClient.EXPECT().Get("0x123").Return(&types2.GetTxResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("0x123")
 			})
@@ -162,9 +169,12 @@ var _ = Describe("TxModule", func() {
 	Describe(".SendPayload", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
+
 			payload := map[string]interface{}{"type": 1}
-			mockClient.EXPECT().SendTxPayload(payload).Return(nil, fmt.Errorf("error"))
+			mockTxClient.EXPECT().Send(payload).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(payload)
@@ -173,9 +183,12 @@ var _ = Describe("TxModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
+			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
+
 			payload := map[string]interface{}{"type": 1}
-			mockClient.EXPECT().SendTxPayload(payload).Return(&types2.HashResponse{}, nil)
+			mockTxClient.EXPECT().Send(payload).Return(&types2.HashResponse{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendPayload(payload)
 			})

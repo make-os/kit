@@ -18,11 +18,11 @@ import (
 
 var _ = Describe("Repo", func() {
 	var ctrl *gomock.Controller
-	var client *ClientV1
+	var client *RemoteClient
 	var key *crypto.Key
 
 	BeforeEach(func() {
-		client = &ClientV1{apiRoot: ""}
+		client = &RemoteClient{apiRoot: ""}
 		ctrl = gomock.NewController(GinkgoT())
 		key = crypto.NewKeyFromIntSeed(1)
 	})
@@ -31,12 +31,12 @@ var _ = Describe("Repo", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".CreateRepo", func() {
+	Describe(".Create", func() {
 		It("should return error if signing key is not set", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.CreateRepo(&types.CreateRepoBody{})
+			_, err := client.Repo().Create(&types.CreateRepoBody{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -64,7 +64,7 @@ var _ = Describe("Repo", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.CreateRepo(&types.CreateRepoBody{
+			resp, err := client.Repo().Create(&types.CreateRepoBody{
 				Name:       "repo1",
 				Nonce:      1,
 				Value:      100,
@@ -81,7 +81,7 @@ var _ = Describe("Repo", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.CreateRepo(&types.CreateRepoBody{SigningKey: key})
+			_, err := client.Repo().Create(&types.CreateRepoBody{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -99,7 +99,7 @@ var _ = Describe("Repo", func() {
 				Expect(params["noProposals"]).To(BeTrue())
 				return resp, fmt.Errorf("error")
 			}
-			_, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
+			_, err := client.Repo().Get("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -118,7 +118,7 @@ var _ = Describe("Repo", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.GetRepo("repo1")
+			resp, err := client.Repo().Get("repo1")
 			Expect(err).To(BeNil())
 			Expect(resp.Balance.String()).To(Equal("100"))
 		})
@@ -129,7 +129,7 @@ var _ = Describe("Repo", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{})
+			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -162,7 +162,7 @@ var _ = Describe("Repo", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.AddRepoContributors(&types.AddRepoContribsBody{
+			resp, err := client.Repo().AddContributors(&types.AddRepoContribsBody{
 				RepoName:      "repo1",
 				ProposalID:    "1",
 				PushKeys:      []string{"pk1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
@@ -184,7 +184,7 @@ var _ = Describe("Repo", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{SigningKey: key})
+			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -195,7 +195,7 @@ var _ = Describe("Repo", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.VoteRepoProposal(&types.RepoVoteBody{})
+			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -223,7 +223,7 @@ var _ = Describe("Repo", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.VoteRepoProposal(&types.RepoVoteBody{
+			resp, err := client.Repo().VoteProposal(&types.RepoVoteBody{
 				RepoName:   "repo1",
 				ProposalID: "1",
 				Nonce:      1,
@@ -238,7 +238,7 @@ var _ = Describe("Repo", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.VoteRepoProposal(&types.RepoVoteBody{SigningKey: key})
+			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})

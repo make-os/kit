@@ -43,7 +43,7 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 
 	// Initialize the config using the test root command
 	var tmcfg = tmconfig.DefaultConfig()
-	cfg = &config.AppConfig{}
+	cfg = config.EmptyAppConfig()
 	interrupt := util.Interrupt(make(chan struct{}))
 	config.Configure(cfg, tmcfg, &interrupt)
 	cfg.Node.Mode = config.ModeTest

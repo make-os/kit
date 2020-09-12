@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/lobe/api/remote/client"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/util"
@@ -28,7 +29,7 @@ var _ = Describe("API", func() {
 
 	Describe(".V1Path", func() {
 		It("should return /v1/my_namespace/my_method when namespace='my_namespace' and method='my_method", func() {
-			path := V1Path("my_namespace", "my_method")
+			path := client.V1Path("my_namespace", "my_method")
 			Expect(path).To(Equal("/v1/my_namespace/my_method"))
 		})
 	})

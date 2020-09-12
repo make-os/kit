@@ -8,7 +8,8 @@ import (
 	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
-	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	mockrpc "github.com/make-os/lobe/mocks/rpc"
+	mockclients "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -122,12 +123,16 @@ var _ = Describe("Common", func() {
 		})
 
 		It("should use rpc client if nonce and keepers are not set", func() {
+			mockRPCClient := mockrpc.NewMockClient(ctrl)
+			mockUserClient := mockclients.NewMockUser(ctrl)
+			mockRPCClient.EXPECT().User().Return(mockUserClient)
+
 			key := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
-			mockRPCClient := mocks2.NewMockClient(ctrl)
-			mockRPCClient.EXPECT().GetAccount(key.Addr().String()).Return(&types.GetAccountResponse{
+			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&types.GetAccountResponse{
 				Account: &state.Account{Nonce: 1},
 			}, nil)
+
 			payloadOnly, pk := finalizeTx(tx, nil, mockRPCClient, key.PrivKey().Base58())
 			Expect(pk).ToNot(BeNil())
 			Expect(pk.Base58()).To(Equal(key.PrivKey().Base58()))
@@ -140,8 +145,11 @@ var _ = Describe("Common", func() {
 		It("should panic if rpc client returns error", func() {
 			key := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
-			mockRPCClient := mocks2.NewMockClient(ctrl)
-			mockRPCClient.EXPECT().GetAccount(key.Addr().String()).Return(nil, fmt.Errorf("error"))
+			mockRPCClient := mockrpc.NewMockClient(ctrl)
+			mockUserClient := mockclients.NewMockUser(ctrl)
+			mockRPCClient.EXPECT().User().Return(mockUserClient)
+			mockUserClient.EXPECT().Get(key.Addr().String()).Return(nil, fmt.Errorf("error"))
+
 			Expect(func() {
 				finalizeTx(tx, nil, mockRPCClient, key.PrivKey().Base58())
 			}).To(Panic())

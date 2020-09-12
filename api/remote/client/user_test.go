@@ -17,19 +17,19 @@ import (
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var client *ClientV1
+	var client *RemoteClient
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		client = &ClientV1{apiRoot: ""}
+		client = &RemoteClient{apiRoot: ""}
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GetAccountNonce", func() {
+	Describe(".GetNonce", func() {
 		It("should send `address` and `block height` in request and return nonce sent from server", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				Expect(endpoint).To(Equal("/v1/user/nonce"))
@@ -48,13 +48,13 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			resp, err := client.GetAccountNonce("addr1", 100)
+			resp, err := client.User().GetNonce("addr1", 100)
 			Expect(err).To(BeNil())
 			Expect(resp.Nonce).To(Equal("123"))
 		})
 	})
 
-	Describe(".GetAccount", func() {
+	Describe(".Get", func() {
 		It("should send `address` and `block height` in request and return account sent from server", func() {
 			client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				Expect(endpoint).To(Equal("/v1/user/account"))
@@ -77,7 +77,7 @@ var _ = Describe("Account", func() {
 
 				return resp, nil
 			}
-			resp, err := client.GetAccount("addr1", 100)
+			resp, err := client.User().Get("addr1", 100)
 			Expect(err).To(BeNil())
 			Expect(resp.Balance).To(Equal(util.String("979956")))
 			Expect(resp.Nonce.UInt64()).To(Equal(uint64(43)))
@@ -85,12 +85,12 @@ var _ = Describe("Account", func() {
 		})
 	})
 
-	Describe(".SendCoin()", func() {
+	Describe(".Send", func() {
 		It("should return error if signing key is not set", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.SendCoin(&types.SendCoinBody{})
+			_, err := client.User().Send(&types.SendCoinBody{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -117,7 +117,7 @@ var _ = Describe("Account", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.SendCoin(&types.SendCoinBody{
+			resp, err := client.User().Send(&types.SendCoinBody{
 				Nonce:      1,
 				Value:      100,
 				Fee:        1,
@@ -132,7 +132,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.SendCoin(&types.SendCoinBody{SigningKey: key})
+			_, err := client.User().Send(&types.SendCoinBody{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})

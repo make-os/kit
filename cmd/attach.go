@@ -32,7 +32,7 @@ func connectToServer(cfg *config.AppConfig) (client.Client, *apitypes.GetMethodR
 		Password: cfg.RPC.Password,
 	})
 
-	methods, err := cl.GetMethods()
+	methods, err := cl.RPC().GetMethods()
 	if err != nil {
 		return nil, nil, err
 	}

@@ -112,7 +112,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.CreateRepo(&apitypes.CreateRepoBody{
+		resp, err := m.AttachedClient.Repo().Create(&apitypes.CreateRepoBody{
 			Name:       tx.Name,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
@@ -238,7 +238,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.GetRepo(name, &apitypes.GetRepoOpts{
+		resp, err := m.AttachedClient.Repo().Get(name, &apitypes.GetRepoOpts{
 			NoProposals: noProposals,
 			Height:      blockHeight,
 		})
@@ -377,7 +377,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.AddRepoContributors(&apitypes.AddRepoContribsBody{
+		resp, err := m.AttachedClient.Repo().AddContributors(&apitypes.AddRepoContribsBody{
 			RepoName:      tx.RepoName,
 			ProposalID:    tx.ID,
 			PushKeys:      tx.PushKeys,

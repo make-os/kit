@@ -130,7 +130,7 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 	if validatorKey != "" {
 		vk, err := crypto.ConvertBase58PrivKeyToTMPrivKey(strings.TrimSpace(validatorKey))
 		if err != nil {
-			golog.Fatalf("Failed to decode validator private key", err.Error())
+			golog.Fatalf("Failed to decode validator private key: %s", err.Error())
 		}
 		pv := privval.GenFilePV(tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
 		pv.Key.PrivKey = vk
@@ -144,7 +144,7 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 		nodeKeyFile := tmconfig.NodeKeyFile()
 		os.RemoveAll(nodeKeyFile)
 		if _, err = genNodeKey(nodeKeyFile, vk); err != nil {
-			golog.Fatalf("Failed to create node key file", err.Error())
+			golog.Fatalf("Failed to create node key file: %s", err.Error())
 		}
 	}
 

@@ -20,7 +20,7 @@ var _ = Describe("PushKeyAPI", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GetPushKey", func() {
+	Describe(".Get", func() {
 		modules := &types.Modules{}
 		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
 		testGetRequestCases(map[string]TestCase{
@@ -31,7 +31,7 @@ var _ = Describe("PushKeyAPI", func() {
 				mocker: func(tc *TestCase) {
 					mockPushKeyModule := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyModule.EXPECT().
-						Get("pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", uint64(1)).
+						Find("pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", uint64(1)).
 						Return(util.Map{
 							"pubKey":  "49G1iGk8fY7RQcJQ7LfQdThdyfaN8dKfxhGQSh8uuNaK35CgazZ",
 							"address": "os1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"})
@@ -41,7 +41,7 @@ var _ = Describe("PushKeyAPI", func() {
 		}, api.GetPushKey)
 	})
 
-	Describe(".GetPushKeyOwnerNonce", func() {
+	Describe(".GetOwnerNonce", func() {
 		modules := &types.Modules{}
 		api := &API{modules: modules, log: logger.NewLogrusNoOp()}
 		testGetRequestCases(map[string]TestCase{

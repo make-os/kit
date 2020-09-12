@@ -136,7 +136,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.RegisterPushKey(&apitypes.RegisterPushKeyBody{
+		resp, err := m.AttachedClient.PushKey().Register(&apitypes.RegisterPushKeyBody{
 			PublicKey:  tx.PublicKey,
 			Scopes:     tx.Scopes,
 			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),
@@ -300,7 +300,7 @@ func (m *PushKeyModule) GetAccountOfOwner(address string, height ...uint64) util
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.GetPushKeyOwner(address, h)
+		resp, err := m.AttachedClient.PushKey().GetOwner(address, h)
 		if err != nil {
 			panic(err)
 		}

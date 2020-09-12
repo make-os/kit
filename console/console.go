@@ -163,7 +163,7 @@ func (c *Console) connectToNote() (client.Client, *apitypes.GetMethodResponse, e
 		Password: c.cfg.RPC.Password,
 	})
 
-	methods, err := cl.GetMethods()
+	methods, err := cl.RPC().GetMethods()
 	if err != nil {
 		return nil, nil, err
 	}

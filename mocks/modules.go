@@ -389,23 +389,23 @@ func (mr *MockUserModuleMockRecorder) GetKeys() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockUserModule)(nil).GetKeys))
 }
 
-// GetKey mocks base method
+// GetPrivKey mocks base method
 func (m *MockUserModule) GetPrivKey(address string, passphrase ...string) string {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range passphrase {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetKey", varargs...)
+	ret := m.ctrl.Call(m, "GetPrivKey", varargs...)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetKey indicates an expected call of GetKey
-func (mr *MockUserModuleMockRecorder) GetKey(address interface{}, passphrase ...interface{}) *gomock.Call {
+// GetPrivKey indicates an expected call of GetPrivKey
+func (mr *MockUserModuleMockRecorder) GetPrivKey(address interface{}, passphrase ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, passphrase...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKey", reflect.TypeOf((*MockUserModule)(nil).GetKey), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivKey", reflect.TypeOf((*MockUserModule)(nil).GetPrivKey), varargs...)
 }
 
 // GetPublicKey mocks base method
@@ -987,7 +987,7 @@ func (mr *MockTicketModuleMockRecorder) GetHostTicketsByProposer(proposerPubKey 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHostTicketsByProposer", reflect.TypeOf((*MockTicketModule)(nil).GetHostTicketsByProposer), varargs...)
 }
 
-// ListTopValidators mocks base method
+// GetTopValidators mocks base method
 func (m *MockTicketModule) GetTopValidators(limit ...int) []util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -999,13 +999,13 @@ func (m *MockTicketModule) GetTopValidators(limit ...int) []util.Map {
 	return ret0
 }
 
-// ListTopValidators indicates an expected call of ListTopValidators
-func (mr *MockTicketModuleMockRecorder) ListTopValidators(limit ...interface{}) *gomock.Call {
+// GetTopValidators indicates an expected call of GetTopValidators
+func (mr *MockTicketModuleMockRecorder) GetTopValidators(limit ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopValidators", reflect.TypeOf((*MockTicketModule)(nil).GetTopValidators), limit...)
 }
 
-// ListTopHosts mocks base method
+// GetTopHosts mocks base method
 func (m *MockTicketModule) GetTopHosts(limit ...int) []util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -1017,13 +1017,13 @@ func (m *MockTicketModule) GetTopHosts(limit ...int) []util.Map {
 	return ret0
 }
 
-// ListTopHosts indicates an expected call of ListTopHosts
-func (mr *MockTicketModuleMockRecorder) ListTopHosts(limit ...interface{}) *gomock.Call {
+// GetTopHosts indicates an expected call of GetTopHosts
+func (mr *MockTicketModuleMockRecorder) GetTopHosts(limit ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopHosts", reflect.TypeOf((*MockTicketModule)(nil).GetTopHosts), limit...)
 }
 
-// TicketStats mocks base method
+// GetStats mocks base method
 func (m *MockTicketModule) GetStats(proposerPubKey ...string) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -1035,13 +1035,13 @@ func (m *MockTicketModule) GetStats(proposerPubKey ...string) util.Map {
 	return ret0
 }
 
-// TicketStats indicates an expected call of TicketStats
-func (mr *MockTicketModuleMockRecorder) TicketStats(proposerPubKey ...interface{}) *gomock.Call {
+// GetStats indicates an expected call of GetStats
+func (mr *MockTicketModuleMockRecorder) GetStats(proposerPubKey ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockTicketModule)(nil).GetStats), proposerPubKey...)
 }
 
-// ListRecent mocks base method
+// GetAll mocks base method
 func (m *MockTicketModule) GetAll(limit ...int) []util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -1053,8 +1053,8 @@ func (m *MockTicketModule) GetAll(limit ...int) []util.Map {
 	return ret0
 }
 
-// ListRecent indicates an expected call of ListRecent
-func (mr *MockTicketModuleMockRecorder) ListRecent(limit ...interface{}) *gomock.Call {
+// GetAll indicates an expected call of GetAll
+func (mr *MockTicketModuleMockRecorder) GetAll(limit ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTicketModule)(nil).GetAll), limit...)
 }
@@ -1246,6 +1246,49 @@ func (mr *MockRepoModuleMockRecorder) AddContributor(params interface{}, options
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddContributor", reflect.TypeOf((*MockRepoModule)(nil).AddContributor), varargs...)
+}
+
+// Track mocks base method
+func (m *MockRepoModule) Track(names string, height ...uint64) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{names}
+	for _, a := range height {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Track", varargs...)
+}
+
+// Track indicates an expected call of Track
+func (mr *MockRepoModuleMockRecorder) Track(names interface{}, height ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{names}, height...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Track", reflect.TypeOf((*MockRepoModule)(nil).Track), varargs...)
+}
+
+// UnTrack mocks base method
+func (m *MockRepoModule) UnTrack(names string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UnTrack", names)
+}
+
+// UnTrack indicates an expected call of UnTrack
+func (mr *MockRepoModuleMockRecorder) UnTrack(names interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnTrack", reflect.TypeOf((*MockRepoModule)(nil).UnTrack), names)
+}
+
+// GetTracked mocks base method
+func (m *MockRepoModule) GetTracked() util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTracked")
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetTracked indicates an expected call of GetTracked
+func (mr *MockRepoModuleMockRecorder) GetTracked() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracked", reflect.TypeOf((*MockRepoModule)(nil).GetTracked))
 }
 
 // MockNamespaceModule is a mock of NamespaceModule interface

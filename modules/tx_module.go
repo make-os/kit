@@ -87,7 +87,7 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 func (m *TxModule) Get(hash string) util.Map {
 
 	if m.InAttachMode() {
-		tx, err := m.AttachedClient.GetTransaction(hash)
+		tx, err := m.AttachedClient.Tx().Get(hash)
 		if err != nil {
 			panic(err)
 		}
@@ -130,7 +130,7 @@ func (m *TxModule) Get(hash string) util.Map {
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 
 	if m.InAttachMode() {
-		tx, err := m.AttachedClient.SendTxPayload(params)
+		tx, err := m.AttachedClient.Tx().Send(params)
 		if err != nil {
 			panic(err)
 		}

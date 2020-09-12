@@ -8,7 +8,7 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/keystore"
-	keystoretypes "github.com/make-os/lobe/keystore/types"
+	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
 	"github.com/make-os/lobe/types/constants"
@@ -28,7 +28,7 @@ import (
 type UserModule struct {
 	types.ModuleCommon
 	cfg      *config.AppConfig
-	keystore keystoretypes.Keystore
+	keystore kstypes.Keystore
 	service  services.Service
 	logic    core.Logic
 }
@@ -41,7 +41,7 @@ func NewAttachableUserModule(client client.Client, ks *keystore.Keystore) *UserM
 // NewUserModule creates an instance of UserModule
 func NewUserModule(
 	cfg *config.AppConfig,
-	keystore keystoretypes.Keystore,
+	keystore kstypes.Keystore,
 	service services.Service,
 	logic core.Logic) *UserModule {
 	return &UserModule{
@@ -235,7 +235,7 @@ func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
 
 	if m.InAttachMode() {
-		acct, err := m.AttachedClient.GetAccount(address, height...)
+		acct, err := m.AttachedClient.User().Get(address, height...)
 		if err != nil {
 			panic(err)
 		}
@@ -246,7 +246,8 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
-	return cast.ToString(acct.Nonce)
+
+	return cast.ToString(acct.Nonce.UInt64())
 }
 
 // Get returns the account of the given address
@@ -255,7 +256,7 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 
 	if m.InAttachMode() {
-		tx, err := m.AttachedClient.GetAccount(address, height...)
+		tx, err := m.AttachedClient.User().Get(address, height...)
 		if err != nil {
 			panic(err)
 		}
@@ -280,7 +281,7 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
 
 	if m.InAttachMode() {
-		// acct, err := m.AttachedClient.GetAccount(address, height...)
+		// acct, err := m.AttachedClient.User().Get(address, height...)
 		// if err != nil {
 		// 	panic(err)
 		// }
@@ -414,7 +415,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.SendCoin(&apitypes.SendCoinBody{
+		resp, err := m.AttachedClient.User().Send(&apitypes.SendCoinBody{
 			To:         tx.To,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),

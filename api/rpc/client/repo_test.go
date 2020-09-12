@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Client", func() {
+var _ = Describe("RepoClient", func() {
 	var client *RPCClient
 	var ctrl *gomock.Controller
 	var key = crypto.NewKeyFromIntSeed(1)
@@ -26,9 +26,9 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".CreateRepo", func() {
+	Describe(".Create", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.CreateRepo(&types.CreateRepoBody{
+			_, err := client.Repo().Create(&types.CreateRepoBody{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -55,7 +55,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.CreateRepo(&types.CreateRepoBody{
+			_, err := client.Repo().Create(&types.CreateRepoBody{
 				Name:       "repo1",
 				Nonce:      100,
 				Value:      10,
@@ -77,7 +77,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("repo_create"))
 				return util.Map{"address": "r/repo1", "hash": "0x123"}, 0, nil
 			}
-			resp, err := client.CreateRepo(&types.CreateRepoBody{
+			resp, err := client.Repo().Create(&types.CreateRepoBody{
 				Name:       "repo1",
 				Nonce:      100,
 				Value:      10,
@@ -91,7 +91,7 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe(".GetRepo", func() {
+	Describe(".Get", func() {
 		It("should return ReqError when call failed", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("repo_get"))
@@ -102,7 +102,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 500, fmt.Errorf("error")
 			}
-			_, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
+			_, err := client.Repo().Get("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     ErrCodeUnexpected,
@@ -117,7 +117,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("repo_get"))
 				return util.Map{"balance": struct{}{}}, 0, nil
 			}
-			_, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
+			_, err := client.Repo().Get("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
 			Expect(err.(*util.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
 			Expect(err.(*util.ReqError).HttpCode).To(Equal(500))
@@ -129,15 +129,15 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("repo_get"))
 				return util.Map{"balance": "100.2"}, 0, nil
 			}
-			res, err := client.GetRepo("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
+			res, err := client.Repo().Get("repo1", &types.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).To(BeNil())
 			Expect(res.Balance.String()).To(Equal("100.2"))
 		})
 	})
 
-	Describe(".AddRepoContributors", func() {
+	Describe(".AddContributors", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{
+			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -170,7 +170,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.AddRepoContributors(&types.AddRepoContribsBody{
+			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{
 				RepoName:      "repo1",
 				ProposalID:    "1",
 				PushKeys:      []string{"pk1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
@@ -197,15 +197,15 @@ var _ = Describe("Client", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return util.Map{"address": "r/repo1", "hash": "0x123"}, 0, nil
 			}
-			resp, err := client.AddRepoContributors(&types.AddRepoContribsBody{SigningKey: key})
+			resp, err := client.Repo().AddContributors(&types.AddRepoContribsBody{SigningKey: key})
 			Expect(err).To(BeNil())
 			Expect(resp.Hash).To(Equal("0x123"))
 		})
 	})
 
-	Describe(".VoteRepoProposal", func() {
+	Describe(".VoteProposal", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.VoteRepoProposal(&types.RepoVoteBody{
+			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -232,7 +232,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.VoteRepoProposal(&types.RepoVoteBody{
+			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{
 				RepoName:   "repo1",
 				ProposalID: "1",
 				Nonce:      1,
@@ -252,7 +252,7 @@ var _ = Describe("Client", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return util.Map{"hash": "0x123"}, 0, nil
 			}
-			resp, err := client.VoteRepoProposal(&types.RepoVoteBody{SigningKey: key})
+			resp, err := client.Repo().VoteProposal(&types.RepoVoteBody{SigningKey: key})
 			Expect(err).To(BeNil())
 			Expect(resp.Hash).To(Equal("0x123"))
 		})

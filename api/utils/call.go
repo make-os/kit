@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	remote "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
+	rpc "github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/api/types"
 	"github.com/pkg/errors"
 )
@@ -14,18 +14,18 @@ import (
 // NextNonceGetter describes a function for getting the next nonce of an account.
 type NextNonceGetter func(
 	address string,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (string, error)
 
 // GetNextNonceOfPushKeyOwner returns the next account nonce of the owner of a given push key.
 func GetNextNonceOfPushKeyOwner(
 	pkID string,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (nextNonce string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
 		var err error
 		var acct *types.GetAccountResponse
-		acct, err = c.GetPushKeyOwner(pkID)
+		acct, err = c.PushKey().GetOwner(pkID)
 		if acct != nil {
 			nextNonce = fmt.Sprintf("%d", acct.Nonce+1)
 		}
@@ -34,7 +34,7 @@ func GetNextNonceOfPushKeyOwner(
 	}, func(c remote.Client) error {
 		var err error
 		var resp *types.GetAccountNonceResponse
-		resp, err = c.GetPushKeyOwnerNonce(pkID)
+		resp, err = c.PushKey().GetOwnerNonce(pkID)
 		if resp != nil {
 			curNonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)
 			nextNonce = fmt.Sprintf("%d", curNonce+1)
@@ -47,12 +47,12 @@ func GetNextNonceOfPushKeyOwner(
 // GetNextNonceOfAccount returns the next account nonce of an account.
 func GetNextNonceOfAccount(
 	address string,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (nextNonce string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
 		var err error
 		var acct *types.GetAccountResponse
-		acct, err = c.GetAccount(address)
+		acct, err = c.User().Get(address)
 		if acct != nil {
 			nextNonce = fmt.Sprintf("%d", acct.Nonce+1)
 		}
@@ -61,7 +61,7 @@ func GetNextNonceOfAccount(
 	}, func(c remote.Client) error {
 		var err error
 		var resp *types.GetAccountResponse
-		resp, err = c.GetAccount(address)
+		resp, err = c.User().Get(address)
 		if resp != nil {
 			nextNonce = fmt.Sprintf("%d", resp.Nonce.UInt64()+1)
 		}
@@ -73,16 +73,16 @@ func GetNextNonceOfAccount(
 // RepoCreator describes a function for creating a repo creating transaction.
 type RepoCreator func(
 	req *types.CreateRepoBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // CreateRepo creates a repository creating transaction and returns the hash.
 func CreateRepo(
 	req *types.CreateRepoBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.CreateRepo(req)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.Repo().Create(req)
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func CreateRepo(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.CreateRepo(req)
+		resp, err := c.Repo().Create(req)
 		if err != nil {
 			return err
 		}
@@ -103,16 +103,16 @@ func CreateRepo(
 // RepoCreator describes a function for creating a repo creating transaction.
 type PushKeyRegister func(
 	req *types.RegisterPushKeyBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // RegisterPushKey creates a push key registration transaction and returns the hash.
 func RegisterPushKey(
 	req *types.RegisterPushKeyBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.RegisterPushKey(req)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.PushKey().Register(req)
 		if err != nil {
 			return err
 		}
@@ -120,7 +120,7 @@ func RegisterPushKey(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.RegisterPushKey(req)
+		resp, err := c.PushKey().Register(req)
 		if err != nil {
 			return err
 		}
@@ -134,17 +134,17 @@ func RegisterPushKey(
 // proposal to add contributors to a repo.
 type RepoContributorsAdder func(
 	req *types.AddRepoContribsBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // AddRepoContributors creates a proposal transaction to add contributors
 // to a repo and returns the hash.
 func AddRepoContributors(
 	req *types.AddRepoContribsBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.AddRepoContributors(req)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.Repo().AddContributors(req)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func AddRepoContributors(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.AddRepoContributors(req)
+		resp, err := c.Repo().AddContributors(req)
 		if err != nil {
 			return err
 		}
@@ -165,17 +165,17 @@ func AddRepoContributors(
 // CoinSender describes a function for sending coins
 type CoinSender func(
 	req *types.SendCoinBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // SendCoin creates a transaction to send coins from user account to
 // another user/repo account.
 func SendCoin(
 	req *types.SendCoinBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.SendCoin(req)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.User().Send(req)
 		if err != nil {
 			return err
 		}
@@ -183,7 +183,7 @@ func SendCoin(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.SendCoin(req)
+		resp, err := c.User().Send(req)
 		if err != nil {
 			return err
 		}
@@ -196,16 +196,16 @@ func SendCoin(
 // TxGetter describes a function for getting a finalized transaction
 type TxGetter func(
 	hash string,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (res *types.GetTxResponse, err error)
 
 // GetTransaction gets a finalized transaction by hash
 func GetTransaction(
 	hash string,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (res *types.GetTxResponse, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.GetTransaction(hash)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.Tx().Get(hash)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func GetTransaction(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.GetTransaction(hash)
+		resp, err := c.Tx().Get(hash)
 		if err != nil {
 			return err
 		}
@@ -226,16 +226,16 @@ func GetTransaction(
 // RepoProposalVoter describes a function for voting on a repo's proposal
 type RepoProposalVoter func(
 	req *types.RepoVoteBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // VoteRepoProposal creates a transaction to vote for/on a repo's proposal
 func VoteRepoProposal(
 	req *types.RepoVoteBody,
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
-	err = CallClients(rpcClient, remoteClients, func(c client.Client) error {
-		resp, err := c.VoteRepoProposal(req)
+	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
+		resp, err := c.Repo().VoteProposal(req)
 		if err != nil {
 			return err
 		}
@@ -243,7 +243,7 @@ func VoteRepoProposal(
 		return err
 
 	}, func(c remote.Client) error {
-		resp, err := c.VoteRepoProposal(req)
+		resp, err := c.Repo().VoteProposal(req)
 		if err != nil {
 			return err
 		}
@@ -264,9 +264,9 @@ func VoteRepoProposal(
 // of the clients. The rpcClient is not called when one of the remote API client
 // returns a nil error.
 func CallClients(
-	rpcClient client.Client,
+	rpcClient rpc.Client,
 	remoteClients []remote.Client,
-	rpcCaller func(client.Client) error,
+	rpcCaller func(rpc.Client) error,
 	remoteCaller func(remote.Client) error) error {
 
 	// Return error when no remote client and RPC client were provided
@@ -280,7 +280,7 @@ func CallClients(
 	}
 
 	var err error
-	var mainErrs = []error{}
+	var mainErrs []error
 
 	// If remote clients are provided, call each one with the remote API caller
 	// passing the client to the callback function.

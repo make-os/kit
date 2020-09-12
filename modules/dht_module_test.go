@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/modules"
@@ -54,7 +55,7 @@ var _ = Describe("DHTModule", func() {
 
 	Describe(".Store", func() {
 		It("should panic if unable to store data", func() {
-			mockDHT.EXPECT().Store(gomock.Any(), "key", []byte("val")).Return(fmt.Errorf("error"))
+			mockDHT.EXPECT().Store(gomock.Any(), dht.MakeKey("key"), []byte("val")).Return(fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Store("key", "val")
@@ -62,14 +63,14 @@ var _ = Describe("DHTModule", func() {
 		})
 
 		It("should not panic on success", func() {
-			mockDHT.EXPECT().Store(gomock.Any(), "key", []byte("val")).Return(nil)
+			mockDHT.EXPECT().Store(gomock.Any(), dht.MakeKey("key"), []byte("val")).Return(nil)
 			Expect(func() { m.Store("key", "val") }).ToNot(Panic())
 		})
 	})
 
 	Describe(".Lookup", func() {
 		It("should panic if unable to lookup key", func() {
-			mockDHT.EXPECT().Lookup(gomock.Any(), "key").Return(nil, fmt.Errorf("error"))
+			mockDHT.EXPECT().Lookup(gomock.Any(), dht.MakeKey("key")).Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "key"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Lookup("key")
@@ -77,7 +78,7 @@ var _ = Describe("DHTModule", func() {
 		})
 
 		It("should return data on success", func() {
-			mockDHT.EXPECT().Lookup(gomock.Any(), "key").Return([]byte("abc"), nil)
+			mockDHT.EXPECT().Lookup(gomock.Any(), dht.MakeKey("key")).Return([]byte("abc"), nil)
 			data := m.Lookup("key")
 			Expect(data).ToNot(BeEmpty())
 			Expect(data).To(Equal([]byte("abc")))

@@ -24,12 +24,12 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".SendTxPayload", func() {
+	Describe(".Send", func() {
 		It("should return ReqError when call failed", func() {
 			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return nil, 0, fmt.Errorf("error")
 			})
-			_, err := client.SendTxPayload(map[string]interface{}{})
+			_, err := client.Tx().Send(map[string]interface{}{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     client2.ErrCodeUnexpected,
@@ -43,20 +43,20 @@ var _ = Describe("Client", func() {
 			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return util.Map{"hash": "0x123"}, 0, nil
 			})
-			txInfo, err := client.SendTxPayload(map[string]interface{}{})
+			txInfo, err := client.Tx().Send(map[string]interface{}{})
 			Expect(err).To(BeNil())
 			Expect(txInfo.Hash).To(Equal("0x123"))
 		})
 	})
 
-	Describe(".GetTransaction()", func() {
+	Describe(".Get()", func() {
 		It("should return ReqError when call failed", func() {
 			client.SetCallFunc(func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				Expect(method).To(Equal("tx_get"))
 				Expect(params).To(Equal("0x123"))
 				return nil, 500, fmt.Errorf("error")
 			})
-			_, err := client.GetTransaction("0x123")
+			_, err := client.Tx().Get("0x123")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(&util.ReqError{
 				Code:     client2.ErrCodeUnexpected,
@@ -74,7 +74,7 @@ var _ = Describe("Client", func() {
 					"data":   map[string]interface{}{"value": "100.2"},
 				}, 0, nil
 			})
-			res, err := client.GetTransaction("0x123")
+			res, err := client.Tx().Get("0x123")
 			Expect(err).To(BeNil())
 			Expect(res.Status).To(Equal(modules.TxStatusInMempool))
 			Expect(res.Data).To(Equal(map[string]interface{}{"value": "100.2"}))

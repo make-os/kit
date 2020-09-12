@@ -7,7 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	req "github.com/imroc/req"
-	types "github.com/make-os/lobe/api/types"
+	client "github.com/make-os/lobe/api/remote/client"
 	reflect "reflect"
 )
 
@@ -64,207 +64,58 @@ func (mr *MockClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockClient)(nil).PostCall), endpoint, body)
 }
 
-// SendTxPayload mocks base method
-func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.HashResponse, error) {
+// PushKey mocks base method
+func (m *MockClient) PushKey() client.PushKey {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendTxPayload", data)
-	ret0, _ := ret[0].(*types.HashResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "PushKey")
+	ret0, _ := ret[0].(client.PushKey)
+	return ret0
 }
 
-// SendTxPayload indicates an expected call of SendTxPayload
-func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
+// PushKey indicates an expected call of PushKey
+func (mr *MockClientMockRecorder) PushKey() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTxPayload", reflect.TypeOf((*MockClient)(nil).SendTxPayload), data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKey", reflect.TypeOf((*MockClient)(nil).PushKey))
 }
 
-// GetTransaction mocks base method
-func (m *MockClient) GetTransaction(hash string) (*types.GetTxResponse, error) {
+// Repo mocks base method
+func (m *MockClient) Repo() client.Repo {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransaction", hash)
-	ret0, _ := ret[0].(*types.GetTxResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Repo")
+	ret0, _ := ret[0].(client.Repo)
+	return ret0
 }
 
-// GetTransaction indicates an expected call of GetTransaction
-func (mr *MockClientMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
+// Repo indicates an expected call of Repo
+func (mr *MockClientMockRecorder) Repo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockClient)(nil).GetTransaction), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Repo", reflect.TypeOf((*MockClient)(nil).Repo))
 }
 
-// GetAccountNonce mocks base method
-func (m *MockClient) GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+// Tx mocks base method
+func (m *MockClient) Tx() client.Tx {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{address}
-	for _, a := range blockHeight {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetAccountNonce", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Tx")
+	ret0, _ := ret[0].(client.Tx)
+	return ret0
 }
 
-// GetAccountNonce indicates an expected call of GetAccountNonce
-func (mr *MockClientMockRecorder) GetAccountNonce(address interface{}, blockHeight ...interface{}) *gomock.Call {
+// Tx indicates an expected call of Tx
+func (mr *MockClientMockRecorder) Tx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{address}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountNonce", reflect.TypeOf((*MockClient)(nil).GetAccountNonce), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tx", reflect.TypeOf((*MockClient)(nil).Tx))
 }
 
-// GetAccount mocks base method
-func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+// User mocks base method
+func (m *MockClient) User() client.User {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{address}
-	for _, a := range blockHeight {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetAccount", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "User")
+	ret0, _ := ret[0].(client.User)
+	return ret0
 }
 
-// GetAccount indicates an expected call of GetAccount
-func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ...interface{}) *gomock.Call {
+// User indicates an expected call of User
+func (mr *MockClientMockRecorder) User() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{address}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
-}
-
-// GetPushKeyOwnerNonce mocks base method
-func (m *MockClient) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{pushKeyID}
-	for _, a := range blockHeight {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetPushKeyOwnerNonce", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPushKeyOwnerNonce indicates an expected call of GetPushKeyOwnerNonce
-func (mr *MockClientMockRecorder) GetPushKeyOwnerNonce(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{pushKeyID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyOwnerNonce", reflect.TypeOf((*MockClient)(nil).GetPushKeyOwnerNonce), varargs...)
-}
-
-// GetPushKey mocks base method
-func (m *MockClient) GetPushKey(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{pushKeyID}
-	for _, a := range blockHeight {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetPushKey", varargs...)
-	ret0, _ := ret[0].(*types.GetPushKeyResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPushKey indicates an expected call of GetPushKey
-func (mr *MockClientMockRecorder) GetPushKey(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{pushKeyID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKey", reflect.TypeOf((*MockClient)(nil).GetPushKey), varargs...)
-}
-
-// RegisterPushKey mocks base method
-func (m *MockClient) RegisterPushKey(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPushKey", body)
-	ret0, _ := ret[0].(*types.RegisterPushKeyResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RegisterPushKey indicates an expected call of RegisterPushKey
-func (mr *MockClientMockRecorder) RegisterPushKey(body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPushKey", reflect.TypeOf((*MockClient)(nil).RegisterPushKey), body)
-}
-
-// CreateRepo mocks base method
-func (m *MockClient) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateRepo", body)
-	ret0, _ := ret[0].(*types.CreateRepoResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateRepo indicates an expected call of CreateRepo
-func (mr *MockClientMockRecorder) CreateRepo(body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepo", reflect.TypeOf((*MockClient)(nil).CreateRepo), body)
-}
-
-// GetRepo mocks base method
-func (m *MockClient) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{name}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetRepo", varargs...)
-	ret0, _ := ret[0].(*types.GetRepoResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRepo indicates an expected call of GetRepo
-func (mr *MockClientMockRecorder) GetRepo(name interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{name}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockClient)(nil).GetRepo), varargs...)
-}
-
-// AddRepoContributors mocks base method
-func (m *MockClient) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddRepoContributors", body)
-	ret0, _ := ret[0].(*types.HashResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddRepoContributors indicates an expected call of AddRepoContributors
-func (mr *MockClientMockRecorder) AddRepoContributors(body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRepoContributors", reflect.TypeOf((*MockClient)(nil).AddRepoContributors), body)
-}
-
-// VoteRepoProposal mocks base method
-func (m *MockClient) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VoteRepoProposal", body)
-	ret0, _ := ret[0].(*types.HashResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// VoteRepoProposal indicates an expected call of VoteRepoProposal
-func (mr *MockClientMockRecorder) VoteRepoProposal(body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VoteRepoProposal", reflect.TypeOf((*MockClient)(nil).VoteRepoProposal), body)
-}
-
-// SendCoin mocks base method
-func (m *MockClient) SendCoin(body *types.SendCoinBody) (*types.HashResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendCoin", body)
-	ret0, _ := ret[0].(*types.HashResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SendCoin indicates an expected call of SendCoin
-func (mr *MockClientMockRecorder) SendCoin(body interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoin", reflect.TypeOf((*MockClient)(nil).SendCoin), body)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockClient)(nil).User))
 }

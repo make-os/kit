@@ -108,7 +108,7 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient client.Client, 
 	// If nonce us unset, compute next nonce by using the RPC client to query
 	// the sender account only if keepers is unset.
 	if tx.GetNonce() == 0 && key != nil && keepers == nil && rpcClient != nil {
-		senderAcct, err := rpcClient.GetAccount(tx.GetFrom().String())
+		senderAcct, err := rpcClient.User().Get(tx.GetFrom().String())
 		if err != nil {
 			panic(err)
 		}

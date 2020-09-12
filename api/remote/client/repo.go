@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/make-os/lobe/api/remote"
 	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/state"
@@ -13,8 +12,13 @@ import (
 	"github.com/spf13/cast"
 )
 
-// CreateRepo creates transaction to create a new repository
-func (c *ClientV1) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
+// RepoAPI provides access to the repo-related remote APIs.
+type RepoAPI struct {
+	c *RemoteClient
+}
+
+// Create creates transaction to create a new repository
+func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -38,7 +42,7 @@ func (c *ClientV1) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResp
 		return nil, err
 	}
 
-	resp, err := c.post(remote.V1Path(constants.NamespaceRepo, types.MethodNameCreateRepo), tx.ToMap())
+	resp, err := c.c.post(V1Path(constants.NamespaceRepo, types.MethodNameCreateRepo), tx.ToMap())
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +51,8 @@ func (c *ClientV1) CreateRepo(body *types.CreateRepoBody) (*types.CreateRepoResp
 	return &result, resp.ToJSON(&result)
 }
 
-// VoteRepoProposal creates transaction to vote for/against a repository's proposal
-func (c *ClientV1) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+// VoteProposal creates transaction to vote for/against a repository's proposal
+func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -69,7 +73,7 @@ func (c *ClientV1) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashRespon
 		return nil, err
 	}
 
-	resp, err := c.post(remote.V1Path(constants.NamespaceRepo, types.MethodNameRepoPropVote), tx.ToMap())
+	resp, err := c.c.post(V1Path(constants.NamespaceRepo, types.MethodNameRepoPropVote), tx.ToMap())
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +82,15 @@ func (c *ClientV1) VoteRepoProposal(body *types.RepoVoteBody) (*types.HashRespon
 	return &result, resp.ToJSON(&result)
 }
 
-// GetRepo returns the repository corresponding to the given name
-func (c *ClientV1) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
+// Get returns the repository corresponding to the given name
+func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}
 	}
 
-	path := remote.V1Path(constants.NamespaceRepo, types.MethodNameGetRepo)
-	resp, err := c.get(path, M{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals})
+	path := V1Path(constants.NamespaceRepo, types.MethodNameGetRepo)
+	resp, err := c.c.get(path, M{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals})
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +103,8 @@ func (c *ClientV1) GetRepo(name string, opts ...*types.GetRepoOpts) (*types.GetR
 	return repo, nil
 }
 
-// AddRepoContributors creates transaction to create a add repo contributors
-func (c *ClientV1) AddRepoContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
+// AddContributors creates transaction to create a add repo contributors
+func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -130,7 +134,7 @@ func (c *ClientV1) AddRepoContributors(body *types.AddRepoContribsBody) (*types.
 		return nil, err
 	}
 
-	resp, err := c.post(remote.V1Path(constants.NamespaceRepo, types.MethodNameAddRepoContribs), tx.ToMap())
+	resp, err := c.c.post(V1Path(constants.NamespaceRepo, types.MethodNameAddRepoContribs), tx.ToMap())
 	if err != nil {
 		return nil, err
 	}
