@@ -69,7 +69,7 @@ var _ = Describe("Client", func() {
 
 	Describe(".Register()", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{
+			_, err := client.PushKey().Register(&types.BodyRegisterPushKey{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -96,7 +96,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{
+			_, err := client.PushKey().Register(&types.BodyRegisterPushKey{
 				Nonce:      100,
 				Fee:        1,
 				Scopes:     []string{"scope1"},
@@ -118,7 +118,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("pk_register"))
 				return util.Map{"address": "pk1abc", "hash": "0x123"}, 0, nil
 			}
-			resp, err := client.PushKey().Register(&types.RegisterPushKeyBody{
+			resp, err := client.PushKey().Register(&types.BodyRegisterPushKey{
 				Nonce:      100,
 				Fee:        1,
 				SigningKey: key,

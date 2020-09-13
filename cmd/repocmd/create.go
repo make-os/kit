@@ -115,7 +115,7 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.CreateRepoBody{
+	body := &types.BodyCreateRepo{
 		Name:       args.Name,
 		Nonce:      nonce,
 		Value:      args.Value,

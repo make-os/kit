@@ -415,7 +415,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.User().Send(&apitypes.SendCoinBody{
+		resp, err := m.AttachedClient.User().Send(&apitypes.BodySendCoin{
 			To:         tx.To,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),

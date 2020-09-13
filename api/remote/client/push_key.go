@@ -18,7 +18,7 @@ type PushKeyAPI struct {
 }
 
 // GetPushKeyOwnerNonce returns the nonce of the push key owner account
-func (a *PushKeyAPI) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+func (a *PushKeyAPI) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.ResultAccountNonce, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
@@ -30,13 +30,13 @@ func (a *PushKeyAPI) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*ty
 		return nil, err
 	}
 
-	var result types.GetAccountNonceResponse
+	var result types.ResultAccountNonce
 	return &result, resp.ToJSON(&result)
 }
 
 // Get finds a push key by its ID.
 // If blockHeight is specified, only the block at the given height is searched.
-func (a *PushKeyAPI) Get(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error) {
+func (a *PushKeyAPI) Get(pushKeyID string, blockHeight ...uint64) (*types.ResultPushKey, error) {
 
 	height := uint64(0)
 	if len(blockHeight) > 0 {
@@ -49,7 +49,7 @@ func (a *PushKeyAPI) Get(pushKeyID string, blockHeight ...uint64) (*types.GetPus
 		return nil, err
 	}
 
-	var pk = &types.GetPushKeyResponse{PushKey: state.BarePushKey()}
+	var pk = &types.ResultPushKey{PushKey: state.BarePushKey()}
 	if err = resp.ToJSON(pk.PushKey); err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (a *PushKeyAPI) Get(pushKeyID string, blockHeight ...uint64) (*types.GetPus
 }
 
 // Register creates a transaction to register a push key
-func (a *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+func (a *PushKeyAPI) Register(body *types.BodyRegisterPushKey) (*types.ResultRegisterPushKey, error) {
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
 	}
@@ -86,6 +86,6 @@ func (a *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.RegisterP
 		return nil, err
 	}
 
-	var result types.RegisterPushKeyResponse
+	var result types.ResultRegisterPushKey
 	return &result, resp.ToJSON(&result)
 }

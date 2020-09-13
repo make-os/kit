@@ -85,7 +85,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{})
+			_, err := client.PushKey().Register(&types.BodyRegisterPushKey{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -112,7 +112,7 @@ var _ = Describe("Account", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.PushKey().Register(&types.RegisterPushKeyBody{
+			resp, err := client.PushKey().Register(&types.BodyRegisterPushKey{
 				Nonce:      1,
 				Fee:        1,
 				Scopes:     []string{"ns/repo", "repo1"},
@@ -129,7 +129,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.PushKey().Register(&types.RegisterPushKeyBody{SigningKey: key})
+			_, err := client.PushKey().Register(&types.BodyRegisterPushKey{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})

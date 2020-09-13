@@ -98,7 +98,7 @@ var _ = Describe("CreateCmd", func() {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
@@ -123,7 +123,7 @@ var _ = Describe("CreateCmd", func() {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
@@ -149,7 +149,7 @@ var _ = Describe("CreateCmd", func() {
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.CreateRepoBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "0x123", nil
 			}
 			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {

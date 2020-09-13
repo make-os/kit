@@ -136,7 +136,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.PushKey().Register(&apitypes.RegisterPushKeyBody{
+		resp, err := m.AttachedClient.PushKey().Register(&apitypes.BodyRegisterPushKey{
 			PublicKey:  tx.PublicKey,
 			Scopes:     tx.Scopes,
 			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),

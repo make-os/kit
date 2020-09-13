@@ -111,7 +111,7 @@ var _ = Describe("SignCommit", func() {
 				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "", fmt.Errorf("error")
 			}
 			err := RegisterCmd(cfg, args)
@@ -131,7 +131,7 @@ var _ = Describe("SignCommit", func() {
 				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.PublicKey).To(Equal(key.PubKey().ToPublicKey()))
 				Expect(req.FeeCap).To(Equal(args.FeeCap))
 				Expect(req.Fee).To(Equal(args.Fee))
@@ -157,7 +157,7 @@ var _ = Describe("SignCommit", func() {
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.RegisterPushKeyBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "0x123", nil
 			}
 			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {

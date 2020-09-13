@@ -16,7 +16,7 @@ type UserAPI struct {
 }
 
 // Get gets an account corresponding to a given address
-func (u *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+func (u *UserAPI) Get(address string, blockHeight ...uint64) (*types.ResultAccount, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {
@@ -28,7 +28,7 @@ func (u *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountR
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	r := &types.GetAccountResponse{Account: state.BareAccount()}
+	r := &types.ResultAccount{Account: state.BareAccount()}
 	if err = r.Account.FromMap(resp); err != nil {
 		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
@@ -37,7 +37,7 @@ func (u *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountR
 }
 
 // Send sends coins from a user account to another account or repository
-func (u *UserAPI) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
+func (u *UserAPI) Send(body *types.BodySendCoin) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -63,7 +63,7 @@ func (u *UserAPI) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.HashResponse
+	var r types.ResultHash
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil

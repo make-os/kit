@@ -112,7 +112,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().Create(&apitypes.CreateRepoBody{
+		resp, err := m.AttachedClient.Repo().Create(&apitypes.BodyCreateRepo{
 			Name:       tx.Name,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
@@ -377,7 +377,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().AddContributors(&apitypes.AddRepoContribsBody{
+		resp, err := m.AttachedClient.Repo().AddContributors(&apitypes.BodyAddRepoContribs{
 			RepoName:      tx.RepoName,
 			ProposalID:    tx.ID,
 			PushKeys:      tx.PushKeys,

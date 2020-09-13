@@ -113,7 +113,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockPushKeyClient.EXPECT().Register(gomock.Any()).Return(&types.RegisterPushKeyResponse{}, nil)
+			mockPushKeyClient.EXPECT().Register(gomock.Any()).Return(&types.ResultRegisterPushKey{}, nil)
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			assert.NotPanics(GinkgoT(), func() {
@@ -317,7 +317,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockPushKeyClient.EXPECT().GetOwner(key.PushAddr().String(), uint64(1)).Return(&types.GetAccountResponse{}, nil)
+			mockPushKeyClient.EXPECT().GetOwner(key.PushAddr().String(), uint64(1)).Return(&types.ResultAccount{}, nil)
 			m.AttachedClient = mockClient
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccountOfOwner(key.PushAddr().String(), 1)

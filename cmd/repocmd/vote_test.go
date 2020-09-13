@@ -79,7 +79,7 @@ var _ = Describe("VoteCmd", func() {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.RepoVoteBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				Expect(req.RepoName).To(Equal(args.RepoName))
 				Expect(req.ProposalID).To(Equal(args.ProposalID))
 				Expect(req.Vote).To(Equal(args.Vote))
@@ -104,7 +104,7 @@ var _ = Describe("VoteCmd", func() {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.RepoVoteBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "0x123", nil
 			}
 			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
@@ -125,7 +125,7 @@ var _ = Describe("VoteCmd", func() {
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.RepoVoteBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "0x123", nil
 			}
 			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {

@@ -86,7 +86,7 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.SendCoinBody{
+	body := &types.BodySendCoin{
 		To:         identifier.Address(args.Recipient),
 		Nonce:      nonce,
 		Value:      args.Value,

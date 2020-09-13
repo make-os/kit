@@ -18,7 +18,7 @@ import (
 // connectToServer creates an RPC client to configured remote server.
 // It will test the connection by getting the RPC methods supported
 // by the server. Returns both client and RPC methods on success.
-func connectToServer(cfg *config.AppConfig) (client.Client, *apitypes.GetMethodResponse, error) {
+func connectToServer(cfg *config.AppConfig) (client.Client, *apitypes.ResultGetMethod, error) {
 	host, port, err := net.SplitHostPort(cfg.RPC.Address)
 	if err != nil {
 		return nil, nil, err

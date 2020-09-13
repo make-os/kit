@@ -76,7 +76,7 @@ var _ = Describe("TxModule", func() {
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
-			mockTxClient.EXPECT().Get("0x123").Return(&types2.GetTxResponse{}, nil)
+			mockTxClient.EXPECT().Get("0x123").Return(&types2.ResultTx{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("0x123")
 			})
@@ -188,7 +188,7 @@ var _ = Describe("TxModule", func() {
 			m.AttachedClient = mockClient
 
 			payload := map[string]interface{}{"type": 1}
-			mockTxClient.EXPECT().Send(payload).Return(&types2.HashResponse{}, nil)
+			mockTxClient.EXPECT().Send(payload).Return(&types2.ResultHash{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendPayload(payload)
 			})

@@ -32,7 +32,7 @@ var _ = Describe("TxCmd", func() {
 	Describe(".CreateCmd", func() {
 		It("should return error when unable to get transaction", func() {
 			args := &txcmd.GetArgs{Hash: "0x123"}
-			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.GetTxResponse, err error) {
+			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.ResultTx, err error) {
 				Expect(hash).To(Equal(args.Hash))
 				return nil, fmt.Errorf("error")
 			}
@@ -43,7 +43,7 @@ var _ = Describe("TxCmd", func() {
 
 		It("should return error='unknown transaction' when error is ReqError and has http status=404", func() {
 			args := &txcmd.GetArgs{Hash: "0x123"}
-			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.GetTxResponse, err error) {
+			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.ResultTx, err error) {
 				Expect(hash).To(Equal(args.Hash))
 				reqErr := util.ReqErr(404, "not_found", "", "not found")
 				return nil, errors.Wrap(reqErr, "error")
@@ -55,9 +55,9 @@ var _ = Describe("TxCmd", func() {
 
 		It("should return no error on success", func() {
 			args := &txcmd.GetArgs{Hash: "0x123", Stdout: ioutil.Discard}
-			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.GetTxResponse, err error) {
+			args.GetTransaction = func(hash string, rpcClient client.Client, remoteClients []restclient.Client) (res *types.ResultTx, err error) {
 				Expect(hash).To(Equal(args.Hash))
-				return &types.GetTxResponse{
+				return &types.ResultTx{
 					Data:   map[string]interface{}{"value": "10.2"},
 					Status: modules.TxStatusInBlock,
 				}, nil

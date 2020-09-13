@@ -24,7 +24,7 @@ func GetNextNonceOfPushKeyOwner(
 	remoteClients []remote.Client) (nextNonce string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
 		var err error
-		var acct *types.GetAccountResponse
+		var acct *types.ResultAccount
 		acct, err = c.PushKey().GetOwner(pkID)
 		if acct != nil {
 			nextNonce = fmt.Sprintf("%d", acct.Nonce+1)
@@ -33,7 +33,7 @@ func GetNextNonceOfPushKeyOwner(
 
 	}, func(c remote.Client) error {
 		var err error
-		var resp *types.GetAccountNonceResponse
+		var resp *types.ResultAccountNonce
 		resp, err = c.PushKey().GetOwnerNonce(pkID)
 		if resp != nil {
 			curNonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)
@@ -51,7 +51,7 @@ func GetNextNonceOfAccount(
 	remoteClients []remote.Client) (nextNonce string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
 		var err error
-		var acct *types.GetAccountResponse
+		var acct *types.ResultAccount
 		acct, err = c.User().Get(address)
 		if acct != nil {
 			nextNonce = fmt.Sprintf("%d", acct.Nonce+1)
@@ -60,7 +60,7 @@ func GetNextNonceOfAccount(
 
 	}, func(c remote.Client) error {
 		var err error
-		var resp *types.GetAccountResponse
+		var resp *types.ResultAccount
 		resp, err = c.User().Get(address)
 		if resp != nil {
 			nextNonce = fmt.Sprintf("%d", resp.Nonce.UInt64()+1)
@@ -72,13 +72,13 @@ func GetNextNonceOfAccount(
 
 // RepoCreator describes a function for creating a repo creating transaction.
 type RepoCreator func(
-	req *types.CreateRepoBody,
+	req *types.BodyCreateRepo,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // CreateRepo creates a repository creating transaction and returns the hash.
 func CreateRepo(
-	req *types.CreateRepoBody,
+	req *types.BodyCreateRepo,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
@@ -102,13 +102,13 @@ func CreateRepo(
 
 // RepoCreator describes a function for creating a repo creating transaction.
 type PushKeyRegister func(
-	req *types.RegisterPushKeyBody,
+	req *types.BodyRegisterPushKey,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // RegisterPushKey creates a push key registration transaction and returns the hash.
 func RegisterPushKey(
-	req *types.RegisterPushKeyBody,
+	req *types.BodyRegisterPushKey,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
@@ -133,14 +133,14 @@ func RegisterPushKey(
 // RepoContributorsAdder describes a function for creating a
 // proposal to add contributors to a repo.
 type RepoContributorsAdder func(
-	req *types.AddRepoContribsBody,
+	req *types.BodyAddRepoContribs,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // AddRepoContributors creates a proposal transaction to add contributors
 // to a repo and returns the hash.
 func AddRepoContributors(
-	req *types.AddRepoContribsBody,
+	req *types.BodyAddRepoContribs,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
@@ -164,14 +164,14 @@ func AddRepoContributors(
 
 // CoinSender describes a function for sending coins
 type CoinSender func(
-	req *types.SendCoinBody,
+	req *types.BodySendCoin,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // SendCoin creates a transaction to send coins from user account to
 // another user/repo account.
 func SendCoin(
-	req *types.SendCoinBody,
+	req *types.BodySendCoin,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
@@ -197,13 +197,13 @@ func SendCoin(
 type TxGetter func(
 	hash string,
 	rpcClient rpc.Client,
-	remoteClients []remote.Client) (res *types.GetTxResponse, err error)
+	remoteClients []remote.Client) (res *types.ResultTx, err error)
 
 // GetTransaction gets a finalized transaction by hash
 func GetTransaction(
 	hash string,
 	rpcClient rpc.Client,
-	remoteClients []remote.Client) (res *types.GetTxResponse, err error) {
+	remoteClients []remote.Client) (res *types.ResultTx, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {
 		resp, err := c.Tx().Get(hash)
 		if err != nil {
@@ -225,13 +225,13 @@ func GetTransaction(
 
 // RepoProposalVoter describes a function for voting on a repo's proposal
 type RepoProposalVoter func(
-	req *types.RepoVoteBody,
+	req *types.BodyRepoVote,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error)
 
 // VoteRepoProposal creates a transaction to vote for/on a repo's proposal
 func VoteRepoProposal(
-	req *types.RepoVoteBody,
+	req *types.BodyRepoVote,
 	rpcClient rpc.Client,
 	remoteClients []remote.Client) (hash string, err error) {
 	err = CallClients(rpcClient, remoteClients, func(c rpc.Client) error {

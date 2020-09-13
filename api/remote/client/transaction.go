@@ -14,7 +14,7 @@ type TxAPI struct {
 }
 
 // Send sends a signed transaction to the mempool
-func (c *TxAPI) Send(data map[string]interface{}) (*types.HashResponse, error) {
+func (c *TxAPI) Send(data map[string]interface{}) (*types.ResultHash, error) {
 	resp, err := c.c.post(V1Path(constants.NamespaceTx, types.MethodNameSendPayload), data)
 	if err != nil {
 		return nil, err
@@ -24,12 +24,12 @@ func (c *TxAPI) Send(data map[string]interface{}) (*types.HashResponse, error) {
 		return nil, fmt.Errorf(resp.String())
 	}
 
-	var result types.HashResponse
+	var result types.ResultHash
 	return &result, resp.ToJSON(&result)
 }
 
 // Get gets a transaction by hash
-func (c *TxAPI) Get(hash string) (*types.GetTxResponse, error) {
+func (c *TxAPI) Get(hash string) (*types.ResultTx, error) {
 
 	path := V1Path(constants.NamespaceTx, types.MethodNameGetTx)
 	resp, err := c.c.get(path, M{"hash": hash})
@@ -37,7 +37,7 @@ func (c *TxAPI) Get(hash string) (*types.GetTxResponse, error) {
 		return nil, err
 	}
 
-	var res types.GetTxResponse
+	var res types.ResultTx
 	if err = resp.ToJSON(&res); err != nil {
 		return nil, err
 	}

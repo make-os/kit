@@ -129,7 +129,7 @@ var _ = Describe("Common", func() {
 
 			key := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
-			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&types.GetAccountResponse{
+			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&types.ResultAccount{
 				Account: &state.Account{Nonce: 1},
 			}, nil)
 

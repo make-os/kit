@@ -18,7 +18,7 @@ type RepoAPI struct {
 }
 
 // Create creates transaction to create a new repository
-func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
+func (c *RepoAPI) Create(body *types.BodyCreateRepo) (*types.ResultCreateRepo, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -47,12 +47,12 @@ func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse,
 		return nil, err
 	}
 
-	var result types.CreateRepoResponse
+	var result types.ResultCreateRepo
 	return &result, resp.ToJSON(&result)
 }
 
 // VoteProposal creates transaction to vote for/against a repository's proposal
-func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+func (c *RepoAPI) VoteProposal(body *types.BodyRepoVote) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -78,12 +78,12 @@ func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, e
 		return nil, err
 	}
 
-	var result types.HashResponse
+	var result types.ResultHash
 	return &result, resp.ToJSON(&result)
 }
 
 // Get returns the repository corresponding to the given name
-func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
+func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.ResultRepository, error) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}
@@ -95,7 +95,7 @@ func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoRe
 		return nil, err
 	}
 
-	var repo = &types.GetRepoResponse{Repository: state.BareRepository()}
+	var repo = &types.ResultRepository{Repository: state.BareRepository()}
 	if err = resp.ToJSON(repo.Repository); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoRe
 }
 
 // AddContributors creates transaction to create a add repo contributors
-func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
+func (c *RepoAPI) AddContributors(body *types.BodyAddRepoContribs) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -139,6 +139,6 @@ func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashR
 		return nil, err
 	}
 
-	var result types.HashResponse
+	var result types.ResultHash
 	return &result, resp.ToJSON(&result)
 }

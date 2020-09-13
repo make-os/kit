@@ -28,7 +28,7 @@ var _ = Describe("RepoClient", func() {
 
 	Describe(".Create", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.Repo().Create(&types.CreateRepoBody{
+			_, err := client.Repo().Create(&types.BodyCreateRepo{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -55,7 +55,7 @@ var _ = Describe("RepoClient", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.Repo().Create(&types.CreateRepoBody{
+			_, err := client.Repo().Create(&types.BodyCreateRepo{
 				Name:       "repo1",
 				Nonce:      100,
 				Value:      10,
@@ -77,7 +77,7 @@ var _ = Describe("RepoClient", func() {
 				Expect(method).To(Equal("repo_create"))
 				return util.Map{"address": "r/repo1", "hash": "0x123"}, 0, nil
 			}
-			resp, err := client.Repo().Create(&types.CreateRepoBody{
+			resp, err := client.Repo().Create(&types.BodyCreateRepo{
 				Name:       "repo1",
 				Nonce:      100,
 				Value:      10,
@@ -137,7 +137,7 @@ var _ = Describe("RepoClient", func() {
 
 	Describe(".AddContributors", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{
+			_, err := client.Repo().AddContributors(&types.BodyAddRepoContribs{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -170,7 +170,7 @@ var _ = Describe("RepoClient", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.Repo().AddContributors(&types.AddRepoContribsBody{
+			_, err := client.Repo().AddContributors(&types.BodyAddRepoContribs{
 				RepoName:      "repo1",
 				ProposalID:    "1",
 				PushKeys:      []string{"pk1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"},
@@ -197,7 +197,7 @@ var _ = Describe("RepoClient", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return util.Map{"address": "r/repo1", "hash": "0x123"}, 0, nil
 			}
-			resp, err := client.Repo().AddContributors(&types.AddRepoContribsBody{SigningKey: key})
+			resp, err := client.Repo().AddContributors(&types.BodyAddRepoContribs{SigningKey: key})
 			Expect(err).To(BeNil())
 			Expect(resp.Hash).To(Equal("0x123"))
 		})
@@ -205,7 +205,7 @@ var _ = Describe("RepoClient", func() {
 
 	Describe(".VoteProposal", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{
+			_, err := client.Repo().VoteProposal(&types.BodyRepoVote{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -232,7 +232,7 @@ var _ = Describe("RepoClient", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.Repo().VoteProposal(&types.RepoVoteBody{
+			_, err := client.Repo().VoteProposal(&types.BodyRepoVote{
 				RepoName:   "repo1",
 				ProposalID: "1",
 				Nonce:      1,
@@ -252,7 +252,7 @@ var _ = Describe("RepoClient", func() {
 			client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 				return util.Map{"hash": "0x123"}, 0, nil
 			}
-			resp, err := client.Repo().VoteProposal(&types.RepoVoteBody{SigningKey: key})
+			resp, err := client.Repo().VoteProposal(&types.BodyRepoVote{SigningKey: key})
 			Expect(err).To(BeNil())
 			Expect(resp.Hash).To(Equal("0x123"))
 		})

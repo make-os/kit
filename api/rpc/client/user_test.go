@@ -69,7 +69,7 @@ var _ = Describe("Client", func() {
 
 	Describe(".Send()", func() {
 		It("should return ReqError when signing key is not provided", func() {
-			_, err := client.User().Send(&types.SendCoinBody{
+			_, err := client.User().Send(&types.BodySendCoin{
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
@@ -95,7 +95,7 @@ var _ = Describe("Client", func() {
 				))
 				return nil, 0, fmt.Errorf("error")
 			}
-			_, err := client.User().Send(&types.SendCoinBody{
+			_, err := client.User().Send(&types.BodySendCoin{
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
@@ -116,7 +116,7 @@ var _ = Describe("Client", func() {
 				Expect(method).To(Equal("user_send"))
 				return util.Map{"hash": "0x123"}, 0, nil
 			}
-			resp, err := client.User().Send(&types.SendCoinBody{
+			resp, err := client.User().Send(&types.BodySendCoin{
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,

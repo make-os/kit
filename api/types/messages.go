@@ -5,42 +5,48 @@ import (
 	"github.com/make-os/lobe/rpc"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util/identifier"
+	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-// HashResponse contains the hash of a transaction request
-type HashResponse struct {
+// ResultHash contains the hash of a transaction request
+type ResultHash struct {
 	Hash string `json:"hash"`
 }
 
-// GetTxResponse contains the response of a request to get a transaction
-type GetTxResponse struct {
+// ResultTx contains the response of a request to get a transaction
+type ResultTx struct {
 	Data   map[string]interface{} `json:"data"`
 	Status string                 `json:"status"`
 }
 
-// GetAccountNonceResponse is the response of a request for an account's nonce.
-type GetAccountNonceResponse struct {
+// ResultAccountNonce is the response of a request for an account's nonce.
+type ResultAccountNonce struct {
 	Nonce string `json:"nonce"`
 }
 
-// GetAccountResponse is the response of a request for an account.
-type GetAccountResponse struct {
+// ResultAccount is the response of a request for an account.
+type ResultAccount struct {
 	*state.Account `json:",flatten"`
 }
 
-// GetAccountResponse is the response of a request for a push key.
-type GetPushKeyResponse struct {
+// ResultBlock is the response of a request for block.
+type ResultBlock struct {
+	*core_types.ResultBlock
+}
+
+// ResultPushKey is the response of a request for a push key.
+type ResultPushKey struct {
 	*state.PushKey `json:",flatten"`
 }
 
-// CreateRepoResponse is the response of a request to create a repository
-type CreateRepoResponse struct {
+// ResultCreateRepo is the response of a request to create a repository
+type ResultCreateRepo struct {
 	Address string `json:"address"`
 	Hash    string `json:"hash"`
 }
 
-// CreateRepoBody contains arguments for creating a repository
-type CreateRepoBody struct {
+// BodyCreateRepo contains arguments for creating a repository
+type BodyCreateRepo struct {
 	Name       string
 	Nonce      uint64
 	Value      float64
@@ -49,8 +55,8 @@ type CreateRepoBody struct {
 	SigningKey *crypto.Key
 }
 
-// GetRepoResponse is the response of a request to get a repository
-type GetRepoResponse struct {
+// ResultRepository is the response of a request to get a repository
+type ResultRepository struct {
 	*state.Repository `json:",flatten"`
 }
 
@@ -60,8 +66,8 @@ type GetRepoOpts struct {
 	NoProposals bool   `json:"noProposals"`
 }
 
-// RepoVoteBody contains arguments for voting on a proposal
-type RepoVoteBody struct {
+// BodyRepoVote contains arguments for voting on a proposal
+type BodyRepoVote struct {
 	RepoName   string
 	ProposalID string
 	Vote       int
@@ -70,8 +76,8 @@ type RepoVoteBody struct {
 	SigningKey *crypto.Key
 }
 
-// RegisterPushKeyBody contains arguments for registering a push key
-type RegisterPushKeyBody struct {
+// BodyRegisterPushKey contains arguments for registering a push key
+type BodyRegisterPushKey struct {
 	Nonce      uint64
 	Fee        float64
 	PublicKey  crypto.PublicKey
@@ -80,14 +86,14 @@ type RegisterPushKeyBody struct {
 	SigningKey *crypto.Key
 }
 
-// RegisterPushKeyResponse is the response of a request to register a push key
-type RegisterPushKeyResponse struct {
+// ResultRegisterPushKey is the response of a request to register a push key
+type ResultRegisterPushKey struct {
 	Address string `json:"address"`
 	Hash    string `json:"hash"`
 }
 
-// AddRepoContribsBody contains arguments for adding repo contributors
-type AddRepoContribsBody struct {
+// BodyAddRepoContribs contains arguments for adding repo contributors
+type BodyAddRepoContribs struct {
 	RepoName      string
 	ProposalID    string
 	PushKeys      []string
@@ -102,13 +108,13 @@ type AddRepoContribsBody struct {
 	SigningKey    *crypto.Key
 }
 
-// GetMethodResponse is the response for RPC server methods
-type GetMethodResponse struct {
+// ResultGetMethod is the response for RPC server methods
+type ResultGetMethod struct {
 	Methods []rpc.MethodInfo
 }
 
-// SendCoinBody contains arguments for sending coins
-type SendCoinBody struct {
+// BodySendCoin contains arguments for sending coins
+type BodySendCoin struct {
 	Nonce      uint64
 	Value      float64
 	Fee        float64

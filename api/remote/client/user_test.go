@@ -90,7 +90,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, nil
 			}
-			_, err := client.User().Send(&types.SendCoinBody{})
+			_, err := client.User().Send(&types.BodySendCoin{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("signing key is required"))
 		})
@@ -117,7 +117,7 @@ var _ = Describe("Account", func() {
 				resp, _ = req.Get(ts.URL)
 				return resp, nil
 			}
-			resp, err := client.User().Send(&types.SendCoinBody{
+			resp, err := client.User().Send(&types.BodySendCoin{
 				Nonce:      1,
 				Value:      100,
 				Fee:        1,
@@ -132,7 +132,7 @@ var _ = Describe("Account", func() {
 			client.post = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
 				return nil, fmt.Errorf("error")
 			}
-			_, err := client.User().Send(&types.SendCoinBody{SigningKey: key})
+			_, err := client.User().Send(&types.BodySendCoin{SigningKey: key})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})

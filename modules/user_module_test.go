@@ -276,7 +276,7 @@ var _ = Describe("UserModule", func() {
 			mockUserClient := mocks3.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
-			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&apitypes.GetAccountResponse{}, nil)
+			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&apitypes.ResultAccount{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccount("os1abc", 1)
 			})
@@ -503,7 +503,7 @@ var _ = Describe("UserModule", func() {
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"value": "10"}
 
-			mockUserClient.EXPECT().Send(gomock.Any()).Return(&apitypes.HashResponse{}, nil)
+			mockUserClient.EXPECT().Send(gomock.Any()).Return(&apitypes.ResultHash{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendCoin(params)
 			})

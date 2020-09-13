@@ -115,7 +115,7 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.RegisterPushKeyBody{
+	body := &types.BodyRegisterPushKey{
 		PublicKey:  pubKeyToReg,
 		Nonce:      nonce,
 		Fee:        args.Fee,

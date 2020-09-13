@@ -84,7 +84,7 @@ func VoteCmd(cfg *config.AppConfig, args *VoteArgs) error {
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.RepoVoteBody{
+	body := &types.BodyRepoVote{
 		RepoName:   args.RepoName,
 		ProposalID: args.ProposalID,
 		Vote:       args.Vote,

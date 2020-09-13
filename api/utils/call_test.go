@@ -76,7 +76,7 @@ var _ = Describe("ClientUtils", func() {
 
 		It("should return no err when two remote API clients were provided and one succeeded", func() {
 			remotePkClient.EXPECT().GetOwnerNonce("pk-id").Return(nil, fmt.Errorf("error"))
-			remotePkClient.EXPECT().GetOwnerNonce("pk-id").Return(&types.GetAccountNonceResponse{Nonce: "10"}, nil)
+			remotePkClient.EXPECT().GetOwnerNonce("pk-id").Return(&types.ResultAccountNonce{Nonce: "10"}, nil)
 			nextNonce, err := GetNextNonceOfPushKeyOwner("pk-id", nil, []remote.Client{remClient2, remClient1})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))
@@ -99,7 +99,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			rpcPkClient.EXPECT().GetOwner("pk-id").Return(&types.GetAccountResponse{Account: &state.Account{Nonce: 10}}, nil)
+			rpcPkClient.EXPECT().GetOwner("pk-id").Return(&types.ResultAccount{Account: &state.Account{Nonce: 10}}, nil)
 			nextNonce, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))
@@ -139,14 +139,14 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only a remote API client was provided and it succeeded", func() {
-			remoteUserClient.EXPECT().Get("address1").Return(&types.GetAccountResponse{Account: &state.Account{Nonce: 10}}, nil)
+			remoteUserClient.EXPECT().Get("address1").Return(&types.ResultAccount{Account: &state.Account{Nonce: 10}}, nil)
 			nextNonce, err := GetNextNonceOfAccount("address1", nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			rpcUserClient.EXPECT().Get("address1").Return(&types.GetAccountResponse{Account: &state.Account{Nonce: 10}}, nil)
+			rpcUserClient.EXPECT().Get("address1").Return(&types.ResultAccount{Account: &state.Account{Nonce: 10}}, nil)
 			nextNonce, err := GetNextNonceOfAccount("address1", rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))
@@ -163,7 +163,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when two remote API clients were provided and both failed", func() {
-			args := &types.CreateRepoBody{Name: "repo1"}
+			args := &types.BodyCreateRepo{Name: "repo1"}
 			remoteRepoClient.EXPECT().Create(args).Return(nil, fmt.Errorf("error")).Times(2)
 			_, err := CreateRepo(args, nil, []remote.Client{remClient1, remClient2})
 			Expect(err).ToNot(BeNil())
@@ -171,7 +171,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when only one remote API and one rpc client were provided and both failed", func() {
-			args := &types.CreateRepoBody{Name: "repo1"}
+			args := &types.BodyCreateRepo{Name: "repo1"}
 			rpcRepoClient.EXPECT().Create(args).Return(nil, fmt.Errorf("error"))
 			remoteRepoClient.EXPECT().Create(args).Return(nil, fmt.Errorf("error"))
 			_, err := CreateRepo(args, rpcClient, []remote.Client{remClient1})
@@ -180,16 +180,16 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only a remote API client was provided and it succeeded", func() {
-			args := &types.CreateRepoBody{Name: "repo1"}
-			remoteRepoClient.EXPECT().Create(args).Return(&types.CreateRepoResponse{Hash: "0x123"}, nil)
+			args := &types.BodyCreateRepo{Name: "repo1"}
+			remoteRepoClient.EXPECT().Create(args).Return(&types.ResultCreateRepo{Hash: "0x123"}, nil)
 			hash, err := CreateRepo(args, nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			args := &types.CreateRepoBody{Name: "repo1"}
-			rpcRepoClient.EXPECT().Create(args).Return(&types.CreateRepoResponse{Hash: "0x123"}, nil)
+			args := &types.BodyCreateRepo{Name: "repo1"}
+			rpcRepoClient.EXPECT().Create(args).Return(&types.ResultCreateRepo{Hash: "0x123"}, nil)
 			hash, err := CreateRepo(args, rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
@@ -206,7 +206,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when two remote API clients were provided and both failed", func() {
-			args := &types.RepoVoteBody{RepoName: "repo1"}
+			args := &types.BodyRepoVote{RepoName: "repo1"}
 			remoteRepoClient.EXPECT().VoteProposal(args).Return(nil, fmt.Errorf("error")).Times(2)
 			_, err := VoteRepoProposal(args, nil, []remote.Client{remClient1, remClient2})
 			Expect(err).ToNot(BeNil())
@@ -214,7 +214,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when only one remote API and one rpc client were provided and both failed", func() {
-			args := &types.RepoVoteBody{RepoName: "repo1"}
+			args := &types.BodyRepoVote{RepoName: "repo1"}
 			rpcRepoClient.EXPECT().VoteProposal(args).Return(nil, fmt.Errorf("error"))
 			remoteRepoClient.EXPECT().VoteProposal(args).Return(nil, fmt.Errorf("error"))
 			_, err := VoteRepoProposal(args, rpcClient, []remote.Client{remClient1})
@@ -223,16 +223,16 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only a remote API client was provided and it succeeded", func() {
-			args := &types.RepoVoteBody{RepoName: "repo1"}
-			remoteRepoClient.EXPECT().VoteProposal(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodyRepoVote{RepoName: "repo1"}
+			remoteRepoClient.EXPECT().VoteProposal(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := VoteRepoProposal(args, nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			args := &types.RepoVoteBody{RepoName: "repo1"}
-			rpcRepoClient.EXPECT().VoteProposal(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodyRepoVote{RepoName: "repo1"}
+			rpcRepoClient.EXPECT().VoteProposal(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := VoteRepoProposal(args, rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
@@ -249,7 +249,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when two remote API clients were provided and both failed", func() {
-			args := &types.RegisterPushKeyBody{PublicKey: key.PubKey().ToPublicKey()}
+			args := &types.BodyRegisterPushKey{PublicKey: key.PubKey().ToPublicKey()}
 			remotePkClient.EXPECT().Register(args).Return(nil, fmt.Errorf("error")).Times(2)
 			_, err := RegisterPushKey(args, nil, []remote.Client{remClient2, remClient1})
 			Expect(err).ToNot(BeNil())
@@ -257,7 +257,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when only one remote API and one rpc client were provided and both failed", func() {
-			args := &types.RegisterPushKeyBody{PublicKey: key.PubKey().ToPublicKey()}
+			args := &types.BodyRegisterPushKey{PublicKey: key.PubKey().ToPublicKey()}
 			rpcPkClient.EXPECT().Register(args).Return(nil, fmt.Errorf("error"))
 			remotePkClient.EXPECT().Register(args).Return(nil, fmt.Errorf("error"))
 			_, err := RegisterPushKey(args, rpcClient, []remote.Client{remClient1})
@@ -266,16 +266,16 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only an remote API client was provided and it succeeded", func() {
-			args := &types.RegisterPushKeyBody{PublicKey: key.PubKey().ToPublicKey()}
-			remotePkClient.EXPECT().Register(args).Return(&types.RegisterPushKeyResponse{Hash: "0x123"}, nil)
+			args := &types.BodyRegisterPushKey{PublicKey: key.PubKey().ToPublicKey()}
+			remotePkClient.EXPECT().Register(args).Return(&types.ResultRegisterPushKey{Hash: "0x123"}, nil)
 			hash, err := RegisterPushKey(args, nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			args := &types.RegisterPushKeyBody{PublicKey: key.PubKey().ToPublicKey()}
-			rpcPkClient.EXPECT().Register(args).Return(&types.RegisterPushKeyResponse{Hash: "0x123"}, nil)
+			args := &types.BodyRegisterPushKey{PublicKey: key.PubKey().ToPublicKey()}
+			rpcPkClient.EXPECT().Register(args).Return(&types.ResultRegisterPushKey{Hash: "0x123"}, nil)
 			hash, err := RegisterPushKey(args, rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
@@ -292,7 +292,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when two remote API clients were provided and both failed", func() {
-			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			args := &types.BodyAddRepoContribs{RepoName: "repo1"}
 			remoteRepoClient.EXPECT().AddContributors(args).Return(nil, fmt.Errorf("error")).Times(2)
 			_, err := AddRepoContributors(args, nil, []remote.Client{remClient2, remClient1})
 			Expect(err).ToNot(BeNil())
@@ -300,7 +300,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when only one remote API and one rpc client were provided and both failed", func() {
-			args := &types.AddRepoContribsBody{RepoName: "repo1"}
+			args := &types.BodyAddRepoContribs{RepoName: "repo1"}
 			rpcRepoClient.EXPECT().AddContributors(args).Return(nil, fmt.Errorf("error"))
 			remoteRepoClient.EXPECT().AddContributors(args).Return(nil, fmt.Errorf("error"))
 			_, err := AddRepoContributors(args, rpcClient, []remote.Client{remClient1})
@@ -309,16 +309,16 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only an remote API client was provided and it succeeded", func() {
-			args := &types.AddRepoContribsBody{RepoName: "repo1"}
-			remoteRepoClient.EXPECT().AddContributors(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodyAddRepoContribs{RepoName: "repo1"}
+			remoteRepoClient.EXPECT().AddContributors(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := AddRepoContributors(args, nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			args := &types.AddRepoContribsBody{RepoName: "repo1"}
-			rpcRepoClient.EXPECT().AddContributors(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodyAddRepoContribs{RepoName: "repo1"}
+			rpcRepoClient.EXPECT().AddContributors(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := AddRepoContributors(args, rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
@@ -335,7 +335,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when two remote API clients were provided and both failed", func() {
-			args := &types.SendCoinBody{Value: 10.20}
+			args := &types.BodySendCoin{Value: 10.20}
 			remoteUserClient.EXPECT().Send(args).Return(nil, fmt.Errorf("error")).Times(2)
 			_, err := SendCoin(args, nil, []remote.Client{remClient2, remClient1})
 			Expect(err).ToNot(BeNil())
@@ -343,7 +343,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when only one remote API and one rpc client were provided and both failed", func() {
-			args := &types.SendCoinBody{Value: 10.20}
+			args := &types.BodySendCoin{Value: 10.20}
 			rpcUserClient.EXPECT().Send(args).Return(nil, fmt.Errorf("error"))
 			remoteUserClient.EXPECT().Send(args).Return(nil, fmt.Errorf("error"))
 			_, err := SendCoin(args, rpcClient, []remote.Client{remClient1})
@@ -352,16 +352,16 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return no err when only a remote client was provided and it succeeded", func() {
-			args := &types.SendCoinBody{Value: 10.20}
-			remoteUserClient.EXPECT().Send(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodySendCoin{Value: 10.20}
+			remoteUserClient.EXPECT().Send(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := SendCoin(args, nil, []remote.Client{remClient1})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
 		})
 
 		It("should return no err when only a rpc client was provided and it succeeded", func() {
-			args := &types.SendCoinBody{Value: 10.20}
-			rpcUserClient.EXPECT().Send(args).Return(&types.HashResponse{Hash: "0x123"}, nil)
+			args := &types.BodySendCoin{Value: 10.20}
+			rpcUserClient.EXPECT().Send(args).Return(&types.ResultHash{Hash: "0x123"}, nil)
 			hash, err := SendCoin(args, rpcClient, []remote.Client{})
 			Expect(err).To(BeNil())
 			Expect(hash).To(Equal("0x123"))
@@ -396,7 +396,7 @@ var _ = Describe("ClientUtils", func() {
 
 		It("should return no err when only a remote API client was provided and it succeeded", func() {
 			hash := "0x123"
-			expectedRes := &types.GetTxResponse{
+			expectedRes := &types.ResultTx{
 				Data:   map[string]interface{}{"type": "1", "value": "10.2"},
 				Status: modules.TxStatusInBlock,
 			}
@@ -408,7 +408,7 @@ var _ = Describe("ClientUtils", func() {
 
 		It("should return no err when only a rpc API client was provided and it succeeded", func() {
 			hash := "0x123"
-			expectedRes := &types.GetTxResponse{
+			expectedRes := &types.ResultTx{
 				Data:   map[string]interface{}{"type": "1", "value": "10.2"},
 				Status: modules.TxStatusInBlock,
 			}

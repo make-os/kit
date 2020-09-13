@@ -16,7 +16,7 @@ type RepoAPI struct {
 }
 
 // Create creates a new repository
-func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
+func (c *RepoAPI) Create(body *types.BodyCreateRepo) (*types.ResultCreateRepo, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -46,14 +46,14 @@ func (c *RepoAPI) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse,
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.CreateRepoResponse
+	var r types.ResultCreateRepo
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil
 }
 
 // Get finds and returns a repository
-func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
+func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.ResultRepository, error) {
 
 	if len(opts) == 0 {
 		opts = []*types.GetRepoOpts{{}}
@@ -65,7 +65,7 @@ func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoRe
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r = types.GetRepoResponse{Repository: state.BareRepository()}
+	var r = types.ResultRepository{Repository: state.BareRepository()}
 	if err := util.DecodeMap(resp, r.Repository); err != nil {
 		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
@@ -74,7 +74,7 @@ func (c *RepoAPI) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoRe
 }
 
 // AddContributors creates transaction to create a add repo contributors
-func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
+func (c *RepoAPI) AddContributors(body *types.BodyAddRepoContribs) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -109,14 +109,14 @@ func (c *RepoAPI) AddContributors(body *types.AddRepoContribsBody) (*types.HashR
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.HashResponse
+	var r types.ResultHash
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil
 }
 
 // VoteProposal creates transaction to vote for/against a repository's proposal
-func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+func (c *RepoAPI) VoteProposal(body *types.BodyRepoVote) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -142,7 +142,7 @@ func (c *RepoAPI) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, e
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.HashResponse
+	var r types.ResultHash
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil

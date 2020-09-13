@@ -78,7 +78,7 @@ var _ = Describe("UserCmd", func() {
 			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 				return "10", nil
 			}
-			args.SendCoin = func(req *types.SendCoinBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 				return "", fmt.Errorf("error")
 			}
 			err := SendCmd(cfg, args)
@@ -99,7 +99,7 @@ var _ = Describe("UserCmd", func() {
 				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 					return "10", nil
 				}
-				args.SendCoin = func(req *types.SendCoinBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 					return "0x123", nil
 				}
 				err = SendCmd(cfg, args)
@@ -123,7 +123,7 @@ var _ = Describe("UserCmd", func() {
 				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
 					return "10", nil
 				}
-				args.SendCoin = func(req *types.SendCoinBody, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
 					return "0x123", nil
 				}
 				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {

@@ -48,7 +48,7 @@ func (c *ChainAPI) APIs() rpc.APISet {
 		{
 			Name:        "getBlock",
 			Namespace:   constants.NamespaceChain,
-			Description: "Get full block data at the given height",
+			Description: "Get a block at a given chain height",
 			Func:        c.getBlock,
 		},
 		{

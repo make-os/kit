@@ -111,7 +111,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 		args.PropID = cast.ToString(time.Now().Unix())
 	}
 
-	body := &types.AddRepoContribsBody{
+	body := &types.BodyAddRepoContribs{
 		RepoName:      args.Name,
 		ProposalID:    args.PropID,
 		PushKeys:      args.PushKeys,

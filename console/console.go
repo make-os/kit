@@ -149,7 +149,7 @@ func (c *Console) OnStop(f func()) {
 // connectToNode creates an RPC client to configured remote server.
 // It will test the connection by getting the RPC methods supported
 // by the server. Returns both client and RPC methods on success.
-func (c *Console) connectToNote() (client.Client, *apitypes.GetMethodResponse, error) {
+func (c *Console) connectToNote() (client.Client, *apitypes.ResultGetMethod, error) {
 	host, port, err := net.SplitHostPort(c.cfg.RPC.Address)
 	if err != nil {
 		return nil, nil, err

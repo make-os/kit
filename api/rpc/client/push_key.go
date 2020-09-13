@@ -16,7 +16,7 @@ type PushKeyAPI struct {
 }
 
 // GetOwner gets the account that owns the given push key
-func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*types.ResultAccount, error) {
 
 	var height uint64
 	if len(blockHeight) > 0 {
@@ -28,7 +28,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*types.GetAc
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	r := &types.GetAccountResponse{Account: state.BareAccount()}
+	r := &types.ResultAccount{Account: state.BareAccount()}
 	if err = r.Account.FromMap(out); err != nil {
 		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
@@ -37,7 +37,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*types.GetAc
 }
 
 // Register registers a public key as a push key
-func (pk *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+func (pk *PushKeyAPI) Register(body *types.BodyRegisterPushKey) (*types.ResultRegisterPushKey, error) {
 
 	if body.SigningKey == nil {
 		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
@@ -67,7 +67,7 @@ func (pk *PushKeyAPI) Register(body *types.RegisterPushKeyBody) (*types.Register
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r types.RegisterPushKeyResponse
+	var r types.ResultRegisterPushKey
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil

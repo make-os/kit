@@ -34,14 +34,14 @@ func (m *MockPushKey) EXPECT() *MockPushKeyMockRecorder {
 }
 
 // GetOwnerNonce mocks base method
-func (m *MockPushKey) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+func (m *MockPushKey) GetOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.ResultAccountNonce, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetOwnerNonce", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
+	ret0, _ := ret[0].(*types.ResultAccountNonce)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -54,14 +54,14 @@ func (mr *MockPushKeyMockRecorder) GetOwnerNonce(pushKeyID interface{}, blockHei
 }
 
 // Get mocks base method
-func (m *MockPushKey) Get(pushKeyID string, blockHeight ...uint64) (*types.GetPushKeyResponse, error) {
+func (m *MockPushKey) Get(pushKeyID string, blockHeight ...uint64) (*types.ResultPushKey, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(*types.GetPushKeyResponse)
+	ret0, _ := ret[0].(*types.ResultPushKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,10 +74,10 @@ func (mr *MockPushKeyMockRecorder) Get(pushKeyID interface{}, blockHeight ...int
 }
 
 // Register mocks base method
-func (m *MockPushKey) Register(body *types.RegisterPushKeyBody) (*types.RegisterPushKeyResponse, error) {
+func (m *MockPushKey) Register(body *types.BodyRegisterPushKey) (*types.ResultRegisterPushKey, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", body)
-	ret0, _ := ret[0].(*types.RegisterPushKeyResponse)
+	ret0, _ := ret[0].(*types.ResultRegisterPushKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -112,10 +112,10 @@ func (m *MockRepo) EXPECT() *MockRepoMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockRepo) Create(body *types.CreateRepoBody) (*types.CreateRepoResponse, error) {
+func (m *MockRepo) Create(body *types.BodyCreateRepo) (*types.ResultCreateRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", body)
-	ret0, _ := ret[0].(*types.CreateRepoResponse)
+	ret0, _ := ret[0].(*types.ResultCreateRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -127,10 +127,10 @@ func (mr *MockRepoMockRecorder) Create(body interface{}) *gomock.Call {
 }
 
 // VoteProposal mocks base method
-func (m *MockRepo) VoteProposal(body *types.RepoVoteBody) (*types.HashResponse, error) {
+func (m *MockRepo) VoteProposal(body *types.BodyRepoVote) (*types.ResultHash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VoteProposal", body)
-	ret0, _ := ret[0].(*types.HashResponse)
+	ret0, _ := ret[0].(*types.ResultHash)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -142,14 +142,14 @@ func (mr *MockRepoMockRecorder) VoteProposal(body interface{}) *gomock.Call {
 }
 
 // Get mocks base method
-func (m *MockRepo) Get(name string, opts ...*types.GetRepoOpts) (*types.GetRepoResponse, error) {
+func (m *MockRepo) Get(name string, opts ...*types.GetRepoOpts) (*types.ResultRepository, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(*types.GetRepoResponse)
+	ret0, _ := ret[0].(*types.ResultRepository)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -162,10 +162,10 @@ func (mr *MockRepoMockRecorder) Get(name interface{}, opts ...interface{}) *gomo
 }
 
 // AddContributors mocks base method
-func (m *MockRepo) AddContributors(body *types.AddRepoContribsBody) (*types.HashResponse, error) {
+func (m *MockRepo) AddContributors(body *types.BodyAddRepoContribs) (*types.ResultHash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddContributors", body)
-	ret0, _ := ret[0].(*types.HashResponse)
+	ret0, _ := ret[0].(*types.ResultHash)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -200,10 +200,10 @@ func (m *MockTx) EXPECT() *MockTxMockRecorder {
 }
 
 // Send mocks base method
-func (m *MockTx) Send(data map[string]interface{}) (*types.HashResponse, error) {
+func (m *MockTx) Send(data map[string]interface{}) (*types.ResultHash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", data)
-	ret0, _ := ret[0].(*types.HashResponse)
+	ret0, _ := ret[0].(*types.ResultHash)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -215,10 +215,10 @@ func (mr *MockTxMockRecorder) Send(data interface{}) *gomock.Call {
 }
 
 // Get mocks base method
-func (m *MockTx) Get(hash string) (*types.GetTxResponse, error) {
+func (m *MockTx) Get(hash string) (*types.ResultTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", hash)
-	ret0, _ := ret[0].(*types.GetTxResponse)
+	ret0, _ := ret[0].(*types.ResultTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -253,14 +253,14 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 }
 
 // GetNonce mocks base method
-func (m *MockUser) GetNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+func (m *MockUser) GetNonce(address string, blockHeight ...uint64) (*types.ResultAccountNonce, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetNonce", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
+	ret0, _ := ret[0].(*types.ResultAccountNonce)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -273,14 +273,14 @@ func (mr *MockUserMockRecorder) GetNonce(address interface{}, blockHeight ...int
 }
 
 // Get mocks base method
-func (m *MockUser) Get(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+func (m *MockUser) Get(address string, blockHeight ...uint64) (*types.ResultAccount, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(*types.GetAccountResponse)
+	ret0, _ := ret[0].(*types.ResultAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -293,10 +293,10 @@ func (mr *MockUserMockRecorder) Get(address interface{}, blockHeight ...interfac
 }
 
 // Send mocks base method
-func (m *MockUser) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
+func (m *MockUser) Send(body *types.BodySendCoin) (*types.ResultHash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Send", body)
-	ret0, _ := ret[0].(*types.HashResponse)
+	ret0, _ := ret[0].(*types.ResultHash)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

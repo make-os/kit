@@ -18,7 +18,7 @@ type UserAPI struct {
 }
 
 // GetNonce returns the nonce of an account
-func (c *UserAPI) GetNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
+func (c *UserAPI) GetNonce(address string, blockHeight ...uint64) (*types.ResultAccountNonce, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
@@ -30,12 +30,12 @@ func (c *UserAPI) GetNonce(address string, blockHeight ...uint64) (*types.GetAcc
 		return nil, err
 	}
 
-	var result types.GetAccountNonceResponse
+	var result types.ResultAccountNonce
 	return &result, resp.ToJSON(&result)
 }
 
 // Get returns the account corresponding to the given address
-func (c *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountResponse, error) {
+func (c *UserAPI) Get(address string, blockHeight ...uint64) (*types.ResultAccount, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
@@ -47,7 +47,7 @@ func (c *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountR
 		return nil, err
 	}
 
-	var acct = &types.GetAccountResponse{Account: state.BareAccount()}
+	var acct = &types.ResultAccount{Account: state.BareAccount()}
 	if err = resp.ToJSON(acct.Account); err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *UserAPI) Get(address string, blockHeight ...uint64) (*types.GetAccountR
 }
 
 // Send creates transaction to send coins to another user or a repository.
-func (c *UserAPI) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
+func (c *UserAPI) Send(body *types.BodySendCoin) (*types.ResultHash, error) {
 
 	if body.SigningKey == nil {
 		return nil, fmt.Errorf("signing key is required")
@@ -82,6 +82,6 @@ func (c *UserAPI) Send(body *types.SendCoinBody) (*types.HashResponse, error) {
 		return nil, err
 	}
 
-	var result types.HashResponse
+	var result types.ResultHash
 	return &result, resp.ToJSON(&result)
 }
