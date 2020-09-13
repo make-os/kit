@@ -1,7 +1,6 @@
 package refsync
 
 import (
-	"encoding/base64"
 	"fmt"
 	"sync"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/pkg/errors"
-	"github.com/stretchr/objx"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -53,11 +51,7 @@ func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Kee
 		initRepo:   repo.InitRepository,
 	}
 
-	service, err := services.NewFromConfig(w.cfg.G().TMConfig)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to create node service instance"))
-	}
-	w.service = service
+	w.service = services.New(w.cfg.G().TMConfig.RPC.ListenAddress)
 
 	go func() {
 		cfg.G().Interrupt.Wait()
@@ -178,21 +172,14 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	// Find push transactions addressed to the target repository.
 	start := task.StartHeight
 	for start <= task.EndHeight {
-		res, err := w.service.GetBlock(int64(start))
+		block, err := w.service.GetBlock(int64(start))
 		if err != nil {
 			return errors.Wrapf(err, "failed to get block (height=%d)", start)
 		}
 
-		// TODO: new tendermint update may have a different block structure.
-		block := objx.New(res)
 		foundTx := false
-		for i, tx := range block.Get("result.block.data.txs").InterSlice() {
-			bz, err := base64.StdEncoding.DecodeString(tx.(string))
-			if err != nil {
-				return fmt.Errorf("failed to decode transaction: %s", err)
-			}
-
-			txObj, err := txns.DecodeTx(bz)
+		for i, tx := range block.Block.Data.Txs {
+			txObj, err := txns.DecodeTx(tx)
 			if err != nil {
 				return fmt.Errorf("unable to decode transaction #%d in height %d", i, start)
 			}

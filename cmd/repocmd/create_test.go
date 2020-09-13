@@ -5,21 +5,26 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	types2 "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/objx"
 )
+
+func TestRepocmd(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "RepoCmd Suite")
+}
 
 var _ = Describe("CreateCmd", func() {
 	var err error
@@ -77,7 +82,7 @@ var _ = Describe("CreateCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "", fmt.Errorf("error")
 			}
@@ -94,11 +99,11 @@ var _ = Describe("CreateCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *api.BodyCreateRepo, rpcClient types.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
@@ -119,11 +124,11 @@ var _ = Describe("CreateCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *api.BodyCreateRepo, rpcClient types.Client) (hash string, err error) {
 				Expect(req.Name).To(Equal(args.Name))
 				Expect(objx.New(req.Config).Get("governance.propFee").String()).To(Equal("100"))
 				Expect(req.Value).To(Equal(12.2))
@@ -131,7 +136,7 @@ var _ = Describe("CreateCmd", func() {
 				Expect(req.Fee).To(Equal(1.2))
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return nil
 			}
 			err := CreateCmd(cfg, args)
@@ -146,13 +151,13 @@ var _ = Describe("CreateCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				return "2", nil
 			}
-			args.CreateRepo = func(req *types2.BodyCreateRepo, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.CreateRepo = func(req *api.BodyCreateRepo, rpcClient types.Client) (hash string, err error) {
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return fmt.Errorf("error")
 			}
 			err := CreateCmd(cfg, args)

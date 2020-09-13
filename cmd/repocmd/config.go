@@ -11,15 +11,14 @@ import (
 	"runtime"
 	"strings"
 
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/remote/types"
+	rpctypes "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/api"
 	"github.com/spf13/cast"
-	gocfg "gopkg.in/src-d/go-git.v4/config"
+	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 type Remote struct {
@@ -61,19 +60,16 @@ type ConfigArgs struct {
 	Remotes []Remote
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient rpctypes.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of an account
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// CreateRepo is a function for generating a transaction for creating a repository
-	CreateRepo utils.RepoCreator
+	CreateRepo api.RepoCreator
 
 	Stdout io.Writer
 }
@@ -123,13 +119,13 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
-		rcfg.Remotes[remote.Name] = &gocfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
+		rcfg.Remotes[remote.Name] = &gogitcfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
 	}
 
 	// If no remote was set, add default remote pointing to the local remote.
 	if len(rcfg.Remotes) == 0 {
 		url := fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, repo.GetName())
-		rcfg.Remotes["origin"] = &gocfg.RemoteConfig{Name: "origin", URLs: []string{url}}
+		rcfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
 	// Add hooks if allowed

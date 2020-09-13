@@ -5,20 +5,25 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestUserCmd(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "UserCmd Suite")
+}
 
 var _ = Describe("UserCmd", func() {
 	var err error
@@ -58,7 +63,7 @@ var _ = Describe("UserCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "", fmt.Errorf("error")
 			}
@@ -75,10 +80,10 @@ var _ = Describe("UserCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				return "10", nil
 			}
-			args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.SendCoin = func(req *api.BodySendCoin, rpcClient types.Client) (hash string, err error) {
 				return "", fmt.Errorf("error")
 			}
 			err := SendCmd(cfg, args)
@@ -96,10 +101,10 @@ var _ = Describe("UserCmd", func() {
 				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 					return mockKey, nil
 				}
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 					return "10", nil
 				}
-				args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.SendCoin = func(req *api.BodySendCoin, rpcClient types.Client) (hash string, err error) {
 					return "0x123", nil
 				}
 				err = SendCmd(cfg, args)
@@ -120,13 +125,13 @@ var _ = Describe("UserCmd", func() {
 				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 					return mockKey, nil
 				}
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 					return "10", nil
 				}
-				args.SendCoin = func(req *types.BodySendCoin, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.SendCoin = func(req *api.BodySendCoin, rpcClient types.Client) (hash string, err error) {
 					return "0x123", nil
 				}
-				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 					return fmt.Errorf("error")
 				}
 				err = SendCmd(cfg, args)

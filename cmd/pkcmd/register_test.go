@@ -5,22 +5,27 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	types2 "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SignCommit", func() {
+func TestPushKeyCmd(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "PushKeyCmd Suite")
+}
+
+var _ = Describe("RegisterCmd", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
@@ -90,7 +95,7 @@ var _ = Describe("SignCommit", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal("os1abc"))
 				return "", fmt.Errorf("error")
 			}
@@ -107,11 +112,11 @@ var _ = Describe("SignCommit", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *api.BodyRegisterPushKey, rpcClient types.Client) (hash string, err error) {
 				return "", fmt.Errorf("error")
 			}
 			err := RegisterCmd(cfg, args)
@@ -127,11 +132,11 @@ var _ = Describe("SignCommit", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal("os1abc"))
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *api.BodyRegisterPushKey, rpcClient types.Client) (hash string, err error) {
 				Expect(req.PublicKey).To(Equal(key.PubKey().ToPublicKey()))
 				Expect(req.FeeCap).To(Equal(args.FeeCap))
 				Expect(req.Fee).To(Equal(args.Fee))
@@ -139,7 +144,7 @@ var _ = Describe("SignCommit", func() {
 				Expect(req.Nonce).To(Equal(uint64(10)))
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return nil
 			}
 			err := RegisterCmd(cfg, args)
@@ -154,13 +159,13 @@ var _ = Describe("SignCommit", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockSigningKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				return "10", nil
 			}
-			args.RegisterPushKey = func(req *types2.BodyRegisterPushKey, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.RegisterPushKey = func(req *api.BodyRegisterPushKey, rpcClient types.Client) (hash string, err error) {
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return fmt.Errorf("error")
 			}
 			err := RegisterCmd(cfg, args)

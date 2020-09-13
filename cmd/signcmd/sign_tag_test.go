@@ -6,14 +6,13 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	types2 "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/remote/types"
+	types3 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
@@ -223,7 +222,7 @@ var _ = Describe("SignTag", func() {
 				tag := &object.Tag{Message: "tag1 message"}
 				mockRepo.EXPECT().TagObject(ref.Hash()).Return(tag, nil)
 
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types3.Client) (string, error) {
 					Expect(address).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}

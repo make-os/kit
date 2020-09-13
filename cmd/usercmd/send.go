@@ -6,12 +6,11 @@ import (
 	"strconv"
 
 	"github.com/fatih/color"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/types"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/rpc/types"
+	api2 "github.com/make-os/lobe/types/api"
+	"github.com/make-os/lobe/util/api"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
@@ -40,19 +39,16 @@ type SendArgs struct {
 	SigningKeyPass string
 
 	// RPCClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of an account
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// SendCoin is a function for sending coins
-	SendCoin utils.CoinSender
+	SendCoin api.CoinSender
 
 	// ShowTxStatusTracker is a function tracking and displaying tx status
 	ShowTxStatusTracker common.TxStatusTrackerFunc
@@ -79,14 +75,14 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 	// If nonce is unset, get the nonce from a remote server
 	nonce := args.Nonce
 	if nonce == 0 {
-		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient, args.RemoteClients)
+		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to get signer's next nonce")
 		}
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.BodySendCoin{
+	body := &api2.BodySendCoin{
 		To:         identifier.Address(args.Recipient),
 		Nonce:      nonce,
 		Value:      args.Value,
@@ -95,7 +91,7 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 	}
 
 	// Create the transaction
-	hash, err := args.SendCoin(body, args.RPCClient, args.RemoteClients)
+	hash, err := args.SendCoin(body, args.RPCClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to send coins")
 	}
@@ -106,7 +102,7 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 		fmt.Fprintln(args.Stdout, " - To:", fmt2.CyanString(args.Recipient))
 		fmt.Fprintln(args.Stdout, " - Amount:", fmt2.CyanString(cast.ToString(args.Value)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
-		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {
 			return err
 		}
 	}

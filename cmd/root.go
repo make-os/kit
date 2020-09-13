@@ -186,6 +186,12 @@ func init() {
 	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
 	rootCmd.PersistentFlags().StringToString("loglevel", map[string]string{}, "Set log level for modules")
 
+	// Remote API connection flags
+	rootCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
+	rootCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
+	rootCmd.PersistentFlags().String("remote.address", config.DefaultRemoteServerAddress, "Set the RPC listening address")
+	rootCmd.PersistentFlags().Bool("rpc.https", false, "Force the client to use https:// protocol")
+
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")
 	rootCmd.PersistentFlags().MarkHidden("keyid-format")
@@ -203,4 +209,8 @@ func init() {
 	viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
 	viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
 	viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
+	viper.BindPFlag("rpc.user", rootCmd.PersistentFlags().Lookup("rpc.user"))
+	viper.BindPFlag("rpc.password", rootCmd.PersistentFlags().Lookup("rpc.password"))
+	viper.BindPFlag("remote.address", rootCmd.PersistentFlags().Lookup("remote.address"))
+	viper.BindPFlag("rpc.https", rootCmd.PersistentFlags().Lookup("rpc.https"))
 }

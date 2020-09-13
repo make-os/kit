@@ -9,5 +9,5 @@ import (
 
 func TestGitcmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Gitcmd Suite")
+	RunSpecs(t, "GitCmd Suite")
 }

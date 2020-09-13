@@ -9,5 +9,5 @@ import (
 
 func TestMergecmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Mergecmd Suite")
+	RunSpecs(t, "MergeCmd Suite")
 }

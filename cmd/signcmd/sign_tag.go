@@ -5,14 +5,13 @@ import (
 	"os"
 	"strconv"
 
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
@@ -66,16 +65,13 @@ type SignTagArgs struct {
 	NoPrompt bool
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// SetRemotePushToken is a function for setting push tokens on a git remote config
 	SetRemotePushToken server.RemotePushTokenSetter
@@ -163,7 +159,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
-		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
+		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get next nonce")
 		}

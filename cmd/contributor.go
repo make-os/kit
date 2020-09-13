@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/contribcmd"
 	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util/api"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +53,7 @@ var contribAddCmd = &cobra.Command{
 			log.Fatal("failed to decode policies", "Err", err)
 		}
 
-		_, client, remoteClients := getRepoAndClients("", cmd)
+		_, client := getRepoAndClient("", cmd)
 		if err := contribcmd.AddCmd(cfg, &contribcmd.AddArgs{
 			Name:                name,
 			PushKeys:            args,
@@ -69,10 +69,9 @@ var contribAddCmd = &cobra.Command{
 			SigningKey:          signingKey,
 			SigningKeyPass:      signingKeyPass,
 			RPCClient:           client,
-			RemoteClients:       remoteClients,
 			KeyUnlocker:         common.UnlockKey,
-			GetNextNonce:        utils.GetNextNonceOfAccount,
-			AddRepoContributors: utils.AddRepoContributors,
+			GetNextNonce:        api.GetNextNonceOfAccount,
+			AddRepoContributors: api.AddRepoContributors,
 			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
@@ -86,20 +85,20 @@ func init() {
 	contribCmd.AddCommand(contribAddCmd)
 
 	// Set flags
-	contribAddCmd.Flags().StringP("name", "r", "", "The name of the target repository")
-	contribAddCmd.Flags().String("id", "", "The unique proposal ID (default: current unix timestamp)")
-	contribAddCmd.Flags().Int("feeMode", 0, "Specify who pays the fees: 0=contributor, 1=repo, 2=repo (capped) ")
-	contribAddCmd.Flags().Float64("feeCap", 0, "Max. amount of repo balance the contributor(s) can spend on fees")
-	contribAddCmd.Flags().String("namespace", "", "Add contributor(s) to the given repo-owned namespace")
-	contribAddCmd.Flags().String("namespaceOnly", "", "Only add contributor(s) to the given repo-owned namespace")
-	contribAddCmd.Flags().String("policies", "", "Set repository policies")
-	contribAddCmd.Flags().Float64P("value", "v", 0, "The proposal fee to be paid if required by the repository")
+	contribF := contribAddCmd.Flags()
+	contribF.StringP("name", "r", "", "The name of the target repository")
+	contribF.String("id", "", "The unique proposal ID (default: current unix timestamp)")
+	contribF.Int("feeMode", 0, "Specify who pays the fees: 0=contributor, 1=repo, 2=repo (capped) ")
+	contribF.Float64("feeCap", 0, "Max. amount of repo balance the contributor(s) can spend on fees")
+	contribF.String("namespace", "", "Add contributor(s) to the given repo-owned namespace")
+	contribF.String("namespaceOnly", "", "Only add contributor(s) to the given repo-owned namespace")
+	contribF.String("policies", "", "Set repository policies")
+	contribF.Float64P("value", "v", 0, "The proposal fee to be paid if required by the repository")
 
-	// API connection config flags
-	addAPIConnectionFlags(contribCmd.PersistentFlags())
-
-	// Common Tx flags
-	addCommonTxFlags(contribAddCmd.Flags())
+	contribF.Float64P("fee", "f", 0, "Set the network transaction fee")
+	contribF.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	contribF.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	contribF.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
 
 	// Set required field
 	contribAddCmd.MarkFlagRequired("name")

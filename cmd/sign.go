@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/signcmd"
 	"github.com/make-os/lobe/remote/server"
+	"github.com/make-os/lobe/util/api"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ var signCommitCmd = &cobra.Command{
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
-		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
+		targetRepo, client := getRepoAndClient("", cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -70,11 +70,10 @@ var signCommitCmd = &cobra.Command{
 			SignRefOnly:                   refOnly,
 			ForceSign:                     forceSign,
 			RPCClient:                     client,
-			RemoteClients:                 remoteClients,
 			Stdout:                        os.Stdout,
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
-			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -103,7 +102,7 @@ var signTagCmd = &cobra.Command{
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
-		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
+		targetRepo, client := getRepoAndClient("", cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -124,11 +123,10 @@ var signTagCmd = &cobra.Command{
 			SignRefOnly:                   refOnly,
 			ForceSign:                     forceSign,
 			RPCClient:                     client,
-			RemoteClients:                 remoteClients,
 			Stdout:                        os.Stdout,
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
-			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -154,7 +152,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
+		targetRepo, client := getRepoAndClient("", cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -169,17 +167,34 @@ var signNoteCmd = &cobra.Command{
 			Remote:                        targetRemotes,
 			ResetTokens:                   resetRemoteTokens,
 			RPCClient:                     client,
-			RemoteClients:                 remoteClients,
 			SetRemotePushTokensOptionOnly: setRemoteTokenOnly,
 			Stdout:                        os.Stdout,
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
-			GetNextNonce:                  utils.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken:            server.SetRemotePushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
+}
+
+func setupSignCommitCmd(cmd *cobra.Command) {
+	cmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
+	cmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
+	cmd.Flags().StringP("branch", "b", "", "Specify a target branch to sign (default: HEAD)")
+	cmd.Flags().Bool("force", false, "Forcefully checkout the target branch to sign")
+	cmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
+	cmd.Flags().Bool("ref-only", false, "Only sign the commit object")
+	cmd.Flags().Bool("token-only", false, "Only create and sign the push token")
+	cmd.Flags().Bool("force-sign", false, "Forcefully sign the commit even when it has already been signed")
+}
+
+func setupSignTagCmd(cmd *cobra.Command) {
+	cmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
+	cmd.Flags().Bool("ref-only", false, "Only sign the tag object")
+	cmd.Flags().Bool("token-only", false, "Only create and sign the push token")
+	cmd.Flags().Bool("force-sign", false, "Forcefully sign the tag even when it has already been signed")
 }
 
 func init() {
@@ -193,28 +208,17 @@ func init() {
 	// Top-level flags
 	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
 	pf.Bool("no-username", false, "Do not add tokens to the username part of the remote URLs")
-
-	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
-	signCommitCmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
-	signCommitCmd.Flags().StringP("branch", "b", "", "Specify a target branch to sign (default: HEAD)")
-	signCommitCmd.Flags().Bool("force", false, "Forcefully checkout the target branch to sign")
-	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
-	signCommitCmd.Flags().Bool("ref-only", false, "Only sign the commit object")
-	signCommitCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
-	signCommitCmd.Flags().Bool("force-sign", false, "Forcefully sign the commit even when it has already been signed")
-	signTagCmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
-	signTagCmd.Flags().Bool("ref-only", false, "Only sign the tag object")
-	signTagCmd.Flags().Bool("token-only", false, "Only create and sign the push token")
-	signTagCmd.Flags().Bool("force-sign", false, "Forcefully sign the tag even when it has already been signed")
-
-	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")
 	pf.StringP("value", "v", "", "Set a value for paying additional fees")
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
-	// API connection config flags
-	addAPIConnectionFlags(pf)
+	setupSignCommitCmd(signCommitCmd)
+	setupSignTagCmd(signTagCmd)
 
-	// Common Tx flags
-	addCommonTxFlags(pf)
+	pf.Float64P("fee", "f", 0, "Set the network transaction fee")
+	pf.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	pf.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	pf.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
+	signCmd.MarkFlagRequired("fee")
+	signCmd.MarkFlagRequired("signing-key")
 }

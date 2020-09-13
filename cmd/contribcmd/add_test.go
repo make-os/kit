@@ -7,15 +7,14 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -58,7 +57,7 @@ var _ = Describe("ContribCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "", fmt.Errorf("error")
 			}
@@ -75,10 +74,10 @@ var _ = Describe("ContribCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				return "10", nil
 			}
-			args.AddRepoContributors = func(req *types.BodyAddRepoContribs, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.AddRepoContributors = func(req *api.BodyAddRepoContribs, rpcClient types.Client) (hash string, err error) {
 				return "", fmt.Errorf("error")
 			}
 			err := AddCmd(cfg, args)
@@ -96,10 +95,10 @@ var _ = Describe("ContribCmd", func() {
 				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 					return mockKey, nil
 				}
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 					return "10", nil
 				}
-				args.AddRepoContributors = func(req *types.BodyAddRepoContribs, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.AddRepoContributors = func(req *api.BodyAddRepoContribs, rpcClient types.Client) (hash string, err error) {
 					return "0x123", nil
 				}
 				err = AddCmd(cfg, args)
@@ -124,13 +123,13 @@ var _ = Describe("ContribCmd", func() {
 				args.KeyUnlocker = func(cfg *config.AppConfig, args2 *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 					return mockKey, nil
 				}
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 					return "10", nil
 				}
-				args.AddRepoContributors = func(req *types.BodyAddRepoContribs, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+				args.AddRepoContributors = func(req *api.BodyAddRepoContribs, rpcClient types.Client) (hash string, err error) {
 					return "0x123", nil
 				}
-				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+				args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 					return fmt.Errorf("error")
 				}
 				err = AddCmd(cfg, args)

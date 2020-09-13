@@ -9,5 +9,5 @@ import (
 
 func TestContribCmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Repocmd Suite")
+	RunSpecs(t, "RepoCmd Suite")
 }

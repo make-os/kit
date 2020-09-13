@@ -6,15 +6,14 @@ import (
 	"io/ioutil"
 	"strings"
 
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/signcmd"
 	"github.com/make-os/lobe/config"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/rpc/types"
+	"github.com/make-os/lobe/util/api"
 	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -30,16 +29,13 @@ type HookArgs struct {
 	AskPass bool
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// SetRemotePushToken is a function for setting push tokens on a git remote config
 	SetRemotePushToken server.RemotePushTokenSetter
@@ -95,7 +91,6 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				NoPrompt:           true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
-				RemoteClients:      args.RemoteClients,
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,
@@ -112,7 +107,6 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				Force:              true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
-				RemoteClients:      args.RemoteClients,
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,
@@ -128,7 +122,6 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 				NoPrompt:           true,
 				ResetTokens:        false,
 				RPCClient:          args.RPCClient,
-				RemoteClients:      args.RemoteClients,
 				KeyUnlocker:        args.KeyUnlocker,
 				GetNextNonce:       args.GetNextNonce,
 				SetRemotePushToken: args.SetRemotePushToken,

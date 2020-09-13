@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
-	"github.com/make-os/lobe/modules"
+	types2 "github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/api"
 	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/pkg/errors"
@@ -24,13 +23,10 @@ type GetArgs struct {
 	Status bool
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types.Client
 
 	// GetTransaction is a function for getting a finalized transaction
-	GetTransaction utils.TxGetter
+	GetTransaction api.TxGetter
 
 	Stdout io.Writer
 }
@@ -38,7 +34,7 @@ type GetArgs struct {
 // GetCmd gets a finalized transaction
 func GetCmd(args *GetArgs) error {
 
-	data, err := args.GetTransaction(args.Hash, args.RPCClient, args.RemoteClients)
+	data, err := args.GetTransaction(args.Hash, args.RPCClient)
 	if err != nil {
 		if reqErr, ok := errors.Cause(err).(*util.ReqError); ok && reqErr.HttpCode == 404 {
 			return fmt.Errorf("unknown transaction")
@@ -51,11 +47,11 @@ func GetCmd(args *GetArgs) error {
 		if args.Status {
 			fmt.Print("Status: ")
 			switch data.Status {
-			case modules.TxStatusInBlock:
+			case types2.TxStatusInBlock:
 				fmt.Fprintln(args.Stdout, colorfmt.GreenString("Confirmed"))
-			case modules.TxStatusInMempool:
+			case types2.TxStatusInMempool:
 				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Mempool"))
-			case modules.TxStatusInPushpool:
+			case types2.TxStatusInPushpool:
 				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Pushpool"))
 			}
 			return nil

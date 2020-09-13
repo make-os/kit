@@ -7,29 +7,20 @@ import (
 	"strconv"
 	"strings"
 
-	remote "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/remote/plumbing"
 	rr "github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/rpc/client"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
 // getRPCClient creates and returns an RPC using RPC-related flags in the given command.
 // It will return nil client and nil error if --no.rpc flag is set.
 func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
-	noRPC, _ := cmd.Flags().GetBool("no.rpc")
-	if noRPC {
-		return nil, nil
-	}
-
-	rpcAddress, _ := cmd.Flags().GetString("rpc.address")
+	rpcAddress, _ := cmd.Flags().GetString("remote.address")
 	rpcUser, _ := cmd.Flags().GetString("rpc.user")
 	rpcPassword, _ := cmd.Flags().GetString("rpc.password")
 	rpcSecured, _ := cmd.Flags().GetBool("rpc.https")
@@ -44,7 +35,7 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 		return nil, errors.Wrap(err, "failed convert rpc port")
 	}
 
-	c := client.NewClient(&client.Options{
+	c := client.NewClient(&types2.Options{
 		Host:     host,
 		Port:     portInt,
 		User:     rpcUser,
@@ -55,58 +46,19 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	return c, nil
 }
 
-// getRemoteAPIClientsFromRepo gets REST clients for every  http(s) remote
-// URL set on the given repository. Immediately returns nothing if
-// --no.remote is true.
-func getRemoteAPIClientsFromRepo(cmd *cobra.Command, repo types.LocalRepo) (clients []remote.Client) {
-	noRemote, _ := cmd.Flags().GetBool("no.api")
-	if noRemote {
-		return
-	}
-
-	for _, url := range repo.GetRemoteURLs() {
-		ep, _ := transport.NewEndpoint(url)
-		if !funk.ContainsString([]string{"http", "https"}, ep.Protocol) {
-			continue
-		}
-
-		apiURL := fmt.Sprintf("%s://%s", ep.Protocol, ep.Host)
-		if ep.Port != 0 {
-			apiURL = fmt.Sprintf("%s:%d", apiURL, ep.Port)
-		}
-
-		clients = append(clients, remote.NewClient(apiURL))
-	}
-	return
-}
-
-// getClients returns an RPC and Remote API clients.
+// getRepoAndClient opens a the repository on the current working directory
+// and returns an initialized RPC client.
 // If a repository is found on the current working directory,
-// its remote urls are collected and converted to remote clients.
-// If `api.address` is set, another remote client is created for it.
-func getRepoAndClients(repoDir string, cmd *cobra.Command) (types.LocalRepo, client.Client, []remote.Client) {
+// the remote urls are collected and used to initialize the client.
+func getRepoAndClient(repoDir string, cmd *cobra.Command) (types.LocalRepo, types2.Client) {
 
 	var err error
 	var targetRepo types.LocalRepo
-	var remoteClients []remote.Client
 
 	if repoDir == "" {
 		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
 	} else {
 		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
-	}
-
-	if targetRepo != nil {
-		remoteClients = getRemoteAPIClientsFromRepo(cmd, targetRepo)
-	}
-
-	// If remote API address flag was set, create a client with it
-	if apiAddr, _ := cmd.Flags().GetString("api.address"); apiAddr != "" {
-		proto := "http"
-		if ok, _ := cmd.Flags().GetBool("api.https"); ok {
-			proto = "https"
-		}
-		remoteClients = append(remoteClients, remote.NewClient(fmt.Sprintf("%s://%s", proto, apiAddr)))
 	}
 
 	// Get JSON RPCClient client
@@ -115,40 +67,12 @@ func getRepoAndClients(repoDir string, cmd *cobra.Command) (types.LocalRepo, cli
 		log.Fatal(err.Error())
 	}
 
-	return targetRepo, rpcClient, remoteClients
-}
-
-// addAPIConnectionFlags adds flags used for connecting to a RPC or Remote API server.
-func addAPIConnectionFlags(pf *pflag.FlagSet) {
-	pf.String("rpc.user", "", "Set the RPC username")
-	pf.String("rpc.password", "", "Set the RPC password")
-	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
-	pf.Bool("rpc.https", false, "Force the client to use https:// protocol")
-	pf.Bool("no.rpc", false, "Disable connection to the JSON-RPC API")
-	pf.Bool("no.api", false, "Disable connection to the Remote API")
-	pf.String("api.address", "", "Set the Remote API address")
-	pf.Bool("api.https", false, "Force the client to use https:// protocol")
-}
-
-// addCommonTxFlags adds flags required for commands that create network transactions
-func addCommonTxFlags(fs *pflag.FlagSet) {
-	if fs.Lookup("fee") == nil {
-		fs.Float64P("fee", "f", 0, "Set transaction fee to pay to the network")
-	}
-	if fs.Lookup("nonce") == nil {
-		fs.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
-	}
-	if fs.Lookup("signing-key") == nil {
-		fs.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
-	}
-	if fs.Lookup("signing-key-pass") == nil {
-		fs.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
-	}
+	return targetRepo, rpcClient
 }
 
 // rejectFlagCombo rejects unwanted flag combination
 func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
-	var found = []string{}
+	var found []string
 	for _, f := range flags {
 		if len(found) > 0 && cmd.Flags().Changed(f) {
 			str := "--" + f

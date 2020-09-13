@@ -9,5 +9,5 @@ import (
 
 func TestIssuecmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Issuecmd Suite")
+	RunSpecs(t, "IssueCmd Suite")
 }

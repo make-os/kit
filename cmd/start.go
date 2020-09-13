@@ -57,15 +57,11 @@ func setStartFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.String("node.address", config.DefaultNodeAddress, "Set the node's p2p listening address")
 	f.Bool("rpc.on", false, "Start the RPC service")
-	f.String("rpc.user", "", "Set the RPC username")
-	f.String("rpc.password", "", "Set the RPC password")
 	f.Bool("rpc.disableauth", false, "Disable RPC authentication")
 	f.Bool("rpc.authpubmethod", false, "Enable RPC authentication for non-private methods")
-	f.Bool("node.validator", false, "Run the node in validator mode")
-	f.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 	f.String("rpc.tmaddress", config.DefaultTMRPCAddress, "Set tendermint RPC listening address")
+	f.Bool("node.validator", false, "Run the node in validator mode")
 	f.String("dht.address", config.DefaultDHTAddress, "Set the DHT listening address")
-	f.String("remote.address", config.DefaultRemoteServerAddress, "Set the remote server listening address")
 	f.String("node.addpeer", "", "Connect to one or more persistent node")
 	f.Bool("dht.on", true, "Run the DHT service and join the network")
 	f.String("dht.addpeer", "", "Register bootstrap peers for joining the DHT network")
@@ -73,9 +69,11 @@ func setStartFlags(cmd *cobra.Command) {
 	f.StringSliceP("repo.track", "t", []string{}, "Specify one or more repositories to track")
 	f.StringSliceP("repo.untrack", "u", []string{}, "Untrack one or more repositories")
 	f.BoolP("repo.untrackall", "x", false, "Untrack one or more repositories")
+
 	extArgsMap := map[string]string{}
 	f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 	viper.Set("node.extsargs", extArgsMap)
+
 	viperBindFlagSet(cmd)
 }
 

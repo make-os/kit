@@ -43,14 +43,11 @@ var (
 	// DefaultTMRPCAddress is the default RPC listening address for the tendermint
 	DefaultTMRPCAddress = "127.0.0.1:9001"
 
-	// DefaultRPCAddress is the default RPC listening address
-	DefaultRPCAddress = ":9002"
+	// DefaultRemoteServerAddress is the default remote server listening address
+	DefaultRemoteServerAddress = ":9002"
 
 	// DefaultDHTAddress is the default DHT listening address
 	DefaultDHTAddress = ":9003"
-
-	// DefaultRemoteServerAddress is the default remote server listening address
-	DefaultRemoteServerAddress = ":9004"
 
 	// NoColorFormatting indicates that stdout/stderr output should have no color
 	NoColorFormatting = false
@@ -242,10 +239,6 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	if cfg.DHT.Address != "" && cfg.DHT.Address[:1] == ":" {
 		cfg.DHT.Address = "0.0.0.0" + cfg.DHT.Address
-	}
-
-	if cfg.RPC.Address != "" && cfg.RPC.Address[:1] == ":" {
-		cfg.RPC.Address = "0.0.0.0" + cfg.RPC.Address
 	}
 
 	if cfg.RPC.User == "" && cfg.RPC.Password == "" {

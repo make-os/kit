@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/repocmd"
 	"github.com/make-os/lobe/cmd/signcmd"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/api"
 	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
@@ -50,7 +50,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client, remoteClients := getRepoAndClients("", cmd)
+		_, client := getRepoAndClient("", cmd)
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
@@ -60,10 +60,9 @@ var repoCreateCmd = &cobra.Command{
 			Nonce:               nonce,
 			Config:              configPath,
 			RPCClient:           client,
-			RemoteClients:       remoteClients,
 			KeyUnlocker:         common.UnlockKey,
-			GetNextNonce:        utils.GetNextNonceOfAccount,
-			CreateRepo:          utils.CreateRepo,
+			GetNextNonce:        api.GetNextNonceOfAccount,
+			CreateRepo:          api.CreateRepo,
 			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
@@ -73,14 +72,30 @@ var repoCreateCmd = &cobra.Command{
 }
 
 func setupRepoCreateCmd(cmd *cobra.Command) {
-	sp := cmd.Flags().StringP
-	fp := cmd.Flags().Float64P
+	f := cmd.Flags()
 
-	if cmd.Flags().Lookup("value") == nil {
-		fp("value", "v", 0, "The amount of coins to transfer to the repository")
+	f.StringP("config", "c", "", "Specify repository settings or a file containing it")
+
+	if f.Lookup("value") == nil {
+		f.Float64P("value", "v", 0, "The amount of coins to transfer to the repository")
 	}
-	sp("config", "c", "", "Specify repository settings or a file containing it")
-	addCommonTxFlags(cmd.Flags())
+
+	if f.Lookup("fee") == nil {
+		f.Float64P("fee", "f", 0, "Set the network transaction fee")
+	}
+
+	if f.Lookup("nonce") == nil {
+		f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	}
+
+	if f.Lookup("signing-key") == nil {
+		f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	}
+
+	if f.Lookup("signing-key-pass") == nil {
+		f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
+	}
+
 	cmd.MarkFlagRequired("fee")
 	cmd.MarkFlagRequired("signing-key")
 }
@@ -115,7 +130,7 @@ var repoVoteCmd = &cobra.Command{
 			proposalID = "MR" + mrID
 		}
 
-		_, client, remoteClients := getRepoAndClients("", cmd)
+		_, client := getRepoAndClient("", cmd)
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          proposalID,
@@ -125,10 +140,9 @@ var repoVoteCmd = &cobra.Command{
 			SigningKeyPass:      signingKeyPass,
 			Nonce:               nonce,
 			RPCClient:           client,
-			RemoteClients:       remoteClients,
 			KeyUnlocker:         common.UnlockKey,
-			GetNextNonce:        utils.GetNextNonceOfAccount,
-			VoteCreator:         utils.VoteRepoProposal,
+			GetNextNonce:        api.GetNextNonceOfAccount,
+			VoteCreator:         api.VoteRepoProposal,
 			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
@@ -138,11 +152,14 @@ var repoVoteCmd = &cobra.Command{
 }
 
 func setupRepoVoteCmd(cmd *cobra.Command) {
-	sp := cmd.Flags().StringP
-	sp("repo", "r", "", "The name of the repository")
-	sp("id", "i", "", "The unique ID of the proposal")
-	sp("mr", "m", "", "The unique ID of a merge request") // Prepends `MR` to the id
-	addCommonTxFlags(cmd.Flags())
+	f := cmd.Flags()
+	f.StringP("repo", "r", "", "The name of the repository")
+	f.StringP("id", "i", "", "The unique ID of the proposal")
+	f.StringP("mr", "m", "", "The unique ID of a merge request") // Prepends `MR` to the id
+	f.Float64P("fee", "f", 0, "Set the network transaction fee")
+	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
 	cmd.MarkFlagRequired("fee")
 	cmd.MarkFlagRequired("signing-key")
 }
@@ -173,7 +190,7 @@ var repoConfigCmd = &cobra.Command{
 			}
 		}
 
-		targetRepo, client, remoteClients := getRepoAndClients(targetRepoDir, cmd)
+		targetRepo, client := getRepoAndClient(targetRepoDir, cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -198,10 +215,9 @@ var repoConfigCmd = &cobra.Command{
 			SigningKeyPass:  &signingKeyPass,
 			NoHook:          noSign,
 			PrintOutForEval: evalPrintOut,
-			RemoteClients:   remoteClients,
 			Remotes:         remoteObjs,
 			KeyUnlocker:     common.UnlockKey,
-			GetNextNonce:    utils.GetNextNonceOfAccount,
+			GetNextNonce:    api.GetNextNonceOfAccount,
 			Stdout:          os.Stdout,
 		}
 
@@ -236,22 +252,34 @@ var repoConfigCmd = &cobra.Command{
 }
 
 func setupRepoConfigCmd(cmd *cobra.Command) {
-	ssp := cmd.Flags().StringSliceP
-	sp := cmd.Flags().StringP
-	bf := cmd.Flags().Bool
-	bfp := cmd.Flags().BoolP
-	fp := cmd.Flags().Float64P
-	ssp("remote", "r", []string{}, "Set one or more remotes")
-	bf("no-sign", false, "Do not enable automatic signing hook")
-	bf("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
-	bfp("print-out", "o", false, "Print out more config to pass to eval()")
-	sp("push-key", "k", "", "Specify the push key (defaults to signing key)")
+	f := cmd.Flags()
 
-	if cmd.Flags().Lookup("value") == nil {
-		fp("value", "v", 0, "Set transaction value")
+	f.StringSliceP("remote", "r", []string{}, "Set one or more remotes")
+	f.Bool("no-sign", false, "Do not enable automatic signing hook")
+	f.Bool("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
+	f.BoolP("print-out", "o", false, "Print out more config to pass to eval()")
+
+	if f.Lookup("value") == nil {
+		f.Float64P("value", "v", 0, "Set transaction value")
 	}
 
-	addCommonTxFlags(cmd.Flags())
+	if f.Lookup("fee") == nil {
+		f.Float64P("fee", "f", 0, "Set the network transaction fee")
+	}
+
+	if f.Lookup("nonce") == nil {
+		f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	}
+
+	if f.Lookup("signing-key") == nil {
+		f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	}
+
+	if f.Lookup("signing-key-pass") == nil {
+		f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
+	}
+
+	f.StringP("push-key", "k", "", "Specify the push key (defaults to signing key)")
 }
 
 // repoHookCmd is a command handles git hooks
@@ -261,7 +289,7 @@ var repoHookCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		authMode, _ := cmd.Flags().GetBool("askpass")
 
-		targetRepo, client, remoteClients := getRepoAndClients("", cmd)
+		targetRepo, client := getRepoAndClient("", cmd)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -269,10 +297,9 @@ var repoHookCmd = &cobra.Command{
 		if err := repocmd.HookCmd(cfg, targetRepo, &repocmd.HookArgs{
 			Args:               args,
 			AskPass:            authMode,
-			RemoteClients:      remoteClients,
 			RPCClient:          client,
 			KeyUnlocker:        common.UnlockKey,
-			GetNextNonce:       utils.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:       api.GetNextNonceOfPushKeyOwner,
 			SetRemotePushToken: server.SetRemotePushToken,
 			CommitSigner:       signcmd.SignCommitCmd,
 			TagSigner:          signcmd.SignTagCmd,
@@ -372,8 +399,4 @@ func init() {
 	setupRepoConfigCmd(repoConfigCmd)
 	setupRepoHookCmd(repoHookCmd)
 	setupRepoInitCmd(repoInitCmd)
-
-	// API connection config flags
-	addAPIConnectionFlags(repoCmd.PersistentFlags())
-	addAPIConnectionFlags(repoConfigCmd.PersistentFlags())
 }

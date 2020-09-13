@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	usercmd "github.com/make-os/lobe/cmd/usercmd"
+	"github.com/make-os/lobe/util/api"
 	"github.com/spf13/cobra"
 )
 
@@ -20,8 +20,8 @@ var userCmd = &cobra.Command{
 	},
 }
 
-// userSend represents a sub-command to send coins
-var userSend = &cobra.Command{
+// userSendCmd represents a sub-command to send coins
+var userSendCmd = &cobra.Command{
 	Use:   "send [flags] <address>",
 	Short: "Send coins from user account to another user account or a repository",
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -37,7 +37,7 @@ var userSend = &cobra.Command{
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 
-		_, client, remoteClients := getRepoAndClients("", cmd)
+		_, client := getRepoAndClient("", cmd)
 		if err := usercmd.SendCmd(cfg, &usercmd.SendArgs{
 			Recipient:           args[0],
 			Value:               value,
@@ -46,10 +46,9 @@ var userSend = &cobra.Command{
 			SigningKey:          signingKey,
 			SigningKeyPass:      signingKeyPass,
 			RPCClient:           client,
-			RemoteClients:       remoteClients,
 			KeyUnlocker:         common.UnlockKey,
-			GetNextNonce:        utils.GetNextNonceOfAccount,
-			SendCoin:            utils.SendCoin,
+			GetNextNonce:        api.GetNextNonceOfAccount,
+			SendCoin:            api.SendCoin,
 			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
@@ -60,18 +59,15 @@ var userSend = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(userCmd)
-	userCmd.AddCommand(userSend)
+	userCmd.AddCommand(userSendCmd)
 
 	// Set flags
-	userSend.Flags().Float64P("value", "v", 0, "Set the amount of coin to send")
-
-	// API connection config flags
-	addAPIConnectionFlags(userCmd.PersistentFlags())
-
-	// Common Tx flags
-	addCommonTxFlags(userSend.Flags())
-
-	// Set required field
-	userSend.MarkFlagRequired("fee")
-	userSend.MarkFlagRequired("signing-key")
+	f := userSendCmd.Flags()
+	f.Float64P("value", "v", 0, "Set the amount of coin to send")
+	f.Float64P("fee", "f", 0, "Set the network transaction fee")
+	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
+	userSendCmd.MarkFlagRequired("fee")
+	userSendCmd.MarkFlagRequired("signing-key")
 }

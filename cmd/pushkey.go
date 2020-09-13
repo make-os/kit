@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/pkcmd"
+	"github.com/make-os/lobe/util/api"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ var pushKeyRegCmd = &cobra.Command{
 		scopes, _ := cmd.Flags().GetStringSlice("scopes")
 		feeCap, _ := cmd.Flags().GetFloat64("feeCap")
 
-		_, client, remoteClients := getRepoAndClients("", cmd)
+		_, client := getRepoAndClient("", cmd)
 		if err := pkcmd.RegisterCmd(cfg, &pkcmd.RegisterArgs{
 			Target:              target,
 			TargetPass:          targetPass,
@@ -49,12 +49,11 @@ var pushKeyRegCmd = &cobra.Command{
 			SigningKeyPass:      signingKeyPass,
 			Nonce:               nonce,
 			RPCClient:           client,
-			RemoteClients:       remoteClients,
 			Scopes:              scopes,
 			FeeCap:              feeCap,
 			KeyUnlocker:         common.UnlockKey,
-			GetNextNonce:        utils.GetNextNonceOfAccount,
-			RegisterPushKey:     utils.RegisterPushKey,
+			GetNextNonce:        api.GetNextNonceOfAccount,
+			RegisterPushKey:     api.RegisterPushKey,
 			ShowTxStatusTracker: common.ShowTxStatusTracker,
 			Stdout:              os.Stdout,
 		}); err != nil {
@@ -67,20 +66,16 @@ func init() {
 	rootCmd.AddCommand(pushKeyCmd)
 	pushKeyCmd.AddCommand(pushKeyRegCmd)
 
-	fp := pushKeyRegCmd.Flags().Float64P
-	ssp := pushKeyRegCmd.Flags().StringSliceP
-	s := pushKeyRegCmd.Flags().String
+	f := pushKeyRegCmd.Flags()
 
 	// Set flags
-	ssp("scopes", "s", []string{}, "Set one or more push key scopes")
-	fp("feeCap", "c", 0, "Set the maximum fee the key is allowed to spend on fees")
-	s("pass", "", "Specify the passphrase of a chosen push key account")
-
-	// Common Tx flags
-	addCommonTxFlags(pushKeyRegCmd.Flags())
-
-	// API connection config flags
-	addAPIConnectionFlags(pushKeyCmd.PersistentFlags())
+	f.StringSliceP("scopes", "s", []string{}, "Set one or more push key scopes")
+	f.Float64P("feeCap", "c", 0, "Set the maximum fee the key is allowed to spend on fees")
+	f.String("pass", "", "Specify the passphrase of a chosen push key account")
+	f.Float64P("fee", "f", 0, "Set the network transaction fee")
+	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
+	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
 
 	// Set required field
 	pushKeyRegCmd.MarkFlagRequired("fee")

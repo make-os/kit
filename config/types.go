@@ -98,7 +98,6 @@ type NetConfig struct {
 // RPCConfig describes RPC config settings
 type RPCConfig struct {
 	On            bool   `json:"on" mapstructure:"on"`
-	Address       string `json:"address" mapstructure:"address"`
 	User          string `json:"user" mapstructure:"user"`
 	Password      string `json:"password" mapstructure:"password"`
 	DisableAuth   bool   `json:"disableauth" mapstructure:"disableauth"`

@@ -5,22 +5,21 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	types2 "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/server"
 	remotetypes "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-func testGetNextNonce2(nonce string, err error) func(string, client.Client, []restclient.Client) (string, error) {
-	return func(s string, rpcClient client.Client, clients []restclient.Client) (string, error) {
+func testGetNextNonce2(nonce string, err error) func(string, types.Client) (string, error) {
+	return func(s string, rpcClient types.Client) (string, error) {
 		return nonce, err
 	}
 }
@@ -153,7 +152,7 @@ var _ = Describe("SignNote", func() {
 				refname := plumbing.ReferenceName("refs/notes/note1")
 				hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 				mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
-				args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 					Expect(address).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}

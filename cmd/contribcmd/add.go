@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/types"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/rpc/types"
+	api2 "github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util/api"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -62,19 +61,16 @@ type AddArgs struct {
 	SigningKeyPass string
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of an account
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// CreateRepo is a function for generating a transaction for creating a repository
-	AddRepoContributors utils.RepoContributorsAdder
+	AddRepoContributors api.RepoContributorsAdder
 
 	// ShowTxStatusTracker is a function tracking and displaying tx status
 	ShowTxStatusTracker common.TxStatusTrackerFunc
@@ -100,7 +96,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 	// If nonce is unset, get the nonce from a remote server
 	nonce := args.Nonce
 	if nonce == 0 {
-		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient, args.RemoteClients)
+		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to get signer's next nonce")
 		}
@@ -111,7 +107,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 		args.PropID = cast.ToString(time.Now().Unix())
 	}
 
-	body := &types.BodyAddRepoContribs{
+	body := &api2.BodyAddRepoContribs{
 		RepoName:      args.Name,
 		ProposalID:    args.PropID,
 		PushKeys:      args.PushKeys,
@@ -127,7 +123,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 	}
 
 	// Create the repo creating transaction
-	hash, err := args.AddRepoContributors(body, args.RPCClient, args.RemoteClients)
+	hash, err := args.AddRepoContributors(body, args.RPCClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to add contributors")
 	}
@@ -135,7 +131,7 @@ func AddCmd(cfg *config.AppConfig, args *AddArgs) error {
 	if args.Stdout != nil {
 		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
-		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {
 			return err
 		}
 	}

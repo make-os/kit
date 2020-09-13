@@ -72,17 +72,11 @@ type Node struct {
 
 // NewNode creates an instance of RPCServer
 func NewNode(cfg *config.AppConfig) *Node {
-
-	service, err := services.NewFromConfig(cfg.G().TMConfig)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to create node service instance"))
-	}
-
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("node"),
-		service: service,
+		service: services.New(cfg.G().TMConfig.RPC.ListenAddress),
 		acctMgr: keystore.New(cfg.KeystoreDir()),
 	}
 }

@@ -9,16 +9,15 @@ import (
 	"strconv"
 	"strings"
 
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/server"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/api"
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
@@ -82,16 +81,13 @@ type SignCommitArgs struct {
 	NoPrompt bool
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// SetRemotePushToken is a function for setting push tokens on a git remote config
 	SetRemotePushToken server.RemotePushTokenSetter
@@ -155,7 +151,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
-		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient, args.RemoteClients)
+		nonce, err := args.GetNextNonce(pushKeyID, args.RPCClient)
 		if err != nil {
 			return errors2.Wrapf(err, "failed to get next nonce")
 		}

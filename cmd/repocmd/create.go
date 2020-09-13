@@ -9,12 +9,11 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/types"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/rpc/types"
+	api2 "github.com/make-os/lobe/types/api"
+	"github.com/make-os/lobe/util/api"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
@@ -46,19 +45,16 @@ type CreateArgs struct {
 	SigningKeyPass string
 
 	// RpcClient is the RPC client
-	RPCClient client.Client
-
-	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.Client
+	RPCClient types.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
 	KeyUnlocker common.KeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of an account
-	GetNextNonce utils.NextNonceGetter
+	GetNextNonce api.NextNonceGetter
 
 	// CreateRepo is a function for generating a transaction for creating a repository
-	CreateRepo utils.RepoCreator
+	CreateRepo api.RepoCreator
 
 	// ShowTxStatusTracker is a function tracking and displaying tx status
 	ShowTxStatusTracker common.TxStatusTrackerFunc
@@ -108,14 +104,14 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 	// If nonce is unset, get the nonce from a remote server
 	nonce := args.Nonce
 	if nonce == 0 {
-		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient, args.RemoteClients)
+		nextNonce, err := args.GetNextNonce(key.GetUserAddress(), args.RPCClient)
 		if err != nil {
 			return errors.Wrap(err, "failed to get signer's next nonce")
 		}
 		nonce, _ = strconv.ParseUint(nextNonce, 10, 64)
 	}
 
-	body := &types.BodyCreateRepo{
+	body := &api2.BodyCreateRepo{
 		Name:       args.Name,
 		Nonce:      nonce,
 		Value:      args.Value,
@@ -125,7 +121,7 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 	}
 
 	// Create the repo creating transaction
-	hash, err := args.CreateRepo(body, args.RPCClient, args.RemoteClients)
+	hash, err := args.CreateRepo(body, args.RPCClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to create repo")
 	}
@@ -135,7 +131,7 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
-		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient, args.RemoteClients); err != nil {
+		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {
 			return err
 		}
 	}

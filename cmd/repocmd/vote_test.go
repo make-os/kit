@@ -7,15 +7,14 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	types2 "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -58,7 +57,7 @@ var _ = Describe("VoteCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "", fmt.Errorf("error")
 			}
@@ -75,11 +74,11 @@ var _ = Describe("VoteCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *api.BodyRepoVote, rpcClient types.Client) (hash string, err error) {
 				Expect(req.RepoName).To(Equal(args.RepoName))
 				Expect(req.ProposalID).To(Equal(args.ProposalID))
 				Expect(req.Vote).To(Equal(args.Vote))
@@ -100,14 +99,14 @@ var _ = Describe("VoteCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				Expect(address).To(Equal(key.Addr().String()))
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *api.BodyRepoVote, rpcClient types.Client) (hash string, err error) {
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return nil
 			}
 			err := VoteCmd(cfg, args)
@@ -122,13 +121,13 @@ var _ = Describe("VoteCmd", func() {
 			args.KeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (kstypes.StoredKey, error) {
 				return mockKey, nil
 			}
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
 				return "2", nil
 			}
-			args.VoteCreator = func(req *types2.BodyRepoVote, rpcClient client.Client, remoteClients []restclient.Client) (hash string, err error) {
+			args.VoteCreator = func(req *api.BodyRepoVote, rpcClient types.Client) (hash string, err error) {
 				return "0x123", nil
 			}
-			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []restclient.Client) error {
+			args.ShowTxStatusTracker = func(stdout io.Writer, hash string, rpcClient types.Client) error {
 				return fmt.Errorf("error")
 			}
 			err := VoteCmd(cfg, args)

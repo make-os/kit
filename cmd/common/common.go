@@ -9,14 +9,13 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	client2 "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
-	"github.com/make-os/lobe/api/utils"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/keystore"
 	"github.com/make-os/lobe/keystore/types"
-	"github.com/make-os/lobe/modules"
+	types3 "github.com/make-os/lobe/modules/types"
 	remotetypes "github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/rpc/types"
+	"github.com/make-os/lobe/util/api"
 	"github.com/make-os/lobe/util/colorfmt"
 	"github.com/pkg/errors"
 )
@@ -135,11 +134,10 @@ func MakePassEnvVar(appName string) string {
 	return strings.ToUpper(fmt.Sprintf("%s_PASS", appName))
 }
 
-type TxStatusTrackerFunc func(stdout io.Writer, hash string, rpcClient client.Client,
-	remoteClients []client2.Client) error
+type TxStatusTrackerFunc func(stdout io.Writer, hash string, rpcClient types2.Client) error
 
 // ShowTxStatusTracker tracks transaction status and displays updates to stdout.
-func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient client.Client, remoteClients []client2.Client) error {
+func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client) error {
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Writer = stdout
 	s.Prefix = " "
@@ -147,7 +145,7 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient client.Client,
 	lastStatus := ""
 	for {
 		time.Sleep(1 * time.Second)
-		resp, err := utils.GetTransaction(hash, rpcClient, remoteClients)
+		resp, err := api.GetTransaction(hash, rpcClient)
 		if err != nil {
 			s.Stop()
 			return err
@@ -156,9 +154,9 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient client.Client,
 			continue
 		}
 		lastStatus = resp.Status
-		if resp.Status == modules.TxStatusInMempool {
+		if resp.Status == types3.TxStatusInMempool {
 			s.Suffix = colorfmt.YellowString(" In mempool")
-		} else if resp.Status == modules.TxStatusInPushpool {
+		} else if resp.Status == types3.TxStatusInPushpool {
 			s.Suffix = colorfmt.YellowString(" In pushpool")
 		} else {
 			s.FinalMSG = colorfmt.GreenString("   Confirmed!\n")

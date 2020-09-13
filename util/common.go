@@ -300,6 +300,15 @@ func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
 	return decoder.Decode(srcMap)
 }
 
+// DecodeWithJSON is like DecodeMap but it marshals src and Unmarshal to dest using encode/json.
+func DecodeWithJSON(src interface{}, dest interface{}) error {
+	bz, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bz, dest)
+}
+
 // EncodeNumber serializes a number to BigEndian
 func EncodeNumber(n uint64) []byte {
 	var b = make([]byte, 8)

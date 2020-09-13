@@ -4,10 +4,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
-	restclient "github.com/make-os/lobe/api/remote/client"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
@@ -15,13 +14,19 @@ import (
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/server"
 	remotetypes "github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var testGetNextNonce = func(pushKeyID string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+func TestSigncmd(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "SignCmd Suite")
+}
+
+var testGetNextNonce = func(pushKeyID string, rpcClient types2.Client) (string, error) {
 	return "1", nil
 }
 
@@ -122,7 +127,7 @@ var _ = Describe("SignCommit", func() {
 			mockStoredKey.EXPECT().GetMeta().Return(types.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.Addr().String())
-			args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args.GetNextNonce = func(address string, rpcClient types2.Client) (string, error) {
 				return "", fmt.Errorf("error")
 			}
 			SignCommitCmd(cfg, mockRepo, args)
@@ -153,7 +158,7 @@ var _ = Describe("SignCommit", func() {
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
-			args := &SignCommitArgs{GetNextNonce: func(pushKeyID string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+			args := &SignCommitArgs{GetNextNonce: func(pushKeyID string, rpcClient types2.Client) (string, error) {
 				return "", fmt.Errorf("error")
 			}}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
@@ -255,7 +260,7 @@ var _ = Describe("SignCommit", func() {
 				It(`should pass push key to CreateEmptyCommit, TxDetail object and GetNextNonce`, func() {
 					mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
 					args := &SignCommitArgs{Fee: "1", SigningKey: key.Addr().String(), Message: "some message", AmendCommit: false}
-					args.GetNextNonce = func(address string, rpcClient client.Client, remoteClients []restclient.Client) (string, error) {
+					args.GetNextNonce = func(address string, rpcClient types2.Client) (string, error) {
 						Expect(address).To(Equal(key.PushAddr().String()))
 						return "1", nil
 					}

@@ -1,7 +1,6 @@
 package refsync
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/golang/mock/gomock"
@@ -15,6 +14,8 @@ import (
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	. "github.com/onsi/ginkgo"
+	core_types "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"gopkg.in/src-d/go-git.v4"
 
 	. "github.com/onsi/gomega"
@@ -139,9 +140,9 @@ var _ = Describe("Watcher", func() {
 		When("no transactions exist in blocks between StartHeight -> EndHeight", func() {
 			It("should just fetch the block at the heights and update the tracked repo LastUpdated height", func() {
 				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 3}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+2)).Return(map[string]interface{}{}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+2)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+2)
@@ -152,42 +153,12 @@ var _ = Describe("Watcher", func() {
 		})
 
 		When("transaction is bad", func() {
-			It("should return error when unable to decode transaction from base64", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-					"result": map[string]interface{}{
-						"block": map[string]interface{}{
-							"data": map[string]interface{}{
-								"txs": []interface{}{
-									"bad_base64",
-								},
-							},
-						},
-					},
-				}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
-				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
-				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
-				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
-				err := w.Do(task)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("failed to decode transaction: illegal base64 data at input byte 3"))
-			})
-
 			It("should return error when unable to decode transaction into a BaseTx", func() {
 				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-					"result": map[string]interface{}{
-						"block": map[string]interface{}{
-							"data": map[string]interface{}{
-								"txs": []interface{}{
-									base64.StdEncoding.EncodeToString([]byte("bad tx")),
-								},
-							},
-						},
-					},
-				}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
+					Txs: []tmtypes.Tx{[]byte("bad tx")},
+				}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
@@ -201,18 +172,10 @@ var _ = Describe("Watcher", func() {
 			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxCoinTransfer()
 			tx.Value = "10"
-			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-				"result": map[string]interface{}{
-					"block": map[string]interface{}{
-						"data": map[string]interface{}{
-							"txs": []interface{}{
-								base64.StdEncoding.EncodeToString(tx.Bytes()),
-							},
-						},
-					},
-				},
-			}, nil)
-			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
+				Txs: []tmtypes.Tx{tx.Bytes()},
+			}}}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
@@ -224,18 +187,10 @@ var _ = Describe("Watcher", func() {
 			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxPush()
 			tx.Note = &types2.Note{RepoName: "repo2"}
-			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-				"result": map[string]interface{}{
-					"block": map[string]interface{}{
-						"data": map[string]interface{}{
-							"txs": []interface{}{
-								base64.StdEncoding.EncodeToString(tx.Bytes()),
-							},
-						},
-					},
-				},
-			}, nil)
-			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
+				Txs: []tmtypes.Tx{tx.Bytes()},
+			}}}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 			mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
@@ -247,18 +202,10 @@ var _ = Describe("Watcher", func() {
 			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxPush()
 			tx.Note = &types2.Note{RepoName: "repo2"}
-			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-				"result": map[string]interface{}{
-					"block": map[string]interface{}{
-						"data": map[string]interface{}{
-							"txs": []interface{}{
-								base64.StdEncoding.EncodeToString(tx.Bytes()),
-							},
-						},
-					},
-				},
-			}, nil)
-			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
+				Txs: []tmtypes.Tx{tx.Bytes()},
+			}}}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
 			err := w.Do(task)
 			Expect(err).To(BeNil())
@@ -280,18 +227,8 @@ var _ = Describe("Watcher", func() {
 					didInitRepo = true
 					return nil
 				}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-					"result": map[string]interface{}{
-						"block": map[string]interface{}{
-							"data": map[string]interface{}{
-								"txs": []interface{}{
-									base64.StdEncoding.EncodeToString(tx.Bytes()),
-								},
-							},
-						},
-					},
-				}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{Txs: []tmtypes.Tx{tx.Bytes()}}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
@@ -310,18 +247,8 @@ var _ = Describe("Watcher", func() {
 					didInitRepo = true
 					return git.ErrRepositoryAlreadyExists
 				}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-					"result": map[string]interface{}{
-						"block": map[string]interface{}{
-							"data": map[string]interface{}{
-								"txs": []interface{}{
-									base64.StdEncoding.EncodeToString(tx.Bytes()),
-								},
-							},
-						},
-					},
-				}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{Txs: []tmtypes.Tx{tx.Bytes()}}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
@@ -339,18 +266,8 @@ var _ = Describe("Watcher", func() {
 					didInitRepo = true
 					return fmt.Errorf("error")
 				}
-				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(map[string]interface{}{
-					"result": map[string]interface{}{
-						"block": map[string]interface{}{
-							"data": map[string]interface{}{
-								"txs": []interface{}{
-									base64.StdEncoding.EncodeToString(tx.Bytes()),
-								},
-							},
-						},
-					},
-				}, nil)
-				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(map[string]interface{}{}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{Txs: []tmtypes.Tx{tx.Bytes()}}}}, nil)
+				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight)
 				mockRepoSyncInfoKeeper.EXPECT().Track(task.RepoName, task.StartHeight+1)
