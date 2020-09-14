@@ -9,7 +9,7 @@ import (
 	storagemocks "github.com/make-os/lobe/storage/mocks"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -38,7 +38,7 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	Describe(".SaveBlockInfo", func() {
-		var info = &core.BlockInfo{AppHash: []byte("stuff"), Height: 1}
+		var info = &state.BlockInfo{AppHash: []byte("stuff"), Height: 1}
 
 		BeforeEach(func() {
 			err := sysKeeper.SaveBlockInfo(info)
@@ -48,7 +48,7 @@ var _ = Describe("SystemKeeper", func() {
 		It("should store last block info", func() {
 			rec, err := appDB.Get(MakeKeyBlockInfo(info.Height.Int64()))
 			Expect(err).To(BeNil())
-			var actual core.BlockInfo
+			var actual state.BlockInfo
 			err = rec.Scan(&actual)
 			Expect(err).To(BeNil())
 			Expect(info).To(BeEquivalentTo(&actual))
@@ -65,8 +65,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("there are 2 blocks info stored", func() {
-			var info2 = &core.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
-			var info1 = &core.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
+			var info2 = &state.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
+			var info1 = &state.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
 
 			BeforeEach(func() {
 				err := sysKeeper.SaveBlockInfo(info1)
@@ -109,8 +109,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("there are 2 block info stored", func() {
-			var info2 = &core.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
-			var info1 = &core.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
+			var info2 = &state.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
+			var info1 = &state.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
 			BeforeEach(func() {
 				err := sysKeeper.SaveBlockInfo(info2)
 				Expect(err).To(BeNil())

@@ -2,6 +2,7 @@ package createrepo_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -11,13 +12,17 @@ import (
 	"github.com/make-os/lobe/remote/policy"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestCreateRepo(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "CreateRepo Suite")
+}
 
 var _ = Describe("CreateRepoContract", func() {
 	var appDB, stateTreeDB storagetypes.Engine
@@ -33,7 +38,7 @@ var _ = Describe("CreateRepoContract", func() {
 		cfg, err = testutil.SetTestCfg()
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

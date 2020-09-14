@@ -83,7 +83,7 @@ var _ = Describe("SystemKeeper", func() {
 		})
 	})
 
-	Describe(".GetByHeight", func() {
+	Describe(".Get", func() {
 		When("one validator is stored at height=1, search height = 1", func() {
 			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket1")}}
 			BeforeEach(func() {
@@ -93,7 +93,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			It("should return err=nil and one validator", func() {
-				res, err := valKeeper.GetByHeight(1)
+				res, err := valKeeper.Get(1)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(core.BlockValidators(rec)))
 			})
@@ -110,7 +110,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			It("should return valset2 since it is the most recent", func() {
-				res, err := valKeeper.GetByHeight(0)
+				res, err := valKeeper.Get(0)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})
@@ -128,7 +128,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			It("should return valset2 since it is the most recent set", func() {
-				res, err := valKeeper.GetByHeight(9)
+				res, err := valKeeper.Get(9)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})
@@ -146,7 +146,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			It("should return valset2 since it is the most recent set", func() {
-				res, err := valKeeper.GetByHeight(10)
+				res, err := valKeeper.Get(10)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})

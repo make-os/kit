@@ -6,6 +6,7 @@ import (
 
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/validation"
 
@@ -52,7 +53,7 @@ var _ = Describe("Transaction", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

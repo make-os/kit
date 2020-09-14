@@ -11,7 +11,6 @@ import (
 	"github.com/make-os/lobe/mocks"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -35,7 +34,7 @@ var _ = Describe("ProposalHandler", func() {
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

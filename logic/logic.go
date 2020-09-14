@@ -327,7 +327,7 @@ func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 // OnEndBlock is called within the ABCI EndBlock method;
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
-func (l *Logic) OnEndBlock(block *core.BlockInfo) error {
+func (l *Logic) OnEndBlock(block *state.BlockInfo) error {
 
 	repoKeeper := l.RepoKeeper()
 	nextChainHeight := uint64(block.Height)

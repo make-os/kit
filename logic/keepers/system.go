@@ -7,7 +7,7 @@ import (
 	"github.com/make-os/lobe/storage"
 	"github.com/make-os/lobe/storage/common"
 	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util"
 )
 
@@ -20,7 +20,7 @@ type SystemKeeper struct {
 	db storagetypes.Tx
 
 	gmx       *sync.RWMutex
-	lastSaved *core.BlockInfo
+	lastSaved *state.BlockInfo
 }
 
 // NewSystemKeeper creates an instance of SystemKeeper
@@ -31,7 +31,7 @@ func NewSystemKeeper(db storagetypes.Tx) *SystemKeeper {
 // SaveBlockInfo saves a committed block information.
 // Indexes the saved block info for faster future retrieval so
 // that GetLastBlockInfo will not refetch
-func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
+func (s *SystemKeeper) SaveBlockInfo(info *state.BlockInfo) error {
 	data := util.ToBytes(info)
 	record := common.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
 
@@ -43,7 +43,7 @@ func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
 }
 
 // GetLastBlockInfo returns information about the last committed block.
-func (s *SystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
+func (s *SystemKeeper) GetLastBlockInfo() (*state.BlockInfo, error) {
 
 	// Retrieve the cached last saved block info if set
 	s.gmx.RLock()
@@ -62,7 +62,7 @@ func (s *SystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
 		return nil, ErrBlockInfoNotFound
 	}
 
-	var blockInfo core.BlockInfo
+	var blockInfo state.BlockInfo
 	if err := rec.Scan(&blockInfo); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *SystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
 }
 
 // GetBlockInfo returns block information at a given height
-func (s *SystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
+func (s *SystemKeeper) GetBlockInfo(height int64) (*state.BlockInfo, error) {
 	rec, err := s.db.Get(MakeKeyBlockInfo(height))
 	if err != nil {
 		if err == storage.ErrRecordNotFound {
@@ -80,7 +80,7 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
 		return nil, err
 	}
 
-	var blockInfo core.BlockInfo
+	var blockInfo state.BlockInfo
 	if err := rec.Scan(&blockInfo); err != nil {
 		return nil, err
 	}

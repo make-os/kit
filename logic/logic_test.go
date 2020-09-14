@@ -3,6 +3,7 @@ package logic_test
 import (
 	"encoding/json"
 	"os"
+	"testing"
 
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/util"
@@ -15,6 +16,11 @@ import (
 
 	l "github.com/make-os/lobe/logic"
 )
+
+func TestLogic(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Logic Suite")
+}
 
 var _ = Describe("Logic", func() {
 	var appDB, stateTreeDB storagetypes.Engine

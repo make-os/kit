@@ -60,7 +60,7 @@ get:
 
 // GetByHeight gets validators at the given height. If height is <= 0, the
 // validator set of the highest height is returned.
-func (v *ValidatorKeeper) GetByHeight(height int64) (core.BlockValidators, error) {
+func (v *ValidatorKeeper) Get(height int64) (core.BlockValidators, error) {
 
 	if height > 0 {
 		return v.getByHeight(height)

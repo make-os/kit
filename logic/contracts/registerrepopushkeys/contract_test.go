@@ -2,6 +2,7 @@ package registerrepopushkeys_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -21,7 +22,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("UpsertOwnerContract", func() {
+func TestRegisterRepoPushKeys(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "RegisterRepoPushKeys Suite")
+}
+
+var _ = Describe("Contract", func() {
 	var appDB, stateTreeDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -35,7 +41,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

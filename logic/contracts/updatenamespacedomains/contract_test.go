@@ -2,6 +2,7 @@ package updatenamespacedomains_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -11,13 +12,17 @@ import (
 	"github.com/make-os/lobe/params"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestUpdateNamespaceDomains(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "UpdateNamespaceDomains Suite")
+}
 
 var _ = Describe("Contract", func() {
 	var appDB, stateTreeDB storagetypes.Engine
@@ -33,7 +38,7 @@ var _ = Describe("Contract", func() {
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

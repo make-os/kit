@@ -2,6 +2,7 @@ package upsertowner_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -20,6 +21,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func TestUpsertOwner(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "UpsertOwner Suite")
+}
+
 var _ = Describe("Contract", func() {
 	var appDB, stateTreeDB storagetypes.Engine
 	var err error
@@ -35,7 +41,7 @@ var _ = Describe("Contract", func() {
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = logic2.New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
