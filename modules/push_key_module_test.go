@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/config"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
@@ -13,6 +12,7 @@ import (
 	mockclients "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
@@ -113,7 +113,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockPushKeyClient.EXPECT().Register(gomock.Any()).Return(&types.ResultRegisterPushKey{}, nil)
+			mockPushKeyClient.EXPECT().Register(gomock.Any()).Return(&api.ResultRegisterPushKey{}, nil)
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
 			assert.NotPanics(GinkgoT(), func() {
@@ -317,7 +317,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockPushKeyClient.EXPECT().GetOwner(key.PushAddr().String(), uint64(1)).Return(&types.ResultAccount{}, nil)
+			mockPushKeyClient.EXPECT().GetOwner(key.PushAddr().String(), uint64(1)).Return(&api.ResultAccount{}, nil)
 			m.AttachedClient = mockClient
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccountOfOwner(key.PushAddr().String(), 1)

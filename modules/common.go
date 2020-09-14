@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/crypto"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
@@ -81,7 +81,7 @@ func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool)
 // It will not reset fields already set.
 // options[0]: <string|bool> 	- key or payloadOnly request
 // options[1]: [<bool>] 		- payload request
-func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient client.Client, options ...interface{}) (bool, *crypto.PrivKey) {
+func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, options ...interface{}) (bool, *crypto.PrivKey) {
 
 	key, payloadOnly := parseOptions(options...)
 

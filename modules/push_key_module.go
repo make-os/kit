@@ -3,13 +3,13 @@ package modules
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/api/rpc/client"
-	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
@@ -30,7 +30,7 @@ type PushKeyModule struct {
 }
 
 // NewAttachablePushKeyModule creates an instance of PushKeyModule suitable in attach mode
-func NewAttachablePushKeyModule(client client.Client) *PushKeyModule {
+func NewAttachablePushKeyModule(client types2.Client) *PushKeyModule {
 	return &PushKeyModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
@@ -136,7 +136,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.PushKey().Register(&apitypes.BodyRegisterPushKey{
+		resp, err := m.AttachedClient.PushKey().Register(&api.BodyRegisterPushKey{
 			PublicKey:  tx.PublicKey,
 			Scopes:     tx.Scopes,
 			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),

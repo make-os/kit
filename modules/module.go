@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/extensions"
@@ -12,7 +11,7 @@ import (
 	"github.com/make-os/lobe/mempool"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
-	"github.com/make-os/lobe/rpc"
+	types3 "github.com/make-os/lobe/rpc/types"
 	types2 "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/robertkrimen/otto"
@@ -26,17 +25,7 @@ type Module struct {
 }
 
 // New creates an instance of Module
-func New(
-	cfg *config.AppConfig,
-	acctmgr *keystore.Keystore,
-	service services.Service,
-	logic core.Logic,
-	mempoolReactor *mempool.Reactor,
-	ticketmgr types2.TicketManager,
-	dht types.DHT,
-	extMgr *extensions.Manager,
-	rpcServer *rpc.RPCServer,
-	remoteSvr core.RemoteServer) *Module {
+func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Service, logic core.Logic, mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht types.DHT, extMgr *extensions.Manager, remoteSvr core.RemoteServer) *Module {
 
 	return &Module{
 		cfg: cfg,
@@ -51,7 +40,7 @@ func New(
 			DHT:     NewDHTModule(cfg, dht),
 			ExtMgr:  extMgr,
 			Util:    NewConsoleUtilModule(os.Stdout),
-			RPC:     NewRPCModule(cfg, rpcServer),
+			RPC:     NewRPCModule(cfg),
 			Pool:    NewPoolModule(mempoolReactor, remoteSvr.GetPushPool()),
 			Dev:     NewDevModule(),
 		},
@@ -59,7 +48,7 @@ func New(
 }
 
 // NewAttachable creates an instance of Module configured for attach mode.
-func NewAttachable(cfg *config.AppConfig, client client.Client, ks *keystore.Keystore) *Module {
+func NewAttachable(cfg *config.AppConfig, client types3.Client, ks *keystore.Keystore) *Module {
 	return &Module{
 		cfg:        cfg,
 		attachMode: cfg.IsAttachMode(),
@@ -73,7 +62,7 @@ func NewAttachable(cfg *config.AppConfig, client client.Client, ks *keystore.Key
 			NS:      NewAttachableNamespaceModule(client),
 			DHT:     NewAttachableDHTModule(client),
 			Util:    NewConsoleUtilModule(os.Stdout),
-			RPC:     NewRPCModule(cfg, nil),
+			RPC:     NewRPCModule(cfg),
 			Pool:    NewAttachablePoolModule(client),
 			Dev:     NewDevModule(),
 		},

@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/api/rpc/client"
-	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/crypto"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
@@ -28,7 +28,7 @@ type RepoModule struct {
 }
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
-func NewAttachableRepoModule(client client.Client) *RepoModule {
+func NewAttachableRepoModule(client types2.Client) *RepoModule {
 	return &RepoModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
@@ -112,7 +112,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().Create(&apitypes.BodyCreateRepo{
+		resp, err := m.AttachedClient.Repo().Create(&api.BodyCreateRepo{
 			Name:       tx.Name,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
@@ -238,7 +238,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().Get(name, &apitypes.GetRepoOpts{
+		resp, err := m.AttachedClient.Repo().Get(name, &api.GetRepoOpts{
 			NoProposals: noProposals,
 			Height:      blockHeight,
 		})
@@ -377,7 +377,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().AddContributors(&apitypes.BodyAddRepoContribs{
+		resp, err := m.AttachedClient.Repo().AddContributors(&api.BodyAddRepoContribs{
 			RepoName:      tx.RepoName,
 			ProposalID:    tx.ID,
 			PushKeys:      tx.PushKeys,

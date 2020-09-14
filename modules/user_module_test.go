@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/config"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/keystore"
@@ -17,8 +16,8 @@ import (
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/testutil"
 	types2 "github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -276,7 +275,7 @@ var _ = Describe("UserModule", func() {
 			mockUserClient := mocks3.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
-			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&apitypes.ResultAccount{}, nil)
+			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&api.ResultAccount{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccount("os1abc", 1)
 			})
@@ -334,7 +333,7 @@ var _ = Describe("UserModule", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			res := m.GetAvailableBalance("addr1")
 			Expect(res).To(Equal("100"))
 		})
@@ -344,7 +343,7 @@ var _ = Describe("UserModule", func() {
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			res := m.GetAvailableBalance("addr1")
 			Expect(res).To(Equal("90"))
 		})
@@ -363,7 +362,7 @@ var _ = Describe("UserModule", func() {
 			acct := state.BareAccount()
 			acct.Balance = "100"
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			res := m.GetStakedBalance("addr1")
 			Expect(res).To(Equal("0"))
 		})
@@ -373,7 +372,7 @@ var _ = Describe("UserModule", func() {
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			res := m.GetStakedBalance("addr1")
 			Expect(res).To(Equal("10"))
 		})
@@ -384,8 +383,8 @@ var _ = Describe("UserModule", func() {
 			res := m.GetValidatorKey()
 			Expect(res).To(And(
 				HaveKey("address"),
-				HaveKey("tmAddress"),
-				HaveKey("publicKey"),
+				HaveKey("tmAddr"),
+				HaveKey("pubkey"),
 			))
 			Expect(res).ToNot(HaveKey("privateKey"))
 		})
@@ -394,8 +393,8 @@ var _ = Describe("UserModule", func() {
 			res := m.GetValidatorKey()
 			Expect(res).To(And(
 				HaveKey("address"),
-				HaveKey("tmAddress"),
-				HaveKey("publicKey"),
+				HaveKey("tmAddr"),
+				HaveKey("pubkey"),
 			))
 			Expect(res).ToNot(HaveKey("privateKey"))
 		})
@@ -404,8 +403,8 @@ var _ = Describe("UserModule", func() {
 			res := m.GetValidatorKey(true)
 			Expect(res).To(And(
 				HaveKey("address"),
-				HaveKey("tmAddress"),
-				HaveKey("publicKey"),
+				HaveKey("tmAddr"),
+				HaveKey("pubkey"),
 				HaveKey("privateKey"),
 			))
 		})
@@ -503,7 +502,7 @@ var _ = Describe("UserModule", func() {
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"value": "10"}
 
-			mockUserClient.EXPECT().Send(gomock.Any()).Return(&apitypes.ResultHash{}, nil)
+			mockUserClient.EXPECT().Send(gomock.Any()).Return(&api.ResultHash{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendCoin(params)
 			})

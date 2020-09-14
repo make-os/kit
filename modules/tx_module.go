@@ -3,9 +3,9 @@ package modules
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/api/rpc/client"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
@@ -14,12 +14,6 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/make-os/lobe/util"
 	"github.com/robertkrimen/otto"
-)
-
-const (
-	TxStatusInMempool  = "in_mempool"
-	TxStatusInPushpool = "in_pushpool"
-	TxStatusInBlock    = "in_block"
 )
 
 // TxModule provides transaction functionalities to JS environment
@@ -35,7 +29,7 @@ func NewTxModule(service services.Service, logic core.Logic) *TxModule {
 }
 
 // NewAttachableTxModule creates an instance of TxModule suitable in attach mode
-func NewAttachableTxModule(client client.Client) *TxModule {
+func NewAttachableTxModule(client types2.Client) *TxModule {
 	return &TxModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 
@@ -104,17 +98,17 @@ func (m *TxModule) Get(hash string) util.Map {
 	if err != nil && err != types.ErrTxNotFound {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	} else if tx != nil {
-		return map[string]interface{}{"status": TxStatusInBlock, "data": util.ToMap(tx)}
+		return map[string]interface{}{"status": modulestypes.TxStatusInBlock, "data": util.ToMap(tx)}
 	}
 
 	// Check tx in the mempool
 	if tx := m.logic.GetMempoolReactor().GetTx(hash); tx != nil {
-		return map[string]interface{}{"status": TxStatusInMempool, "data": util.ToMap(tx)}
+		return map[string]interface{}{"status": modulestypes.TxStatusInMempool, "data": util.ToMap(tx)}
 	}
 
 	// Check tx in push pool
 	if note := m.logic.GetRemoteServer().GetPushPool().Get(hash); note != nil {
-		return map[string]interface{}{"status": TxStatusInPushpool, "data": note.ToMap()}
+		return map[string]interface{}{"status": modulestypes.TxStatusInPushpool, "data": note.ToMap()}
 	}
 
 	panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))

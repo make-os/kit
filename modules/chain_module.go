@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/spf13/cast"
@@ -33,7 +33,7 @@ func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule
 }
 
 // NewAttachableChainModule creates an instance of ChainModule suitable in attach mode
-func NewAttachableChainModule(client client.Client) *ChainModule {
+func NewAttachableChainModule(client types2.Client) *ChainModule {
 	return &ChainModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 
@@ -107,7 +107,7 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return res
+	return util.ToMap(res)
 }
 
 // getHeight returns the current block height
@@ -135,7 +135,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return util.ToMap(res)
+	return util.ToBasicMap(res)
 }
 
 // getValidators returns validators of a given block
@@ -146,7 +146,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 // RETURNS res []Map
 // res.publicKey <string>: The base58 public key of validator
 // res.address <string>: The bech32 address of the validator
-// res.tmAddress <string>: The tendermint address and the validator
+// res.tmAddr <string>: The tendermint address and the validator
 // res.ticketId <string>: The id of the validator ticket
 func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
@@ -158,7 +158,7 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
-	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
+	validators, err := m.keepers.ValidatorKeeper().Get(blockHeight)
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
@@ -170,10 +170,10 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 		pubKey := crypto.MustPubKeyFromBytes(pubKey.Bytes())
 		vList = append(vList, map[string]interface{}{
-			"publicKey": pubKey.Base58(),
-			"address":   pubKey.Addr(),
-			"tmAddress": pub32.Address().String(),
-			"ticketId":  valInfo.TicketID.String(),
+			"pubkey":   pubKey.Base58(),
+			"address":  pubKey.Addr(),
+			"tmAddr":   pub32.Address().String(),
+			"ticketId": valInfo.TicketID.String(),
 		})
 	}
 

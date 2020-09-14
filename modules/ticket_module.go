@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
@@ -27,7 +27,7 @@ type TicketModule struct {
 }
 
 // NewAttachableTicketModule creates an instance of TicketModule suitable in attach mode
-func NewAttachableTicketModule(client client.Client) *TicketModule {
+func NewAttachableTicketModule(client types2.Client) *TicketModule {
 	return &TicketModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 

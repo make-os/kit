@@ -7,7 +7,6 @@ import (
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -80,7 +79,7 @@ var _ = Describe("NamespaceModule", func() {
 			ns.ExpiresAt = 100
 			ns.GraceEndAt = 200
 			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(ns)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 101}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 101}, nil)
 			res := m.Lookup("name", 0)
 			Expect(res).ToNot(BeNil())
 			Expect(res["expired"]).To(BeTrue())
@@ -93,7 +92,7 @@ var _ = Describe("NamespaceModule", func() {
 			ns.ExpiresAt = 100
 			ns.GraceEndAt = 200
 			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("name"), uint64(0)).Return(ns)
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 200}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 200}, nil)
 			res := m.Lookup("name", 0)
 			Expect(res).ToNot(BeNil())
 			Expect(res["expired"]).To(BeTrue())

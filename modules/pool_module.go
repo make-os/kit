@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/api/rpc/client"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/push/types"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
@@ -21,7 +21,7 @@ type PoolModule struct {
 }
 
 // NewAttachablePoolModule creates an instance of PoolModule suitable in attach mode
-func NewAttachablePoolModule(client client.Client) *PoolModule {
+func NewAttachablePoolModule(client types2.Client) *PoolModule {
 	return &PoolModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 

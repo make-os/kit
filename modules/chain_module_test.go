@@ -9,11 +9,14 @@ import (
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
+	core_types "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/types"
 )
 
 var _ = Describe("ChainModule", func() {
@@ -60,10 +63,10 @@ var _ = Describe("ChainModule", func() {
 		})
 
 		It("should return expected result on success", func() {
-			expected := map[string]interface{}{"height": 100}
+			expected := &core_types.ResultBlock{Block: &types.Block{}}
 			mockService.EXPECT().GetBlock(int64(1)).Return(expected, nil)
 			res := m.GetBlock("1")
-			Expect(res).To(Equal(util.Map(expected)))
+			Expect(map[string]interface{}(res)).To(Equal(util.ToMap(expected)))
 		})
 	})
 
@@ -74,7 +77,7 @@ var _ = Describe("ChainModule", func() {
 		})
 
 		It("should expected result on success", func() {
-			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			height := m.GetHeight()
 			Expect(height).To(Equal("100"))
 		})
@@ -91,10 +94,10 @@ var _ = Describe("ChainModule", func() {
 		})
 
 		It("should return expected block info on success", func() {
-			bi := &core.BlockInfo{Height: 100}
+			bi := &state.BlockInfo{Height: 100}
 			mockSysKeeper.EXPECT().GetBlockInfo(int64(1)).Return(bi, nil)
 			res := m.GetBlockInfo("1")
-			Expect(res).To(Equal(util.Map(util.ToMap(bi))))
+			Expect(res).To(Equal(util.Map(util.ToBasicMap(bi))))
 		})
 	})
 
@@ -104,7 +107,7 @@ var _ = Describe("ChainModule", func() {
 		})
 
 		It("should panic when unable to get validators at height", func() {
-			mockValKeeper.EXPECT().GetByHeight(int64(1)).Return(nil, fmt.Errorf("error"))
+			mockValKeeper.EXPECT().Get(int64(1)).Return(nil, fmt.Errorf("error"))
 			Expect(func() { m.GetValidators("1") }).To(Panic())
 		})
 
@@ -114,12 +117,12 @@ var _ = Describe("ChainModule", func() {
 			vals := core.BlockValidators{
 				key.PubKey().MustBytes32(): &core.Validator{PubKey: key.PubKey().MustBytes32(), TicketID: ticketID},
 			}
-			mockValKeeper.EXPECT().GetByHeight(int64(1)).Return(vals, nil)
+			mockValKeeper.EXPECT().Get(int64(1)).Return(vals, nil)
 			res := m.GetValidators("1")
 			Expect(res).To(HaveLen(1))
-			Expect(res[0]["publicKey"]).To(Equal("48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC"))
+			Expect(res[0]["pubkey"]).To(Equal("48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC"))
 			Expect(res[0]["address"]).To(Equal(identifier.Address("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")))
-			Expect(res[0]["tmAddress"]).To(Equal("171E68F02E6F66BF9FF65C13C75D9B2B492C2F40"))
+			Expect(res[0]["tmAddr"]).To(Equal("171E68F02E6F66BF9FF65C13C75D9B2B492C2F40"))
 			Expect(res[0]["ticketId"]).To(Equal("0x7469636b65745f6964"))
 		})
 	})

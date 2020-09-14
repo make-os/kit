@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
@@ -24,7 +24,7 @@ type NamespaceModule struct {
 }
 
 // NewAttachableNamespaceModule creates an instance of NamespaceModule suitable in attach mode
-func NewAttachableNamespaceModule(client client.Client) *NamespaceModule {
+func NewAttachableNamespaceModule(client types2.Client) *NamespaceModule {
 	return &NamespaceModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
 }
 

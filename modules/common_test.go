@@ -5,11 +5,11 @@ import (
 	"math/big"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
 	mockrpc "github.com/make-os/lobe/mocks/rpc"
 	mockclients "github.com/make-os/lobe/mocks/rpc-client"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -129,7 +129,7 @@ var _ = Describe("Common", func() {
 
 			key := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
-			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&types.ResultAccount{
+			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{
 				Account: &state.Account{Nonce: 1},
 			}, nil)
 

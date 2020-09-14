@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	types2 "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
 	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/modules/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
@@ -110,7 +110,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
-			mockRepoClient.EXPECT().Create(gomock.Any()).Return(&types2.ResultCreateRepo{}, nil)
+			mockRepoClient.EXPECT().Create(gomock.Any()).Return(&api.ResultCreateRepo{}, nil)
 			params := map[string]interface{}{"name": "repo1"}
 			assert.NotPanics(GinkgoT(), func() {
 				m.Create(params)
@@ -256,7 +256,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
-			mockRepoClient.EXPECT().Get("repo1", &types2.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
+			mockRepoClient.EXPECT().Get("repo1", &api.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1", types.GetOptions{Height: 1})
@@ -269,7 +269,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
-			mockRepoClient.EXPECT().Get("repo1", &types2.GetRepoOpts{Height: 1}).Return(&types2.ResultRepository{}, nil)
+			mockRepoClient.EXPECT().Get("repo1", &api.GetRepoOpts{Height: 1}).Return(&api.ResultRepository{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("repo1", types.GetOptions{Height: 1})
 			})
@@ -424,7 +424,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
-			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&types2.ResultHash{}, fmt.Errorf("error"))
+			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&api.ResultHash{}, fmt.Errorf("error"))
 			params := map[string]interface{}{"id": 1}
 			err := fmt.Errorf("error")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -438,7 +438,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
-			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&types2.ResultHash{}, nil)
+			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&api.ResultHash{}, nil)
 			params := map[string]interface{}{"id": 1}
 			assert.NotPanics(GinkgoT(), func() {
 				m.AddContributor(params)

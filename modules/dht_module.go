@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/dht/types"
 	modulestypes "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/plumbing"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/util"
 
@@ -28,7 +28,7 @@ type DHTModule struct {
 }
 
 // NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
-func NewAttachableDHTModule(client client.Client) *DHTModule {
+func NewAttachableDHTModule(client types2.Client) *DHTModule {
 	return &DHTModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
 }
 

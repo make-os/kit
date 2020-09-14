@@ -3,14 +3,14 @@ package modules
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/api/rpc/client"
-	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/keystore"
 	kstypes "github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/node/services"
+	types2 "github.com/make-os/lobe/rpc/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
@@ -34,7 +34,7 @@ type UserModule struct {
 }
 
 // NewAttachableUserModule creates an instance of UserModule suitable in attach mode
-func NewAttachableUserModule(client client.Client, ks *keystore.Keystore) *UserModule {
+func NewAttachableUserModule(client types2.Client, ks *keystore.Keystore) *UserModule {
 	return &UserModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}, keystore: ks}
 }
 
@@ -331,14 +331,14 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 // RETURNS object <map>:
 // publicKey <string>:	The validator base58 public key
 // address 	<string>:	The validator's bech32 address.
-// tmAddress <string>:	The tendermint address
+// tmAddr <string>:	The tendermint address
 func (m *UserModule) GetValidatorKey(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]interface{}{
-		"publicKey": key.PubKey().Base58(),
-		"address":   key.Addr().String(),
-		"tmAddress": m.cfg.G().PrivVal.Key.Address.String(),
+		"pubkey":  key.PubKey().Base58(),
+		"address": key.Addr().String(),
+		"tmAddr":  m.cfg.G().PrivVal.Key.Address.String(),
 	}
 
 	if len(includePrivKey) > 0 && includePrivKey[0] {
@@ -415,7 +415,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 	}
 
 	if m.InAttachMode() {
-		resp, err := m.AttachedClient.User().Send(&apitypes.BodySendCoin{
+		resp, err := m.AttachedClient.User().Send(&api.BodySendCoin{
 			To:         tx.To,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),

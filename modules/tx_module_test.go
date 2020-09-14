@@ -5,14 +5,15 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	types2 "github.com/make-os/lobe/api/types"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
 	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
+	types2 "github.com/make-os/lobe/modules/types"
 	types3 "github.com/make-os/lobe/remote/push/types"
 	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -76,7 +77,7 @@ var _ = Describe("TxModule", func() {
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
-			mockTxClient.EXPECT().Get("0x123").Return(&types2.ResultTx{}, nil)
+			mockTxClient.EXPECT().Get("0x123").Return(&api.ResultTx{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Get("0x123")
 			})
@@ -105,7 +106,7 @@ var _ = Describe("TxModule", func() {
 			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(tx, nil)
 			res := m.Get(hash)
 			Expect(res).To(HaveKey("status"))
-			Expect(res["status"]).To(Equal(modules.TxStatusInBlock))
+			Expect(res["status"]).To(Equal(types2.TxStatusInBlock))
 			Expect(res).To(HaveKey("data"))
 			Expect(res["data"]).To(Equal(util.ToMap(tx)))
 		})
@@ -118,7 +119,7 @@ var _ = Describe("TxModule", func() {
 				mockMempoolReactor.EXPECT().GetTx(hash).Return(tx)
 				res := m.Get(hash)
 				Expect(res).To(HaveKey("status"))
-				Expect(res["status"]).To(Equal(modules.TxStatusInMempool))
+				Expect(res["status"]).To(Equal(types2.TxStatusInMempool))
 				Expect(res).To(HaveKey("data"))
 				Expect(res["data"]).To(Equal(util.ToMap(tx)))
 			})
@@ -139,7 +140,7 @@ var _ = Describe("TxModule", func() {
 
 				res := m.Get(hash.HexStr())
 				Expect(res).To(HaveKey("status"))
-				Expect(res["status"]).To(Equal(modules.TxStatusInPushpool))
+				Expect(res["status"]).To(Equal(types2.TxStatusInPushpool))
 				Expect(res).To(HaveKey("data"))
 				Expect(res["data"]).To(Equal(util.ToBasicMap(note)))
 			})
@@ -188,7 +189,7 @@ var _ = Describe("TxModule", func() {
 			m.AttachedClient = mockClient
 
 			payload := map[string]interface{}{"type": 1}
-			mockTxClient.EXPECT().Send(payload).Return(&types2.ResultHash{}, nil)
+			mockTxClient.EXPECT().Send(payload).Return(&api.ResultHash{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.SendPayload(payload)
 			})

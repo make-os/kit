@@ -40,7 +40,7 @@ func (m *RPCModule) methods() []*types.VMMember {
 		},
 		{
 			Name:        "local",
-			Value:       m.ConnectLocal,
+			Value:       m.connectLocal,
 			Description: "connect to the local RPC server",
 		},
 	}
@@ -77,8 +77,8 @@ func (m *RPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// ConnectLocal returns an RPC client connected to the local RPC server
-func (m *RPCModule) ConnectLocal() util.Map {
+// connectLocal returns an RPC client connected to the local RPC server
+func (m *RPCModule) connectLocal() util.Map {
 	host, port, err := net.SplitHostPort(m.cfg.Remote.Address)
 	if err != nil {
 		panic(err)
