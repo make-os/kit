@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/json"
+
 	"github.com/make-os/lobe/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -279,4 +281,23 @@ var _ = Describe("Errors", func() {
 		})
 	})
 
+	Describe("TMAddress marshalling", func() {
+		It("should correctly marshal byte slice", func() {
+			var addr = TMAddress{0xfd, 0xc5, 0x2c, 0x37, 0x6f, 0xa4, 0xd3, 0x2b, 0xe4, 0xbd, 0x20, 0x66, 0xbe, 0x88, 0x89, 0x1d, 0x9d, 0xb1, 0x3c, 0xa0}
+			res, err := json.Marshal(addr)
+			Expect(err).To(BeNil())
+			Expect(string(res)).To(Equal(`"FDC52C376FA4D32BE4BD2066BE88891D9DB13CA0"`))
+		})
+
+		It("should correctly unmarshal byte slice", func() {
+			var addr = TMAddress{0xfd, 0xc5, 0x2c, 0x37, 0x6f, 0xa4, 0xd3, 0x2b, 0xe4, 0xbd, 0x20, 0x66, 0xbe, 0x88, 0x89, 0x1d, 0x9d, 0xb1, 0x3c, 0xa0}
+			res, err := json.Marshal(addr)
+			Expect(err).To(BeNil())
+
+			var addr2 TMAddress
+			err = json.Unmarshal(res, &addr2)
+			Expect(err).To(BeNil())
+			Expect(addr).To(Equal(addr2))
+		})
+	})
 })

@@ -402,3 +402,15 @@ func (s String) Float() float64 {
 func (s String) IsDecimal() bool {
 	return govalidator.IsFloat(string(s))
 }
+
+// TMAddress represents a tendermint address
+type TMAddress []byte
+
+func (i TMAddress) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + strings.ToUpper(hex.EncodeToString(i)) + `"`), nil
+}
+
+func (i *TMAddress) UnmarshalJSON(data []byte) error {
+	*i = FromHexBytes(bytes.Trim(data, `"`))
+	return nil
+}
