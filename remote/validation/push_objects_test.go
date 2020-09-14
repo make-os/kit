@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
@@ -17,7 +16,6 @@ import (
 	"github.com/make-os/lobe/testutil"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util"
 	crypto2 "github.com/make-os/lobe/util/crypto"
@@ -161,7 +159,6 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				pp.Println(err.Error())
 				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
@@ -474,7 +471,7 @@ var _ = Describe("Validation", func() {
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
 				mockLogic.EXPECT().DrySend(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), uint64(1)).
 					Return(fmt.Errorf("insufficient"))
 

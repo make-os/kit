@@ -10,13 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/api/remote"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/dht/announcer"
 	dhttypes "github.com/make-os/lobe/dht/types"
-	modtypes "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
@@ -31,6 +28,7 @@ import (
 	rr "github.com/make-os/lobe/remote/repo"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/rpc"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	crypto2 "github.com/make-os/lobe/util/crypto"
@@ -68,7 +66,9 @@ type Server struct {
 	cfg                        *config.AppConfig
 	log                        logger.Logger                           // log is the application logger
 	wg                         *sync.WaitGroup                         // wait group for waiting for the remote server
-	srv                        *http.Server                            // the http server
+	mux                        *http.ServeMux                          // The request multiplexer
+	srv                        *http.Server                            // The http server
+	rpcHandler                 *rpc.Handler                            // JSON-RPC 2.0 handler
 	rootDir                    string                                  // the root directory where all repos are stored
 	addr                       string                                  // addr is the listening address for the http server
 	gitBinPath                 string                                  // gitBinPath is the path of the git executable
@@ -79,12 +79,11 @@ type Server struct {
 	pushKeyGetter              core.PushKeyGetter                      // finds and returns PGP public key
 	dht                        dhttypes.DHT                            // The dht service
 	objfetcher                 fetcher.ObjectFetcher                   // The object fetcher service
-	blockGetter                types.BlockGetter                       // Provides access to blocks
+	blockGetter                core.BlockGetter                        // Provides access to blocks
 	noteSenders                *cache.Cache                            // Store senders of push notes
 	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
 	endorsements               *cache.Cache                            // Stores push endorsements
 	notesReceived              *cache.Cache                            // Stores ID of push notes recently received
-	modulesAgg                 modtypes.ModulesHub                     // Modules aggregator
 	refSyncer                  rstypes.RefSync                         // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                       // Function for performing authentication
 	checkPushNote              validation.CheckPushNoteFunc            // Function for performing PushNote validation
@@ -107,7 +106,7 @@ func New(
 	appLogic core.Logic,
 	dht dhttypes.DHT,
 	mempool core.Mempool,
-	blockGetter types.BlockGetter) *Server {
+	blockGetter core.BlockGetter) *Server {
 
 	// Create wait group
 	wg := &sync.WaitGroup{}
@@ -127,6 +126,7 @@ func New(
 		cfg:                     cfg,
 		log:                     cfg.G().Log.Module("remote-server"),
 		addr:                    addr,
+		mux:                     http.NewServeMux(),
 		rootDir:                 cfg.GetRepoRoot(),
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
@@ -147,6 +147,9 @@ func New(
 		notesReceived:           cache.NewCacheWithExpiringEntry(params.NotesReceivedCacheSize),
 		checkEndorsement:        validation.CheckEndorsement,
 	}
+
+	// Instantiate RPC handler
+	server.rpcHandler = rpc.New(server.mux, cfg)
 
 	// Set concrete functions for various function typed fields
 	server.makePushHandler = server.createPushHandler
@@ -203,12 +206,6 @@ func (sv *Server) applyRepoTrackingConfig() {
 // SetRootDir sets the directory where repositories are stored
 func (sv *Server) SetRootDir(dir string) {
 	sv.rootDir = dir
-}
-
-// RegisterAPIHandlers registers server API handlers
-func (sv *Server) RegisterAPIHandlers(agg modtypes.ModulesHub) {
-	sv.modulesAgg = agg
-	sv.registerAPIHandlers(sv.srv.Handler.(*http.ServeMux))
 }
 
 // GetFetcher returns the fetcher service
@@ -288,17 +285,23 @@ func (sv *Server) isNoteSeen(noteID string) bool {
 	return sv.notesReceived.Get(key) == struct{}{}
 }
 
+// GetRPCHandler returns the RPC handler
+func (sv *Server) GetRPCHandler() *rpc.Handler {
+	return sv.rpcHandler
+}
+
 // Start starts the server that serves the repos.
 // Implements p2p.Reactor
 func (sv *Server) Start() error {
-	s := http.NewServeMux()
 
+	// In non-validator mode, apply handler for git requests
 	if !sv.cfg.IsValidatorNode() {
-		s.HandleFunc("/", sv.gitRequestsHandler)
+		sv.mux.HandleFunc("/", sv.gitRequestsHandler)
 	}
 
 	sv.log.Info("Server has started", "Address", sv.addr)
-	sv.srv = &http.Server{Addr: sv.addr, Handler: s}
+	sv.srv = &http.Server{Addr: sv.addr, Handler: sv.mux}
+
 	go func() {
 		sv.srv.ListenAndServe()
 		sv.wg.Done()
@@ -307,11 +310,6 @@ func (sv *Server) Start() error {
 	go sv.subscribe()
 
 	return nil
-}
-
-func (sv *Server) registerAPIHandlers(s *http.ServeMux) {
-	api := remote.NewAPI(sv.modulesAgg, sv.log)
-	api.RegisterEndpoints(s)
 }
 
 // GetLogic returns the application logic provider

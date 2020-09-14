@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/dht/announcer"
 	anntypes "github.com/make-os/lobe/dht/types"
-	nodetypes "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/fetcher"
@@ -83,7 +82,7 @@ func New(cfg *config.AppConfig,
 	}
 
 	go func() {
-		for evt := range cfg.G().Bus.On(nodetypes.EvtTxPushProcessed) {
+		for evt := range cfg.G().Bus.On(core.EvtTxPushProcessed) {
 			rs.OnNewTx(evt.Args[0].(*txns.TxPush), "", evt.Args[2].(int), evt.Args[1].(int64))
 		}
 	}()
