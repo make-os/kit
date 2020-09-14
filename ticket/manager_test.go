@@ -2,11 +2,11 @@ package ticket
 
 import (
 	"os"
+	"testing"
 
 	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 
@@ -23,6 +23,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestTicket(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Ticket Suite")
+}
 
 var _ = Describe("Manager", func() {
 	var err error
@@ -59,7 +64,7 @@ var _ = Describe("Manager", func() {
 		When("ticket of matching type exist", func() {
 			ticket := &tickettypes.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
@@ -76,7 +81,7 @@ var _ = Describe("Manager", func() {
 		When("matching unable to find ticket with matching type", func() {
 			ticket := &tickettypes.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
@@ -121,7 +126,7 @@ var _ = Describe("Manager", func() {
 
 			When("immature=true", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticketB)
 					Expect(err).To(BeNil())
@@ -139,7 +144,7 @@ var _ = Describe("Manager", func() {
 
 			When("immature=false", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticketB)
 					Expect(err).To(BeNil())
@@ -156,7 +161,7 @@ var _ = Describe("Manager", func() {
 
 			When("mature=true", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticketB)
 					Expect(err).To(BeNil())
@@ -174,7 +179,7 @@ var _ = Describe("Manager", func() {
 
 			When("mature=false", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticketB)
 					Expect(err).To(BeNil())
@@ -191,7 +196,7 @@ var _ = Describe("Manager", func() {
 
 			When("expired=true", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticketC, ticketD)
 					Expect(err).To(BeNil())
@@ -209,7 +214,7 @@ var _ = Describe("Manager", func() {
 
 			When("expired=false", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticketC, ticketD)
 					Expect(err).To(BeNil())
@@ -226,7 +231,7 @@ var _ = Describe("Manager", func() {
 
 			When("active=true", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticketC, ticketD)
 					Expect(err).To(BeNil())
@@ -244,7 +249,7 @@ var _ = Describe("Manager", func() {
 
 			When("active=false", func() {
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticketC, ticketD)
 					Expect(err).To(BeNil())
@@ -271,7 +276,7 @@ var _ = Describe("Manager", func() {
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
 				mgr.logic = mockLogic
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 160}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 160}, nil)
 			})
 
 			It("should return 1", func() {
@@ -285,7 +290,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 300}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 300}, nil)
 				mgr.logic = mockLogic
 			})
 
@@ -492,7 +497,7 @@ var _ = Describe("Manager", func() {
 			ticket3 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h3"), Type: txns.TxTypeHostTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 1, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "10"}
 
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2, ticket3)
 				Expect(err).To(BeNil())
@@ -534,7 +539,7 @@ var _ = Describe("Manager", func() {
 
 		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 
 				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_4)
@@ -550,7 +555,7 @@ var _ = Describe("Manager", func() {
 
 		When("proposer='pub_key3', type=TxTypeHostTicket, addDelegated=false", func() {
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 
 				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3)
@@ -570,7 +575,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -587,7 +592,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -605,7 +610,7 @@ var _ = Describe("Manager", func() {
 				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticket2)
 					Expect(err).To(BeNil())
@@ -625,7 +630,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -643,7 +648,7 @@ var _ = Describe("Manager", func() {
 				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticket2)
 					Expect(err).To(BeNil())
@@ -663,7 +668,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key2.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -680,7 +685,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -698,7 +703,7 @@ var _ = Describe("Manager", func() {
 				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticket2)
 					Expect(err).To(BeNil())
@@ -718,7 +723,7 @@ var _ = Describe("Manager", func() {
 			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticketA, ticketB)
 				Expect(err).To(BeNil())
@@ -735,7 +740,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -753,7 +758,7 @@ var _ = Describe("Manager", func() {
 				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticket2)
 					Expect(err).To(BeNil())
@@ -773,7 +778,7 @@ var _ = Describe("Manager", func() {
 			ticketA := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticketB := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 1, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticketA, ticketB)
 				Expect(err).To(BeNil())
@@ -790,7 +795,7 @@ var _ = Describe("Manager", func() {
 			ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 			ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 			BeforeEach(func() {
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -808,7 +813,7 @@ var _ = Describe("Manager", func() {
 				ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key.Addr().String(), Height: 2, Index: 2, MatureBy: 10, ExpireBy: 100, Value: "3"}
 				ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeHostTicket, ProposerPubKey: key.PubKey().MustBytes32(), Delegator: key2.Addr().String(), Height: 2, Index: 1, MatureBy: 10, ExpireBy: 100, Value: "4"}
 				BeforeEach(func() {
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 11}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 11}, nil)
 					mgr.logic = mockLogic
 					err := mgr.s.Add(ticket, ticket2)
 					Expect(err).To(BeNil())

@@ -6,11 +6,11 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/dht/types"
-	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/fetcher"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	remotetypes "github.com/make-os/lobe/remote/types"
+	"github.com/make-os/lobe/rpc"
 )
 
 // PushKeyGetter represents a function used for fetching a push key
@@ -55,6 +55,9 @@ type RemoteServer interface {
 	// Start starts the server
 	Start() error
 
+	// GetRPCHandler returns the RPC handler
+	GetRPCHandler() *rpc.Handler
+
 	// Wait can be used by the caller to wait till the server terminates
 	Wait()
 
@@ -66,9 +69,6 @@ type RemoteServer interface {
 
 	// BroadcastNoteAndEndorsement broadcasts repo push note and push endorsement
 	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
-
-	// RegisterAPIHandlers registers server API handlers
-	RegisterAPIHandlers(agg types2.ModulesHub)
 
 	// AnnounceObject announces a key on the DHT network
 	Announce(objType int, repo string, hash []byte, doneCB func(error))

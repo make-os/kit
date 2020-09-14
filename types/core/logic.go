@@ -17,19 +17,9 @@ import (
 // BlockValidators contains validators of a block
 type BlockValidators map[util.Bytes32]*Validator
 
-// BlockInfo describes information about a block
-type BlockInfo struct {
-	AppHash         []byte     `json:"appHash"`
-	LastAppHash     []byte     `json:"lastAppHash"`
-	Hash            []byte     `json:"hash"`
-	Height          util.Int64 `json:"height"`
-	ProposerAddress []byte     `json:"proposerAddress"`
-	Time            util.Int64 `json:"time"`
-}
-
 // Validator represents a validator
 type Validator struct {
-	PubKey   util.Bytes32  `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	PubKey   util.Bytes32  `json:"publicKey,omitempty" mapstructure:"pubkey"`
 	TicketID util.HexBytes `json:"ticketID,omitempty" mapstructure:"ticketID"`
 }
 
@@ -61,13 +51,13 @@ type AnnounceListEntry struct {
 type SystemKeeper interface {
 
 	// SaveBlockInfo saves a committed block information
-	SaveBlockInfo(info *BlockInfo) error
+	SaveBlockInfo(info *state.BlockInfo) error
 
 	// GetLastBlockInfo returns information about the last committed block
-	GetLastBlockInfo() (*BlockInfo, error)
+	GetLastBlockInfo() (*state.BlockInfo, error)
 
 	// GetBlockInfo returns block information at a given height
-	GetBlockInfo(height int64) (*BlockInfo, error)
+	GetBlockInfo(height int64) (*state.BlockInfo, error)
 
 	// SetHelmRepo sets the governing repository of the network
 	SetHelmRepo(name string) error
@@ -347,7 +337,7 @@ type Logic interface {
 
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
-	OnEndBlock(block *BlockInfo) error
+	OnEndBlock(block *state.BlockInfo) error
 }
 
 // Keepers describes modules for accessing the state and storage
@@ -394,7 +384,7 @@ type ValidatorKeeper interface {
 
 	// GetByHeight gets validators at the given height. If height is <= 0, the
 	// validator set of the highest height is returned.
-	GetByHeight(height int64) (BlockValidators, error)
+	Get(height int64) (BlockValidators, error)
 
 	// Index adds a set of validators associated to the given height
 	Index(height int64, validators []*Validator) error
