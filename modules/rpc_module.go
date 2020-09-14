@@ -5,10 +5,10 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/lobe/rpc/client"
+	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/stretchr/objx"
 
@@ -21,24 +21,18 @@ import (
 type RPCModule struct {
 	types.ModuleCommon
 	cfg                *config.AppConfig
-	server             rpc.Server
 	modFuncs           []*types.VMMember
-	ClientContextMaker func(client client.Client) *ClientContext
+	ClientContextMaker func(client types2.Client) *ClientContext
 }
 
 // NewRPCModule creates an instance of RPCModule
-func NewRPCModule(cfg *config.AppConfig, server rpc.Server) *RPCModule {
-	return &RPCModule{cfg: cfg, server: server, ClientContextMaker: newClientContext}
+func NewRPCModule(cfg *config.AppConfig) *RPCModule {
+	return &RPCModule{cfg: cfg, ClientContextMaker: newClientContext}
 }
 
 // methods are functions exposed in the special namespace of this module.
 func (m *RPCModule) methods() []*types.VMMember {
 	m.modFuncs = []*types.VMMember{
-		{
-			Name:        "isRunning",
-			Value:       m.IsRunning,
-			Description: "Checks whether the local RPCClient server is running",
-		},
 		{
 			Name:        "connect",
 			Value:       m.connect,
@@ -83,14 +77,9 @@ func (m *RPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// isRunning checks whether the server is running
-func (m *RPCModule) IsRunning() bool {
-	return m.server != nil && m.server.IsRunning()
-}
-
 // ConnectLocal returns an RPC client connected to the local RPC server
 func (m *RPCModule) ConnectLocal() util.Map {
-	host, port, err := net.SplitHostPort(m.cfg.RPC.Address)
+	host, port, err := net.SplitHostPort(m.cfg.Remote.Address)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +88,7 @@ func (m *RPCModule) ConnectLocal() util.Map {
 }
 
 type ClientContext struct {
-	Client  client.Client
+	Client  types2.Client
 	Objects map[string]interface{}
 }
 
@@ -126,24 +115,23 @@ func (r *ClientContext) callE(methodName string, params ...interface{}) (util.Ma
 }
 
 // newClientContext creates an instance of ClientContext
-func newClientContext(client client.Client) *ClientContext {
+func newClientContext(client types2.Client) *ClientContext {
 	return &ClientContext{Client: client, Objects: map[string]interface{}{}}
 }
 
 // connect connects to an RPC server
 //
-// ARGS
-// host: The server's IP address
-// port: The server's port number
-// https: Forces/Disable secure connection with server
-// user: The server's username
-// pass: The server's password
+//  - host: The server's IP address
+//  - port: The server's port number
+//  - https: Forces/Disable secure connection with server
+//  - user: The server's username
+//  - pass: The server's password
 //
 // RETURNS <map>: A mapping of rpc methods under their respective namespaces.
 func (m *RPCModule) connect(host string, port int, https bool, user, pass string) util.Map {
 
 	// Create a client
-	c := client.NewClient(&client.Options{
+	c := client.NewClient(&types2.Options{
 		Host:     host,
 		Port:     port,
 		HTTPS:    https,

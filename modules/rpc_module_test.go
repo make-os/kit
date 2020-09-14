@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/api/rpc/client"
 	"github.com/make-os/lobe/config"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
 	"github.com/make-os/lobe/modules"
+	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/util"
@@ -21,14 +21,12 @@ var _ = Describe("RPCModule", func() {
 	var cfg *config.AppConfig
 	var m *modules.RPCModule
 	var ctrl *gomock.Controller
-	var mockServer *mocks2.MockServer
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockServer = mocks2.NewMockServer(ctrl)
-		m = modules.NewRPCModule(cfg, mockServer)
+		m = modules.NewRPCModule(cfg)
 	})
 
 	AfterEach(func() {
@@ -47,27 +45,15 @@ var _ = Describe("RPCModule", func() {
 		})
 	})
 
-	Describe(".IsRunning", func() {
-		It("should return false server is not initialized", func() {
-			m := modules.NewRPCModule(cfg, nil)
-			Expect(m.IsRunning()).To(BeFalse())
-		})
-
-		It("should return true server is initialized and running", func() {
-			mockServer.EXPECT().IsRunning().Return(true)
-			Expect(m.IsRunning()).To(BeTrue())
-		})
-	})
-
 	Describe(".ConnectLocal", func() {
 		BeforeEach(func() {
-			cfg.RPC.Address = "127.0.0.1:4000"
+			cfg.Remote.Address = "127.0.0.1:4000"
 		})
 
 		It("should return client context object with only 'call' property when no methods from RPC", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockClient.EXPECT().Call("rpc_methods", nil).Return(util.Map{"methods": []interface{}{}}, 200, nil)
-			m.ClientContextMaker = func(client.Client) *modules.ClientContext {
+			m.ClientContextMaker = func(types.Client) *modules.ClientContext {
 				return &modules.ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
 			}
 			objs := m.ConnectLocal()
@@ -83,7 +69,7 @@ var _ = Describe("RPCModule", func() {
 					"namespace": "method_ns",
 				},
 			}}, 200, nil)
-			m.ClientContextMaker = func(client.Client) *modules.ClientContext {
+			m.ClientContextMaker = func(types.Client) *modules.ClientContext {
 				return &modules.ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
 			}
 			objs := m.ConnectLocal()
