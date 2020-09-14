@@ -3,15 +3,16 @@ package node
 import (
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/logic/contracts/mergerequest"
-	types2 "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	pushtypes "github.com/make-os/lobe/remote/push/types"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
 	"github.com/tendermint/tendermint/privval"
@@ -34,6 +35,11 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/testutil"
 )
+
+func TestNode(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Node Suite")
+}
 
 func genFilePV(bz []byte) *privval.FilePV {
 	privKey := ed25519.GenPrivKeyFromSecret(bz)
@@ -185,7 +191,7 @@ var _ = Describe("App", func() {
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
 
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*core.Validator{}, nil)
+				mockLogic.ValidatorKeeper.EXPECT().Get(gomock.Any()).Return(map[util.Bytes32]*core.Validator{}, nil)
 				app.logic = mockLogic.AtomicLogic
 			})
 
@@ -211,7 +217,7 @@ var _ = Describe("App", func() {
 
 				// Mock the return of the existing validator
 				pubKey := existingValKey.PubKey().MustBytes32()
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*core.Validator{
+				mockLogic.ValidatorKeeper.EXPECT().Get(gomock.Any()).Return(map[util.Bytes32]*core.Validator{
 					pubKey: {PubKey: util.StrToBytes32("pub_key")},
 				}, nil)
 
@@ -250,7 +256,7 @@ var _ = Describe("App", func() {
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
 
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+				mockLogic.ValidatorKeeper.EXPECT().Get(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 				app.logic = mockLogic.AtomicLogic
 			})
 
@@ -282,7 +288,7 @@ var _ = Describe("App", func() {
 			var height = int64(100)
 
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{
 					AppHash: []byte("app_hash"),
 					Height:  util.Int64(height),
 				}, nil)
@@ -739,7 +745,7 @@ var _ = Describe("App", func() {
 			tx.Nonce = 100
 			app.okTxs = []blockTx{{tx, 0}}
 			go app.indexTransactions()
-			evt := <-cfg.G().Bus.On(types2.EvtTxPushProcessed)
+			evt := <-cfg.G().Bus.On(core.EvtTxPushProcessed)
 			Expect(evt.Args).To(HaveLen(3))
 			Expect(evt.Args[0]).To(Equal(tx))
 			Expect(evt.Args[1]).To(Equal(app.curBlock.Height.Int64()))

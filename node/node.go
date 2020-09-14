@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	rpcApi "github.com/make-os/lobe/api/rpc"
 	dhtserver "github.com/make-os/lobe/dht/server"
 	"github.com/make-os/lobe/dht/types"
 	types2 "github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/remote/server"
-	"github.com/make-os/lobe/rpc"
+	rpcApi "github.com/make-os/lobe/rpc/api"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/core"
@@ -66,7 +65,6 @@ type Node struct {
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHT
 	modules        types2.ModulesHub
-	rpcServer      *rpc.RPCServer
 	remoteServer   core.RemoteServer
 }
 
@@ -215,33 +213,15 @@ func (n *Node) Start() error {
 		return err
 	}
 
-	// Start the RPC server
-	n.startRPCServer()
-
 	// Initialize extension manager and start extensions
 	n.configureInterfaces()
 
-	// Pass the module aggregator to the repo manager
-	n.remoteServer.RegisterAPIHandlers(n.modules)
-
 	return nil
-}
-
-// startRPCServer starts RPC service
-func (n *Node) startRPCServer() {
-	if n.cfg.RPC.On {
-		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-server"), n.cfg.G().Interrupt)
-		go n.rpcServer.Serve()
-	}
 }
 
 // startConsoleOnly configures modules, extension manager and the RPC server.
 // However, the RPC server is not started.
 func (n *Node) startConsoleOnly() error {
-
-	// Create the rpc server, add APIs but don't start it.
-	// The console will need a non-nil instance to learn about the RPC methods.
-	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-server"), n.cfg.G().Interrupt)
 
 	// Initialize and start JS modules and extensions
 	n.configureInterfaces()
@@ -262,29 +242,18 @@ func (n *Node) configureInterfaces() {
 	extMgr := extensions.NewManager(n.cfg)
 
 	// Create module hub
-	n.modules = modules.New(
-		n.cfg,
-		n.acctMgr,
-		n.service,
-		n.logic,
-		n.mempoolReactor,
-		n.ticketMgr,
-		n.dht,
-		extMgr,
-		n.rpcServer,
-		n.remoteServer,
-	)
+	n.modules = modules.New(n.cfg, n.acctMgr, n.service, n.logic, n.mempoolReactor, n.ticketMgr, n.dht, extMgr, n.remoteServer)
 
 	// Register JSON RPC methods
-	if n.rpcServer != nil {
-		n.rpcServer.AddAPI(rpcApi.APIs(n.modules, n.rpcServer))
+	if n.remoteServer != nil {
+		n.remoteServer.GetRPCHandler().MergeAPISet(rpcApi.APIs(n.modules))
 	}
 
 	// Set the js module to be the main module of the extension manager
 	extMgr.SetMainModule(n.modules)
 
 	// ConfigureVM the js module if we are not in console-only mode
-	if !n.ConsoleOn() {
+	if !n.isConsoleMode() {
 		n.modules.ConfigureVM(vm)
 	}
 
@@ -315,50 +284,14 @@ func (n *Node) GetChainHeight() int64 {
 	return n.tm.BlockStore().Height()
 }
 
-// GetDB returns the database instance
-func (n *Node) GetDB() storagetypes.Engine {
-	return n.db
-}
-
-// ConsoleOn checks whether the console is running
-func (n *Node) ConsoleOn() bool {
+// isConsoleMode checks whether the console is running
+func (n *Node) isConsoleMode() bool {
 	return os.Args[1] == "console"
 }
 
 // GetModulesHub returns the modules hub
 func (n *Node) GetModulesHub() types2.ModulesHub {
 	return n.modules
-}
-
-// GetTicketManager returns the ticket manager
-func (n *Node) GetTicketManager() tickettypes.TicketManager {
-	return n.ticketMgr
-}
-
-// GetLogic returns the logic instance
-func (n *Node) GetLogic() core.Logic {
-	return n.logic
-}
-
-// GetDHT returns the DHT service
-func (n *Node) GetDHT() types.DHT {
-	return n.dht
-}
-
-// GetMempoolReactor returns the mempool reactor
-func (n *Node) GetMempoolReactor() *mempool.Reactor {
-	return n.mempoolReactor
-}
-
-// GetCurrentValidators returns the current validators
-func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
-	_, cv := n.tm.ConsensusState().GetValidators()
-	return cv
-}
-
-// getService returns the node's service
-func (n *Node) GetService() services.Service {
-	return n.service
 }
 
 // Stop the node

@@ -7,20 +7,20 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/logic/contracts/mergerequest"
 	"github.com/make-os/lobe/logic/keepers"
-	nodetypes "github.com/make-os/lobe/node/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/make-os/lobe/validation"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/state"
+	tmstate "github.com/tendermint/tendermint/state"
 )
 
 type ticketInfo struct {
@@ -45,7 +45,7 @@ type App struct {
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validation.ValidateTxFunc
-	curBlock                  *core.BlockInfo
+	curBlock                  *state.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
@@ -71,7 +71,7 @@ func NewApp(
 		db:         db,
 		logic:      logic,
 		cfg:        cfg,
-		curBlock:   &core.BlockInfo{},
+		curBlock:   &state.BlockInfo{},
 		log:        cfg.G().Log.Module("app"),
 		ticketMgr:  ticketMgr,
 		validateTx: validation.ValidateTx,
@@ -112,7 +112,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 // Used to sync tendermint with the application during a handshake that happens on startup.
 // The returned AppVersion will be included in the header of every block.
 // Tendermint expects LastBlockAppHash and LastBlockHeight to be updated during commit.
-func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
+func (a *App) Info(abcitypes.RequestInfo) abcitypes.ResponseInfo {
 
 	var lastBlockAppHash []byte
 	var lastBlockHeight = int64(0)
@@ -139,7 +139,7 @@ func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 }
 
 // SetOption set non-consensus critical application specific options.
-func (a *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
+func (a *App) SetOption(abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
 	return abcitypes.ResponseSetOption{}
 }
 
@@ -291,7 +291,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	// If the transaction returns an ErrCodeReExecBlock code, discard current
 	// uncommitted state updates and return immediately because the current
 	// block will be re-applied
-	if resp.Code == state.ErrCodeReExecBlock {
+	if resp.Code == tmstate.ErrCodeReExecBlock {
 		a.logic.Discard()
 		return resp
 	}
@@ -340,7 +340,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	}
 
 	// Get current validators
-	curValidators, err := a.logic.ValidatorKeeper().GetByHeight(0)
+	curValidators, err := a.logic.ValidatorKeeper().Get(0)
 	if err != nil {
 		return err
 	}
@@ -395,7 +395,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	defer a.reset()
 
 	// Construct a new block information object
-	bi := &core.BlockInfo{
+	bi := &state.BlockInfo{
 		Height:          a.curBlock.Height,
 		Hash:            a.curBlock.Hash,
 		LastAppHash:     a.curBlock.LastAppHash,
@@ -470,11 +470,11 @@ func (a *App) reset() {
 		a.heightToSaveNewValidators = 0
 	}
 
-	a.curBlock = &core.BlockInfo{}
+	a.curBlock = &state.BlockInfo{}
 }
 
 // Query for data from the application.
-func (a *App) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
+func (a *App) Query(abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	return abcitypes.ResponseQuery{Code: 0}
 }
 
@@ -547,7 +547,7 @@ func (a *App) indexTransactions() {
 
 		// Broadcast pushed transaction
 		if btx.tx.Is(txns.TxTypePush) {
-			a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed,
+			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed,
 				btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
 		}
 	}
