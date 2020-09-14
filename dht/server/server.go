@@ -199,7 +199,9 @@ func (dht *Server) Peers() (peers []string) {
 	return
 }
 
-// Store adds a value corresponding to the given key
+// Store adds a value corresponding to the given key.
+// It will store the value locally even when an error occurred due
+// to a lack of peer in the routing table.
 func (dht *Server) Store(ctx context.Context, key string, value []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
