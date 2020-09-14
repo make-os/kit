@@ -7,15 +7,11 @@ package console
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"path/filepath"
 	"sync"
 
-	"github.com/make-os/lobe/api/rpc/client"
-	apitypes "github.com/make-os/lobe/api/types"
 	"github.com/make-os/lobe/modules/types"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
-	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
 
 	"github.com/pkg/errors"
@@ -144,31 +140,6 @@ func (c *Console) OnStop(f func()) {
 	c.Lock()
 	defer c.Unlock()
 	c.onStopFunc = f
-}
-
-// connectToNode creates an RPC client to configured remote server.
-// It will test the connection by getting the RPC methods supported
-// by the server. Returns both client and RPC methods on success.
-func (c *Console) connectToNote() (client.Client, *apitypes.ResultGetMethod, error) {
-	host, port, err := net.SplitHostPort(c.cfg.RPC.Address)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	cl := client.NewClient(&client.Options{
-		Host:     host,
-		Port:     cast.ToInt(port),
-		HTTPS:    c.cfg.RPC.HTTPS,
-		User:     c.cfg.RPC.User,
-		Password: c.cfg.RPC.Password,
-	})
-
-	methods, err := cl.RPC().GetMethods()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return cl, methods, nil
 }
 
 // Run the console.
