@@ -165,3 +165,36 @@ func (u *UserAPI) GetPublicKey(address string, passphrase string) (string, error
 	}
 	return cast.ToString(resp["pubkey"]), nil
 }
+
+// SetCommission update the validator commission percentage of an account
+func (u *UserAPI) SetCommission(body *api.BodySetCommission) (*api.ResultHash, error) {
+
+	if body.SigningKey == nil {
+		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+	}
+
+	tx := txns.NewBareTxSetDelegateCommission()
+	tx.Nonce = body.Nonce
+	tx.Fee = util.String(cast.ToString(body.Fee))
+	tx.Timestamp = time.Now().Unix()
+	tx.Commission = util.String(cast.ToString(body.Commission))
+	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
+
+	var err error
+	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
+	if err != nil {
+		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+	}
+
+	resp, status, err := u.c.call("user_setCommission", tx.ToMap())
+	if err != nil {
+		return nil, makeStatusErrorFromCallErr(status, err)
+	}
+
+	var r api.ResultHash
+	if err = util.DecodeMap(resp, &r); err != nil {
+		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+	}
+
+	return &r, nil
+}

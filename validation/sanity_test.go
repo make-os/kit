@@ -1087,7 +1087,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Commission = "49"
 				err := validation.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:commission, msg:rate cannot be below the minimum (50%)"))
+				Expect(err.Error()).To(Equal("field:commission, msg:rate cannot be below the minimum (50 percent)"))
 			})
 
 			It("has no commission value is above 100", func() {
@@ -1095,7 +1095,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Commission = "101"
 				err := validation.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:commission, msg:commission rate cannot exceed 100%"))
+				Expect(err.Error()).To(Equal("field:commission, msg:commission rate cannot exceed 100 percent"))
 			})
 
 			It("has no nonce", func() {

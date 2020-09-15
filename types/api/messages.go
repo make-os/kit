@@ -148,3 +148,11 @@ type BodySendCoin struct {
 	To         identifier.Address
 	SigningKey *crypto.Key
 }
+
+// BodySetCommission contains arguments for setting a user account commission
+type BodySetCommission struct {
+	Nonce      uint64
+	Fee        float64
+	Commission float64
+	SigningKey *crypto.Key
+}

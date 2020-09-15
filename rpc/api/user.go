@@ -66,6 +66,11 @@ func (u *UserAPI) sendCoin(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(u.mods.User.SendCoin(cast.ToStringMap(params)))
 }
 
+// setCommission set validator commission
+func (u *UserAPI) setCommission(params interface{}) (resp *rpc.Response) {
+	return rpc.Success(u.mods.User.SetCommission(cast.ToStringMap(params)))
+}
+
 // getKeys returns a list of addresses of keys on the keystore.
 func (u *UserAPI) getKeys(interface{}) (resp *rpc.Response) {
 	return rpc.Success(util.Map{
@@ -168,6 +173,12 @@ func (u *UserAPI) APIs() rpc.APISet {
 			Private:     true,
 			Description: "Get the public key of a key on the keystore",
 			Func:        u.getPublicKey,
+		},
+		{
+			Name:        "setCommission",
+			Namespace:   constants.NamespaceUser,
+			Description: "Set validator commission",
+			Func:        u.setCommission,
 		},
 	}
 }

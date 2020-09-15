@@ -143,6 +143,9 @@ type User interface {
 
 	// GetPublicKey returns the public key of a key on the keystore
 	GetPublicKey(address string, passphrase string) (string, error)
+
+	// SetCommission update the validator commission percentage of an account
+	SetCommission(body *api.BodySetCommission) (*api.ResultHash, error)
 }
 
 // Options describes the options used to configure the client

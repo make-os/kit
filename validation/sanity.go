@@ -408,11 +408,11 @@ func CheckTxSetDelegateCommission(tx *txns.TxSetDelegateCommission, index int) e
 
 	if tx.Commission.Decimal().LessThan(params.MinDelegatorCommission) {
 		minPct := params.MinDelegatorCommission.String()
-		return feI(index, "commission", "rate cannot be below the minimum ("+minPct+"%%)")
+		return feI(index, "commission", "rate cannot be below the minimum ("+minPct+" percent)")
 	}
 
 	if tx.Commission.Decimal().GreaterThan(decimal.NewFromFloat(100)) {
-		return feI(index, "commission", "commission rate cannot exceed 100%%")
+		return feI(index, "commission", "commission rate cannot exceed 100 percent")
 	}
 
 	if err := checkCommon(tx, index); err != nil {
