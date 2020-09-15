@@ -12,7 +12,6 @@ import (
 	"github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
-	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/testutil"
 	types2 "github.com/make-os/lobe/types"
@@ -259,7 +258,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetAccount", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
 
@@ -272,7 +271,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
 			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&api.ResultAccount{}, nil)
@@ -378,34 +377,34 @@ var _ = Describe("UserModule", func() {
 		})
 	})
 
-	Describe(".GetValidatorKey", func() {
+	Describe(".GetValidator", func() {
 		It("should not include private key if 'includePrivKey' argument is set", func() {
-			res := m.GetValidatorKey()
+			res := m.GetValidator()
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddr"),
 				HaveKey("pubkey"),
 			))
-			Expect(res).ToNot(HaveKey("privateKey"))
+			Expect(res).ToNot(HaveKey("privkey"))
 		})
 
 		It("should not include private key if 'includePrivKey' is set to 'false'", func() {
-			res := m.GetValidatorKey()
+			res := m.GetValidator()
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddr"),
 				HaveKey("pubkey"),
 			))
-			Expect(res).ToNot(HaveKey("privateKey"))
+			Expect(res).ToNot(HaveKey("privkey"))
 		})
 
 		It("should include private key if 'includePrivKey' is set to 'true'", func() {
-			res := m.GetValidatorKey(true)
+			res := m.GetValidator(true)
 			Expect(res).To(And(
 				HaveKey("address"),
 				HaveKey("tmAddr"),
 				HaveKey("pubkey"),
-				HaveKey("privateKey"),
+				HaveKey("privkey"),
 			))
 		})
 	})
@@ -483,7 +482,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
 
@@ -497,7 +496,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockUserClient := mocks3.NewMockUser(ctrl)
+			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
 			m.AttachedClient = mockClient
 			params := map[string]interface{}{"value": "10"}

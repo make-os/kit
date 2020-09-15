@@ -153,9 +153,9 @@ var _ = Describe("ConsoleUtilModule", func() {
 			res := m.GenKey(1)
 			res2 := m.GenKey(1)
 			Expect(res).To(Equal(util.Map{
-				"address":    "os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8",
-				"pubkey":     "48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC",
-				"privateKey": "wU7ckbRBWevtkoT9QoET1adGCsABPRtyDx5T9EHZ4paP78EQ1w5sFM2sZg87fm1N2Np586c98GkYwywvtgy9d2gEpWbsbU",
+				"address": "os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8",
+				"pubkey":  "48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC",
+				"privkey": "wU7ckbRBWevtkoT9QoET1adGCsABPRtyDx5T9EHZ4paP78EQ1w5sFM2sZg87fm1N2Np586c98GkYwywvtgy9d2gEpWbsbU",
 			}))
 			Expect(res).To(Equal(res2))
 		})

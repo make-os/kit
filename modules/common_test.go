@@ -8,7 +8,6 @@ import (
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
 	mockrpc "github.com/make-os/lobe/mocks/rpc"
-	mockclients "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
@@ -124,7 +123,7 @@ var _ = Describe("Common", func() {
 
 		It("should use rpc client if nonce and keepers are not set", func() {
 			mockRPCClient := mockrpc.NewMockClient(ctrl)
-			mockUserClient := mockclients.NewMockUser(ctrl)
+			mockUserClient := mockrpc.NewMockUser(ctrl)
 			mockRPCClient.EXPECT().User().Return(mockUserClient)
 
 			key := crypto.NewKeyFromIntSeed(1)
@@ -146,7 +145,7 @@ var _ = Describe("Common", func() {
 			key := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
 			mockRPCClient := mockrpc.NewMockClient(ctrl)
-			mockUserClient := mockclients.NewMockUser(ctrl)
+			mockUserClient := mockrpc.NewMockUser(ctrl)
 			mockRPCClient.EXPECT().User().Return(mockUserClient)
 			mockUserClient.EXPECT().Get(key.Addr().String()).Return(nil, fmt.Errorf("error"))
 

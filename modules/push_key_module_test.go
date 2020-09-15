@@ -8,8 +8,7 @@ import (
 	"github.com/make-os/lobe/config"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
-	mocks2 "github.com/make-os/lobe/mocks/rpc"
-	mockclients "github.com/make-os/lobe/mocks/rpc-client"
+	mocksrpc "github.com/make-os/lobe/mocks/rpc"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/api"
@@ -34,16 +33,16 @@ var _ = Describe("PushKeyModule", func() {
 	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var mockAccountKeeper *mocks.MockAccountKeeper
 	var pk = crypto2.NewKeyFromIntSeed(1)
-	var mockClient *mocks2.MockClient
-	var mockPushKeyClient *mockclients.MockPushKey
+	var mockClient *mocksrpc.MockClient
+	var mockPushKeyClient *mocksrpc.MockPushKey
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockClient = mocks2.NewMockClient(ctrl)
+		mockClient = mocksrpc.NewMockClient(ctrl)
 
-		mockPushKeyClient = mockclients.NewMockPushKey(ctrl)
+		mockPushKeyClient = mocksrpc.NewMockPushKey(ctrl)
 		mockClient.EXPECT().PushKey().Return(mockPushKeyClient).AnyTimes()
 
 		mockService = mocks.NewMockService(ctrl)

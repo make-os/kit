@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	core_types "github.com/tendermint/tendermint/rpc/core/types"
 	reflect "reflect"
 )
 
@@ -33,10 +34,10 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // GetBlock mocks base method
-func (m *MockService) GetBlock(height int64) (map[string]interface{}, error) {
+func (m *MockService) GetBlock(height int64) (*core_types.ResultBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", height)
-	ret0, _ := ret[0].(map[string]interface{})
+	ret0, _ := ret[0].(*core_types.ResultBlock)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

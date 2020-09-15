@@ -8,7 +8,6 @@ import (
 	storagetypes "github.com/make-os/lobe/storage/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	crypto2 "github.com/make-os/lobe/util/crypto"
@@ -225,7 +224,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 
-				bi := &core.BlockInfo{Height: 1}
+				bi := &state.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(nil)
 
@@ -246,7 +245,7 @@ var _ = Describe("TxValidator", func() {
 					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
-					bi := &core.BlockInfo{Height: 1}
+					bi := &state.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 					ticket := &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
 					mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
@@ -269,7 +268,7 @@ var _ = Describe("TxValidator", func() {
 					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
-					bi := &core.BlockInfo{Height: 1}
+					bi := &state.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 					ticket := &tickettypes.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
@@ -293,7 +292,7 @@ var _ = Describe("TxValidator", func() {
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				bi := &core.BlockInfo{Height: 50}
+				bi := &state.BlockInfo{Height: 50}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
@@ -316,7 +315,7 @@ var _ = Describe("TxValidator", func() {
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				bi := &core.BlockInfo{Height: 101}
+				bi := &state.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
@@ -339,7 +338,7 @@ var _ = Describe("TxValidator", func() {
 				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				bi := &core.BlockInfo{Height: 101}
+				bi := &state.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
@@ -582,7 +581,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareTxNamespaceRegister()
 				tx.Name = name
 
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 9}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 9}, nil)
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 10})
 				err = validation.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
@@ -601,7 +600,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = name
 				tx.To = "repo1"
 
-				bi := &core.BlockInfo{Height: 9}
+				bi := &state.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockRepoKeeper.EXPECT().Get(tx.To).Return(state.BareRepository())
 
@@ -622,7 +621,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = name
 				tx.To = "os1m4aaslnzmdp4k3g52tk6eh94ghr547exvtcrkd"
 
-				bi := &core.BlockInfo{Height: 9}
+				bi := &state.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockAcctKeeper.EXPECT().Get(identifier.Address(tx.To)).Return(state.BareAccount())
 
@@ -643,7 +642,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "name1"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 
-				bi := &core.BlockInfo{Height: 10}
+				bi := &state.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 9})
@@ -1033,7 +1032,7 @@ var _ = Describe("TxValidator", func() {
 					FeeDepositEndAt: 100,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 				err = validation.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
@@ -1059,7 +1058,7 @@ var _ = Describe("TxValidator", func() {
 					Fees:            map[string]string{},
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 101}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 101}, nil)
 
 				err = validation.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
@@ -1082,7 +1081,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Gov,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
 					key.Addr().String()).Return(0, false, fmt.Errorf("error"))
@@ -1107,7 +1106,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Gov,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
 					key.Addr().String()).Return(0, true, nil)
@@ -1133,7 +1132,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Gov,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 				err = validation.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
@@ -1160,7 +1159,7 @@ var _ = Describe("TxValidator", func() {
 						Config: repo.Config.Gov,
 					})
 					mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 					err = validation.CheckTxVoteConsistency(tx, -1, mockLogic)
 				})
@@ -1264,7 +1263,7 @@ var _ = Describe("TxValidator", func() {
 					FeeDepositEndAt: 0,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 50}, nil)
 
 				err = validation.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
 			})
@@ -1288,7 +1287,7 @@ var _ = Describe("TxValidator", func() {
 					FeeDepositEndAt: 100,
 				})
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 
 				err = validation.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
 			})
@@ -1313,7 +1312,7 @@ var _ = Describe("TxValidator", func() {
 				})
 
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
-				bi := &core.BlockInfo{Height: 10}
+				bi := &state.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockLogic.EXPECT().DrySend(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))

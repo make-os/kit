@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/mocks"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
-	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
 	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/modules/types"
 	"github.com/make-os/lobe/types/api"
@@ -92,7 +91,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
@@ -106,7 +105,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
@@ -252,7 +251,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
@@ -265,7 +264,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
@@ -420,7 +419,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 
@@ -434,7 +433,7 @@ var _ = Describe("RepoModule", func() {
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
-			mockRepoClient := mocks3.NewMockRepo(ctrl)
+			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
 			m.AttachedClient = mockClient
 

@@ -66,7 +66,7 @@ func (m *UserModule) methods() []*types.VMMember {
 			Description: "Get the private key of a key (supports interactive mode)",
 		},
 		{
-			Name:        "getPublicKey",
+			Name:        "getPubKey",
 			Value:       m.GetPublicKey,
 			Description: "Get the public key of an account (supports interactive mode)",
 		},
@@ -92,7 +92,7 @@ func (m *UserModule) methods() []*types.VMMember {
 		},
 		{
 			Name:        "getValidator",
-			Value:       m.GetValidatorKey,
+			Value:       m.GetValidator,
 			Description: "Get the validator information",
 		},
 		{
@@ -159,12 +159,13 @@ func (m *UserModule) GetKeys() []string {
 }
 
 // getKey returns the private key of an account.
+//
 // The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
-// address: The address corresponding the the local key
-// [passphrase]: The passphrase of the local key
+//  - address: The address corresponding the the local key
+//  - [passphrase]: The passphrase of the local key
 func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
 
 	var pass string
@@ -206,32 +207,33 @@ unlock:
 }
 
 // GetPrivKey returns the private key of an account.
+//
 // The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
-// address: The address corresponding the the local key
-//
-// [passphrase]: The passphrase of the local key
+//  - address: The address corresponding the the local key
+//  - [passphrase]: The passphrase of the local key
 func (m *UserModule) GetPrivKey(address string, passphrase ...string) string {
 	return m.getKey(address, passphrase...).PrivKey().Base58()
 }
 
 // getPublicKey returns the public key of a key.
+//
 // The passphrase argument is used to unlock the key.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
-// address: The address corresponding the the local key
-// [passphrase]: The passphrase of the local key
+//  - address: The address corresponding the the local key
+//  - [passphrase]: The passphrase of the local key
 func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 	return m.getKey(address, passphrase...).PubKey().Base58()
 }
 
 // GetNonce returns the current nonce of a network account
-// address: The address corresponding the account
-// [passphrase]: The target block height to query (default: latest)
-// [height]: The target block height to query (default: latest)
+//  - address: The address corresponding the account
+//  - [passphrase]: The target block height to query (default: latest)
+//  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
 
 	if m.InAttachMode() {
@@ -250,9 +252,9 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 	return cast.ToString(acct.Nonce.UInt64())
 }
 
-// Get returns the account of the given address
-// address: The address corresponding the account
-// [height]: The target block height to query (default: latest)
+// Get returns the account of the given address.
+//  - address: The address corresponding the account
+//  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 
 	if m.InAttachMode() {
@@ -276,8 +278,8 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 }
 
 // GetAvailableBalance returns the spendable balance of an account.
-// address: The address corresponding the account
-// [height]: The target block height to query (default: latest)
+//  - address: The address corresponding the account
+//  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
 
 	if m.InAttachMode() {
@@ -304,9 +306,8 @@ func (m *UserModule) GetAvailableBalance(address string, height ...uint64) strin
 
 // getStakedBalance returns the total staked coins of an account
 //
-// ARGS:
-// address: The address corresponding the account
-// [height]: The target block height to query (default: latest)
+//  - address: The address corresponding the account
+//  - [height]: The target block height to query (default: latest)
 //
 // RETURNS <string>: numeric value
 func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
@@ -325,14 +326,14 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 
 // getPrivateValidator returns the address, public and private keys of the validator.
 //
-// ARGS:
-// includePrivKey: Indicates that the private key of the validator should be included in the result
+//  - includePrivKey: Indicates that the private key of the validator should be included in the result
 //
 // RETURNS object <map>:
-// publicKey <string>:	The validator base58 public key
-// address 	<string>:	The validator's bech32 address.
-// tmAddr <string>:	The tendermint address
-func (m *UserModule) GetValidatorKey(includePrivKey ...bool) util.Map {
+//  - pubkey <string>: The validator base58 public key
+//  - address 	<string>: The validator's bech32 address.
+//  - tmAddr <string>: The tendermint address
+//  - privkey <string>: The validator's base58 public key
+func (m *UserModule) GetValidator(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]interface{}{
@@ -342,7 +343,7 @@ func (m *UserModule) GetValidatorKey(includePrivKey ...bool) util.Map {
 	}
 
 	if len(includePrivKey) > 0 && includePrivKey[0] {
-		info["privateKey"] = key.PrivKey().Base58()
+		info["privkey"] = key.PrivKey().Base58()
 	}
 
 	return info
@@ -350,19 +351,18 @@ func (m *UserModule) GetValidatorKey(includePrivKey ...bool) util.Map {
 
 // setCommission sets the delegator commission for an account
 //
-// ARGS:
 // params <map>
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.commission <number|string>:	The network commission value
-// params.timestamp <number>: 			The unix timestamp
+//  - nonce <number|string>: The senders next account nonce
+//  - fee <number|string>: The transaction fee to pay
+//  - commission <number|string>: The network commission value
+//  - timestamp <number>: The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: The signer's private key
+//  - [1] payloadOnly <bool>: When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>:
-// object.hash <string>: The transaction hash
+//  - hash <string>: The transaction hash
 func (m *UserModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -387,20 +387,19 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 
 // sendCoin sends the native coin from a source account to a destination account.
 //
-// ARGS:
 // params <map>
-// params.value 		<string>: 			The amount of coin to send
-// params.to 			<string>: 			The address of the recipient
-// params.nonce 		<number|string>: 	The senders next account nonce
-// params.fee 			<number|string>: 	The transaction fee to pay
-// params.timestamp 	<number>: 			The unix timestamp
+//  - value 		<string>: 			The amount of coin to send
+//  - to 			<string>: 			The address of the recipient
+//  - nonce 		<number|string>: 	The senders next account nonce
+//  - fee 			<number|string>: 	The transaction fee to pay
+//  - timestamp 	<number>: 			The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//  - [0] key <string>: 			The signer's private key
+//  - [1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+//  - hash <string>: 				The transaction hash
 func (m *UserModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 

@@ -107,7 +107,7 @@ func (m *MockSystemKeeper) EXPECT() *MockSystemKeeperMockRecorder {
 }
 
 // SaveBlockInfo mocks base method
-func (m *MockSystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
+func (m *MockSystemKeeper) SaveBlockInfo(info *state.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveBlockInfo", info)
 	ret0, _ := ret[0].(error)
@@ -121,10 +121,10 @@ func (mr *MockSystemKeeperMockRecorder) SaveBlockInfo(info interface{}) *gomock.
 }
 
 // GetLastBlockInfo mocks base method
-func (m *MockSystemKeeper) GetLastBlockInfo() (*core.BlockInfo, error) {
+func (m *MockSystemKeeper) GetLastBlockInfo() (*state.BlockInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastBlockInfo")
-	ret0, _ := ret[0].(*core.BlockInfo)
+	ret0, _ := ret[0].(*state.BlockInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -136,10 +136,10 @@ func (mr *MockSystemKeeperMockRecorder) GetLastBlockInfo() *gomock.Call {
 }
 
 // GetBlockInfo mocks base method
-func (m *MockSystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
+func (m *MockSystemKeeper) GetBlockInfo(height int64) (*state.BlockInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockInfo", height)
-	ret0, _ := ret[0].(*core.BlockInfo)
+	ret0, _ := ret[0].(*state.BlockInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1103,7 +1103,7 @@ func (mr_2 *MockAtomicLogicMockRecorder) SetMempoolReactor(mr interface{}) *gomo
 }
 
 // OnEndBlock mocks base method
-func (m *MockAtomicLogic) OnEndBlock(block *core.BlockInfo) error {
+func (m *MockAtomicLogic) OnEndBlock(block *state.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnEndBlock", block)
 	ret0, _ := ret[0].(error)
@@ -1482,7 +1482,7 @@ func (mr_2 *MockLogicMockRecorder) SetMempoolReactor(mr interface{}) *gomock.Cal
 }
 
 // OnEndBlock mocks base method
-func (m *MockLogic) OnEndBlock(block *core.BlockInfo) error {
+func (m *MockLogic) OnEndBlock(block *state.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnEndBlock", block)
 	ret0, _ := ret[0].(error)
@@ -1704,19 +1704,19 @@ func (m *MockValidatorKeeper) EXPECT() *MockValidatorKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetByHeight mocks base method
-func (m *MockValidatorKeeper) GetByHeight(height int64) (core.BlockValidators, error) {
+// Get mocks base method
+func (m *MockValidatorKeeper) Get(height int64) (core.BlockValidators, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByHeight", height)
+	ret := m.ctrl.Call(m, "Get", height)
 	ret0, _ := ret[0].(core.BlockValidators)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByHeight indicates an expected call of GetByHeight
-func (mr *MockValidatorKeeperMockRecorder) GetByHeight(height interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockValidatorKeeperMockRecorder) Get(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHeight", reflect.TypeOf((*MockValidatorKeeper)(nil).GetByHeight), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockValidatorKeeper)(nil).Get), height)
 }
 
 // Index mocks base method

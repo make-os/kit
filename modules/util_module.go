@@ -174,7 +174,7 @@ func (m *ConsoleUtilModule) GenKey(seed ...int64) util.Map {
 
 	res := map[string]interface{}{}
 	res["pubkey"] = key.PubKey().Base58()
-	res["privateKey"] = key.PrivKey().Base58()
+	res["privkey"] = key.PrivKey().Base58()
 	res["address"] = key.Addr().String()
 	return res
 }

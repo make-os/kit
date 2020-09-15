@@ -7,8 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
-	mocks2 "github.com/make-os/lobe/mocks/rpc"
-	mocks3 "github.com/make-os/lobe/mocks/rpc-client"
+	mocksrpc "github.com/make-os/lobe/mocks/rpc"
 	"github.com/make-os/lobe/modules"
 	types2 "github.com/make-os/lobe/modules/types"
 	types3 "github.com/make-os/lobe/remote/push/types"
@@ -59,8 +58,8 @@ var _ = Describe("TxModule", func() {
 
 	Describe(".Get", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
-			mockClient := mocks2.NewMockClient(ctrl)
-			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient := mocksrpc.NewMockClient(ctrl)
+			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
@@ -72,8 +71,8 @@ var _ = Describe("TxModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockClient := mocks2.NewMockClient(ctrl)
-			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient := mocksrpc.NewMockClient(ctrl)
+			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
@@ -169,8 +168,8 @@ var _ = Describe("TxModule", func() {
 
 	Describe(".SendPayload", func() {
 		It("should panic if in attach mode and RPC client method returns error", func() {
-			mockClient := mocks2.NewMockClient(ctrl)
-			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient := mocksrpc.NewMockClient(ctrl)
+			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
@@ -183,8 +182,8 @@ var _ = Describe("TxModule", func() {
 		})
 
 		It("should not panic if in attach mode and RPC client method returns no error", func() {
-			mockClient := mocks2.NewMockClient(ctrl)
-			mockTxClient := mocks3.NewMockTx(ctrl)
+			mockClient := mocksrpc.NewMockClient(ctrl)
+			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
 			m.AttachedClient = mockClient
 
