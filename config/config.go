@@ -231,8 +231,8 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	tmcfg.P2P.AddrBookStrict = !devMode
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
-	// In production mode, add seed peers
-	if cfg.IsProd() {
+	// Add seed peers if .IgnoreSeeds is false
+	if cfg.Node.IgnoreSeeds {
 		tmcfg.P2P.PersistentPeers = cfg.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
 		cfg.DHT.BootstrapPeers = cfg.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
 	}

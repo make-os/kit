@@ -38,6 +38,9 @@ type NodeConfig struct {
 
 	// Validator indicates whether to run the node in validator capacity
 	Validator bool `json:"validator" mapstructure:"validator"`
+
+	// IgnoreSeeds will prevent seed address from being used
+	IgnoreSeeds bool `json:"ignoreSeeds" mapstructure:"ignoreSeeds"`
 }
 
 // RepoConfig represents repo-related configuration
