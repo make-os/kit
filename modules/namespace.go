@@ -25,7 +25,7 @@ type NamespaceModule struct {
 
 // NewAttachableNamespaceModule creates an instance of NamespaceModule suitable in attach mode
 func NewAttachableNamespaceModule(client types2.Client) *NamespaceModule {
-	return &NamespaceModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
+	return &NamespaceModule{ModuleCommon: types.ModuleCommon{Client: client}}
 }
 
 // NewNamespaceModule creates an instance of NamespaceModule
@@ -99,6 +99,9 @@ func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // resp.grace <bool>: Indicates whether the namespace is currently within the grace period
 func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 
+	if m.IsAttached() {
+
+	}
 	var targetHeight uint64
 	if len(height) > 0 {
 		targetHeight = height[0]

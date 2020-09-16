@@ -30,7 +30,7 @@ func NewTxModule(service services.Service, logic core.Logic) *TxModule {
 
 // NewAttachableTxModule creates an instance of TxModule suitable in attach mode
 func NewAttachableTxModule(client types2.Client) *TxModule {
-	return &TxModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+	return &TxModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}}
 }
 
 // methods are functions exposed in the special namespace of this module.
@@ -80,8 +80,8 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // object.data		<object>: 		The transaction object.
 func (m *TxModule) Get(hash string) util.Map {
 
-	if m.InAttachMode() {
-		tx, err := m.AttachedClient.Tx().Get(hash)
+	if m.IsAttached() {
+		tx, err := m.Client.Tx().Get(hash)
 		if err != nil {
 			panic(err)
 		}
@@ -123,8 +123,8 @@ func (m *TxModule) Get(hash string) util.Map {
 // object.hash <string>: 				The transaction hash
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 
-	if m.InAttachMode() {
-		tx, err := m.AttachedClient.Tx().Send(params)
+	if m.IsAttached() {
+		tx, err := m.Client.Tx().Send(params)
 		if err != nil {
 			panic(err)
 		}

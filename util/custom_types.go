@@ -13,6 +13,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 )
 
 // Constants
@@ -391,7 +392,7 @@ func (s String) Decimal() decimal.Decimal {
 // Float returns the float equivalent of the numeric value.
 // Panics if not convertible to float64
 func (s String) Float() float64 {
-	f, err := strconv.ParseFloat(string(s), 64)
+	f, err := cast.ToFloat64E(string(s))
 	if err != nil {
 		panic(err)
 	}

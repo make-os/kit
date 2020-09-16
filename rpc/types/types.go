@@ -47,6 +47,9 @@ type Client interface {
 
 	// DHT exposes methods for accessing the DHT network
 	DHT() DHT
+
+	// Ticket exposes methods for purchasing and managing tickets
+	Ticket() Ticket
 }
 
 // Chain provides access to the chain-related RPC methods

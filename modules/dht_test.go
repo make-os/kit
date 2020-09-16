@@ -1,6 +1,7 @@
 package modules_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -77,11 +78,11 @@ var _ = Describe("DHTModule", func() {
 			})
 		})
 
-		It("should return data on success", func() {
+		It("should return base64-encoded data on success", func() {
 			mockDHT.EXPECT().Lookup(gomock.Any(), dht.MakeKey("key")).Return([]byte("abc"), nil)
 			data := m.Lookup("key")
 			Expect(data).ToNot(BeEmpty())
-			Expect(data).To(Equal([]byte("abc")))
+			Expect(data).To(Equal(base64.StdEncoding.EncodeToString([]byte("abc"))))
 		})
 	})
 

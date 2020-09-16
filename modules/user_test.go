@@ -95,7 +95,7 @@ var _ = Describe("UserModule", func() {
 		It("should panic when address is not provided", func() {
 			err := &util.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPrivKey("")
+				m.GetPrivKey("", "pass")
 			})
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("UserModule", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPrivKey("addr1")
+				m.GetPrivKey("addr1", "pass")
 			})
 		})
 
@@ -111,7 +111,7 @@ var _ = Describe("UserModule", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPrivKey("addr1")
+				m.GetPrivKey("addr1", "pass")
 			})
 		})
 
@@ -123,7 +123,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-					m.GetPrivKey("addr1")
+					m.GetPrivKey("addr1", "pass")
 				})
 			})
 
@@ -133,7 +133,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				res := m.GetPrivKey("addr1")
+				res := m.GetPrivKey("addr1", "pass")
 				Expect(res).To(Equal(pk.PrivKey().Base58()))
 			})
 		})
@@ -168,7 +168,7 @@ var _ = Describe("UserModule", func() {
 		It("should panic when address is not provided", func() {
 			err := &util.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPublicKey("")
+				m.GetPublicKey("", "pass")
 			})
 		})
 
@@ -176,7 +176,7 @@ var _ = Describe("UserModule", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
 			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPublicKey("addr1")
+				m.GetPublicKey("addr1", "pass")
 			})
 		})
 
@@ -184,7 +184,7 @@ var _ = Describe("UserModule", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetPublicKey("addr1")
+				m.GetPublicKey("addr1", "pass")
 			})
 		})
 
@@ -196,7 +196,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-					m.GetPublicKey("addr1")
+					m.GetPublicKey("addr1", "pass")
 				})
 			})
 
@@ -206,7 +206,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(nil)
 				mockKey.EXPECT().GetKey().Return(pk)
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				res := m.GetPublicKey("addr1")
+				res := m.GetPublicKey("addr1", "pass")
 				Expect(res).To(Equal(pk.PubKey().Base58()))
 			})
 		})
@@ -260,7 +260,7 @@ var _ = Describe("UserModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
@@ -273,7 +273,7 @@ var _ = Describe("UserModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 			mockUserClient.EXPECT().Get("os1abc", uint64(1)).Return(&api.ResultAccount{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.GetAccount("os1abc", 1)
@@ -484,7 +484,7 @@ var _ = Describe("UserModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockUserClient.EXPECT().Send(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			params := map[string]interface{}{"value": "10"}
@@ -498,7 +498,7 @@ var _ = Describe("UserModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockUserClient := mocks2.NewMockUser(ctrl)
 			mockClient.EXPECT().User().Return(mockUserClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 			params := map[string]interface{}{"value": "10"}
 
 			mockUserClient.EXPECT().Send(gomock.Any()).Return(&api.ResultHash{}, nil)

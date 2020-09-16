@@ -30,8 +30,8 @@ type PushKeyModule struct {
 }
 
 // NewAttachablePushKeyModule creates an instance of PushKeyModule suitable in attach mode
-func NewAttachablePushKeyModule(client types2.Client) *PushKeyModule {
-	return &PushKeyModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+func NewAttachablePushKeyModule(cfg *config.AppConfig, client types2.Client) *PushKeyModule {
+	return &PushKeyModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}, cfg: cfg}
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
@@ -130,13 +130,13 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
+	printPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
 	if printPayload {
 		return tx.ToMap()
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.PushKey().Register(&api.BodyRegisterPushKey{
+	if m.IsAttached() {
+		resp, err := m.Client.PushKey().Register(&api.BodyRegisterPushKey{
 			PublicKey:  tx.PublicKey,
 			Scopes:     tx.Scopes,
 			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),
@@ -299,8 +299,8 @@ func (m *PushKeyModule) GetAccountOfOwner(address string, height ...uint64) util
 		h = height[0]
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.PushKey().GetOwner(address, h)
+	if m.IsAttached() {
+		resp, err := m.Client.PushKey().GetOwner(address, h)
 		if err != nil {
 			panic(err)
 		}

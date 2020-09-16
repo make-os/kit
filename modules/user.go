@@ -34,8 +34,8 @@ type UserModule struct {
 }
 
 // NewAttachableUserModule creates an instance of UserModule suitable in attach mode
-func NewAttachableUserModule(client types2.Client, ks *keystore.Keystore) *UserModule {
-	return &UserModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}, keystore: ks}
+func NewAttachableUserModule(cfg *config.AppConfig, client types2.Client, ks *keystore.Keystore) *UserModule {
+	return &UserModule{ModuleCommon: types.ModuleCommon{Client: client}, cfg: cfg, keystore: ks}
 }
 
 // NewUserModule creates an instance of UserModule
@@ -145,6 +145,15 @@ func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // GetKeys returns a list of address of keys on the keystore
 func (m *UserModule) GetKeys() []string {
+
+	if m.IsAttached() {
+		res, err := m.Client.User().GetKeys()
+		if err != nil {
+			panic(err)
+		}
+		return res
+	}
+
 	accounts, err := m.keystore.List()
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
@@ -166,9 +175,8 @@ func (m *UserModule) GetKeys() []string {
 //
 //  - address: The address corresponding the the local key
 //  - [passphrase]: The passphrase of the local key
-func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
+func (m *UserModule) getKey(address string, passphrase string) *crypto.Key {
 
-	var pass string
 	if address == "" {
 		panic(util.ReqErr(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
@@ -183,20 +191,13 @@ func (m *UserModule) getKey(address string, passphrase ...string) *crypto.Key {
 	}
 
 	if acct.IsUnprotected() {
-		pass = keystore.DefaultPassphrase
+		passphrase = keystore.DefaultPassphrase
 		goto unlock
-	}
-
-	// If passphrase is not set, start interactive mode
-	if len(passphrase) == 0 {
-		pass, _ = m.keystore.AskForPasswordOnce()
-	} else {
-		pass = passphrase[0]
 	}
 
 unlock:
 	// Unlock the key using the passphrase
-	if err := acct.Unlock(pass); err != nil {
+	if err := acct.Unlock(passphrase); err != nil {
 		if err == at.ErrInvalidPassphrase {
 			panic(util.ReqErr(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
@@ -215,7 +216,24 @@ unlock:
 //  - address: The address corresponding the the local key
 //  - [passphrase]: The passphrase of the local key
 func (m *UserModule) GetPrivKey(address string, passphrase ...string) string {
-	return m.getKey(address, passphrase...).PrivKey().Base58()
+
+	// If passphrase is not set, start interactive mode
+	var pass string
+	if len(passphrase) == 0 {
+		pass, _ = m.keystore.AskForPasswordOnce()
+	} else {
+		pass = passphrase[0]
+	}
+
+	if m.IsAttached() {
+		res, err := m.Client.User().GetPrivateKey(address, pass)
+		if err != nil {
+			panic(err)
+		}
+		return res
+	}
+
+	return m.getKey(address, pass).PrivKey().Base58()
 }
 
 // getPublicKey returns the public key of a key.
@@ -227,7 +245,24 @@ func (m *UserModule) GetPrivKey(address string, passphrase ...string) string {
 //  - address: The address corresponding the the local key
 //  - [passphrase]: The passphrase of the local key
 func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
-	return m.getKey(address, passphrase...).PubKey().Base58()
+
+	// If passphrase is not set, start interactive mode
+	var pass string
+	if len(passphrase) == 0 {
+		pass, _ = m.keystore.AskForPasswordOnce()
+	} else {
+		pass = passphrase[0]
+	}
+
+	if m.IsAttached() {
+		res, err := m.Client.User().GetPublicKey(address, pass)
+		if err != nil {
+			panic(err)
+		}
+		return res
+	}
+
+	return m.getKey(address, pass).PubKey().Base58()
 }
 
 // GetNonce returns the current nonce of a network account
@@ -236,12 +271,12 @@ func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 //  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetNonce(address string, height ...uint64) string {
 
-	if m.InAttachMode() {
-		acct, err := m.AttachedClient.User().Get(address, height...)
+	if m.IsAttached() {
+		nonce, err := m.Client.User().GetNonce(address, height...)
 		if err != nil {
 			panic(err)
 		}
-		return cast.ToString(acct.Nonce.UInt64())
+		return cast.ToString(nonce)
 	}
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
@@ -257,8 +292,8 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 //  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 
-	if m.InAttachMode() {
-		tx, err := m.AttachedClient.User().Get(address, height...)
+	if m.IsAttached() {
+		tx, err := m.Client.User().Get(address, height...)
 		if err != nil {
 			panic(err)
 		}
@@ -282,13 +317,12 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 //  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAvailableBalance(address string, height ...uint64) string {
 
-	if m.InAttachMode() {
-		// acct, err := m.AttachedClient.User().Get(address, height...)
-		// if err != nil {
-		// 	panic(err)
-		// }
-
-		// return acct.GetAvailableBalance()
+	if m.IsAttached() {
+		bal, err := m.Client.User().GetBalance(address, height...)
+		if err != nil {
+			panic(err)
+		}
+		return cast.ToString(bal)
 	}
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
@@ -305,12 +339,18 @@ func (m *UserModule) GetAvailableBalance(address string, height ...uint64) strin
 }
 
 // getStakedBalance returns the total staked coins of an account
-//
 //  - address: The address corresponding the account
 //  - [height]: The target block height to query (default: latest)
-//
-// RETURNS <string>: numeric value
 func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
+
+	if m.IsAttached() {
+		bal, err := m.Client.User().GetStakedBalance(address, height...)
+		if err != nil {
+			panic(err)
+		}
+		return cast.ToString(bal)
+	}
+
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
@@ -334,15 +374,28 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 //  - tmAddr <string>: The tendermint address
 //  - privkey <string>: The validator's base58 public key
 func (m *UserModule) GetValidator(includePrivKey ...bool) util.Map {
-	key, _ := m.cfg.G().PrivVal.GetKey()
 
+	inclPrivKey := false
+	if len(includePrivKey) > 0 {
+		inclPrivKey = includePrivKey[0]
+	}
+
+	if m.IsAttached() {
+		res, err := m.Client.User().GetValidator(inclPrivKey)
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(res)
+	}
+
+	key, _ := m.cfg.G().PrivVal.GetKey()
 	info := map[string]interface{}{
 		"pubkey":  key.PubKey().Base58(),
 		"address": key.Addr().String(),
 		"tmAddr":  m.cfg.G().PrivVal.Key.Address.String(),
 	}
 
-	if len(includePrivKey) > 0 && includePrivKey[0] {
+	if inclPrivKey {
 		info["privkey"] = key.PrivKey().Base58()
 	}
 
@@ -371,8 +424,22 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.User().SetCommission(&api.BodySetCommission{
+			Commission: tx.Commission.Float(),
+			Nonce:      tx.Nonce,
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -408,13 +475,13 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
-	if printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.User().Send(&api.BodySendCoin{
+	if m.IsAttached() {
+		resp, err := m.Client.User().Send(&api.BodySendCoin{
 			To:         tx.To,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),

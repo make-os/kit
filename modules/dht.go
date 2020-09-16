@@ -2,6 +2,7 @@ package modules
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -28,8 +29,8 @@ type DHTModule struct {
 }
 
 // NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
-func NewAttachableDHTModule(client types2.Client) *DHTModule {
-	return &DHTModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+func NewAttachableDHTModule(cfg *config.AppConfig, client types2.Client) *DHTModule {
+	return &DHTModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}, cfg: cfg}
 }
 
 // NewDHTModule creates an instance of DHTModule
@@ -103,11 +104,15 @@ func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 }
 
 // store stores a value corresponding to the given key
-//
-// ARGS:
-// key: The data query key
-// val: The data to be stored
 func (m *DHTModule) Store(key string, val string) {
+
+	if m.IsAttached() {
+		if err := m.Client.DHT().Store(key, val); err != nil {
+			panic(err)
+		}
+		return
+	}
+
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	if err := m.dht.Store(ctx, dht.MakeKey(key), []byte(val)); err != nil {
@@ -117,25 +122,36 @@ func (m *DHTModule) Store(key string, val string) {
 
 // lookup finds a value for a given key
 //
-// ARGS:
-// key: The data query key
-//
-// RETURNS: <[]bytes>: The data stored on the key
-func (m *DHTModule) Lookup(key string) interface{} {
+// RETURNS <base64 string>: The data stored on the key
+func (m *DHTModule) Lookup(key string) string {
+
+	if m.IsAttached() {
+		val, err := m.Client.DHT().Lookup(key)
+		if err != nil {
+			panic(err)
+		}
+		return base64.StdEncoding.EncodeToString([]byte(val))
+	}
+
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	bz, err := m.dht.Lookup(ctx, dht.MakeKey(key))
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
-	return bz
+	return base64.StdEncoding.EncodeToString(bz)
 }
 
 // announce announces to the network that the node can provide value for a given key
-//
-// ARGS:
-// key: The data query key
 func (m *DHTModule) Announce(key string) {
+
+	if m.IsAttached() {
+		if err := m.Client.DHT().Announce(key); err != nil {
+			panic(err)
+		}
+		return
+	}
+
 	m.dht.Announce(announcer.ObjTypeAny, "", []byte(key), nil)
 }
 
@@ -147,7 +163,15 @@ func (m *DHTModule) Announce(key string) {
 // RETURNS: resp <[]map[string]interface{}>
 // - resp.id <string>: The peer ID of the provider
 // - resp.addresses: <[]string>: A list of p2p multiaddrs of the provider
-func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interface{}) {
+func (m *DHTModule) GetRepoObjectProviders(hash string) (res []util.Map) {
+
+	if m.IsAttached() {
+		res, err := m.Client.DHT().GetRepoObjectProviders(hash)
+		if err != nil {
+			panic(err)
+		}
+		return util.StructSliceToMap(res)
+	}
 
 	var err error
 	var key []byte
@@ -190,7 +214,16 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interf
 // RETURNS: resp <[]map[string]interface{}>
 // - resp.id <string>: The peer ID of the provider
 // - resp.addresses: <[]string>: A list of p2p multiaddrs of the provider
-func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
+func (m *DHTModule) GetProviders(key string) (res []util.Map) {
+
+	if m.IsAttached() {
+		res, err := m.Client.DHT().GetProviders(key)
+		if err != nil {
+			panic(err)
+		}
+		return util.StructSliceToMap(res)
+	}
+
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, []byte(key))
@@ -212,5 +245,13 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 
 // getPeers returns a list of DHT peer IDs
 func (m *DHTModule) GetPeers() (peers []string) {
+	if m.IsAttached() {
+		res, err := m.Client.DHT().GetPeers()
+		if err != nil {
+			panic(err)
+		}
+		return res
+	}
+
 	return m.dht.Peers()
 }

@@ -165,10 +165,10 @@ type NamespaceModule interface {
 type DHTModule interface {
 	Module
 	Store(key string, val string)
-	Lookup(key string) interface{}
+	Lookup(key string) string
 	Announce(key string)
-	GetRepoObjectProviders(key string) (res []map[string]interface{})
-	GetProviders(key string) (res []map[string]interface{})
+	GetRepoObjectProviders(key string) (res []util.Map)
+	GetProviders(key string) (res []util.Map)
 	GetPeers() []string
 }
 
@@ -198,13 +198,13 @@ type ModuleCommon struct {
 	// Suggestions contains console suggestions
 	Suggestions []prompt.Suggest
 
-	// attachedClient is the RPC client the console is currently attached to in attach mode.
-	AttachedClient types.Client
+	// Client is an RPC client
+	Client types.Client
 }
 
-// InAttachMode checks whether the module is in attach mode.
-func (m *ModuleCommon) InAttachMode() bool {
-	return m.AttachedClient != nil
+// IsAttached checks whether the module is in attach mode.
+func (m *ModuleCommon) IsAttached() bool {
+	return m.Client != nil
 }
 
 // Completer returns suggestions for console input

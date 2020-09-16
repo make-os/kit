@@ -25,7 +25,9 @@ type Module struct {
 }
 
 // New creates an instance of Module
-func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Service, logic core.Logic, mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht types.DHT, extMgr *extensions.Manager, remoteSvr core.RemoteServer) *Module {
+func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Service, logic core.Logic,
+	mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht types.DHT,
+	extMgr *extensions.Manager, remoteSvr core.RemoteServer) *Module {
 
 	return &Module{
 		cfg: cfg,
@@ -55,12 +57,12 @@ func NewAttachable(cfg *config.AppConfig, client types3.Client, ks *keystore.Key
 		Modules: &modulestypes.Modules{
 			Tx:      NewAttachableTxModule(client),
 			Chain:   NewAttachableChainModule(client),
-			User:    NewAttachableUserModule(client, ks),
-			PushKey: NewAttachablePushKeyModule(client),
+			User:    NewAttachableUserModule(cfg, client, ks),
+			PushKey: NewAttachablePushKeyModule(cfg, client),
 			Ticket:  NewAttachableTicketModule(client),
 			Repo:    NewAttachableRepoModule(client),
 			NS:      NewAttachableNamespaceModule(client),
-			DHT:     NewAttachableDHTModule(client),
+			DHT:     NewAttachableDHTModule(cfg, client),
 			Util:    NewConsoleUtilModule(os.Stdout),
 			RPC:     NewRPCModule(cfg),
 			Pool:    NewAttachablePoolModule(client),

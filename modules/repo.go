@@ -29,7 +29,7 @@ type RepoModule struct {
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
 func NewAttachableRepoModule(client types2.Client) *RepoModule {
-	return &RepoModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+	return &RepoModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}}
 }
 
 // NewRepoModule creates an instance of RepoModule
@@ -106,13 +106,13 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
-	if printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().Create(&api.BodyCreateRepo{
+	if m.IsAttached() {
+		resp, err := m.Client.Repo().Create(&api.BodyCreateRepo{
 			Name:       tx.Name,
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
@@ -160,7 +160,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	if retPayload, _ := finalizeTx(tx, m.logic, nil, options...); retPayload {
 		return tx.ToMap()
 	}
 
@@ -198,8 +198,24 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.Repo().VoteProposal(&api.BodyRepoVote{
+			RepoName:   tx.RepoName,
+			ProposalID: tx.ProposalID,
+			Vote:       tx.Vote,
+			Nonce:      tx.Nonce,
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -237,8 +253,8 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		}
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().Get(name, &api.GetRepoOpts{
+	if m.IsAttached() {
+		resp, err := m.Client.Repo().Get(name, &api.GetRepoOpts{
 			NoProposals: noProposals,
 			Height:      blockHeight,
 		})
@@ -288,7 +304,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	if retPayload, _ := finalizeTx(tx, m.logic, nil, options...); retPayload {
 		return tx.ToMap()
 	}
 
@@ -326,7 +342,7 @@ func (m *RepoModule) DepositProposalFee(params map[string]interface{}, options .
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	if retPayload, _ := finalizeTx(tx, m.logic, nil, options...); retPayload {
 		return tx.ToMap()
 	}
 
@@ -371,13 +387,13 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	printPayload, signingKey := finalizeTx(tx, m.logic, m.AttachedClient, options...)
-	if printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
 	}
 
-	if m.InAttachMode() {
-		resp, err := m.AttachedClient.Repo().AddContributors(&api.BodyAddRepoContribs{
+	if m.IsAttached() {
+		resp, err := m.Client.Repo().AddContributors(&api.BodyAddRepoContribs{
 			RepoName:      tx.RepoName,
 			ProposalID:    tx.ID,
 			PushKeys:      tx.PushKeys,

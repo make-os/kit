@@ -1454,10 +1454,10 @@ func (mr *MockDHTModuleMockRecorder) Store(key, val interface{}) *gomock.Call {
 }
 
 // Lookup mocks base method
-func (m *MockDHTModule) Lookup(key string) interface{} {
+func (m *MockDHTModule) Lookup(key string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Lookup", key)
-	ret0, _ := ret[0].(interface{})
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
@@ -1480,10 +1480,10 @@ func (mr *MockDHTModuleMockRecorder) Announce(key interface{}) *gomock.Call {
 }
 
 // GetRepoObjectProviders mocks base method
-func (m *MockDHTModule) GetRepoObjectProviders(key string) []map[string]interface{} {
+func (m *MockDHTModule) GetRepoObjectProviders(key string) []util.Map {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoObjectProviders", key)
-	ret0, _ := ret[0].([]map[string]interface{})
+	ret0, _ := ret[0].([]util.Map)
 	return ret0
 }
 
@@ -1494,10 +1494,10 @@ func (mr *MockDHTModuleMockRecorder) GetRepoObjectProviders(key interface{}) *go
 }
 
 // GetProviders mocks base method
-func (m *MockDHTModule) GetProviders(key string) []map[string]interface{} {
+func (m *MockDHTModule) GetProviders(key string) []util.Map {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProviders", key)
-	ret0, _ := ret[0].([]map[string]interface{})
+	ret0, _ := ret[0].([]util.Map)
 	return ret0
 }
 

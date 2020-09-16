@@ -1,4 +1,4 @@
-package modules
+package modules_test
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
 	mocks2 "github.com/make-os/lobe/mocks/rpc"
+	"github.com/make-os/lobe/modules"
 	"github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/constants"
@@ -18,14 +19,14 @@ import (
 var _ = Describe("RPCModule", func() {
 	var err error
 	var cfg *config.AppConfig
-	var m *RPCModule
+	var m *modules.RPCModule
 	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		m = NewRPCModule(cfg)
+		m = modules.NewRPCModule(cfg)
 	})
 
 	AfterEach(func() {
@@ -44,7 +45,7 @@ var _ = Describe("RPCModule", func() {
 		})
 	})
 
-	Describe(".connectLocal", func() {
+	Describe(".ConnectLocal", func() {
 		BeforeEach(func() {
 			cfg.Remote.Address = "127.0.0.1:4000"
 		})
@@ -52,10 +53,10 @@ var _ = Describe("RPCModule", func() {
 		It("should return client context object with only 'call' property when no methods from RPC", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockClient.EXPECT().Call("rpc_methods", nil).Return(util.Map{"methods": []interface{}{}}, 200, nil)
-			m.ClientContextMaker = func(types.Client) *ClientContext {
-				return &ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
+			m.ClientContextMaker = func(types.Client) *modules.ClientContext {
+				return &modules.ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
 			}
-			objs := m.connectLocal()
+			objs := m.ConnectLocal()
 			Expect(objs).To(HaveLen(1))
 			Expect(objs).To(HaveKey("call"))
 		})
@@ -68,10 +69,10 @@ var _ = Describe("RPCModule", func() {
 					"namespace": "method_ns",
 				},
 			}}, 200, nil)
-			m.ClientContextMaker = func(types.Client) *ClientContext {
-				return &ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
+			m.ClientContextMaker = func(types.Client) *modules.ClientContext {
+				return &modules.ClientContext{Client: mockClient, Objects: map[string]interface{}{}}
 			}
-			objs := m.connectLocal()
+			objs := m.ConnectLocal()
 			Expect(objs).To(HaveLen(2))
 			Expect(objs).To(HaveKey("call"))
 			Expect(objs).To(HaveKey("method_ns"))

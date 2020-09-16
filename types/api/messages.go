@@ -5,6 +5,7 @@ import (
 	"github.com/make-os/lobe/rpc"
 	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/identifier"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -40,12 +41,12 @@ type ResultValidatorInfo struct {
 
 // ResultBlock is the result for a request to get a block.
 type ResultBlock struct {
-	*core_types.ResultBlock
+	*core_types.ResultBlock `json:",flatten"`
 }
 
 // ResultBlockInfo is the result for a request to get summarized block info.
 type ResultBlockInfo struct {
-	*state.BlockInfo
+	*state.BlockInfo `json:",flatten"`
 }
 
 // ResultDHTProvider describes a DHT provider
@@ -165,14 +166,15 @@ type BodyBuyTicket struct {
 	Value      float64
 	SigningKey *crypto.Key
 	Delegate   crypto.PublicKey
+	BLSPubKey  util.Bytes
 }
 
 // BodyTicketQuery contains arguments for querying tickets
 type BodyTicketQuery struct {
 	ProposerPubKey string
-	QueryOption    map[string]interface{}
+	QueryOption    *tickettypes.QueryOptions
 }
 
 type ResultTicket struct {
-	*tickettypes.Ticket
+	*tickettypes.Ticket `json:",flatten"`
 }

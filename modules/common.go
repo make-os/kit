@@ -76,11 +76,15 @@ func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool)
 }
 
 // finalizeTx sets the public key, timestamp, nonce and signs the transaction.
-// If nonce is not set, it will use the keepers to query the compute the next nonce.
-// If nonce and keepers are not set, it will use rpcClient to query and compute the next nonce.
-// It will not reset fields already set.
-// options[0]: <string|bool> 	- key or payloadOnly request
-// options[1]: [<bool>] 		- payload request
+//
+//  - If nonce is not set, it will use the keepers to query the compute the next nonce.
+//  - If nonce and keepers are not set, it will use rpcClient to query and compute the next nonce.
+//  - It will not alter fields already set.
+//  - It will not sign the tx if keeper is not set but RPC client is; This means the
+//    call will have to sign the tx with the client.
+//
+//  - options[0]: <string|bool> 	- key or payloadOnly request
+//  - options[1]: [<bool>] 		- payload request
 func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, options ...interface{}) (bool, *crypto.PrivKey) {
 
 	key, payloadOnly := parseOptions(options...)
@@ -95,8 +99,8 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, 
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// If nonce us unset, compute next nonce by using the account keeper to query
-	// the sender account only if keepers is set.
+	// If keepers are provider and nonce iss unset, compute next nonce of the
+	// sending account by using the account using the keeper.
 	if tx.GetNonce() == 0 && key != nil && keepers != nil {
 		senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
 		if senderAcct.IsNil() {
@@ -105,8 +109,8 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, 
 		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
-	// If nonce us unset, compute next nonce by using the RPC client to query
-	// the sender account only if keepers is unset.
+	// If nonce is still unset and an RPC client is provided, compute next nonce by
+	// using the RPC client to query the sending account nonce.
 	if tx.GetNonce() == 0 && key != nil && keepers == nil && rpcClient != nil {
 		senderAcct, err := rpcClient.User().Get(tx.GetFrom().String())
 		if err != nil {
@@ -115,8 +119,8 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, 
 		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
-	// Sign the tx only if unsigned
-	if len(tx.GetSignature()) == 0 && key != nil {
+	// Sign the tx only if unsigned, if we have a key and keepers
+	if len(tx.GetSignature()) == 0 && key != nil && keepers != nil {
 		sig, err := tx.Sign(key.Base58())
 		if err != nil {
 			panic(se(400, StatusCodeInvalidParam, "key", "failed to sign transaction"))

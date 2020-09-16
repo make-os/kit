@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"math/big"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/crypto"
@@ -16,6 +17,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestModules(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Modules Suite")
+}
 
 type TestCase struct {
 	Desc           string
@@ -121,24 +127,36 @@ var _ = Describe("Common", func() {
 			}).To(Panic())
 		})
 
-		It("should use rpc client if nonce and keepers are not set", func() {
-			mockRPCClient := mockrpc.NewMockClient(ctrl)
-			mockUserClient := mockrpc.NewMockUser(ctrl)
-			mockRPCClient.EXPECT().User().Return(mockUserClient)
+		When("rpc client is set and keeper is not set", func() {
+			It("should use rpc client to get nonce", func() {
+				mockRPCClient := mockrpc.NewMockClient(ctrl)
+				mockUserClient := mockrpc.NewMockUser(ctrl)
+				mockRPCClient.EXPECT().User().Return(mockUserClient)
 
-			key := crypto.NewKeyFromIntSeed(1)
-			tx := txns.NewBareTxCoinTransfer()
-			mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{
-				Account: &state.Account{Nonce: 1},
-			}, nil)
+				key := crypto.NewKeyFromIntSeed(1)
+				tx := txns.NewBareTxCoinTransfer()
+				mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{Account: &state.Account{Nonce: 1}}, nil)
 
-			payloadOnly, pk := finalizeTx(tx, nil, mockRPCClient, key.PrivKey().Base58())
-			Expect(pk).ToNot(BeNil())
-			Expect(pk.Base58()).To(Equal(key.PrivKey().Base58()))
-			Expect(payloadOnly).To(BeFalse())
-			Expect(tx.SenderPubKey.IsEmpty()).To(BeFalse())
-			Expect(tx.Sig).ToNot(BeEmpty())
-			Expect(tx.Nonce).To(Equal(uint64(2)))
+				payloadOnly, pk := finalizeTx(tx, nil, mockRPCClient, key.PrivKey().Base58())
+				Expect(pk).ToNot(BeNil())
+				Expect(pk.Base58()).To(Equal(key.PrivKey().Base58()))
+				Expect(payloadOnly).To(BeFalse())
+				Expect(tx.SenderPubKey.IsEmpty()).To(BeFalse())
+				Expect(tx.Nonce).To(Equal(uint64(2)))
+			})
+
+			It("should not sign the tx", func() {
+				mockRPCClient := mockrpc.NewMockClient(ctrl)
+				mockUserClient := mockrpc.NewMockUser(ctrl)
+				mockRPCClient.EXPECT().User().Return(mockUserClient)
+
+				key := crypto.NewKeyFromIntSeed(1)
+				tx := txns.NewBareTxCoinTransfer()
+				mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{Account: &state.Account{Nonce: 1}}, nil)
+
+				finalizeTx(tx, nil, mockRPCClient, key.PrivKey().Base58())
+				Expect(tx.Sig).To(BeEmpty())
+			})
 		})
 
 		It("should panic if rpc client returns error", func() {

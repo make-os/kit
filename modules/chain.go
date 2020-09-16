@@ -34,7 +34,7 @@ func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule
 
 // NewAttachableChainModule creates an instance of ChainModule suitable in attach mode
 func NewAttachableChainModule(client types2.Client) *ChainModule {
-	return &ChainModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
+	return &ChainModule{ModuleCommon: types.ModuleCommon{Client: client}}
 }
 
 // globals are functions exposed in the VM's global namespace
@@ -94,10 +94,15 @@ func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // getBlock fetches a block at the given height
 func (m *ChainModule) GetBlock(height string) util.Map {
 
-	var err error
-	var blockHeight int64
+	if m.IsAttached() {
+		res, err := m.Client.Chain().GetBlock(cast.ToUint64(height))
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(res)
+	}
 
-	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
@@ -112,6 +117,15 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 
 // getHeight returns the current block height
 func (m *ChainModule) GetHeight() string {
+
+	if m.IsAttached() {
+		res, err := m.Client.Chain().GetHeight()
+		if err != nil {
+			panic(err)
+		}
+		return cast.ToString(res)
+	}
+
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
@@ -122,10 +136,15 @@ func (m *ChainModule) GetHeight() string {
 // getBlockInfo Get summarized block information at a given height
 func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
-	var err error
-	var blockHeight int64
+	if m.IsAttached() {
+		res, err := m.Client.Chain().GetBlockInfo(cast.ToUint64(height))
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(res)
+	}
 
-	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
@@ -140,20 +159,24 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 // getValidators returns validators of a given block
 //
-// ARGS:
-// height: The target block height
+//  - height: The target block height
 //
-// RETURNS res []Map
-// res.publicKey <string>: The base58 public key of validator
-// res.address <string>: The bech32 address of the validator
-// res.tmAddr <string>: The tendermint address and the validator
-// res.ticketId <string>: The id of the validator ticket
+// RETURNS res []map
+//  - publicKey <string>: The base58 public key of validator
+//  - address <string>: The bech32 address of the validator
+//  - tmAddr <string>: The tendermint address and the validator
+//  - ticketId <string>: The id of the validator ticket
 func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
-	var err error
-	var blockHeight int64
+	if m.IsAttached() {
+		res, err := m.Client.Chain().GetValidators(cast.ToUint64(height))
+		if err != nil {
+			panic(err)
+		}
+		return util.StructSliceToMap(res)
+	}
 
-	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
@@ -167,7 +190,6 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 	for pubKey, valInfo := range validators {
 		var pub32 ed25519.PubKeyEd25519
 		copy(pub32[:], pubKey.Bytes())
-
 		pubKey := crypto.MustPubKeyFromBytes(pubKey.Bytes())
 		vList = append(vList, map[string]interface{}{
 			"pubkey":   pubKey.Base58(),

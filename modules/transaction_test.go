@@ -61,7 +61,7 @@ var _ = Describe("TxModule", func() {
 			mockClient := mocksrpc.NewMockClient(ctrl)
 			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockTxClient.EXPECT().Get("0x123").Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
@@ -74,7 +74,7 @@ var _ = Describe("TxModule", func() {
 			mockClient := mocksrpc.NewMockClient(ctrl)
 			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockTxClient.EXPECT().Get("0x123").Return(&api.ResultTx{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
@@ -171,7 +171,7 @@ var _ = Describe("TxModule", func() {
 			mockClient := mocksrpc.NewMockClient(ctrl)
 			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			payload := map[string]interface{}{"type": 1}
 			mockTxClient.EXPECT().Send(payload).Return(nil, fmt.Errorf("error"))
@@ -185,7 +185,7 @@ var _ = Describe("TxModule", func() {
 			mockClient := mocksrpc.NewMockClient(ctrl)
 			mockTxClient := mocksrpc.NewMockTx(ctrl)
 			mockClient.EXPECT().Tx().Return(mockTxClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			payload := map[string]interface{}{"type": 1}
 			mockTxClient.EXPECT().Send(payload).Return(&api.ResultHash{}, nil)

@@ -65,7 +65,12 @@ func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 	tx.Value = util.String(cast.ToString(body.Value))
 	tx.Delegate = body.Delegate
 	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
-	tx.BLSPubKey = body.SigningKey.PrivKey().BLSKey().Public().Bytes()
+
+	// Set BLS public key. If not provided, derive a new one from the private key.
+	tx.BLSPubKey = body.BLSPubKey
+	if len(tx.BLSPubKey) == 0 {
+		tx.BLSPubKey = body.SigningKey.PrivKey().BLSKey().Public().Bytes()
+	}
 
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
@@ -89,7 +94,7 @@ func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 // List returns active validator tickets associated with a public key
 func (t *TicketAPI) List(body *api.BodyTicketQuery) (res []*api.ResultTicket, err error) {
 
-	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": body.QueryOption}
+	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": util.ToMap(body.QueryOption)}
 	resp, status, err := t.c.call("ticket_list", q)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(status, err)
@@ -120,7 +125,7 @@ func (t *TicketAPI) List(body *api.BodyTicketQuery) (res []*api.ResultTicket, er
 // ListHost returns active hosts tickets associated with a public key
 func (t *TicketAPI) ListHost(body *api.BodyTicketQuery) (res []*api.ResultTicket, err error) {
 
-	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": body.QueryOption}
+	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": util.ToMap(body.QueryOption)}
 	resp, status, err := t.c.call("ticket_listHost", q)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(status, err)

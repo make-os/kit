@@ -222,6 +222,20 @@ func (mr *MockClientMockRecorder) DHT() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHT", reflect.TypeOf((*MockClient)(nil).DHT))
 }
 
+// Ticket mocks base method
+func (m *MockClient) Ticket() types.Ticket {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ticket")
+	ret0, _ := ret[0].(types.Ticket)
+	return ret0
+}
+
+// Ticket indicates an expected call of Ticket
+func (mr *MockClientMockRecorder) Ticket() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ticket", reflect.TypeOf((*MockClient)(nil).Ticket))
+}
+
 // MockChain is a mock of Chain interface
 type MockChain struct {
 	ctrl     *gomock.Controller
@@ -839,4 +853,34 @@ func (m *MockTicket) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 func (mr *MockTicketMockRecorder) BuyHost(body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuyHost", reflect.TypeOf((*MockTicket)(nil).BuyHost), body)
+}
+
+// List mocks base method
+func (m *MockTicket) List(body *api.BodyTicketQuery) ([]*api.ResultTicket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", body)
+	ret0, _ := ret[0].([]*api.ResultTicket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List
+func (mr *MockTicketMockRecorder) List(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockTicket)(nil).List), body)
+}
+
+// ListHost mocks base method
+func (m *MockTicket) ListHost(body *api.BodyTicketQuery) ([]*api.ResultTicket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListHost", body)
+	ret0, _ := ret[0].([]*api.ResultTicket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListHost indicates an expected call of ListHost
+func (mr *MockTicketMockRecorder) ListHost(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListHost", reflect.TypeOf((*MockTicket)(nil).ListHost), body)
 }

@@ -93,7 +93,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().Create(gomock.Any()).Return(nil, fmt.Errorf("error"))
 			params := map[string]interface{}{"name": "repo1"}
@@ -107,7 +107,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().Create(gomock.Any()).Return(&api.ResultCreateRepo{}, nil)
 			params := map[string]interface{}{"name": "repo1"}
@@ -253,7 +253,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().Get("repo1", &api.GetRepoOpts{Height: 1}).Return(nil, fmt.Errorf("error"))
 			err := fmt.Errorf("error")
@@ -266,7 +266,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().Get("repo1", &api.GetRepoOpts{Height: 1}).Return(&api.ResultRepository{}, nil)
 			assert.NotPanics(GinkgoT(), func() {
@@ -421,7 +421,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&api.ResultHash{}, fmt.Errorf("error"))
 			params := map[string]interface{}{"id": 1}
@@ -435,7 +435,7 @@ var _ = Describe("RepoModule", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
 			mockClient.EXPECT().Repo().Return(mockRepoClient)
-			m.AttachedClient = mockClient
+			m.Client = mockClient
 
 			mockRepoClient.EXPECT().AddContributors(gomock.Any()).Return(&api.ResultHash{}, nil)
 			params := map[string]interface{}{"id": 1}

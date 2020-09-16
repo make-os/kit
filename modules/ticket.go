@@ -9,6 +9,7 @@ import (
 	"github.com/make-os/lobe/node/services"
 	types2 "github.com/make-os/lobe/rpc/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types/api"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
@@ -16,6 +17,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 )
 
 // TicketModule provides access to various utility functions
@@ -28,7 +30,7 @@ type TicketModule struct {
 
 // NewAttachableTicketModule creates an instance of TicketModule suitable in attach mode
 func NewAttachableTicketModule(client types2.Client) *TicketModule {
-	return &TicketModule{ModuleCommon: types.ModuleCommon{AttachedClient: client}}
+	return &TicketModule{ModuleCommon: types.ModuleCommon{Client: client}}
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -156,8 +158,23 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.Ticket().Buy(&api.BodyBuyTicket{
+			Nonce:      tx.Nonce,
+			Value:      cast.ToFloat64(tx.Value.String()),
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			Delegate:   tx.Delegate,
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	// Process the transaction
@@ -187,23 +204,37 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 // RETURNS object <map>
 // 	- hash <string>: 				The transaction hash
 func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...interface{}) util.Map {
-	var err error
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
-	if err = tx.FromMap(params); err != nil {
+	if err := tx.FromMap(params); err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	key, _ := parseOptions(options...)
-
 	// Derive BLS public key
+	key, _ := parseOptions(options...)
 	if key != nil {
 		blsKey := key.BLSKey()
 		tx.BLSPubKey = blsKey.Public().Bytes()
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
+	if retPayload {
 		return tx.ToMap()
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.Ticket().BuyHost(&api.BodyBuyTicket{
+			Nonce:      tx.Nonce,
+			Value:      cast.ToFloat64(tx.Value.String()),
+			Fee:        cast.ToFloat64(tx.Fee.String()),
+			Delegate:   tx.Delegate,
+			BLSPubKey:  tx.BLSPubKey,
+			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(resp)
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -233,6 +264,17 @@ func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, quer
 		qoMap := queryOpts[0]
 		qo.Active = qoMap["expired"] == nil
 		mapstructure.Decode(qoMap, &qo)
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.Ticket().ListHost(&api.BodyTicketQuery{
+			ProposerPubKey: proposerPubKey,
+			QueryOption:    &qo,
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.StructSliceToMap(resp)
 	}
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
@@ -270,6 +312,17 @@ func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts
 	if len(queryOpts) > 0 {
 		qo.SortByHeight = -1
 		mapstructure.Decode(queryOpts[0], &qo)
+	}
+
+	if m.IsAttached() {
+		resp, err := m.Client.Ticket().ListHost(&api.BodyTicketQuery{
+			ProposerPubKey: proposerPubKey,
+			QueryOption:    &qo,
+		})
+		if err != nil {
+			panic(err)
+		}
+		return util.StructSliceToMap(resp)
 	}
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
@@ -432,7 +485,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options .
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+	if retPayload, _ := finalizeTx(tx, m.logic, nil, options...); retPayload {
 		return tx.ToMap()
 	}
 

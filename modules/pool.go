@@ -22,7 +22,7 @@ type PoolModule struct {
 
 // NewAttachablePoolModule creates an instance of PoolModule suitable in attach mode
 func NewAttachablePoolModule(client types2.Client) *PoolModule {
-	return &PoolModule{ModuleCommon: modulestypes.ModuleCommon{AttachedClient: client}}
+	return &PoolModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}}
 }
 
 // NewPoolModule creates an instance of PoolModule
