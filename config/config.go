@@ -232,7 +232,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
 	// Add seed peers if .IgnoreSeeds is false
-	if cfg.Node.IgnoreSeeds {
+	if !cfg.Node.IgnoreSeeds {
 		tmcfg.P2P.PersistentPeers = cfg.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
 		cfg.DHT.BootstrapPeers = cfg.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
 	}
