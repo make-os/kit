@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/crypto/bls"
+	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/validation"
@@ -227,7 +227,7 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 		return errors.Wrap(err, "failed to get top hosts")
 	}
 
-	var endPubKeys []*bls.PublicKey
+	var endPubKeys []*bdn.PublicKey
 	for index, end := range tx.Endorsements {
 
 		// Perform consistency checks but don't check the BLS signature as we don't
@@ -239,7 +239,7 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 		}
 
 		signerTicket := hosts.Get(end.EndorserPubKey)
-		blsPubKey, err := bls.BytesToPublicKey(signerTicket.Ticket.BLSPubKey)
+		blsPubKey, err := bdn.BytesToPublicKey(signerTicket.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
@@ -279,7 +279,7 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 
 	// Generate an aggregated public key and use it to check the endorsers aggregated signature.
 	// Use the bytes output of the first endorsement since all endorsement are expected to be the same.
-	aggPubKey, _ := bls.AggregatePublicKeys(endPubKeys)
+	aggPubKey, _ := bdn.AggregatePublicKeys(endPubKeys)
 	err = aggPubKey.Verify(tx.AggregatedSig, tx.Endorsements[0].BytesForBLSSig())
 	if err != nil {
 		return errors.Wrap(err, "could not verify aggregated endorsers' signature")

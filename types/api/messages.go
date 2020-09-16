@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/rpc"
+	tickettypes "github.com/make-os/lobe/ticket/types"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/util/identifier"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
@@ -149,10 +150,29 @@ type BodySendCoin struct {
 	SigningKey *crypto.Key
 }
 
-// BodySetCommission contains arguments for setting a user account commission
+// BodySetCommission contains arguments for updating a validators commission value
 type BodySetCommission struct {
 	Nonce      uint64
 	Fee        float64
 	Commission float64
 	SigningKey *crypto.Key
+}
+
+// BodyBuyTicket contains arguments for purchasing a ticket
+type BodyBuyTicket struct {
+	Nonce      uint64
+	Fee        float64
+	Value      float64
+	SigningKey *crypto.Key
+	Delegate   crypto.PublicKey
+}
+
+// BodyTicketQuery contains arguments for querying tickets
+type BodyTicketQuery struct {
+	ProposerPubKey string
+	QueryOption    map[string]interface{}
+}
+
+type ResultTicket struct {
+	*tickettypes.Ticket
 }

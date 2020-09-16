@@ -148,6 +148,22 @@ type User interface {
 	SetCommission(body *api.BodySetCommission) (*api.ResultHash, error)
 }
 
+// Ticket provides access to ticket-related RPC methods
+type Ticket interface {
+
+	// Buy creates a transaction to buy a validator ticket
+	Buy(body *api.BodyBuyTicket) (*api.ResultHash, error)
+
+	// BuyHost creates a transaction to buy a host ticket
+	BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error)
+
+	// List returns active validator tickets associated with a public key
+	List(body *api.BodyTicketQuery) (res []*api.ResultTicket, err error)
+
+	// ListHost returns active hosts tickets associated with a public key
+	ListHost(body *api.BodyTicketQuery) (res []*api.ResultTicket, err error)
+}
+
 // Options describes the options used to configure the client
 type Options struct {
 	Host     string

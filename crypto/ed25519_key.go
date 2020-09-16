@@ -7,6 +7,7 @@ import (
 	"fmt"
 	mrand "math/rand"
 
+	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/tendermint/tendermint/libs/bech32"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gogo/protobuf/proto"
-	"github.com/make-os/lobe/crypto/bls"
 	"github.com/make-os/lobe/crypto/vrf"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
@@ -180,9 +180,10 @@ func (p *PrivKey) Key() crypto.PrivKey {
 
 // BLSKey derives a BLS key  using the PrivKey as seed.
 // It uses the first 32 bytes of the private key to seed the BLS key generator.
-func (p *PrivKey) BLSKey() *bls.PrivateKey {
+// TODO: Use actual BLS private key instead of BN256
+func (p *PrivKey) BLSKey() *bdn.PrivateKey {
 	raw := p.MustBytes()
-	blsSk, _ := bls.NewKeyFromSeed(raw)
+	blsSk, _ := bdn.NewKeyFromSeed(raw)
 	return blsSk
 }
 

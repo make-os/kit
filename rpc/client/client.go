@@ -64,27 +64,27 @@ func (c *RPCClient) GetOptions() *types.Options {
 
 // ChainAPI exposes methods for accessing chain information
 func (c *RPCClient) Chain() types.Chain {
-	return &ChainAPI{client: c}
+	return &ChainAPI{c: c}
 }
 
 // PushKeyAPI exposes methods for managing push keys
 func (c *RPCClient) PushKey() types.PushKey {
-	return &PushKeyAPI{client: c}
+	return &PushKeyAPI{c: c}
 }
 
 // RepoAPI exposes methods for managing repositories
 func (c *RPCClient) Repo() types.Repo {
-	return &RepoAPI{client: c}
+	return &RepoAPI{c: c}
 }
 
 // RPC exposes methods for managing the RPC server
 func (c *RPCClient) RPC() types.RPC {
-	return &RPCAPI{client: c}
+	return &RPCAPI{c: c}
 }
 
 // Tx exposes methods for creating and accessing the transactions
 func (c *RPCClient) Tx() types.Tx {
-	return &TxAPI{client: c}
+	return &TxAPI{c: c}
 }
 
 // User exposes methods for accessing user information
@@ -94,7 +94,12 @@ func (c *RPCClient) User() types.User {
 
 // DHT exposes methods for accessing the DHT network
 func (c *RPCClient) DHT() types.DHT {
-	return &DHTAPI{client: c}
+	return &DHTAPI{c: c}
+}
+
+// Ticket exposes methods for purchasing and managing tickets
+func (c *RPCClient) Ticket() types.Ticket {
+	return &TicketAPI{c: c}
 }
 
 // Call calls a method on the RPCClient service.

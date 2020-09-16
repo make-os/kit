@@ -10,12 +10,12 @@ import (
 
 // ChainAPI implements Chain to provide access to the chain-related RPC methods
 type ChainAPI struct {
-	client *RPCClient
+	c *RPCClient
 }
 
 // GetBlock gets a block by height
 func (c *ChainAPI) GetBlock(height uint64) (*api.ResultBlock, error) {
-	resp, statusCode, err := c.client.call("chain_getBlock", height)
+	resp, statusCode, err := c.c.call("chain_getBlock", height)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -30,7 +30,7 @@ func (c *ChainAPI) GetBlock(height uint64) (*api.ResultBlock, error) {
 
 // GetHeight returns the height of the blockchain
 func (c *ChainAPI) GetHeight() (uint64, error) {
-	resp, statusCode, err := c.client.call("chain_getHeight", nil)
+	resp, statusCode, err := c.c.call("chain_getHeight", nil)
 	if err != nil {
 		return 0, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -39,7 +39,7 @@ func (c *ChainAPI) GetHeight() (uint64, error) {
 
 // GetBlockInfo gets a summarized block data for the given height
 func (c *ChainAPI) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
-	resp, statusCode, err := c.client.call("chain_getBlockInfo", height)
+	resp, statusCode, err := c.c.call("chain_getBlockInfo", height)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -54,7 +54,7 @@ func (c *ChainAPI) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 
 // GetValidators gets validators at a given block height
 func (c *ChainAPI) GetValidators(height uint64) ([]*api.ResultValidator, error) {
-	resp, statusCode, err := c.client.call("chain_getValidators", height)
+	resp, statusCode, err := c.c.call("chain_getValidators", height)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

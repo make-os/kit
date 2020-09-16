@@ -7,12 +7,12 @@ import (
 
 // TxAPI provides access to the transaction-related RPC methods
 type TxAPI struct {
-	client *RPCClient
+	c *RPCClient
 }
 
 // Send sends a signed transaction payload to the mempool
 func (t *TxAPI) Send(data map[string]interface{}) (*api.ResultHash, error) {
-	out, statusCode, err := t.client.call("tx_sendPayload", data)
+	out, statusCode, err := t.c.call("tx_sendPayload", data)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -27,7 +27,7 @@ func (t *TxAPI) Send(data map[string]interface{}) (*api.ResultHash, error) {
 
 // Get gets a transaction by its hash
 func (t *TxAPI) Get(hash string) (*api.ResultTx, error) {
-	resp, statusCode, err := t.client.call("tx_get", hash)
+	resp, statusCode, err := t.c.call("tx_get", hash)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

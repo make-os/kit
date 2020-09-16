@@ -12,7 +12,7 @@ import (
 
 // RepoAPI provides access to the repo-related RPC methods
 type RepoAPI struct {
-	client *RPCClient
+	c *RPCClient
 }
 
 // Create creates a new repository
@@ -41,7 +41,7 @@ func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error
 		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
-	resp, statusCode, err := c.client.call("repo_create", tx.ToMap())
+	resp, statusCode, err := c.c.call("repo_create", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -62,7 +62,7 @@ func (c *RepoAPI) Get(name string, opts ...*api.GetRepoOpts) (*api.ResultReposit
 	}
 
 	params := util.Map{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals}
-	resp, statusCode, err := c.client.call("repo_get", params)
+	resp, statusCode, err := c.c.call("repo_get", params)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -106,7 +106,7 @@ func (c *RepoAPI) AddContributors(body *api.BodyAddRepoContribs) (*api.ResultHas
 		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
-	resp, statusCode, err := c.client.call("repo_addContributor", tx.ToMap())
+	resp, statusCode, err := c.c.call("repo_addContributor", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -141,7 +141,7 @@ func (c *RepoAPI) VoteProposal(body *api.BodyRepoVote) (*api.ResultHash, error) 
 		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
-	resp, statusCode, err := c.client.call("repo_vote", tx.ToMap())
+	resp, statusCode, err := c.c.call("repo_vote", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

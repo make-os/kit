@@ -7,12 +7,12 @@ import (
 
 // RPCAPI provides access to the rpc server-related methods
 type RPCAPI struct {
-	client *RPCClient
+	c *RPCClient
 }
 
 // GetMethods gets all methods supported by the RPC server
 func (c *RPCAPI) GetMethods() ([]rpc.MethodInfo, error) {
-	resp, statusCode, err := c.client.call("rpc_methods", nil)
+	resp, statusCode, err := c.c.call("rpc_methods", nil)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

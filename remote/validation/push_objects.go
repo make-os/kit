@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/crypto/bls"
+	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/params"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
@@ -337,7 +337,7 @@ func CheckEndorsementConsistencyUsingHost(
 
 	// Ensure the BLS signature can be verified using the BLS public key of the selected ticket
 	if !noBLSSigCheck {
-		blsPubKey, err := bls.BytesToPublicKey(selected.Ticket.BLSPubKey)
+		blsPubKey, err := bdn.BytesToPublicKey(selected.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}

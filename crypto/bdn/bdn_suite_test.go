@@ -1,4 +1,4 @@
-package bls_test
+package bdn_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestBls(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Bls Suite")
+	RunSpecs(t, "BDN Suite")
 }

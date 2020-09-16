@@ -621,4 +621,12 @@ var _ = Describe("Common", func() {
 			Expect(IsMapOrStruct(&struct{}{})).To(BeTrue())
 		})
 	})
+
+	Describe(".ToByteSlice", func() {
+		It("should convert to byte slice", func() {
+			iSlice := []int{67, 155, 203, 212, 6, 5, 51, 24, 234, 106, 169, 130, 184, 236, 235, 83, 105, 122, 64, 91, 11, 54, 228, 7, 143, 69, 81, 88, 62, 96, 19, 203}
+			bSlice := []byte{67, 155, 203, 212, 6, 5, 51, 24, 234, 106, 169, 130, 184, 236, 235, 83, 105, 122, 64, 91, 11, 54, 228, 7, 143, 69, 81, 88, 62, 96, 19, 203}
+			Expect(ToByteSlice(iSlice)).To(Equal(bSlice))
+		})
+	})
 })

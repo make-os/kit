@@ -772,3 +772,71 @@ func (mr *MockUserMockRecorder) GetPublicKey(address, passphrase interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicKey", reflect.TypeOf((*MockUser)(nil).GetPublicKey), address, passphrase)
 }
+
+// SetCommission mocks base method
+func (m *MockUser) SetCommission(body *api.BodySetCommission) (*api.ResultHash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetCommission", body)
+	ret0, _ := ret[0].(*api.ResultHash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetCommission indicates an expected call of SetCommission
+func (mr *MockUserMockRecorder) SetCommission(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommission", reflect.TypeOf((*MockUser)(nil).SetCommission), body)
+}
+
+// MockTicket is a mock of Ticket interface
+type MockTicket struct {
+	ctrl     *gomock.Controller
+	recorder *MockTicketMockRecorder
+}
+
+// MockTicketMockRecorder is the mock recorder for MockTicket
+type MockTicketMockRecorder struct {
+	mock *MockTicket
+}
+
+// NewMockTicket creates a new mock instance
+func NewMockTicket(ctrl *gomock.Controller) *MockTicket {
+	mock := &MockTicket{ctrl: ctrl}
+	mock.recorder = &MockTicketMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockTicket) EXPECT() *MockTicketMockRecorder {
+	return m.recorder
+}
+
+// Buy mocks base method
+func (m *MockTicket) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Buy", body)
+	ret0, _ := ret[0].(*api.ResultHash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Buy indicates an expected call of Buy
+func (mr *MockTicketMockRecorder) Buy(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Buy", reflect.TypeOf((*MockTicket)(nil).Buy), body)
+}
+
+// BuyHost mocks base method
+func (m *MockTicket) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuyHost", body)
+	ret0, _ := ret[0].(*api.ResultHash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BuyHost indicates an expected call of BuyHost
+func (mr *MockTicketMockRecorder) BuyHost(body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuyHost", reflect.TypeOf((*MockTicket)(nil).BuyHost), body)
+}

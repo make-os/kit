@@ -1,4 +1,4 @@
-package bls
+package bdn
 
 import (
 	"bytes"
@@ -35,7 +35,7 @@ type PrivateKey struct {
 	suite pairing.Suite
 }
 
-// NewKey creates a bn256 private and public key pair
+// NewKey creates a bn256 private and public key pair.
 func NewKey(reader io.Reader) (*PrivateKey, *PublicKey) {
 	suite := bn256.NewSuite()
 	privKey, _ := bdn.NewKeyPair(suite, random.New(reader))

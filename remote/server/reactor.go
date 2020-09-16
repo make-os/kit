@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	crypto2 "github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/crypto/bls"
+	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -372,7 +372,7 @@ func (sv *Server) createPushTx(noteID string) error {
 	// Collect the BLS public keys of all Endorsement senders.
 	// We need them for the construction of BLS aggregated signature.
 	noteEndorsements := funk.Values(endorsementIdx).([]*pushtypes.PushEndorsement)
-	var endorsementsPubKey []*bls.PublicKey
+	var endorsementsPubKey []*bdn.PublicKey
 	var endorsementsSig [][]byte
 	for i, ed := range noteEndorsements {
 
@@ -383,7 +383,7 @@ func (sv *Server) createPushTx(noteID string) error {
 		}
 
 		// Get their BLS public key from the ticket
-		pk, err := bls.BytesToPublicKey(selTicket.Ticket.BLSPubKey)
+		pk, err := bdn.BytesToPublicKey(selTicket.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrapf(err, "endorsement[%d]: bls public key is invalid", i)
 		}
@@ -414,7 +414,7 @@ func (sv *Server) createPushTx(noteID string) error {
 	pushTx.Endorsements = noteEndorsements
 
 	// Generate and set aggregated BLS signature
-	aggSig, err := bls.AggregateSignatures(endorsementsPubKey, endorsementsSig)
+	aggSig, err := bdn.AggregateSignatures(endorsementsPubKey, endorsementsSig)
 	if err != nil {
 		return errors.Wrap(err, "unable to create aggregated signature")
 	}

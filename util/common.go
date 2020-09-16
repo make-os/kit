@@ -666,3 +666,12 @@ func ParseLogLevel(val string) (res map[string]logrus.Level) {
 	}
 	return
 }
+
+// ToByteSlice converts a uint slice to byte slice
+func ToByteSlice(v []int) []byte {
+	bz := make([]byte, len(v))
+	for i, vv := range v {
+		bz[i] = byte(vv)
+	}
+	return bz
+}

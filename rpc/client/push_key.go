@@ -12,7 +12,7 @@ import (
 
 // PushKeyAPI provides access to the pushkey-related RPC methods
 type PushKeyAPI struct {
-	client *RPCClient
+	c *RPCClient
 }
 
 // GetOwner gets the account that owns the given push key
@@ -23,7 +23,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*api.ResultA
 		height = blockHeight[0]
 	}
 
-	out, statusCode, err := pk.client.call("pk_getOwner", util.Map{"id": addr, "height": height})
+	out, statusCode, err := pk.c.call("pk_getOwner", util.Map{"id": addr, "height": height})
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
@@ -62,7 +62,7 @@ func (pk *PushKeyAPI) Register(body *api.BodyRegisterPushKey) (*api.ResultRegist
 	}
 
 	// call RPC method: repo_create
-	resp, statusCode, err := pk.client.call("pk_register", tx.ToMap())
+	resp, statusCode, err := pk.c.call("pk_register", tx.ToMap())
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}

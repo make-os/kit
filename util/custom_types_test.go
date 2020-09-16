@@ -300,4 +300,13 @@ var _ = Describe("Errors", func() {
 			Expect(addr).To(Equal(addr2))
 		})
 	})
+
+	Describe("HexBytes", func() {
+		It("should JSON marshal correctly", func() {
+			hb := HexBytes("hello")
+			bz, err := json.Marshal(hb)
+			Expect(err).To(BeNil())
+			Expect(bz).To(Equal([]byte(`"` + ToHex([]byte("hello")) + `"`)))
+		})
+	})
 })
