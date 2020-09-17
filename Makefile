@@ -23,26 +23,31 @@ release-tagged:
 install:
 	cd cmd/lobe && go install
 
+getbin:
+	curl -L https://storage.googleapis.com/lobe-bin/lobe_$(v)_Linux_x86_64.tar.gz | tar -xz
+	mv ./lob /usr/bin/lob
+	lob -v
+
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
-join-with:
+join:
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
-join-with-dist:
+join-dist:
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.dist --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a binary from local source and connects to testnet-v1
-join-with-src:
+join-src:
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.source --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a git a binary from the official git repository and connects to testnet-v1.
-join-with-gitsrc:
+join-gitsrc:
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.git.source --build-arg version=$(v) --build-arg branch=$(branch) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
