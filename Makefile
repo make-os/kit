@@ -45,7 +45,7 @@ join-with-src:
 join-with-gitsrc:
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.git.source --build-arg version=$(v) --build-arg branch=$(branch) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
-	docker logs -f makeos2 --tail=1000
+	docker logs -f makeos --tail=1000
 
 
 genmocks:
