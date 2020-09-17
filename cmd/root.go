@@ -84,7 +84,7 @@ var rootCmd = &cobra.Command{
 		// Ensure git executable of an acceptable version is installed
 		if funk.ContainsString([]string{"init", "start", "console", "sign", "attach", "config"}, curCmd) {
 			if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
-				if semver.New(version).LessThan(*semver.New("2.20.0")) {
+				if semver.New(version).LessThan(*semver.New("2.11.0")) {
 					log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.
 Visit https://git-scm.com/downloads to download and install the latest version.`,
 					))
