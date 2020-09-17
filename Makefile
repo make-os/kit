@@ -23,23 +23,30 @@ release-tagged:
 install:
 	cd cmd/lobe && go install
 
-# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
-run-tn:
-	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
+# Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
+join-with:
+	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
-# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
-run-tn-dist:
-	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.dist --build-arg version=$(v) --build-arg vKey=$(vKey) .
+# Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
+join-with-dist:
+	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.dist --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
-# Build and run a docker container that runs a pre-built binary located in ./dist and connects to the testnet v1
-run-tn-src:
-	docker build -t makeos/lobe -f dockerfiles/testnet-v1/Dockerfile.source --build-arg version=$(v) --build-arg vKey=$(vKey) .
+# Build and run a docker container that builds a binary from local source and connects to testnet-v1
+join-with-src:
+	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.source --build-arg version=$(v) --build-arg vKey=$(vKey) .
 	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
 	docker logs -f makeos --tail=1000
+
+# Build and run a docker container that builds a git a binary from the official git repository and connects to testnet-v1.
+join-with-gitsrc:
+	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.git.source --build-arg version=$(v) --build-arg branch=$(branch) --build-arg vKey=$(vKey) .
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9002:9002 -p 9003:9003 -p 9004:9004 -d makeos/lobe
+	docker logs -f makeos2 --tail=1000
+
 
 genmocks:
 	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit

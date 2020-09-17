@@ -1,0 +1,33 @@
+# Description: Build a lobe image from source
+FROM golang:1.15-buster
+
+# Expose ports
+EXPOSE 9000
+EXPOSE 9002
+EXPOSE 9003
+EXPOSE 9004
+
+# Set working directory to home
+WORKDIR /home
+
+# Get Lobe version from build command
+ARG vKey=master
+ENV vKey $vKey
+
+ARG branch
+ENV branch $branch
+
+# Download git
+RUN apt-get update && apt-get install git
+
+# Clone source repository
+RUN git clone https://gitlab.com/makeos/lobe
+
+# Build and install
+RUN cd lobe && git checkout ${branch} && make install && mv /go/bin/lobe /go/bin/lob
+
+## Initialize lobe for testnet v1 with 4 validators.
+RUN lob init --net=2000 -v=47shQ9ihsZBf2nYL6tAYR8q8Twb47KTNjimowxaNFRyGPL93oZL,48LZFEsZsRPda1q2kiNZKToiTaeSx63GJdq6DWq9m9C4mSvWhHD,48pFW5Yd5BLm4EVUJW8g9oG1BkNQz4wp2saLB8XmkvMRwRAB2FH,48GKXaSLgJ5ox2C1jDshFGtD6Y4Zhd1doxK6iTDp3KCSZjzdWKt -k=${vKey} -t=1595700581
+
+# Start the node (in dev mode)
+ENTRYPOINT ["lob", "start", "--dev", "--rpc.on"]
