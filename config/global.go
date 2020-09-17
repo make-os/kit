@@ -32,10 +32,7 @@ func (c *AppConfig) G() *Globals {
 
 // LoadKeys gets the node key from the node key file
 // and caches it for fast access
-func (c *AppConfig) LoadKeys(
-	nodeKeyFile,
-	privValKeyFile,
-	privValStateFile string) *p2p.NodeKey {
+func (c *AppConfig) LoadKeys(nodeKeyFile, privValKeyFile, privValStateFile string) *p2p.NodeKey {
 
 	// Load the node key
 	nodeKey, err := p2p.LoadNodeKey(nodeKeyFile)
@@ -48,9 +45,7 @@ func (c *AppConfig) LoadKeys(
 
 	// Set references for node key and priv val
 	c.g.NodeKey = nodeKey
-	c.g.PrivVal = &crypto.WrappedPV{
-		FilePV: pv,
-	}
+	c.g.PrivVal = &crypto.WrappedPV{FilePV: pv}
 
 	return nodeKey
 }

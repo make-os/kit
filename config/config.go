@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/lobe/util"
 	"github.com/olebedev/emitter"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/libs/common"
 
 	"github.com/tendermint/tendermint/config"
 
@@ -114,11 +115,15 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 	return nil
 }
 
+// IsInitialized checks if node is initialized
+func IsInitialized(tmcfg *config.Config) bool {
+	return common.FileExists(tmcfg.PrivValidatorKeyFile())
+}
+
 // ConfigureVM sets up the application command structure, tendermint
 // and lobe configuration. This is where all configuration and
 // settings are prepared
 func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
-
 	NoColorFormatting = viper.GetBool("no-colors")
 
 	// Populate viper from environment variables

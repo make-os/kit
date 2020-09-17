@@ -21,7 +21,6 @@ import (
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -59,11 +58,9 @@ func genNodeKey(filePath string, pk ed25519.PrivKeyEd25519) (*p2p.NodeKey, error
 // If non is provided, the node will be the sole initial validator.
 //
 // genesisTime: sets the genesis file time. If zero, current UTC time is used.
-// TODO:
 func tendermintInit(validatorKey string, genesisValidators []string, genesisState string, genesisTime uint64) error {
 
-	// Do nothing if already initialized
-	if common.FileExists(tmconfig.PrivValidatorKeyFile()) {
+	if config.IsInitialized(tmconfig) {
 		return nil
 	}
 

@@ -73,29 +73,12 @@ var rootCmd = &cobra.Command{
 	Short: "Lobe is the official client for the MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		config.Configure(cfg, tmconfig, &itr)
-		log = cfg.G().Log
+
 		curCmd := cmd.CalledAs()
 
-		if curCmd != "init" {
-			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
-		}
-
-		// Ensure git executable of an acceptable version is installed
-		if funk.ContainsString([]string{"init", "start", "console", "sign", "attach", "config"}, curCmd) {
-			if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
-				if semver.New(version).LessThan(*semver.New("2.11.0")) {
-					log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.
-Visit https://git-scm.com/downloads to download and install the latest version.`,
-					))
-				}
-			} else {
-				log.Fatal(colorfmt.YellowString(`Git executable was not found. 
-If you already have Git installed, provide the executable's location using --gitpath, 
-otherwise visit https://git-scm.com/downloads to download and install it.`,
-				))
-			}
-		}
+		// Configure the node's home directory
+		config.Configure(cfg, tmconfig, &itr)
+		log = cfg.G().Log
 
 		// Set version information
 		cfg.VersionInfo = &config.VersionInfo{}
@@ -103,6 +86,35 @@ otherwise visit https://git-scm.com/downloads to download and install it.`,
 		cfg.VersionInfo.BuildDate = BuildDate
 		cfg.VersionInfo.GoVersion = GoVersion
 		cfg.VersionInfo.BuildVersion = BuildVersion
+
+		// Load keys in the config object
+		if curCmd != "init" {
+			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
+		}
+
+		// Skip git exec check for certain commands
+		if !funk.ContainsString([]string{
+			"init",
+			"start",
+			"console",
+			"sign",
+			"attach",
+			"config"}, curCmd) {
+			return
+		}
+
+		if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
+			if semver.New(version).LessThan(*semver.New("2.11.0")) {
+				log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.` +
+					`Visit https://git-scm.com/downloads to download and install the latest version.`,
+				))
+			}
+		} else {
+			log.Fatal(colorfmt.YellowString(`Git executable was not found.` +
+				`If you already have Git installed, provide the executable's location using --gitpath, otherwise ` +
+				`visit https://git-scm.com/downloads to download and install it.`,
+			))
+		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		version, _ := cmd.Flags().GetBool("version")
