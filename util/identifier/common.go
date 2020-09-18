@@ -6,6 +6,8 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
+const MaxResourceNameLength = 128
+
 // IsValidResourceName checks whether a user-defined name is valid as a resource name
 func IsValidResourceName(name string) error {
 	if len(name) <= 2 {
@@ -17,8 +19,8 @@ func IsValidResourceName(name string) error {
 		}
 		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
 	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
+	if len(name) > MaxResourceNameLength {
+		return fmt.Errorf("name is too long. Maximum character length is %d", MaxResourceNameLength)
 	}
 	return nil
 }
@@ -31,8 +33,8 @@ func IsValidResourceNameNoMinLen(name string) error {
 		}
 		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
 	}
-	if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
+	if len(name) > MaxResourceNameLength {
+		return fmt.Errorf("name is too long. Maximum character length is %d", MaxResourceNameLength)
 	}
 	return nil
 }

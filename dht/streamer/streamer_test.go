@@ -98,23 +98,23 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return ErrUnknownMsgType when message type is unknown", func() {
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-				msg := []byte("unknown")
+				msg := []byte("unknown repo hash")
 				copy(p, msg)
 				return len(msg), nil
-			})
+			}).AnyTimes()
 			_, err := cs.OnRequest(mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError(streamer.ErrUnknownMsgType))
 		})
 
 		It("should call 'Want' handler when message is MsgTypeWant", func() {
-			msg := []byte(dht.MsgTypeWant)
+			msg := []byte(dht.MsgTypeWant + " repo hash")
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 				copy(p, msg)
 				return len(msg), nil
-			})
-			cs.OnWantHandler = func(m []byte, s network.Stream) error {
+			}).AnyTimes()
+			cs.OnWantHandler = func(repo string, hash []byte, s network.Stream) error {
 				Expect(msg).To(Equal(msg))
 				return nil
 			}
@@ -123,13 +123,13 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should call 'Send' handler when message is MsgTypeSend", func() {
-			msg := []byte(dht.MsgTypeSend)
+			msg := []byte(dht.MsgTypeSend + " repo hash")
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 				copy(p, msg)
 				return len(msg), nil
-			})
-			cs.OnSendHandler = func(m []byte, s network.Stream) error {
+			}).AnyTimes()
+			cs.OnSendHandler = func(repo string, hash []byte, s network.Stream) error {
 				Expect(msg).To(Equal(msg))
 				return nil
 			}
@@ -149,21 +149,13 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockConn.EXPECT().RemotePeer().Return(peer.ID("peer-id"))
 		})
 
-		It("should return error if msg could not be parsed", func() {
-			mockStream.EXPECT().Conn().Return(mockConn)
-			mockStream.EXPECT().Reset()
-			err := cs.OnWantRequest([]byte(""), mockStream)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("malformed message"))
-		})
-
 		It("should return error if unable to get local repository", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
 			}
-			err := cs.OnWantRequest(dht.MakeWantMsg("repo1", hash[:]), mockStream)
+			err := cs.OnWantRequest("repo1", hash[:], mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get repo"))
 		})
@@ -177,7 +169,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				return mockRepo, nil
 			}
 			key := hash[:]
-			err := cs.OnWantRequest(dht.MakeWantMsg("repo1", key), mockStream)
+			err := cs.OnWantRequest("repo1", key, mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(dht.ErrObjNotFound))
 		})
@@ -191,7 +183,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				return mockRepo, nil
 			}
 			key := hash[:]
-			err := cs.OnWantRequest(dht.MakeWantMsg("repo1", key), mockStream)
+			err := cs.OnWantRequest("repo1", key, mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to write 'nope' message: write error"))
 		})
@@ -207,7 +199,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					return mockRepo, nil
 				}
 				key := hash[:]
-				err := cs.OnWantRequest(dht.MakeWantMsg("repo1", key), mockStream)
+				err := cs.OnWantRequest("repo1", key, mockStream)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("write error"))
 			})
@@ -221,7 +213,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					return mockRepo, nil
 				}
 				key := hash[:]
-				err := cs.OnWantRequest(dht.MakeWantMsg("repo1", key), mockStream)
+				err := cs.OnWantRequest("repo1", key, mockStream)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -238,21 +230,13 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockConn.EXPECT().RemotePeer().Return(peerID)
 		})
 
-		It("should return error if msg could not be parsed", func() {
-			mockStream.EXPECT().Conn().Return(mockConn)
-			mockStream.EXPECT().Reset()
-			err := cs.OnSendRequest([]byte(""), mockStream)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("malformed message"))
-		})
-
 		It("should return error if unable to get local repository", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
 			}
-			err := cs.OnSendRequest(dht.MakeWantMsg("repo1", hash[:]), mockStream)
+			err := cs.OnSendRequest("repo1", hash[:], mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get repo"))
 		})
@@ -266,7 +250,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				return mockRepo, nil
 			}
 			key := hash[:]
-			err := cs.OnSendRequest(dht.MakeWantMsg("repo1", key), mockStream)
+			err := cs.OnSendRequest("repo1", key, mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("unexpected error"))
 		})
@@ -282,7 +266,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					return mockRepo, nil
 				}
 				key := hash[:]
-				err := cs.OnSendRequest(dht.MakeWantMsg("repo1", key), mockStream)
+				err := cs.OnSendRequest("repo1", key, mockStream)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to write 'nope' message: write error"))
 			})
@@ -302,7 +286,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					return nil, nil, fmt.Errorf("error")
 				}
 				key := hash[:]
-				err := cs.OnSendRequest(dht.MakeWantMsg("repo1", key), mockStream)
+				err := cs.OnSendRequest("repo1", key, mockStream)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to generate commit packfile: error"))
 			})
@@ -326,7 +310,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 				key := hash[:]
 				repoName := "repo1"
-				err := cs.OnSendRequest(dht.MakeWantMsg(repoName, key), mockStream)
+				err := cs.OnSendRequest(repoName, key, mockStream)
 				Expect(err).To(BeNil())
 
 				// It should add packed objects to the peer's HaveCache.

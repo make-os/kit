@@ -36,7 +36,6 @@ var (
 
 var (
 	ObjectStreamerProtocolID = protocol.ID("/object/1.0")
-	MsgTypeLen               = 4
 )
 
 // MakeHaveCacheKey returns a key for storing HaveCache entries.
@@ -80,8 +79,8 @@ type BasicObjectStreamer struct {
 	reposDir         string
 	gitBinPath       string
 	tracker          types4.ProviderTracker
-	OnWantHandler    func(msg []byte, s network.Stream) error
-	OnSendHandler    func(msg []byte, s network.Stream) error
+	OnWantHandler    WantSendHandler
+	OnSendHandler    WantSendHandler
 	HaveCache        HaveCache
 	RepoGetter       repo.GetLocalRepoFunc
 	PackObject       plumbing.CommitPacker
@@ -599,22 +598,21 @@ func (c *BasicObjectStreamer) Handler(s network.Stream) {
 func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 
 	// Get request message
-	msg := make([]byte, 128)
-	_, err := s.Read(msg)
+	msgType, repoName, hash, err := dht2.ReadWantOrSendMsg(s)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to read request")
 	}
 
-	switch string(msg[:MsgTypeLen]) {
+	switch msgType {
 
 	// Handle 'want' message
 	case dht2.MsgTypeWant:
-		err := c.OnWantHandler(msg, s)
+		err := c.OnWantHandler(repoName, hash, s)
 		return false, err
 
 		// Handle 'send' message
 	case dht2.MsgTypeSend:
-		err := c.OnSendHandler(msg, s)
+		err := c.OnSendHandler(repoName, hash, s)
 		return err == nil, err
 
 	default:
@@ -622,47 +620,36 @@ func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 	}
 }
 
+type WantSendHandler func(repo string, hash []byte, s network.Stream) error
+
 // OnWantRequest handles incoming "WANT" requests
-func (c *BasicObjectStreamer) OnWantRequest(msg []byte, s network.Stream) error {
+func (c *BasicObjectStreamer) OnWantRequest(repo string, hash []byte, s network.Stream) error {
 
 	remotePeerID := s.Conn().RemotePeer().Pretty()
 	c.log.Debug("WANT<-: Received request for object", "Peer", remotePeerID)
 
-	repoName, key, err := dht2.ParseWantOrSendMsg(msg)
-	if err != nil {
-		s.Reset()
-		c.log.Debug("failed parse 'want' message", "Err", err)
-		return err
-	}
-
 	// Check if repo exist
-	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repoName))
+	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repo))
 	if err != nil {
 		s.Reset()
 		c.log.Debug("failed repository check", "Err", err)
 		return err
 	}
 
-	commitHash, err := dht2.ParseObjectKey(key)
-	if err != nil {
-		s.Reset()
-		c.log.Debug("unable to parse commit key", "Err", err)
-		return err
-	}
-
-	c.log.Debug("WANT<-: Parsed request for object", "Repo", repoName, "Hash", commitHash,
+	commitHash := plumbing.BytesToHex(hash)
+	c.log.Debug("WANT<-: Parsed request for object", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
 	// Check if object exist in the repo
-	if !r.ObjectExist(plumbing.BytesToHex(commitHash)) {
+	if !r.ObjectExist(commitHash) {
 		if _, err = s.Write(dht2.MakeNopeMsg()); err != nil {
 			return errors.Wrap(err, "failed to write 'nope' message")
 		}
-		c.log.Debug("Requested object does not exist in repo", "Repo", repoName, "Hash", commitHash)
+		c.log.Debug("Requested object does not exist in repo", "Repo", repo, "Hash", commitHash)
 		return dht2.ErrObjNotFound
 	}
 
-	c.log.Debug("WANT<-: Requested object exist in repo", "Repo", repoName, "Hash", commitHash,
+	c.log.Debug("WANT<-: Requested object exist in repo", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
 	// Respond with a 'have' message
@@ -672,43 +659,28 @@ func (c *BasicObjectStreamer) OnWantRequest(msg []byte, s network.Stream) error 
 		return err
 	}
 
-	c.log.Debug("WANT<-: Sent HAVE message", "Repo", repoName, "Hash", commitHash,
+	c.log.Debug("WANT<-: Sent HAVE message", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
 	return nil
 }
 
 // OnSendRequest handles incoming "SEND" requests.
-func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error {
+func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.Stream) error {
 
 	remotePeerID := s.Conn().RemotePeer().Pretty()
 	c.log.Debug("SEND<-: Received message", "Peer", remotePeerID)
 
-	// Parse the message
-	repoName, key, err := dht2.ParseWantOrSendMsg(msg)
-	if err != nil {
-		s.Reset()
-		c.log.Debug("failed parse 'want' message", "Err", err)
-		return err
-	}
-
 	// Check if repo exist
-	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repoName))
+	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repo))
 	if err != nil {
 		s.Reset()
 		c.log.Debug("failed repository check", "Err", err)
 		return err
 	}
 
-	// Parse the object key
-	commitHash, err := dht2.ParseObjectKeyToHex(key)
-	if err != nil {
-		s.Reset()
-		c.log.Debug("unable to parse commit key", "Err", err)
-		return err
-	}
-
 	// Get the object
+	commitHash := plumbing.BytesToHex(hash)
 	obj, err := r.GetObject(commitHash)
 	if err != nil {
 		s.Reset()
@@ -718,7 +690,7 @@ func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error 
 			return err
 		}
 
-		c.log.Debug("SEND<-: Object requested was not found", "Repo", repoName, "Hash",
+		c.log.Debug("SEND<-: Object requested was not found", "Repo", repo, "Hash",
 			commitHash, "Peer", remotePeerID)
 
 		if _, err = s.Write(dht2.MakeNopeMsg()); err != nil {
@@ -728,7 +700,7 @@ func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error 
 		return err
 	}
 
-	c.log.Debug("SEND<-: Processing message", "Repo", repoName, "Hash", commitHash,
+	c.log.Debug("SEND<-: Processing message", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
 	peerHaveCache := c.HaveCache.GetCache(remotePeerID)
@@ -738,7 +710,7 @@ func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error 
 	pack, objs, err := c.PackObject(r, &plumbing.PackObjectArgs{
 		Obj: obj,
 		Filter: func(hash plumb.Hash) bool {
-			if !peerHaveCache.Has(MakeHaveCacheKey(repoName, hash)) {
+			if !peerHaveCache.Has(MakeHaveCacheKey(repo, hash)) {
 				return true
 			}
 			c.log.Debug("SEND<-: Skip object already sent to requester", "Hash",
@@ -764,7 +736,7 @@ func (c *BasicObjectStreamer) OnSendRequest(msg []byte, s network.Stream) error 
 	// Add the packed object to the peer's have-cache
 	for _, obj := range objs {
 		if !peerHaveCache.Has(obj) {
-			peerHaveCache.Add(MakeHaveCacheKey(repoName, obj), struct{}{})
+			peerHaveCache.Add(MakeHaveCacheKey(repo, obj), struct{}{})
 		}
 	}
 

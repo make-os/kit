@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/types"
 	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/util/io"
 	"github.com/pkg/errors"
 )
@@ -174,9 +175,8 @@ func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 			continue
 		}
 
-		commitHash, _ := dht.ParseObjectKey(r.key)
 		r.log.Debug("WANT->: Sent request for an object",
-			"Repo", r.repoName, "Hash", commitHash, "Peer", prov.ID.Pretty())
+			"Repo", r.repoName, "Hash", plumbing.BytesToHex(r.key), "Peer", prov.ID.Pretty())
 
 		// Handle 'WANT' response.
 		go func() {

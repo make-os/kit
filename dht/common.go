@@ -3,9 +3,11 @@ package dht
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/ipfs/go-cid"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
 	"github.com/multiformats/go-multihash"
 )
 
@@ -18,36 +20,50 @@ const (
 )
 
 const (
-	ObjectKeyID     = "/o"
 	ObjectNamespace = "obj"
 )
 
 var (
 	ErrObjNotFound = fmt.Errorf("object not found")
+	MsgTypeLen     = 4
 )
-
-// ParseObjectKey parses an object key
-func ParseObjectKey(key []byte) ([]byte, error) {
-	return key, nil
-}
 
 // ParseObjectKeyToHex parses an object key to an hex-encoded version
 func ParseObjectKeyToHex(key []byte) (string, error) {
 	return util.ToHex(key, true), nil
 }
 
-// MakeWantMsg creates a 'WANT' message
+// MakeWantMsg creates a 'WANT' message.
+//  - Format: WANT <reponame> <20 bytes hash>
+//  - <reponame>: Length varies but not more than MaxResourceNameLength
 func MakeWantMsg(repoName string, hash []byte) []byte {
 	return append([]byte(fmt.Sprintf("%s %s ", MsgTypeWant, repoName)), hash...)
 }
 
+// MakeSendMsg creates a 'SEND' message
+//  - Format: SEND <reponame> <20 bytes hash>
+//  - <reponame>: Length varies but not more than MaxResourceNameLength
+func MakeSendMsg(repoName string, hash []byte) []byte {
+	return append([]byte(fmt.Sprintf("%s %s ", MsgTypeSend, repoName)), hash...)
+}
+
 // ParseWantOrSendMsg parses a 'WANT/SEND' message
-func ParseWantOrSendMsg(msg []byte) (repoName string, hash []byte, err error) {
+func ParseWantOrSendMsg(msg []byte) (typ string, repoName string, hash []byte, err error) {
 	parts := bytes.SplitN(msg, []byte(" "), 3)
 	if len(parts) != 3 {
-		return "", nil, fmt.Errorf("malformed message")
+		return "", "", nil, fmt.Errorf("malformed message")
 	}
-	return string(parts[1]), parts[2], nil
+	return string(parts[0]), string(parts[1]), parts[2][:20], nil
+}
+
+// ReadWantOrSendMsg reads WANT or SEND message from the reader
+func ReadWantOrSendMsg(r io.Reader) (typ string, repoName string, hash []byte, err error) {
+	var buf = make([]byte, MsgTypeLen+identifier.MaxResourceNameLength+20)
+	_, err = r.Read(buf)
+	if err != nil && err != io.EOF {
+		return "", "", nil, err
+	}
+	return ParseWantOrSendMsg(buf)
 }
 
 // MakeHaveMsg creates a 'HAVE' message
@@ -58,11 +74,6 @@ func MakeHaveMsg() []byte {
 // MakeNopeMsg creates a 'NOPE' message
 func MakeNopeMsg() []byte {
 	return []byte(MsgTypeNope)
-}
-
-// MakeSendMsg creates a 'SEND' message
-func MakeSendMsg(repoName string, hash []byte) []byte {
-	return append([]byte(fmt.Sprintf("%s %s ", MsgTypeSend, repoName)), hash...)
 }
 
 // MakeCID creates a content ID
