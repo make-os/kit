@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/crypto"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
@@ -48,7 +47,6 @@ func ValidateChange(
 	detail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
 
-	pp.Println(">>>CHANGE", change)
 	refname := change.Item.GetName()
 	isIssueRef := plumbing2.IsIssueReferencePath(refname)
 	isMergeRequestRef := plumbing2.IsMergeRequestReferencePath(refname)

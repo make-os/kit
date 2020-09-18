@@ -140,8 +140,17 @@ var _ = Describe("BasicObjectStreamer", func() {
 	})
 
 	Describe(".OnWantRequest", func() {
+		var mockConn *mocks.MockConn
+		var mockStream *mocks.MockStream
+
+		BeforeEach(func() {
+			mockStream = mocks.NewMockStream(ctrl)
+			mockConn = mocks.NewMockConn(ctrl)
+			mockConn.EXPECT().RemotePeer().Return(peer.ID("peer-id"))
+		})
+
 		It("should return error if msg could not be parsed", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			err := cs.OnWantRequest([]byte(""), mockStream)
 			Expect(err).ToNot(BeNil())
@@ -149,7 +158,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should return error if unable to get local repository", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
@@ -160,7 +169,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should return write 'NOPE' message to stream and return ErrObjNotFound if object does not exist", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().ObjectExist(hash.String()).Return(false)
 			mockStream.EXPECT().Write(dht.MakeNopeMsg())
@@ -174,7 +183,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should return when unable to write 'NOPE' message to stream when object does not exist", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().ObjectExist(hash.String()).Return(false)
 			mockStream.EXPECT().Write(dht.MakeNopeMsg()).Return(0, fmt.Errorf("write error"))
@@ -189,7 +198,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 		When("commit object exist in local repo", func() {
 			It("should return error when writing 'HAVE' response failed", func() {
-				mockStream := mocks.NewMockStream(ctrl)
+				mockStream.EXPECT().Conn().Return(mockConn)
 				mockStream.EXPECT().Reset()
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().ObjectExist(hash.String()).Return(true)
@@ -204,7 +213,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			})
 
 			It("should return no error when writing 'HAVE' response succeeds", func() {
-				mockStream := mocks.NewMockStream(ctrl)
+				mockStream.EXPECT().Conn().Return(mockConn)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().ObjectExist(hash.String()).Return(true)
 				mockStream.EXPECT().Write(dht.MakeHaveMsg()).Return(0, nil)
@@ -219,9 +228,18 @@ var _ = Describe("BasicObjectStreamer", func() {
 	})
 
 	Describe(".OnSendRequest", func() {
+		var mockConn *mocks.MockConn
+		var mockStream *mocks.MockStream
+		var peerID = peer.ID("peer-id")
+
+		BeforeEach(func() {
+			mockStream = mocks.NewMockStream(ctrl)
+			mockConn = mocks.NewMockConn(ctrl)
+			mockConn.EXPECT().RemotePeer().Return(peerID)
+		})
 
 		It("should return error if msg could not be parsed", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			err := cs.OnSendRequest([]byte(""), mockStream)
 			Expect(err).ToNot(BeNil())
@@ -229,7 +247,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should return error if unable to get local repository", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
@@ -240,7 +258,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		})
 
 		It("should return error when non-ErrObjectNotFound is returned when getting commit from local repo", func() {
-			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().GetObject(hash.String()).Return(nil, fmt.Errorf("unexpected error"))
@@ -255,7 +273,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 		When("ErrObjectNotFound is returned when getting commit from local repo", func() {
 			It("should return error when writing a 'NOPE' response failed", func() {
-				mockStream := mocks.NewMockStream(ctrl)
+				mockStream.EXPECT().Conn().Return(mockConn)
 				mockStream.EXPECT().Reset()
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, plumb.ErrObjectNotFound)
@@ -272,14 +290,10 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 		When("commit object exist in local repo", func() {
 			It("should return error when generating a packfile for the commit failed", func() {
-				mockStream := mocks.NewMockStream(ctrl)
+				mockStream.EXPECT().Conn().Return(mockConn)
 				mockStream.EXPECT().Reset()
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, nil)
-
-				mockConn := mocks.NewMockConn(ctrl)
-				mockConn.EXPECT().RemotePeer().Return(peer.ID("peer-id"))
-				mockStream.EXPECT().Conn().Return(mockConn)
 
 				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 					return mockRepo, nil
@@ -294,14 +308,9 @@ var _ = Describe("BasicObjectStreamer", func() {
 			})
 
 			It("should return no error", func() {
-				mockStream := mocks.NewMockStream(ctrl)
+				mockStream.EXPECT().Conn().Return(mockConn)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, nil)
-
-				peerID := peer.ID("peer-id")
-				mockConn := mocks.NewMockConn(ctrl)
-				mockConn.EXPECT().RemotePeer().Return(peerID)
-				mockStream.EXPECT().Conn().Return(mockConn)
 
 				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
 					return mockRepo, nil

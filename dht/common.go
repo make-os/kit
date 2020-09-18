@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ipfs/go-cid"
+	"github.com/make-os/lobe/util"
 	"github.com/multiformats/go-multihash"
 )
 
@@ -28,6 +29,11 @@ var (
 // ParseObjectKey parses an object key
 func ParseObjectKey(key []byte) ([]byte, error) {
 	return key, nil
+}
+
+// ParseObjectKeyToHex parses an object key to an hex-encoded version
+func ParseObjectKeyToHex(key []byte) (string, error) {
+	return util.ToHex(key, true), nil
 }
 
 // MakeWantMsg creates a 'WANT' message
