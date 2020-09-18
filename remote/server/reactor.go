@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/k0kubun/pp"
 	crypto2 "github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/dht/announcer"
@@ -51,12 +52,14 @@ type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string, fresh bool) er
 // ref is the name of the reference that may be out of sync.
 func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error {
 
+	pp.Println("A2")
 	localRef, err := note.GetTargetRepo().Reference(plumbing2.ReferenceName(ref), false)
 	if err != nil {
 		return err
 	}
 	localRefHash := localRef.Hash()
 
+	pp.Println("B")
 	// Check if the note's pushed reference local hash and the network hash match.
 	// If yes, no resync needs to happen.
 	repoState := note.GetTargetRepo().GetState()
@@ -66,25 +69,30 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 		return nil
 	}
 
+	pp.Println("C")
 	// Get last synchronized
 	refLastSyncHeight, err := sv.logic.RepoSyncInfoKeeper().GetRefLastSyncHeight(note.GetRepoName(), ref)
 	if err != nil {
 		return err
 	}
 
+	pp.Println("D")
 	// If the last successful synced reference height equal the last successful synced
 	// height for the entire repo, it means something unnatural/external messed up
 	// the repo history. We react by resyncing the reference from the beginning.
 	repoLastUpdated := repoState.UpdatedAt.UInt64()
 	if !fromBeginning && refLastSyncHeight == repoLastUpdated {
+		pp.Println("E")
 		refLastSyncHeight = repoState.CreatedAt.UInt64()
 	}
 
 	// If sync from beginning is requested, start from the parent
 	// repo's time of creation
 	if fromBeginning {
+		pp.Println("F")
 		refLastSyncHeight = repoState.CreatedAt.UInt64()
 	}
+	pp.Println("G")
 
 	sv.log.Debug("Scheduling reference for resync", "Repo", note.GetRepoName(), "Ref", ref)
 
@@ -172,8 +180,11 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// If we get an error about a pushed reference and local/network reference mismatch,
 	// we need to determine whether to schedule the repository for a resynchronization.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
+		pp.Println(err.(*util.BadFieldError).Data)
 		if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+			pp.Println("A")
 			sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)
+			pp.Println("Z")
 		}
 		return errors.Wrap(err, "failed push note validation")
 	}
