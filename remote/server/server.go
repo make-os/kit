@@ -519,7 +519,7 @@ func (sv *Server) Log() logger.Logger {
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.BareRepoRefsState, error) {
+func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.RepoRefsState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 

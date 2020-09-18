@@ -82,7 +82,7 @@ type BasicHandler struct {
 	op                   string                              // The current git operation
 	Repo                 remotetypes.LocalRepo               // The target repository
 	Server               core.RemoteServer                   // The repository remote server
-	OldState             remotetypes.BareRepoRefsState       // The old state of the repo before the current push was written
+	OldState             remotetypes.RepoRefsState           // The old state of the repo before the current push was written
 	PushReader           *Reader                             // The push reader for reading pushed git objects
 	NoteID               string                              // The push note unique ID
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
@@ -478,7 +478,8 @@ func (h *BasicHandler) HandleReference(ref string) (errs []error) {
 	var detail = h.TxDetails.Get(ref)
 
 	// Here, we need to validate the change for non-delete request.
-	if !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
+	// If no change, skip validation.
+	if change != nil && !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
 		oldHash := h.PushReader.References[ref].OldHash
 		err = h.ChangeValidator(h.Server.GetLogic(), h.Repo, oldHash, change, detail, h.Server.GetPushKeyGetter())
 		if err != nil {

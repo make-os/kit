@@ -33,14 +33,14 @@ type ChangeResult struct {
 	Changes []*ItemChange
 }
 
-// BareRepoRefsState represents a repositories state
-type BareRepoRefsState interface {
+// RepoRefsState represents a repositories state
+type RepoRefsState interface {
 	// GetReferences returns the references.
 	GetReferences() Items
 	// IsEmpty checks whether the state is empty
 	IsEmpty() bool
 	// GetChanges summarizes the changes between GetState s and y.
-	GetChanges(y BareRepoRefsState) *Changes
+	GetChanges(y RepoRefsState) *Changes
 }
 
 // Changes describes reference changes that happened to a repository

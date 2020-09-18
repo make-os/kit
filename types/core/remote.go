@@ -38,7 +38,7 @@ type RemoteServer interface {
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.BareRepoRefsState, error)
+	GetRepoState(target remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.RepoRefsState, error)
 
 	// GetPushKeyGetter returns getter function for fetching a push key
 	GetPushKeyGetter() PushKeyGetter

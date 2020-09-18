@@ -19,7 +19,7 @@ import (
 	types2 "github.com/make-os/lobe/remote/push/types"
 	repo3 "github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/remote/server"
-	testutil2 "github.com/make-os/lobe/remote/testutil"
+	remotetestutil "github.com/make-os/lobe/remote/testutil"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types/core"
@@ -56,7 +56,7 @@ var _ = Describe("BasicHandler", func() {
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
-		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
+		remotetestutil.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		repo, err = repo3.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
@@ -114,8 +114,8 @@ var _ = Describe("BasicHandler", func() {
 			var packfile io.ReadSeeker
 
 			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				commitHash := remotetestutil.GetRecentCommitHash(path, "refs/heads/master")
 				note := &types2.Note{
 					TargetRepo: repo,
 					References: []*types2.PushedReference{
@@ -530,12 +530,12 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				handler.Server = svr
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+				handler.Reverter = func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
 					return nil, fmt.Errorf("failed revert")
 				}
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
 				errs = handler.HandleReversion()
 			})
 
@@ -550,12 +550,12 @@ var _ = Describe("BasicHandler", func() {
 				mockRemoteSrv.EXPECT().GetRepoState(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 				handler.Server = mockRemoteSrv
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+				handler.Reverter = func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
 					return nil, fmt.Errorf("failed revert")
 				}
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
 				errs = handler.HandleReversion()
 			})
 
@@ -572,12 +572,12 @@ var _ = Describe("BasicHandler", func() {
 					"refs/heads/master": {NewHash: util.RandString(40)},
 					"refs/heads/dev":    {NewHash: util.RandString(40)},
 				}
-				handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
+				handler.Reverter = func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
 					return nil, fmt.Errorf("failed revert")
 				}
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
 				errs = handler.HandleReversion()
 			})
 
@@ -596,9 +596,9 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				handler.Server = svr
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
 				errs = handler.HandleReversion()
 			})
 
@@ -613,7 +613,7 @@ var _ = Describe("BasicHandler", func() {
 		})
 	})
 
-	Describe(".HandleReference", func() {
+	FDescribe(".HandleReference", func() {
 		var errs []error
 
 		Describe("when unable to get state of the repository", func() {
@@ -630,6 +630,7 @@ var _ = Describe("BasicHandler", func() {
 		})
 
 		Describe("when a reference failed change validation check", func() {
+			var curState types.RepoRefsState
 			BeforeEach(func() {
 				handler.Server = svr
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
@@ -637,8 +638,10 @@ var _ = Describe("BasicHandler", func() {
 					return fmt.Errorf("bad reference change")
 				}
 
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				curState = plumbing2.GetRepoState(repo)
 				errs = handler.HandleReference("refs/heads/master")
 			})
 
@@ -647,9 +650,31 @@ var _ = Describe("BasicHandler", func() {
 				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
 			})
 
-			It("should revert the reference back to the old state", func() {
+			It("should not revert the reference back to the old state", func() {
 				newState := plumbing2.GetRepoState(repo)
-				Expect(newState).To(Equal(handler.OldState))
+				Expect(newState).To(Equal(curState))
+			})
+		})
+
+		When("reference did not change", func() {
+			var validated bool
+
+			BeforeEach(func() {
+				handler.Server = svr
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+				handler.ChangeValidator = func(keepers core.Keepers, repo types.LocalRepo, oldHash string, change *types.ItemChange, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
+					validated = true
+					return nil
+				}
+				ref := "refs/heads/master"
+				handler.TxDetails = map[string]*types.TxDetail{ref: {}}
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				handler.OldState = plumbing2.GetRepoState(repo)
+				handler.HandleReference("refs/heads/master")
+			})
+
+			It("should not validate the reference", func() {
+				Expect(validated).To(BeFalse())
 			})
 		})
 
@@ -672,10 +697,10 @@ var _ = Describe("BasicHandler", func() {
 					return nil
 				}
 
-				testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
-				testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+				remotetestutil.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+				remotetestutil.AppendCommit(path, "body", "hello world", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+				remotetestutil.AppendCommit(path, "body", "hello world, again", "commit 1")
 				errs = handler.HandleReference(ref)
 				Expect(errs).To(HaveLen(0))
 			})
@@ -704,10 +729,10 @@ var _ = Describe("BasicHandler", func() {
 					return fmt.Errorf("policy failed")
 				}
 
-				testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
-				testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+				remotetestutil.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+				remotetestutil.AppendCommit(path, "body", "hello world", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+				remotetestutil.AppendCommit(path, "body", "hello world, again", "commit 1")
 				errs = handler.HandleReference(ref)
 			})
 
@@ -733,9 +758,9 @@ var _ = Describe("BasicHandler", func() {
 					return fmt.Errorf("failed merge check")
 				}
 
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				handler.OldState = plumbing2.GetRepoState(repo)
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 2")
+				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
 				errs = handler.HandleReference("refs/heads/master")
 			})
 

@@ -150,14 +150,14 @@ func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...types1.KVOption) (types1.BareRepoRefsState, error) {
+func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...types1.KVOption) (types1.RepoRefsState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoState", varargs...)
-	ret0, _ := ret[0].(types1.BareRepoRefsState)
+	ret0, _ := ret[0].(types1.RepoRefsState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -41,7 +41,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (head references)", func() {
-		var prevState types.BareRepoRefsState
+		var prevState types.RepoRefsState
 
 		When("a repo has 1 ref and 4 commits; plumbing.Revert the 4th commit", func() {
 
@@ -185,7 +185,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (annotated tags)", func() {
-		var prevState types.BareRepoRefsState
+		var prevState types.RepoRefsState
 
 		When("repo old state has 0 tags; new state has 1 tag", func() {
 			BeforeEach(func() {
@@ -288,7 +288,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (notes)", func() {
-		var prevState types.BareRepoRefsState
+		var prevState types.RepoRefsState
 
 		When("repo old state has 0 notes; new state has 1 note", func() {
 

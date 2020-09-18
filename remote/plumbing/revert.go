@@ -26,14 +26,14 @@ const (
 	ActionTypeNoteUpdate
 )
 
-type RevertFunc func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (*types.Changes, error)
+type RevertFunc func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (*types.Changes, error)
 
 // Revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
 func Revert(
 	repo types.LocalRepo,
-	prevState types.BareRepoRefsState,
+	prevState types.RepoRefsState,
 	options ...types.KVOption) (*types.Changes, error) {
 
 	var actions []*Action
