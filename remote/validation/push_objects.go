@@ -24,10 +24,22 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// ErrCodePushRefAndLocalHashMismatch is the code describing an error
+// RefMismatchErr describe a reference mismatch error
+type RefMismatchErr struct {
+	MismatchLocal bool
+	MismatchNet   bool
+	Ref           string
+}
+
+// ErrCodeRefAndLocalStateMismatch is the code describing an error
 // that occurs when a pushed reference old hash does not match its
-// corresponding local hash.
-const ErrCodePushRefAndLocalHashMismatch = "pushRefLocalMismatch"
+// corresponding local reference hash.
+const ErrCodeRefAndLocalStateMismatch = "refAndLocalMismatch"
+
+// ErrCodeRefAndNetStateMismatch is the code describing an error
+// that occurs when a pushed reference old hash does not match its
+// corresponding network reference hash.
+const ErrCodeRefAndNetStateMismatch = "refAndNetMismatch"
 
 // CheckPushedReferenceConsistency validates pushed references.
 //
@@ -53,9 +65,9 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 	}
 
 	// If target repo is set and the pushed reference old hash is non-zero, we
-	// need to ensure the current hash of the local version of the pushed
-	// reference is the same as the old hash of the pushed reference, otherwise
-	// the pushed reference will not be compatible.
+	// need to:
+	//  1. Ensure that the current hash of the local version of the pushed
+	//     reference matches the old hash of note's pushed reference.
 	if targetRepo != nil && !oldHashIsZero {
 		localRef, err := targetRepo.Reference(plumbing.ReferenceName(name), false)
 		if err != nil {
@@ -63,7 +75,21 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 		}
 		if ref.OldHash != localRef.Hash().String() {
 			msg := fmt.Sprintf("reference '%s' old hash does not match its local version", name)
-			return fe(-1, "references", msg, ErrCodePushRefAndLocalHashMismatch, ref.Name)
+			return fe(-1, "references", msg, &RefMismatchErr{MismatchLocal: true, Ref: ref.Name})
+		}
+	}
+
+	// If target repo is set and the pushed reference network-wide state is non-zero:
+	// Ensure that the note's pushed reference old hash matches the
+	// current network-wide hash of the same reference.
+	if targetRepo != nil {
+		refStateHash := plumbing.ZeroHash.String()
+		if refState := targetRepo.GetState().References.Get(name); !refState.IsNil() {
+			refStateHash = refState.Hash.HexStr(true)
+		}
+		if refStateHash != ref.OldHash {
+			msg := fmt.Sprintf("reference '%s' old hash does not match its network version", name)
+			return fe(-1, "references", msg, &RefMismatchErr{MismatchNet: true, Ref: ref.Name})
 		}
 	}
 

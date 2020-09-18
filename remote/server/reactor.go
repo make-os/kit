@@ -44,12 +44,12 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	}
 }
 
-type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string) error
+type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string, fresh bool) error
 
 // maybeScheduleReSync checks whether the local repository needs to be scheduled for synchronized.
 // note is the note containing the problematic ref.
 // ref is the name of the reference that may be out of sync.
-func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string) error {
+func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error {
 
 	localRef, err := note.GetTargetRepo().Reference(plumbing2.ReferenceName(ref), false)
 	if err != nil {
@@ -57,7 +57,7 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string) error
 	}
 	localRefHash := localRef.Hash()
 
-	// Check if the reference's local and network hash match.
+	// Check if the note's pushed reference local hash and the network hash match.
 	// If yes, no resync needs to happen.
 	repoState := note.GetTargetRepo().GetState()
 	if bytes.Equal(repoState.References.Get(ref).Hash.Bytes(), localRefHash[:]) {
@@ -71,12 +71,20 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string) error
 	}
 
 	// If the last successful synced reference height equal the last successful synced
-	// height for the entire repo, it means something unnatural/external messed the repo
-	// history. We react by resyncing the repo from height 0
+	// height for the entire repo, it means something unnatural/external messed up
+	// the repo history. We react by resyncing the reference from the beginning.
 	repoLastUpdated := repoState.UpdatedAt.UInt64()
-	if refLastSyncHeight == repoLastUpdated {
-		refLastSyncHeight = 0
+	if !fromBeginning && refLastSyncHeight == repoLastUpdated {
+		refLastSyncHeight = repoState.CreatedAt.UInt64()
 	}
+
+	// If sync from beginning is requested, start from the parent
+	// repo's time of creation
+	if fromBeginning {
+		refLastSyncHeight = repoState.CreatedAt.UInt64()
+	}
+
+	sv.log.Debug("Scheduling reference for resync", "Repo", note.GetRepoName(), "Ref", ref)
 
 	// Add the repo to the refsync watcher
 	sv.refSyncer.Watch(note.GetRepoName(), ref, refLastSyncHeight, repoLastUpdated)
@@ -131,7 +139,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// be synced, we can only validate and broadcast the node.
 	if err := sv.refSyncer.CanSync(note.Namespace, note.RepoName); err != nil || sv.cfg.IsValidatorNode() {
 		sv.log.Info("Partially processing received push note",
-			"ID", noteID, "IsValidator", sv.cfg.IsValidatorNode(), "IsUntrackedRepo", err != nil)
+			"ID", noteID, "IsValidator", sv.cfg.IsValidatorNode())
 
 		if err := sv.checkPushNote(&note, sv.logic); err != nil {
 			return errors.Wrap(err, "failed push note validation")
@@ -159,14 +167,12 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Validate the push note.
+	// If we get an error about a pushed reference and local/network reference mismatch,
+	// we need to determine whether to schedule the repository for a resynchronization.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
-
-		// If we get an error about a pushed reference and local reference mismatch,
-		// we need to determine whether to schedule the repository for a resynchronization.
-		if funk.ContainsString(err.(*util.BadFieldError).Data, validation.ErrCodePushRefAndLocalHashMismatch) {
-			sv.scheduleReSync(&note, err.(*util.BadFieldError).Data[1])
+		if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+			sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)
 		}
-
 		return errors.Wrap(err, "failed push note validation")
 	}
 

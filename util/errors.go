@@ -14,7 +14,7 @@ type BadFieldError struct {
 	Field string
 	Msg   string
 	Index int
-	Data  []string
+	Data  interface{}
 }
 
 func (b *BadFieldError) Is(target error) bool {
@@ -27,7 +27,7 @@ func (b *BadFieldError) Error() string {
 }
 
 // FieldErrorWithIndex creates an instance of BadFieldError with an index
-func FieldErrorWithIndex(index int, field string, msg string, data ...string) error {
+func FieldErrorWithIndex(index int, field string, msg string, data ...interface{}) error {
 
 	// Prevent the occurrence of ':' after a ',' as it will cause the
 	// output to be incorrectly parsed back to a BadFieldError.
@@ -35,7 +35,12 @@ func FieldErrorWithIndex(index int, field string, msg string, data ...string) er
 		panic("FieldErrorWithIndex: message cannot include `:` character after a ',' character")
 	}
 
-	return &BadFieldError{Field: field, Msg: msg, Index: index, Data: data}
+	e := &BadFieldError{Field: field, Msg: msg, Index: index}
+	if len(data) > 0 {
+		e.Data = data[0]
+	}
+
+	return e
 }
 
 // FieldError creates an instance of BadFieldError without an index

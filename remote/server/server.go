@@ -96,7 +96,7 @@ type Server struct {
 	endorsementBroadcaster     BroadcastEndorsementFunc                // Function for broadcasting an endorsement
 	noteBroadcaster            BroadcastPushNoteFunc                   // Function for broadcasting a push note
 	endorsementCreator         CreateEndorsementFunc                   // Function for creating an endorsement for a given push note
-	scheduleReSync             ScheduleReSyncFunc                      // Function for scheduling a resync of a repository
+	tryScheduleReSync          ScheduleReSyncFunc                      // Function for scheduling a resync of a repository
 }
 
 // New creates an instance of Server
@@ -160,7 +160,7 @@ func New(
 	server.noteBroadcaster = server.broadcastPushNote
 	server.endorsementCreator = createEndorsement
 	server.processPushNote = server.maybeProcessPushNote
-	server.scheduleReSync = server.maybeScheduleReSync
+	server.tryScheduleReSync = server.maybeScheduleReSync
 
 	// Instantiate the base reactor
 	server.BaseReactor = *p2p.NewBaseReactor("Reactor", server)

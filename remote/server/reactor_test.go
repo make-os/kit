@@ -337,9 +337,9 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
-					return util.FieldErrorWithIndex(-1, "", "error", validation.ErrCodePushRefAndLocalHashMismatch, "ref/heads/master")
+					return util.FieldErrorWithIndex(-1, "", "error", validation.ErrCodeRefAndLocalStateMismatch, "ref/heads/master")
 				}
-				svr.scheduleReSync = func(note types.PushNote, ref string) error {
+				svr.tryScheduleReSync = func(note types.PushNote, ref string) error {
 					reSyncScheduled = true
 					return nil
 				}
