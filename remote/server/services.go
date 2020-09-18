@@ -221,18 +221,9 @@ dumbReq:
 
 // serveService handles git-upload & fetch-pack requests
 func serveService(s *RequestContext) error {
-	defer s.pktEnc.Flush()
 
 	w, r, op, dir := s.W, s.R, s.Operation, s.RepoDir
 	op = strings.ReplaceAll(op, "git-", "")
-
-	// Set response headers
-	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-result", op))
-	w.Header().Set("Connection", "Keep-Alive")
-	w.Header().Set("Transfer-Encoding", "chunked")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
-	hdrNoCache(w)
 
 	// Construct the git command
 	env := os.Environ()

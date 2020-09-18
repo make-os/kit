@@ -92,8 +92,7 @@ func isPullRequest(r *http.Request) bool {
 // - r: The http request
 // - repo: The target repository
 // - namespace: The namespace object. Nil means default namespace.
-func (sv *Server) handleAuth(r *http.Request, w http.ResponseWriter, repo *state.Repository,
-	namespace *state.Namespace) (txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc, err error) {
+func (sv *Server) handleAuth(r *http.Request, repo *state.Repository, namespace *state.Namespace) (txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc, err error) {
 
 	// Do not require auth for pull request (yet)
 	if isPullRequest(r) {

@@ -143,7 +143,7 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteClose
 
 	// Register to use the git reference update to perform authorization checks
 	h.PushReader.UseReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
-		h.pktEnc.Encode(plumbing.SidebandInfo("performing authorization checks"))
+		h.pktEnc.Encode(plumbing.SidebandInfoln("performing authorization checks"))
 		return errors.Wrap(h.AuthorizationHandler(ur), "authorization")
 	})
 
@@ -152,7 +152,7 @@ func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteClose
 		return err
 	}
 
-	h.pktEnc.Encode(plumbing.SidebandInfo("reading objects and references"))
+	h.pktEnc.Encode(plumbing.SidebandInfoln("reading objects and references"))
 
 	// Read the packfile objects
 	gitRcvErr := bytes.NewBuffer(nil)
@@ -276,7 +276,7 @@ func (h *BasicHandler) HandleGCAndSizeCheck() error {
 	// Perform garbage collection to:
 	// - pack loose objects
 	// - remove unreachable that are at least a day old
-	h.pktEnc.Encode(plumbing.SidebandInfo("running garbage collector"))
+	h.pktEnc.Encode(plumbing.SidebandInfoln("running garbage collector"))
 	if err := h.Repo.GC("1 day ago"); err != nil {
 		return errors.Wrap(err, "failed to run garbage collection")
 	}
@@ -317,7 +317,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	defer func() {
 		h.HandleReversion()
 		if err == nil {
-			h.pktEnc.Encode(plumbing.SidebandProgress("hash: " + h.NoteID))
+			h.pktEnc.Encode(plumbing.SidebandProgressln("hash: " + h.NoteID))
 		}
 	}()
 
@@ -327,7 +327,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	}
 
 	// Process the pushed references
-	h.pktEnc.Encode(plumbing.SidebandInfo("performing repo and references validation"))
+	h.pktEnc.Encode(plumbing.SidebandInfoln("performing repo and references validation"))
 	err = h.HandleReferences()
 	if err != nil {
 		return err
@@ -336,7 +336,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	// Create and sign push notification only if a target note was not provided.
 	var note = targetNote
 	if note == nil {
-		h.pktEnc.Encode(plumbing.SidebandInfo("creating push note"))
+		h.pktEnc.Encode(plumbing.SidebandInfoln("creating push note"))
 		note, err = h.createPushNote()
 		if err != nil {
 			return err
@@ -344,7 +344,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	}
 
 	// Add the push note to the push pool
-	h.pktEnc.Encode(plumbing.SidebandInfo("adding push note to the pushpool"))
+	h.pktEnc.Encode(plumbing.SidebandInfoln("adding push note to the pushpool"))
 	if err = h.Server.GetPushPool().Add(note); err != nil {
 		return err
 	}
@@ -353,7 +353,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	h.HandleAnnouncement()
 
 	// Broadcast the push note
-	h.pktEnc.Encode(plumbing.SidebandInfo("broadcasting push note and endorsement"))
+	h.pktEnc.Encode(plumbing.SidebandInfoln("broadcasting push note and endorsement"))
 	if err = h.Server.BroadcastNoteAndEndorsement(note); err != nil {
 		h.log.Error("Failed to broadcast push note", "Err", err)
 	}
@@ -431,7 +431,7 @@ func (h *BasicHandler) HandleReversion() []error {
 		changes := oldState.GetChanges(curState.(*plumbing.State))
 
 		// Revert to old state
-		h.pktEnc.Encode(plumbing.SidebandInfo(fmt.Sprintf("%s: reverting to pre-push state", ref)))
+		h.pktEnc.Encode(plumbing.SidebandInfoln(fmt.Sprintf("%s: reverting to pre-push state", ref)))
 		changes, err = h.Reverter(h.Repo, oldState, plumbing.MatchOpt(ref), plumbing.ChangesOpt(changes))
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "%s: failed to revert to old state", ref))
@@ -490,7 +490,7 @@ func (h *BasicHandler) HandleReference(ref string) (errs []error) {
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
 	if err == nil && detail.MergeProposalID != "" {
-		h.pktEnc.Encode(plumbing.SidebandInfo(fmt.Sprintf("%s: performing merge compliance check", ref)))
+		h.pktEnc.Encode(plumbing.SidebandInfoln(fmt.Sprintf("%s: performing merge compliance check", ref)))
 		if err := h.MergeChecker(
 			h.Repo,
 			change,

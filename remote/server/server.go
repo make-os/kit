@@ -362,8 +362,8 @@ func (sv *Server) Announce(objType int, repo string, hash []byte, doneCB func(er
 
 // gitRequestsHandler handles incoming http request from a git client
 func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
+
 	sv.log.Debug("New request", "Method", r.Method, "URL", r.URL.String())
-	pktEnc := pktline.NewEncoder(w)
 
 	// handle panics gracefully
 	defer func() {
@@ -413,23 +413,20 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op == "git-receive-pack" {
-		go pktEnc.Encode(plumbing.SidebandInfo("performing authentication checks"))
+	pktEnc := pktline.NewEncoder(w)
+	if op == "git-receive-pack" && r.Header.Get("Authorization") != "" {
+		pktEnc.Encode(plumbing.SidebandInfoln("performing authentication checks"))
 	}
 
 	// Authenticate pusher
-	txDetails, polEnforcer, err := sv.handleAuth(r, w, repoState, namespace)
+	txDetails, polEnforcer, err := sv.handleAuth(r, repoState, namespace)
 	if err != nil {
 		if err == ErrPushTokenRequired {
 			w.Header().Set("WWW-Authenticate", "Basic")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
-		// Output sideband error message. We are adopting status 205 as
-		// the preferred response code since `git push` will not show the error
-		// if it is not within 200-209 range.
-		w.WriteHeader(http.StatusResetContent)
+		pktEnc.Encode(plumbing.SidebandInfoln("authentication checks failed"))
 		pktEnc.Encode(plumbing.SidebandErr(err.Error()))
 		pktEnc.Flush()
 		return
@@ -486,7 +483,15 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		err := srv.handle(req)
 		if err != nil {
 			sv.log.Error("failed to handle request", "Req", srvPattern, "Err", err)
+			return
 		}
+
+		w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-result", op))
+		w.Header().Set("Connection", "Keep-Alive")
+		w.Header().Set("Transfer-Encoding", "chunked")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(http.StatusOK)
+		hdrNoCache(w)
 
 		return
 	}

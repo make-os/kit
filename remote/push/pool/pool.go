@@ -120,7 +120,7 @@ func (p *PushPool) Add(note types.PushNote) error {
 		// Reject note if existing reference fee is greater/equal
 		if existingItem.Note.GetFee().Decimal().GreaterThanOrEqual(note.GetFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on staged reference (ref:%s, repo:%s) "+
-				"not allowed due to inferior fee.", ref.Name, note.(*types.Note).RepoName)
+				"not allowed due to inferior fee", ref.Name, note.(*types.Note).RepoName)
 			return fmt.Errorf(msg)
 		}
 

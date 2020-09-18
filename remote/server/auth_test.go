@@ -304,7 +304,7 @@ var _ = Describe("Auth", func() {
 		When("request method is GET", func() {
 			It("should return nil transaction details, enforcer and error", func() {
 				req := httptest.NewRequest("GET", "https://127.0.0.1", bytes.NewReader(nil))
-				txDetails, enforcer, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
+				txDetails, enforcer, err := svr.handleAuth(req, &state.Repository{}, &state.Namespace{})
 				Expect(err).To(BeNil())
 				Expect(txDetails).To(BeNil())
 				Expect(enforcer).To(BeNil())
@@ -314,7 +314,7 @@ var _ = Describe("Auth", func() {
 		When("a push token is not provided", func() {
 			It("should return error", func() {
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
-				_, _, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
+				_, _, err := svr.handleAuth(req, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrPushTokenRequired))
 			})
@@ -324,7 +324,7 @@ var _ = Describe("Auth", func() {
 			It("should return error", func() {
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth("xyz-malformed", "")
-				_, _, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
+				_, _, err := svr.handleAuth(req, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("malformed push token at index 0. Unable to decode"))
 			})
@@ -339,7 +339,7 @@ var _ = Describe("Auth", func() {
 				svr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, fmt.Errorf("auth error")
 				}
-				_, _, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
+				_, _, err := svr.handleAuth(req, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("auth error"))
 			})
@@ -355,7 +355,7 @@ var _ = Describe("Auth", func() {
 				svr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (policy.EnforcerFunc, error) {
 					return enforcer, nil
 				}
-				_, enc, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
+				_, enc, err := svr.handleAuth(req, &state.Repository{}, &state.Namespace{})
 				Expect(err).To(BeNil())
 				Expect(fmt.Sprintf("%p", enc)).To(Equal(fmt.Sprintf("%p", enforcer)))
 			})

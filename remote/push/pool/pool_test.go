@@ -149,7 +149,7 @@ var _ = Describe("PushPool", func() {
 
 			It("should reject new tx and return replace-by-fee inferiority error", func() {
 				Expect(err.Error()).To(Equal("replace-by-fee on staged reference" +
-					" (ref:refs/heads/master, repo:repo) not allowed due to inferior fee."))
+					" (ref:refs/heads/master, repo:repo) not allowed due to inferior fee"))
 			})
 		})
 
@@ -206,7 +206,7 @@ var _ = Describe("PushPool", func() {
 
 			It("should reject new tx and return replace-by-fee inferiority error", func() {
 				Expect(err.Error()).To(Equal("replace-by-fee on staged reference " +
-					"(ref:refs/heads/master, repo:repo) not allowed due to inferior fee."))
+					"(ref:refs/heads/master, repo:repo) not allowed due to inferior fee"))
 			})
 		})
 
