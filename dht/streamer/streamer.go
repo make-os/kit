@@ -610,7 +610,7 @@ func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 		err := c.OnWantHandler(repoName, hash, s)
 		return false, err
 
-		// Handle 'send' message
+	// Handle 'send' message
 	case dht2.MsgTypeSend:
 		err := c.OnSendHandler(repoName, hash, s)
 		return err == nil, err

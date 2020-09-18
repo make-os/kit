@@ -187,7 +187,7 @@ func getInfoRefs(s *RequestContext) error {
 		return err
 	}
 
-	// ConfigureVM response headers. Disable cache and set code to 200
+	// Configure response headers. Disable cache and set code to 200
 	hdrNoCache(s.W)
 	s.W.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", s.ServiceName))
 	s.W.WriteHeader(http.StatusOK)
@@ -224,6 +224,14 @@ func serveService(s *RequestContext) error {
 
 	w, r, op, dir := s.W, s.R, s.Operation, s.RepoDir
 	op = strings.ReplaceAll(op, "git-", "")
+
+	// Set response headers
+	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-result", op))
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+	hdrNoCache(w)
 
 	// Construct the git command
 	env := os.Environ()

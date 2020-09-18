@@ -483,15 +483,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		err := srv.handle(req)
 		if err != nil {
 			sv.log.Error("failed to handle request", "Req", srvPattern, "Err", err)
-			return
 		}
-
-		w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-result", op))
-		w.Header().Set("Connection", "Keep-Alive")
-		w.Header().Set("Transfer-Encoding", "chunked")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.WriteHeader(http.StatusOK)
-		hdrNoCache(w)
 
 		return
 	}
