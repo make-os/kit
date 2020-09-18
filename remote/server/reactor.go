@@ -93,13 +93,11 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	// Ignore note if previously seen
+	// Ignore note if previously seen or mark note as 'seen'
 	noteID := note.ID().String()
 	if sv.isNoteSeen(noteID) {
 		return nil
 	}
-
-	// Mark note as 'seen'
 	sv.markNoteAsSeen(noteID)
 
 	peerID, repoName := peer.ID(), note.GetRepoName()
@@ -310,7 +308,8 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "endorsement validation failed")
 	}
 
-	sv.log.Debug("Received a valid push endorsement", "PeerID", peerID, "ID", endID)
+	sv.log.Debug("Received a valid push endorsement",
+		"PeerID", peerID, "ID", endID, "Endorser", endorsement.EndorserPubKey.ToBase58PubKey())
 
 	// Cache the sender so we don't broadcast same Endorsement to it later
 	sv.registerEndorsementSender(string(peerID), endID)

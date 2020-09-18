@@ -35,6 +35,8 @@ func (sv *Server) BroadcastNoteAndEndorsement(note pushtypes.PushNote) error {
 		return err
 	}
 
+	sv.log.Debug("Created a note endorsement", "NoteID", note.ID().String())
+
 	// Broadcast the endorsement
 	sv.endorsementBroadcaster(endorsement)
 

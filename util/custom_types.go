@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
@@ -74,6 +75,16 @@ func (b Bytes32) Bytes() []byte {
 		return []byte{}
 	}
 	return b[:]
+}
+
+// ToBase58PubKey tries to convert the bytes to a base58-encoded public key.
+// Panics if unable to convert.
+func (b Bytes32) ToBase58PubKey() string {
+	pk, err := crypto.PubKeyFromBytes(b[:])
+	if err != nil {
+		panic(err)
+	}
+	return pk.Base58()
 }
 
 // HexBytes wraps b in HexBytes
