@@ -414,9 +414,6 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pktEnc := pktline.NewEncoder(w)
-	if op == "git-receive-pack" && r.Header.Get("Authorization") != "" {
-		pktEnc.Encode(plumbing.SidebandInfoln("performing authentication checks"))
-	}
 
 	// Authenticate pusher
 	txDetails, polEnforcer, err := sv.handleAuth(r, repoState, namespace)
@@ -426,7 +423,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		pktEnc.Encode(plumbing.SidebandInfoln("authentication checks failed"))
+		pktEnc.Encode(plumbing.SidebandInfoln("authentication has failed"))
 		pktEnc.Encode(plumbing.SidebandErr(err.Error()))
 		pktEnc.Flush()
 		return
