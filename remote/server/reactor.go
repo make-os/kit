@@ -309,7 +309,7 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	sv.log.Debug("Received a valid push endorsement",
-		"PeerID", peerID, "ID", endID, "Endorser", endorsement.EndorserPubKey.ToBase58PubKey())
+		"PeerID", peerID, "ID", endID, "Endorser", crypto2.ToBase58PubKey(endorsement.EndorserPubKey))
 
 	// Cache the sender so we don't broadcast same Endorsement to it later
 	sv.registerEndorsementSender(string(peerID), endID)

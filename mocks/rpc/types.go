@@ -152,6 +152,20 @@ func (mr *MockClientMockRecorder) PushKey() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKey", reflect.TypeOf((*MockClient)(nil).PushKey))
 }
 
+// Pool mocks base method
+func (m *MockClient) Pool() types.Pool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Pool")
+	ret0, _ := ret[0].(types.Pool)
+	return ret0
+}
+
+// Pool indicates an expected call of Pool
+func (mr *MockClientMockRecorder) Pool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pool", reflect.TypeOf((*MockClient)(nil).Pool))
+}
+
 // Repo mocks base method
 func (m *MockClient) Repo() types.Repo {
 	m.ctrl.T.Helper()
@@ -428,6 +442,59 @@ func (m *MockDHT) Lookup(key string) (string, error) {
 func (mr *MockDHTMockRecorder) Lookup(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*MockDHT)(nil).Lookup), key)
+}
+
+// MockPool is a mock of Pool interface
+type MockPool struct {
+	ctrl     *gomock.Controller
+	recorder *MockPoolMockRecorder
+}
+
+// MockPoolMockRecorder is the mock recorder for MockPool
+type MockPoolMockRecorder struct {
+	mock *MockPool
+}
+
+// NewMockPool creates a new mock instance
+func NewMockPool(ctrl *gomock.Controller) *MockPool {
+	mock := &MockPool{ctrl: ctrl}
+	mock.recorder = &MockPoolMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockPool) EXPECT() *MockPoolMockRecorder {
+	return m.recorder
+}
+
+// GetSize mocks base method
+func (m *MockPool) GetSize() (*api.ResultPoolSize, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSize")
+	ret0, _ := ret[0].(*api.ResultPoolSize)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSize indicates an expected call of GetSize
+func (mr *MockPoolMockRecorder) GetSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockPool)(nil).GetSize))
+}
+
+// GetPushPoolSize mocks base method
+func (m *MockPool) GetPushPoolSize() (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushPoolSize")
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPushPoolSize indicates an expected call of GetPushPoolSize
+func (mr *MockPoolMockRecorder) GetPushPoolSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPoolSize", reflect.TypeOf((*MockPool)(nil).GetPushPoolSize))
 }
 
 // MockRepo is a mock of Repo interface

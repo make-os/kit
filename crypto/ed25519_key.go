@@ -194,6 +194,16 @@ func (p *PrivKey) VRFKey() vrf.PrivateKey {
 	return vrfSK
 }
 
+// ToBase58PubKey tries to convert the bytes to a base58-encoded public key.
+// Panics if unable to convert.
+func ToBase58PubKey(bz util.Bytes32) string {
+	pk, err := PubKeyFromBytes(bz[:])
+	if err != nil {
+		panic(err)
+	}
+	return pk.Base58()
+}
+
 // PubKey represents a public key
 type PubKey struct {
 	pubKey crypto.PubKey
