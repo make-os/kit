@@ -61,6 +61,8 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 	// If yes, no resync needs to happen.
 	repoState := note.GetTargetRepo().GetState()
 	if bytes.Equal(repoState.References.Get(ref).Hash.Bytes(), localRefHash[:]) {
+		sv.log.Debug("Abandon reference resync; local and network state match",
+			"Repo", note.GetRepoName(), "Ref", ref)
 		return nil
 	}
 
