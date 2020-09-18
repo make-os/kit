@@ -27,13 +27,16 @@ type Client interface {
 	// Call calls a method on the RPCClient service.
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 
-	// ChainAPI exposes methods for accessing chain information
+	// Chain exposes methods for accessing chain information
 	Chain() Chain
 
-	// PushKeyAPI exposes methods for managing push keys
+	// PushKey exposes methods for managing push keys
 	PushKey() PushKey
 
-	// RepoAPI exposes methods for managing repositories
+	// Pool exposes methods for managing push keys
+	Pool() Pool
+
+	// Repo exposes methods for managing repositories
 	Repo() Repo
 
 	// RPC exposes methods for managing the RPC server
@@ -86,6 +89,16 @@ type DHT interface {
 
 	// Lookup finds a value stored under the given key
 	Lookup(key string) (string, error)
+}
+
+// Pool provides access to a nodes transaction and push pools
+type Pool interface {
+
+	// GetSize returns size information of the mempool
+	GetSize() (*api.ResultPoolSize, error)
+
+	// GetPushPoolSize returns size information of the mempool
+	GetPushPoolSize() (int, error)
 }
 
 // Repo provides access to the repo-related RPC methods

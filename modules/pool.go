@@ -81,6 +81,15 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
+
+	if m.IsAttached() {
+		res, err := m.Client.Pool().GetSize()
+		if err != nil {
+			panic(err)
+		}
+		return util.ToMap(res)
+	}
+
 	return util.ToMap(m.mempoolReactor.GetPoolSize())
 }
 
@@ -95,5 +104,14 @@ func (m *PoolModule) GetTop(n int) []util.Map {
 
 // getPushPoolSize returns the size of the push pool
 func (m *PoolModule) GetPushPoolSize() int {
+
+	if m.IsAttached() {
+		res, err := m.Client.Pool().GetPushPoolSize()
+		if err != nil {
+			panic(err)
+		}
+		return res
+	}
+
 	return m.pushPool.Len()
 }

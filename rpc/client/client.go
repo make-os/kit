@@ -62,17 +62,22 @@ func (c *RPCClient) GetOptions() *types.Options {
 	return c.opts
 }
 
-// ChainAPI exposes methods for accessing chain information
+// Chain exposes methods for accessing chain information
 func (c *RPCClient) Chain() types.Chain {
 	return &ChainAPI{c: c}
 }
 
-// PushKeyAPI exposes methods for managing push keys
+// PushKey exposes methods for managing push keys
 func (c *RPCClient) PushKey() types.PushKey {
 	return &PushKeyAPI{c: c}
 }
 
-// RepoAPI exposes methods for managing repositories
+// Pool exposes methods for managing push keys
+func (c *RPCClient) Pool() types.Pool {
+	return &PoolAPI{c: c}
+}
+
+// Repo exposes methods for managing repositories
 func (c *RPCClient) Repo() types.Repo {
 	return &RepoAPI{c: c}
 }

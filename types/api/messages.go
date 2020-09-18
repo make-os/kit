@@ -175,6 +175,13 @@ type BodyTicketQuery struct {
 	QueryOption    *tickettypes.QueryOptions
 }
 
+// ResultTicket represents a ticket
 type ResultTicket struct {
 	*tickettypes.Ticket `json:",flatten"`
+}
+
+// ResultPoolSize describes size information of the mempool
+type ResultPoolSize struct {
+	Count int `json:"count"`
+	Size  int `json:"size"`
 }
