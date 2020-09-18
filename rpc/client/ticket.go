@@ -117,7 +117,7 @@ func (t *TicketAPI) List(body *api.BodyTicketQuery) (res []*api.ResultTicket, er
 			Value: util.String(cast.ToString(tm.Get("value").Inter())),
 		}
 		ticket.Hash, _ = util.FromHex(cast.ToString(tm.Get("hash").Inter()))
-		res = append(res, &api.ResultTicket{ticket})
+		res = append(res, &api.ResultTicket{Ticket: ticket})
 	}
 	return
 }
@@ -148,7 +148,7 @@ func (t *TicketAPI) ListHost(body *api.BodyTicketQuery) (res []*api.ResultTicket
 			Value: util.String(cast.ToString(tm.Get("value").Inter())),
 		}
 		ticket.Hash, _ = util.FromHex(cast.ToString(tm.Get("hash").Inter()))
-		res = append(res, &api.ResultTicket{ticket})
+		res = append(res, &api.ResultTicket{Ticket: ticket})
 	}
 	return
 }

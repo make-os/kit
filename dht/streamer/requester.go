@@ -163,7 +163,7 @@ func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 			continue
 		}
 
-		// Send 'WANT' message to providers
+		// Send 'WANT' message to provider
 		var s network.Stream
 		s, err = r.Write(ctx, prov, ObjectStreamerProtocolID, dht.MakeWantMsg(r.repoName, r.key))
 		if err != nil {
@@ -174,6 +174,10 @@ func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 			}
 			continue
 		}
+
+		commitHash, _ := dht.ParseObjectKey(r.key)
+		r.log.Debug("WANT->: Sent request for an object",
+			"Repo", r.repoName, "Hash", commitHash, "Peer", s.Conn().RemotePeer().Pretty())
 
 		// Handle 'WANT' response.
 		go func() {
@@ -264,15 +268,18 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 		r.tracker.MarkSeen(remotePeer)
 	}
 
+	hash, _ := dht.ParseObjectKey(r.key)
+
 	switch string(msg[:4]) {
 	case dht.MsgTypeHave:
+		r.log.Debug("HAVE<-: Received message from provider",
+			"Repo", r.repoName, "Hash", hash, "Peer", remotePeer.Pretty())
 		r.lck.Lock()
 		r.providerStreams = append(r.providerStreams, s)
 		r.lck.Unlock()
 
 	case dht.MsgTypeNope:
-		hash, _ := dht.ParseObjectKey(r.key)
-		r.log.Debug("Provider no longer has the object", "Hash", plumbing.BytesToHex(hash))
+		r.log.Debug("NOPE<-: Provider no longer has the object", "Hash", plumbing.BytesToHex(hash))
 		s.Reset()
 		r.tracker.PeerSentNope(remotePeer, r.key)
 		return ErrNopeReceived
@@ -305,12 +312,18 @@ func (r *BasicObjectRequester) OnSendResponse(s network.Stream) (io.ReadSeekerCl
 		r.tracker.MarkSeen(remotePeer)
 	}
 
+	hash, _ := dht.ParseObjectKey(r.key)
+
 	switch string(op) {
 	case dht.MsgTypeNope:
+		r.log.Debug("NOPE<-: Expected packfile but provider refused to send",
+			"Repo", r.repoName, "Hash", hash, "Peer", s.Conn().RemotePeer().Pretty())
 		r.tracker.PeerSentNope(remotePeer, r.key)
 		return nil, dht.ErrObjNotFound
 
 	case dht.MsgTypePack:
+		r.log.Debug("PACK<-: Packfile received from provider",
+			"Repo", r.repoName, "Hash", hash, "Peer", s.Conn().RemotePeer().Pretty())
 		rdr, err := io.LimitedReadToTmpFile(buf, MaxPackSize)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read pack data")
