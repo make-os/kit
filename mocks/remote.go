@@ -332,6 +332,34 @@ func (mr *MockRemoteServerMockRecorder) GetFetcher() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFetcher", reflect.TypeOf((*MockRemoteServer)(nil).GetFetcher))
 }
 
+// CheckNote mocks base method
+func (m *MockRemoteServer) CheckNote(note types0.PushNote) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckNote", note)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckNote indicates an expected call of CheckNote
+func (mr *MockRemoteServerMockRecorder) CheckNote(note interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckNote", reflect.TypeOf((*MockRemoteServer)(nil).CheckNote), note)
+}
+
+// TryScheduleReSync mocks base method
+func (m *MockRemoteServer) TryScheduleReSync(note types0.PushNote, ref string, fromBeginning bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TryScheduleReSync", note, ref, fromBeginning)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TryScheduleReSync indicates an expected call of TryScheduleReSync
+func (mr *MockRemoteServerMockRecorder) TryScheduleReSync(note, ref, fromBeginning interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryScheduleReSync", reflect.TypeOf((*MockRemoteServer)(nil).TryScheduleReSync), note, ref, fromBeginning)
+}
+
 // GetDHT mocks base method
 func (m *MockRemoteServer) GetDHT() types.DHT {
 	m.ctrl.T.Helper()

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -31,6 +32,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
+
+func TestPush(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Push Suite")
+}
 
 var _ = Describe("BasicHandler", func() {
 	var err error

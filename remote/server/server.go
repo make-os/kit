@@ -229,6 +229,17 @@ func (sv *Server) checkRepo(repo string, key []byte) bool {
 	return err == nil
 }
 
+// CheckNote validates a push note
+func (sv *Server) CheckNote(note pushtypes.PushNote) error {
+	return sv.checkPushNote(note, sv.logic)
+}
+
+// TryScheduleReSync may schedule a local reference for resynchronization if the pushed
+// reference old state does not match the current network state of the reference
+func (sv *Server) TryScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error {
+	return sv.tryScheduleReSync(note, ref, fromBeginning)
+}
+
 // checkRepoObject implements dhttypes.CheckFunc for checking the existence
 // of an object in the given repository.
 func (sv *Server) checkRepoObject(repo string, key []byte) bool {

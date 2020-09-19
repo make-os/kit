@@ -5,6 +5,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -27,6 +28,11 @@ import (
 
 	. "github.com/onsi/gomega"
 )
+
+func TestRefsync(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Refsync Suite")
+}
 
 var _ = Describe("RefSync", func() {
 	var err error

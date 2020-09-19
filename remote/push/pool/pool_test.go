@@ -1,6 +1,7 @@
 package pool
 
 import (
+	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -12,6 +13,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestPool(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Pool Suite")
+}
 
 var _ = Describe("PushPool", func() {
 	var pool *PushPool

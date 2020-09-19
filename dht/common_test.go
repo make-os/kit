@@ -2,12 +2,18 @@ package dht
 
 import (
 	"bytes"
+	"testing"
 
 	"github.com/make-os/lobe/remote/plumbing"
 	. "github.com/onsi/ginkgo"
 
 	. "github.com/onsi/gomega"
 )
+
+func TestDHT(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "DHT Suite")
+}
 
 var _ = Describe("Common", func() {
 	Describe(".MakeWantMsg", func() {

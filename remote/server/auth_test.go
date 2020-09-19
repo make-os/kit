@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -16,7 +15,7 @@ import (
 	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/repo"
-	testutil2 "github.com/make-os/lobe/remote/testutil"
+	remotetestutil "github.com/make-os/lobe/remote/testutil"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
 	"github.com/make-os/lobe/testutil"
@@ -51,7 +50,7 @@ var _ = Describe("Auth", func() {
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
-		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
+		remotetestutil.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		_, err = repo.Get(path)
 		Expect(err).To(BeNil())
 
@@ -295,12 +294,6 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".handleAuth", func() {
-		var w http.ResponseWriter
-
-		BeforeEach(func() {
-			w = httptest.NewRecorder()
-		})
-
 		When("request method is GET", func() {
 			It("should return nil transaction details, enforcer and error", func() {
 				req := httptest.NewRequest("GET", "https://127.0.0.1", bytes.NewReader(nil))

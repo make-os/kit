@@ -44,14 +44,18 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	}
 }
 
-type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string, fresh bool) error
+type ScheduleReSyncFunc func(note pushtypes.PushNote, ref string, fromBeginning bool) error
 
 // maybeScheduleReSync checks whether the local repository needs to be scheduled for synchronized.
 // note is the note containing the problematic ref.
 // ref is the name of the reference that may be out of sync.
+// fromBeginning indicates that the reference should be resynced from scratch.
 func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error {
 
-	var localRefHash = plumbing2.ZeroHash
+	repoName := note.GetRepoName()
+	localRefHash := plumbing2.ZeroHash
+
+	// Get the local hash of the reference
 	localRef, err := note.GetTargetRepo().Reference(plumbing2.ReferenceName(ref), false)
 	if err != nil && err != plumbing2.ErrReferenceNotFound {
 		return err
@@ -59,17 +63,22 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 		localRefHash = localRef.Hash()
 	}
 
+	// Get the network hash of the reference
+	repoState := note.GetTargetRepo().GetState()
+	repoRefHash := plumbing2.ZeroHash
+	if netRef := repoState.References.Get(ref); !netRef.IsNil() {
+		repoRefHash = plumbing.BytesToHash(netRef.Hash)
+	}
+
 	// Check if the note's pushed reference local hash and the network hash match.
 	// If yes, no resync needs to happen.
-	repoState := note.GetTargetRepo().GetState()
-	if bytes.Equal(repoState.References.Get(ref).Hash.Bytes(), localRefHash[:]) {
-		sv.log.Debug("Abandon reference resync; local and network state match",
-			"Repo", note.GetRepoName(), "Ref", ref)
+	if bytes.Equal(localRefHash[:], repoRefHash[:]) {
+		sv.log.Debug("Abandon ref resync; local and network state match", "Repo", repoName, "Ref", ref)
 		return nil
 	}
 
 	// Get last synchronized
-	refLastSyncHeight, err := sv.logic.RepoSyncInfoKeeper().GetRefLastSyncHeight(note.GetRepoName(), ref)
+	refLastSyncHeight, err := sv.logic.RepoSyncInfoKeeper().GetRefLastSyncHeight(repoName, ref)
 	if err != nil {
 		return err
 	}
@@ -88,10 +97,10 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 		refLastSyncHeight = repoState.CreatedAt.UInt64()
 	}
 
-	sv.log.Debug("Scheduling reference for resync", "Repo", note.GetRepoName(), "Ref", ref)
+	sv.log.Debug("Scheduling reference for resync", "Repo", repoName, "Ref", ref)
 
 	// Add the repo to the refsync watcher
-	sv.refSyncer.Watch(note.GetRepoName(), ref, refLastSyncHeight, repoLastUpdated)
+	sv.refSyncer.Watch(repoName, ref, refLastSyncHeight, repoLastUpdated)
 
 	return nil
 }
@@ -144,11 +153,9 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	if err := sv.refSyncer.CanSync(note.Namespace, note.RepoName); err != nil || sv.cfg.IsValidatorNode() {
 		sv.log.Info("Partially processing received push note",
 			"ID", noteID, "IsValidator", sv.cfg.IsValidatorNode())
-
 		if err := sv.checkPushNote(&note, sv.logic); err != nil {
 			return errors.Wrap(err, "failed push note validation")
 		}
-
 		sv.registerNoteSender(string(peerID), noteID)
 		sv.noteBroadcaster(&note)
 		return nil
@@ -171,8 +178,8 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Validate the push note.
-	// If we get an error about a pushed reference and local/network reference mismatch,
-	// we need to determine whether to schedule the repository for a resynchronization.
+	// If we get an error about a pushed reference and local/network reference hash mismatch,
+	// we need to determine whether to schedule the local reference for a resynchronization.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
 		if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
 			sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)

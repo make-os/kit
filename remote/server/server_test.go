@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -21,6 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/phayes/freeport"
 )
+
+func TestServer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Server Suite")
+}
 
 var _ = Describe("Server", func() {
 	var err error

@@ -61,7 +61,7 @@ type RemoteServer interface {
 	// Wait can be used by the caller to wait till the server terminates
 	Wait()
 
-	// CreateRepository creates a local git repository
+	// InitRepository creates a local git repository
 	InitRepository(name string) error
 
 	// BroadcastMsg broadcast messages to peers
@@ -70,11 +70,18 @@ type RemoteServer interface {
 	// BroadcastNoteAndEndorsement broadcasts repo push note and push endorsement
 	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
 
-	// AnnounceObject announces a key on the DHT network
+	// Announce announces a key on the DHT network
 	Announce(objType int, repo string, hash []byte, doneCB func(error))
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher
+
+	// CheckNote validates a push note
+	CheckNote(note pushtypes.PushNote) error
+
+	// TryScheduleReSync may schedule a local reference for resynchronization if the pushed
+	// reference old state does not match the current network state of the reference
+	TryScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error
 
 	// GetDHT returns the dht service
 	GetDHT() types.DHT

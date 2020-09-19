@@ -322,7 +322,7 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("push note validation fail due to mismatch pushed reference hash and local reference hash mismatch", func() {
+		When("push note validation fail due to pushed reference hash and local/network reference hash mismatch", func() {
 			var reSyncScheduled bool
 			It("should schedule repo resync", func() {
 				pn := &types.Note{RepoName: repoName}
@@ -337,10 +337,12 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
-					return util.FieldErrorWithIndex(-1, "", "error", validation.ErrCodeRefAndLocalStateMismatch, "ref/heads/master")
+					mmErr := &validation.RefMismatchErr{MismatchLocal: true, Ref: "ref/heads/master"}
+					return util.FieldErrorWithIndex(-1, "", "error", mmErr)
 				}
-				svr.tryScheduleReSync = func(note types.PushNote, ref string) error {
+				svr.tryScheduleReSync = func(note types.PushNote, ref string, fresh bool) error {
 					reSyncScheduled = true
+					Expect(fresh).To(BeFalse())
 					return nil
 				}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
@@ -387,7 +389,6 @@ var _ = Describe("Reactor", func() {
 				Expect(svr.objfetcher.QueueSize()).To(Equal(1))
 			})
 		})
-
 	})
 
 	Describe(".onObjectsFetched", func() {
@@ -495,12 +496,12 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".maybeScheduleReSync", func() {
-		It("should return error when unable to get reference", func() {
+		It("should return error when unable to get local reference", func() {
 			note := &types.Note{}
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			note.SetTargetRepo(mockRepo)
 			mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(nil, fmt.Errorf("error"))
-			err := svr.maybeScheduleReSync(note, refname)
+			err := svr.maybeScheduleReSync(note, refname, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -515,8 +516,21 @@ var _ = Describe("Reactor", func() {
 			note.SetTargetRepo(mockRepo)
 			refObj := plumbing.NewReferenceFromStrings(refname, refHash)
 			mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
-			err := svr.maybeScheduleReSync(note, refname)
+			err := svr.maybeScheduleReSync(note, refname, false)
 			Expect(err).To(BeNil())
+		})
+
+		When("reference does not exist locally and on the network state", func() {
+			It("should return nil", func() {
+				note := &types.Note{}
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				repoState := state.BareRepository()
+				mockRepo.EXPECT().GetState().Return(repoState)
+				note.SetTargetRepo(mockRepo)
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(nil, plumbing.ErrReferenceNotFound)
+				err := svr.maybeScheduleReSync(note, refname, false)
+				Expect(err).To(BeNil())
+			})
 		})
 
 		When("the target reference's local and network do not match", func() {
@@ -535,7 +549,7 @@ var _ = Describe("Reactor", func() {
 
 				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
-				err := svr.maybeScheduleReSync(note, refname)
+				err := svr.maybeScheduleReSync(note, refname, false)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -555,7 +569,7 @@ var _ = Describe("Reactor", func() {
 
 				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
-				err := svr.maybeScheduleReSync(note, refname)
+				err := svr.maybeScheduleReSync(note, refname, false)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -579,16 +593,17 @@ var _ = Describe("Reactor", func() {
 
 				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
-				err := svr.maybeScheduleReSync(note, refname)
+				err := svr.maybeScheduleReSync(note, refname, false)
 				Expect(err).To(BeNil())
 			})
 
 			When("reference last update height is the same as the repo's last update height", func() {
-				It("should send task to the watcher with start height set at zero", func() {
+				It("should send task to the watcher with start height set to the repo's creation height", func() {
 					refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
 					refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
 					note := &types.Note{RepoName: "repo1"}
 					repoState := state.BareRepository()
+					repoState.CreatedAt = 4
 					repoState.UpdatedAt = 100
 					repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
 
@@ -598,17 +613,43 @@ var _ = Describe("Reactor", func() {
 
 					mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
 					mockRefSync := mocks.NewMockRefSync(ctrl)
-					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(0), repoState.UpdatedAt.UInt64())
+					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(4), repoState.UpdatedAt.UInt64())
 					svr.refSyncer = mockRefSync
 
 					refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
 					mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
-					err := svr.maybeScheduleReSync(note, refname)
+					err := svr.maybeScheduleReSync(note, refname, false)
+					Expect(err).To(BeNil())
+				})
+			})
+
+			When("fromBeginning is true", func() {
+				It("should send task to the watcher with start height set to the repo's creation height", func() {
+					refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+					refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+
+					note := &types.Note{RepoName: "repo1"}
+					repoState := state.BareRepository()
+					repoState.UpdatedAt = 100
+					repoState.CreatedAt = 3
+					repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+					mockRepo := mocks.NewMockLocalRepo(ctrl)
+					mockRepo.EXPECT().GetState().Return(repoState)
+					note.SetTargetRepo(mockRepo)
+
+					mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(30), nil)
+					mockRefSync := mocks.NewMockRefSync(ctrl)
+					mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(3), repoState.UpdatedAt.UInt64())
+					svr.refSyncer = mockRefSync
+
+					refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+					mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+					err := svr.maybeScheduleReSync(note, refname, true)
 					Expect(err).To(BeNil())
 				})
 			})
 		})
-
 	})
 
 	Describe(".maybeProcessPushNote", func() {

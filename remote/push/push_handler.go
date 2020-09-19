@@ -341,6 +341,16 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		if err != nil {
 			return err
 		}
+
+		// Validate the push note.
+		// If we get an error about a pushed reference and local/network reference hash mismatch,
+		// we need to determine whether to schedule the local reference for a resynchronization.
+		if err := h.Server.CheckNote(note); err != nil {
+			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
+			}
+			return errors.Wrap(err, "failed push note validation")
+		}
 	}
 
 	// Add the push note to the push pool
