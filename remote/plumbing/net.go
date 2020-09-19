@@ -17,5 +17,6 @@ func SidebandProgressln(msg string) []byte {
 
 // SidebandInfoln creates a sideband progress info message with a newline prefix
 func SidebandInfoln(msg string) []byte {
-	return sideband.ProgressMessage.WithPayload([]byte(colorfmt.WhiteBoldString(msg) + "\u001b[0m\n"))
+	return sideband.ProgressMessage.WithPayload([]byte(colorfmt.GreenString(msg)))
+	// return sideband.ProgressMessage.WithPayload([]byte(colorfmt.WhiteBoldString(msg) + "\u001b[0m\n"))
 }
