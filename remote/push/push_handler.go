@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -352,6 +353,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 				h.pktEnc.Encode(plumbing.SidebandErr("mismatched reference detected; scheduling resync"))
 				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
 			}
+			pp.Println(err)
 			return errors.Wrap(err, "failed push note validation")
 		}
 	}
