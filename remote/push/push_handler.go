@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -80,12 +79,13 @@ type Handler interface {
 // BasicHandler implements Handler. It provides handles all phases of a push operation.
 type BasicHandler struct {
 	log                  logger.Logger
-	op                   string                              // The current git operation
-	Repo                 remotetypes.LocalRepo               // The target repository
-	Server               core.RemoteServer                   // The repository remote server
-	OldState             remotetypes.RepoRefsState           // The old state of the repo before the current push was written
-	PushReader           *Reader                             // The push reader for reading pushed git objects
-	NoteID               string                              // The push note unique ID
+	op                   string                    // The current git operation
+	Repo                 remotetypes.LocalRepo     // The target repository
+	Server               core.RemoteServer         // The repository remote server
+	OldState             remotetypes.RepoRefsState // The old state of the repo before the current push was written
+	PushReader           *Reader                   // The push reader for reading pushed git objects
+	NoteID               string                    // The push note unique ID
+	reversed             bool
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
 	MergeChecker         validation.MergeComplianceCheckFunc // Merge request checker function
@@ -347,8 +347,9 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		// If we get an error about a pushed reference and local/network reference hash mismatch,
 		// we need to determine whether to schedule the local reference for a resynchronization.
 		if err := h.Server.CheckNote(note); err != nil {
-			pp.Println(">>", err)
 			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+				h.pktEnc.Encode(plumbing.SidebandInfoln("mismatched reference detected; scheduling resync"))
+				h.HandleReversion()
 				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
 			}
 			return errors.Wrap(err, "failed push note validation")
@@ -425,7 +426,13 @@ func (h *BasicHandler) createPushNote() (*types.Note, error) {
 }
 
 // HandleReversion reverts the pushed references back to their pre-push state.
+// It will do nothing and return nil if already called successfully.
 func (h *BasicHandler) HandleReversion() []error {
+
+	if h.reversed {
+		return nil
+	}
+
 	var errs []error
 	for _, ref := range h.PushReader.References.Names() {
 		// Get the old version of the reference prior to the push
@@ -449,6 +456,11 @@ func (h *BasicHandler) HandleReversion() []error {
 			errs = append(errs, errors.Wrapf(err, "%s: failed to revert to old state", ref))
 		}
 	}
+
+	if len(errs) == 0 {
+		h.reversed = true
+	}
+
 	return errs
 }
 
