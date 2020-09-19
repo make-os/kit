@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
@@ -215,10 +215,10 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 	}
 
 	if newPost {
-		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New merge request created!"))
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ New merge request created!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
 	} else {
-		fmt.Fprintln(args.StdOut, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ New comment added!"))
+		fmt.Fprintln(args.StdOut, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ New comment added!"))
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, nComments))
 	}
 

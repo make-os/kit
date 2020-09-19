@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/rpc/types"
@@ -98,7 +98,7 @@ func SendCmd(cfg *config.AppConfig, args *SendArgs) error {
 
 	// Display transaction info and track status
 	if args.Stdout != nil {
-		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
+		fmt.Fprintln(args.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, " - To:", fmt2.CyanString(args.Recipient))
 		fmt.Fprintln(args.Stdout, " - Amount:", fmt2.CyanString(cast.ToString(args.Value)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))

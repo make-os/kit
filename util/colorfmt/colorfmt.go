@@ -3,78 +3,89 @@ package colorfmt
 import (
 	"fmt"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/config"
 )
 
-func colorSprintf(format string, attr []color.Attribute, a ...interface{}) string {
+type Attribute func(arg interface{}) aurora.Value
+
+func colorSprintf(format string, attr []Attribute, a ...interface{}) string {
 	return NewColor(attr...).Sprintf(format, a...)
 }
 
-func colorSprint(format string, attr []color.Attribute) string {
+func colorSprint(format string, attr []Attribute) string {
 	return NewColor(attr...).Sprint(format)
 }
 
 // ColorFmt wraps fatih's Color providing a way to turn color off
 // via a global variable set on app initialization
 type ColorFmt struct {
-	c *color.Color
+	attrs []Attribute
 }
 
 // NewColor creates an instance of ColorFmt
-func NewColor(attr ...color.Attribute) *ColorFmt {
-	return &ColorFmt{c: color.New(attr...)}
+func NewColor(attr ...Attribute) *ColorFmt {
+	return &ColorFmt{attrs: attr}
 }
 
-func (c *ColorFmt) Sprint(a ...interface{}) string {
+func (c *ColorFmt) Sprint(format interface{}) string {
 	if config.NoColorFormatting {
-		return fmt.Sprint(a...)
+		return fmt.Sprint(format)
 	}
-	return c.c.Sprint(a...)
+	var v = aurora.White(format)
+	for _, a := range c.attrs {
+		v = a(v)
+	}
+	return aurora.Sprintf(v)
 }
 
-func (c *ColorFmt) Sprintf(format string, a ...interface{}) string {
+func (c *ColorFmt) Sprintf(format string, args ...interface{}) string {
 	if config.NoColorFormatting {
-		return fmt.Sprintf(format, a...)
+		return fmt.Sprint(format, args)
 	}
-	return c.c.Sprintf(format, a...)
+	var v = aurora.White(aurora.Sprintf(format, args...))
+	for _, a := range c.attrs {
+		v = a(v)
+	}
+	return v.String()
 }
 
 func RedString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.FgRed}, a...)
+	return colorSprintf(format, []Attribute{aurora.Red}, a...)
 }
 
 func YellowString(fmt string, a ...interface{}) string {
-	if len(a) == 0 {
-		return colorSprint(fmt, []color.Attribute{color.FgYellow})
-	}
-	return colorSprintf(fmt, []color.Attribute{color.FgYellow}, a...)
+	return colorSprintf(fmt, []Attribute{aurora.Yellow}, a...)
 }
 
 func GreenString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.FgGreen}, a...)
+	return colorSprintf(format, []Attribute{aurora.Green}, a...)
 }
 
 func CyanString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.FgCyan}, a...)
+	return colorSprintf(format, []Attribute{aurora.Cyan}, a...)
 }
 
-func HiCyanString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.FgHiCyan}, a...)
+func BrightCyanString(format string, a ...interface{}) string {
+	return colorSprintf(format, []Attribute{aurora.BrightCyan}, a...)
 }
 
 func BoldString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.Bold}, a...)
+	return colorSprintf(format, []Attribute{aurora.Bold}, a...)
 }
 
 func WhiteBoldString(format string, a ...interface{}) string {
-	return colorSprintf(format, []color.Attribute{color.FgWhite, color.Bold}, a...)
+	return colorSprintf(format, []Attribute{aurora.Bold, aurora.White}, a...)
+}
+
+func WhiteString(format string, a ...interface{}) string {
+	return colorSprintf(format, []Attribute{aurora.White}, a...)
 }
 
 func Red(format string, a ...interface{}) {
-	fmt.Print(colorSprintf(format, []color.Attribute{color.FgRed}, a...))
+	fmt.Print(colorSprintf(format, []Attribute{aurora.Red}, a...))
 }
 
 func Magenta(format string, a ...interface{}) {
-	fmt.Print(colorSprintf(format, []color.Attribute{color.FgMagenta}, a...))
+	fmt.Print(colorSprintf(format, []Attribute{aurora.Magenta}, a...))
 }

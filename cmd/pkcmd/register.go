@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
@@ -128,7 +128,7 @@ func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 
 	// Display transaction info and track status
 	if args.Stdout != nil {
-		ff(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
+		ff(args.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Transaction sent!"))
 		ff(args.Stdout, fs(" - Address: %s", fmt2.CyanString("r/"+pubKeyToReg.MustPushKeyAddress().String())))
 		ff(args.Stdout, " - Hash:", fmt2.CyanString(hash))
 		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {

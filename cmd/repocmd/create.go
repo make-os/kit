@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/rpc/types"
@@ -128,7 +128,7 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 
 	// Display transaction info and track status
 	if args.Stdout != nil {
-		fmt.Fprintln(args.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Transaction sent!"))
+		fmt.Fprintln(args.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Transaction sent!"))
 		fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
 		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
 		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {

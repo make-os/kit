@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
@@ -159,7 +159,7 @@ var initCmd = &cobra.Command{
 		genesisTime, _ := cmd.Flags().GetUint64("gen-time")
 		genState, _ := cmd.Flags().GetString("gen-state")
 		tendermintInit(validatorKey, validators, genState, genesisTime)
-		fmt.Fprintln(os.Stdout, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Node initialized!"))
+		fmt.Fprintln(os.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Node initialized!"))
 	},
 }
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/cmd/common"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
@@ -121,7 +121,7 @@ func formatAndPrintMergeRequestComments(
 	buf := bytes.NewBuffer(nil)
 
 	padding := strings.Repeat(" ", 25)
-	closeFmt := fmt2.NewColor(color.Bold, color.BgBlue, color.FgWhite).Sprintf(padding + "CLOSED" + padding)
+	closeFmt := fmt2.NewColor(aurora.Bold, aurora.BgBlue, aurora.White).Sprintf(padding + "CLOSED" + padding)
 	if isClosed && !args.NoCloseStatus {
 		buf.WriteString(closeFmt)
 		buf.WriteString("\n")

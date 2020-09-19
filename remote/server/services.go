@@ -221,7 +221,6 @@ dumbReq:
 
 // serveService handles git-upload & fetch-pack requests
 func serveService(s *RequestContext) error {
-
 	w, r, op, dir := s.W, s.R, s.Operation, s.RepoDir
 	op = strings.ReplaceAll(op, "git-", "")
 

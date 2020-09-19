@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/keystore/types"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
@@ -82,7 +82,7 @@ create:
 		return err
 	}
 
-	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key imported successfully!"))
+	fmt.Fprintln(ks.out, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Key imported successfully!"))
 	if keyType == types.KeyTypeUser {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {

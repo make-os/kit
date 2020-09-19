@@ -34,19 +34,19 @@ testnet-v1-init:
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
 join: testnet-v1-init
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
 join-dist: testnet-v1-init
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.dist --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a binary from local source and connects to testnet-v1
 join-src: testnet-v1-init
 	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.source --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a git a binary from the official git repository and connects to testnet-v1.

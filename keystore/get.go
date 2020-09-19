@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/make-os/lobe/util/crypto"
 	"github.com/pkg/errors"
@@ -69,20 +69,20 @@ unlock:
 		return errors.Wrap(err, "could not unlock key")
 	}
 
-	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key revealed successfully!"))
+	fmt.Fprintln(ks.out, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Key revealed successfully!"))
 
 	if !crypto.IsValidPushAddr(storedAcct.GetUserAddress()) {
-		fmt.Fprintln(ks.out, "- User Address: "+fmt2.HiCyanString(storedAcct.GetUserAddress()))
-		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetKey().PushAddr().String()))
+		fmt.Fprintln(ks.out, "- User Address: "+fmt2.BrightCyanString(storedAcct.GetUserAddress()))
+		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.BrightCyanString(storedAcct.GetKey().PushAddr().String()))
 	} else {
-		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.HiCyanString(storedAcct.GetUserAddress()))
-		fmt.Fprintln(ks.out, "- User Address: "+fmt2.HiCyanString(storedAcct.GetKey().Addr().String()))
+		fmt.Fprintln(ks.out, "- Push Address: "+fmt2.BrightCyanString(storedAcct.GetUserAddress()))
+		fmt.Fprintln(ks.out, "- User Address: "+fmt2.BrightCyanString(storedAcct.GetKey().Addr().String()))
 	}
 
-	fmt.Fprintln(ks.out, "- Public Key: "+fmt2.HiCyanString(storedAcct.GetKey().PubKey().Base58()))
+	fmt.Fprintln(ks.out, "- Public Key: "+fmt2.BrightCyanString(storedAcct.GetKey().PubKey().Base58()))
 
 	if showPrivKey {
-		fmt.Fprintln(ks.out, "- Private Key: "+fmt2.HiCyanString(storedAcct.GetKey().PrivKey().Base58()))
+		fmt.Fprintln(ks.out, "- Private Key: "+fmt2.BrightCyanString(storedAcct.GetKey().PrivKey().Base58()))
 	}
 
 	return nil

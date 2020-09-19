@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/fatih/color"
+	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/keystore/types"
 	"github.com/make-os/lobe/util"
@@ -129,7 +129,7 @@ func (ks *Keystore) CreateCmd(
 		return nil, err
 	}
 
-	fmt.Fprintln(ks.out, fmt2.NewColor(color.FgGreen, color.Bold).Sprint("✅ Key successfully created!"))
+	fmt.Fprintln(ks.out, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Key successfully created!"))
 	if keyType == types.KeyTypeUser {
 		fmt.Fprintln(ks.out, " - Address:", fmt2.CyanString(key.Addr().String()))
 	} else if keyType == types.KeyTypePush {
