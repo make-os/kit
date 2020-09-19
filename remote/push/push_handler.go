@@ -335,21 +335,21 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	}
 
 	// Create and sign push notification only if a target note was not provided.
+	// Then, validate the push note:
+	//  - If we get an error about a pushed reference and its corresponding local/network reference
+	//    having a hash mismatch, we need to determine whether to schedule the local reference
+	//    for re-sync. If so, first we must revert the pushed updates immediately.
 	var note = targetNote
 	if note == nil {
-		h.pktEnc.Encode(plumbing.SidebandInfoln("creating push note"))
+		h.pktEnc.Encode(plumbing.SidebandInfoln("creating and validating push note"))
 		note, err = h.createPushNote()
 		if err != nil {
 			return err
 		}
-
-		// Validate the push note.
-		// If we get an error about a pushed reference and local/network reference hash mismatch,
-		// we need to determine whether to schedule the local reference for a resynchronization.
-		if err := h.Server.CheckNote(note); err != nil {
+		if err = h.Server.CheckNote(note); err != nil {
 			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
-				h.pktEnc.Encode(plumbing.SidebandInfoln("mismatched reference detected; scheduling resync"))
 				h.HandleReversion()
+				h.pktEnc.Encode(plumbing.SidebandErr("mismatched reference detected; scheduling resync"))
 				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
 			}
 			return errors.Wrap(err, "failed push note validation")
@@ -362,7 +362,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		return err
 	}
 
-	// Announce the pushed objects
+	// Announce the pushed objects (note and endorsement)
 	h.HandleAnnouncement()
 
 	// Broadcast the push note
