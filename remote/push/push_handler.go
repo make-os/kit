@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -346,6 +347,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		// If we get an error about a pushed reference and local/network reference hash mismatch,
 		// we need to determine whether to schedule the local reference for a resynchronization.
 		if err := h.Server.CheckNote(note); err != nil {
+			pp.Println(">>", err)
 			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
 				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
 			}
