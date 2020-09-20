@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/dht/announcer"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
@@ -319,8 +318,12 @@ func (h *BasicHandler) HandleAnnouncement() {
 // We react by attempting resyncing the reference.
 func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMismatch bool) (err error) {
 	h.HandleReversion()
+	err = h.Server.TryScheduleReSync(note, ref, netMismatch)
+	if err != nil {
+		h.pktEnc.Encode(plumbing.SidebandYellowln(err.Error()))
+	}
 	h.pktEnc.Encode(plumbing.SidebandYellowln("mismatched reference detected; scheduling resync"))
-	return h.Server.TryScheduleReSync(note, ref, netMismatch)
+	return
 }
 
 // HandleUpdate implements Handler
@@ -361,8 +364,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		}
 		if err = h.Server.CheckNote(note); err != nil {
 			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
-				err := h.HandleRefMismatch(note, misErr.Ref, misErr.MismatchNet)
-				pp.Println(err)
+				h.HandleRefMismatch(note, misErr.Ref, misErr.MismatchNet)
 			}
 			return errors.Wrap(err, "failed push note validation")
 		}
