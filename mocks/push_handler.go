@@ -162,3 +162,17 @@ func (mr *MockHandlerMockRecorder) HandleReversion() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleReversion", reflect.TypeOf((*MockHandler)(nil).HandleReversion))
 }
+
+// HandlePushNote mocks base method
+func (m *MockHandler) HandlePushNote(note types.PushNote) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandlePushNote", note)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandlePushNote indicates an expected call of HandlePushNote
+func (mr *MockHandlerMockRecorder) HandlePushNote(note interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandlePushNote", reflect.TypeOf((*MockHandler)(nil).HandlePushNote), note)
+}

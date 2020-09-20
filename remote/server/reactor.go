@@ -17,6 +17,7 @@ import (
 	rr "github.com/make-os/lobe/remote/repo"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -120,6 +121,15 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		return nil
 	}
 	sv.markNoteAsSeen(noteID)
+
+	// Ignore note if already processed in a block
+	_, err := sv.logic.TxKeeper().GetTx(note.ID().Bytes())
+	if err != nil {
+		if err != types.ErrTxNotFound {
+			return errors.Wrap(err, "failed to check if note has been processed")
+		}
+		return nil
+	}
 
 	peerID, repoName := peer.ID(), note.GetRepoName()
 	sv.log.Debug("Received a push note", "PeerID", peerID, "ID", noteID)

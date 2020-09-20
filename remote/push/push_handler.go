@@ -74,6 +74,9 @@ type Handler interface {
 
 	// HandleReversion reverts the pushed references back to their pre-push state.
 	HandleReversion() []error
+
+	// HandlePushNote implements Handler by handing incoming push note
+	HandlePushNote(note types.PushNote) (err error)
 }
 
 // BasicHandler implements Handler. It provides handles all phases of a push operation.
@@ -363,6 +366,12 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		}
 	}
 
+	return h.HandlePushNote(note)
+}
+
+// HandlePushNote implements Handler by handing incoming push note
+func (h *BasicHandler) HandlePushNote(note types.PushNote) (err error) {
+
 	// Add the push note to the push pool
 	h.pktEnc.Encode(plumbing.SidebandInfoln("adding push note to the pushpool"))
 	if err = h.Server.GetPushPool().Add(note); err != nil {
@@ -378,7 +387,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		h.log.Error("Failed to broadcast push note", "Err", err)
 	}
 
-	return nil
+	return
 }
 
 // createPushNote creates a note that describes a push request.

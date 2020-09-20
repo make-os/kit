@@ -17,7 +17,7 @@ import (
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/policy"
 	"github.com/make-os/lobe/remote/push"
-	types2 "github.com/make-os/lobe/remote/push/types"
+	pushtypes "github.com/make-os/lobe/remote/push/types"
 	repo3 "github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/remote/server"
 	remotetestutil "github.com/make-os/lobe/remote/testutil"
@@ -53,6 +53,7 @@ var _ = Describe("BasicHandler", func() {
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockDHT *mocks.MockDHT
 	var mockGitRcvCmd *mocks2.MockCmd
+	var mockPushPool *mocks.MockPushPool
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -74,10 +75,12 @@ var _ = Describe("BasicHandler", func() {
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockGitRcvCmd = mocks2.NewMockCmd(ctrl)
+		mockPushPool = mocks.NewMockPushPool(ctrl)
 
 		svr = server.New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
 		mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log)
+		mockRemoteSrv.EXPECT().GetPushPool().Return(mockPushPool).AnyTimes()
 
 		handler = push.NewHandler(repo, []*types.TxDetail{}, nil, mockRemoteSrv)
 	})
@@ -122,9 +125,9 @@ var _ = Describe("BasicHandler", func() {
 			BeforeEach(func() {
 				remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
 				commitHash := remotetestutil.GetRecentCommitHash(path, "refs/heads/master")
-				note := &types2.Note{
+				note := &pushtypes.Note{
 					TargetRepo: repo,
-					References: []*types2.PushedReference{
+					References: []*pushtypes.PushedReference{
 						{Name: "refs/heads/master", NewHash: commitHash, OldHash: plumbing.ZeroHash.String()},
 					},
 				}
@@ -656,10 +659,44 @@ var _ = Describe("BasicHandler", func() {
 		})
 	})
 
+	Describe(".HandlePushNote", func() {
+		It("should return error when unable to add note to push pool", func() {
+			note := &pushtypes.Note{}
+			mockPushPool.EXPECT().Add(note).Return(fmt.Errorf("error"))
+			err := handler.HandlePushNote(note)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return announce repo name", func() {
+			note := &pushtypes.Note{}
+			mockPushPool.EXPECT().Add(note).Return(nil)
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
+			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
+			handler.HandlePushNote(note)
+		})
+
+		It("should return announce commit and tag objects only", func() {
+			note := &pushtypes.Note{}
+			mockPushPool.EXPECT().Add(note).Return(nil)
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
+
+			commitObject := &push.PackObject{Type: plumbing.CommitObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
+			tagObject := &push.PackObject{Type: plumbing.TagObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
+			blobObject := &push.PackObject{Type: plumbing.BlobObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
+			handler.PushReader.Objects = []*push.PackObject{commitObject, tagObject, blobObject}
+
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), commitObject.Hash[:], nil)
+			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), tagObject.Hash[:], nil)
+			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
+			handler.HandlePushNote(note)
+		})
+	})
+
 	Describe(".HandleRefMismatch", func() {
 		It("should return error when unable to schedule resync", func() {
 			handler.OldState = plumbing2.GetRepoState(repo)
-			note := &types2.Note{}
+			note := &pushtypes.Note{}
 			mockRemoteSrv.EXPECT().TryScheduleReSync(note, "refs/heads/master", false).Return(fmt.Errorf("error"))
 			err := handler.HandleRefMismatch(note, "refs/heads/master", false)
 			Expect(err).ToNot(BeNil())
@@ -668,7 +705,7 @@ var _ = Describe("BasicHandler", func() {
 
 		It("should return no error when resync was scheduled successfully", func() {
 			handler.OldState = plumbing2.GetRepoState(repo)
-			note := &types2.Note{}
+			note := &pushtypes.Note{}
 			mockRemoteSrv.EXPECT().TryScheduleReSync(note, "refs/heads/master", false).Return(nil)
 			err := handler.HandleRefMismatch(note, "refs/heads/master", false)
 			Expect(err).To(BeNil())

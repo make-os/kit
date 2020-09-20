@@ -164,7 +164,8 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	w.processing.Add(task.RepoName, struct{}{})
 	defer w.processing.Remove(task.RepoName)
 
-	w.log.Debug("Scanning chain for new updates", "Repo", task.RepoName, "EndHeight", task.EndHeight)
+	w.log.Debug("Scanning chain for new updates",
+		"Repo", task.RepoName, "Ref", task.Reference, "EndHeight", task.EndHeight)
 
 	isRepoTracked := w.keepers.RepoSyncInfoKeeper().GetTracked(task.RepoName) != nil
 
@@ -199,7 +200,8 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 				}
 			}
 
-			w.log.Debug("Found update for repo", "Repo", task.RepoName, "Height", start)
+			w.log.Debug("Found update for repo",
+				"Repo", task.RepoName, "Ref", task.Reference, "Height", start)
 			w.txHandler(obj, task.Reference, i, int64(start))
 			foundTx = true
 		}

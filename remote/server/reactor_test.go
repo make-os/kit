@@ -48,6 +48,7 @@ var _ = Describe("Reactor", func() {
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 	var mockDHT *mocks.MockDHT
+	var mockTxKeeper *mocks.MockTxKeeper
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = crypto.NewKeyFromIntSeed(1)
@@ -70,6 +71,7 @@ var _ = Describe("Reactor", func() {
 		mockLogic = mockObjects.Logic
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockRepoSyncInfoKeeper = mockObjects.RepoSyncInfoKeeper
+		mockTxKeeper = mockObjects.TxKeeper
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
@@ -106,6 +108,23 @@ var _ = Describe("Reactor", func() {
 				svr.markNoteAsSeen(pn.ID().String())
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 				Expect(err).To(BeNil())
+			})
+		})
+
+		When("checking if push note has been processed in a block", func() {
+			It("should return nil if note has been processed", func() {
+				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+				Expect(err).To(BeNil())
+			})
+
+			It("should return error if unable to check due to error", func() {
+				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, fmt.Errorf("error"))
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to check if note has been processed: error"))
 			})
 		})
 
