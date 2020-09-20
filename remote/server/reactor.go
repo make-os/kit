@@ -126,10 +126,9 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// Ignore note if already processed in a block
 	_, err := sv.logic.TxKeeper().GetTx(note.ID().Bytes())
-	if err != nil {
-		if err != types.ErrTxNotFound {
-			return errors.Wrap(err, "failed to check if note has been processed")
-		}
+	if err != nil && err != types.ErrTxNotFound {
+		return errors.Wrap(err, "failed to check if note has been processed")
+	} else if err == nil {
 		return nil
 	}
 
