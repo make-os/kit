@@ -310,6 +310,14 @@ func (h *BasicHandler) HandleAnnouncement() {
 	}
 }
 
+// HandleRefMismatch handles cases where a reference in the push note differs from
+// the hash of its corresponding local or network reference hash.
+// We react by attempting resyncing the reference.
+func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMismatch bool) (err error) {
+	h.pktEnc.Encode(plumbing.SidebandInfoln("mismatched reference detected; scheduling resync"))
+	return h.Server.TryScheduleReSync(note, ref, netMismatch)
+}
+
 // HandleUpdate implements Handler
 func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 	var err error
@@ -348,9 +356,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		}
 		if err = h.Server.CheckNote(note); err != nil {
 			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
-				h.HandleReversion()
-				h.pktEnc.Encode(plumbing.SidebandInfoln("mismatched reference detected; scheduling resync"))
-				h.Server.TryScheduleReSync(note, misErr.Ref, misErr.MismatchNet)
+				h.HandleRefMismatch(note, misErr.Ref, misErr.MismatchNet)
 			}
 			return errors.Wrap(err, "failed push note validation")
 		}

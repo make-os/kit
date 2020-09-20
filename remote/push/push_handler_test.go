@@ -619,7 +619,26 @@ var _ = Describe("BasicHandler", func() {
 		})
 	})
 
-	FDescribe(".HandleReference", func() {
+	Describe(".HandleRefMismatch", func() {
+		It("should return error when unable to schedule resync", func() {
+			handler.OldState = plumbing2.GetRepoState(repo)
+			note := &types2.Note{}
+			mockRemoteSrv.EXPECT().TryScheduleReSync(note, "refs/heads/master", false).Return(fmt.Errorf("error"))
+			err := handler.HandleRefMismatch(note, "refs/heads/master", false)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return no error when resync was scheduled successfully", func() {
+			handler.OldState = plumbing2.GetRepoState(repo)
+			note := &types2.Note{}
+			mockRemoteSrv.EXPECT().TryScheduleReSync(note, "refs/heads/master", false).Return(nil)
+			err := handler.HandleRefMismatch(note, "refs/heads/master", false)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".HandleReference", func() {
 		var errs []error
 
 		Describe("when unable to get state of the repository", func() {
