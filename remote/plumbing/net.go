@@ -19,3 +19,8 @@ func SidebandProgressln(msg string) []byte {
 func SidebandInfoln(msg string) []byte {
 	return sideband.ProgressMessage.WithPayload([]byte(colorfmt.WhiteString(msg) + "\n"))
 }
+
+// SidebandYellowln is like SidebandInfoln but with yellow colored text
+func SidebandYellowln(msg string) []byte {
+	return sideband.ProgressMessage.WithPayload([]byte(colorfmt.YellowString(msg) + "\n"))
+}
