@@ -49,9 +49,11 @@ func (mr *MockWatcherMockRecorder) Do(task interface{}) *gomock.Call {
 }
 
 // Watch mocks base method
-func (m *MockWatcher) Watch(repo, reference string, startHeight, endHeight uint64) {
+func (m *MockWatcher) Watch(repo, reference string, startHeight, endHeight uint64) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+	ret := m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Watch indicates an expected call of Watch
@@ -162,9 +164,11 @@ func (mr *MockRefSyncMockRecorder) OnNewTx(tx, targetRef, txIndex, height interf
 }
 
 // Watch mocks base method
-func (m *MockRefSync) Watch(repo, reference string, startHeight, endHeight uint64) {
+func (m *MockRefSync) Watch(repo, reference string, startHeight, endHeight uint64) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+	ret := m.ctrl.Call(m, "Watch", repo, reference, startHeight, endHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Watch indicates an expected call of Watch

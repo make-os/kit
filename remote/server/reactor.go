@@ -101,7 +101,9 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 	sv.log.Debug("Scheduling reference for resync", "Repo", repoName, "Ref", ref)
 
 	// Add the repo to the refsync watcher
-	sv.refSyncer.Watch(repoName, ref, refLastSyncHeight, repoLastUpdated)
+	if err := sv.refSyncer.Watch(repoName, ref, refLastSyncHeight, repoLastUpdated); err != nil {
+		return fmt.Errorf("%s: reference is still being resynchronized (try again later)", ref)
+	}
 
 	return nil
 }

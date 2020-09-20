@@ -120,8 +120,8 @@ func (rs *RefSync) CanSync(namespace, repoName string) error {
 }
 
 // Watch adds a repository to the watch queue
-func (rs *RefSync) Watch(repo, reference string, startHeight, endHeight uint64) {
-	rs.watcher.Watch(repo, reference, startHeight, endHeight)
+func (rs *RefSync) Watch(repo, reference string, startHeight, endHeight uint64) error {
+	return rs.watcher.Watch(repo, reference, startHeight, endHeight)
 }
 
 type TxHandlerFunc func(*txns.TxPush, string, int, int64)

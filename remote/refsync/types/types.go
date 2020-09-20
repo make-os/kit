@@ -8,7 +8,7 @@ import (
 
 type Watcher interface {
 	Do(task *WatcherTask) error
-	Watch(repo, reference string, startHeight, endHeight uint64)
+	Watch(repo, reference string, startHeight, endHeight uint64) error
 	QueueSize() int
 	HasTask() bool
 	IsRunning() bool
@@ -25,7 +25,7 @@ type WatcherTask struct {
 }
 
 func (t *WatcherTask) GetID() interface{} {
-	return t.RepoName
+	return t.RepoName + t.Reference
 }
 
 // RefSync describes an interface for synchronizing a repository's
@@ -41,7 +41,7 @@ type RefSync interface {
 	OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64)
 
 	// Watch adds a repository to the watch queue
-	Watch(repo, reference string, startHeight, endHeight uint64)
+	Watch(repo, reference string, startHeight, endHeight uint64) error
 
 	// CanSync checks whether the target repository of a push transaction can be synchronized.
 	CanSync(namespace, repoName string) error

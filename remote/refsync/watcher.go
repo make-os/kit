@@ -28,12 +28,12 @@ type Watcher struct {
 	txHandler TxHandlerFunc
 	keepers   core.Keepers
 	service   services.Service
+	queued    *cache.Cache
 
-	lck        *sync.Mutex
-	started    bool
-	stopped    bool
-	processing *cache.Cache
-	ticker     *time.Ticker
+	lck     *sync.Mutex
+	started bool
+	stopped bool
+	ticker  *time.Ticker
 
 	initRepo repo.InitRepositoryFunc
 }
@@ -41,14 +41,14 @@ type Watcher struct {
 // NewWatcher creates an instance of Watcher
 func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Keepers) *Watcher {
 	w := &Watcher{
-		lck:        &sync.Mutex{},
-		cfg:        cfg,
-		log:        cfg.G().Log.Module("repo-watcher"),
-		queue:      make(chan *rstypes.WatcherTask, 10000),
-		txHandler:  txHandler,
-		keepers:    keepers,
-		processing: cache.NewCache(1000),
-		initRepo:   repo.InitRepository,
+		lck:       &sync.Mutex{},
+		cfg:       cfg,
+		log:       cfg.G().Log.Module("repo-watcher"),
+		queue:     make(chan *rstypes.WatcherTask, 10000),
+		txHandler: txHandler,
+		keepers:   keepers,
+		queued:    cache.NewCache(1000),
+		initRepo:  repo.InitRepository,
 	}
 
 	w.service = services.New(w.cfg.G().TMConfig.RPC.ListenAddress)
@@ -92,14 +92,25 @@ func (w *Watcher) addTrackedRepos() {
 	}
 }
 
-// Watch adds a repository to the watch queue
-func (w *Watcher) Watch(repo, reference string, startHeight, endHeight uint64) {
-	w.queue <- &rstypes.WatcherTask{
+// Watch adds a repository to the watch queue.
+// Returns ErrSkipped if same reference has been queued.
+func (w *Watcher) Watch(repo, reference string, startHeight, endHeight uint64) error {
+
+	task := &rstypes.WatcherTask{
 		RepoName:    repo,
 		StartHeight: startHeight,
 		EndHeight:   endHeight,
 		Reference:   reference,
 	}
+
+	// Skip task if the task is currently being worked on.
+	if w.queued.Has(task.GetID()) {
+		return types.ErrSkipped
+	}
+
+	w.queued.Add(task.GetID(), struct{}{})
+	w.queue <- task
+	return nil
 }
 
 // Start starts the workers.
@@ -156,13 +167,7 @@ func (w *Watcher) Stop() {
 
 // Do finds push transactions that have not been applied to a repository.
 func (w *Watcher) Do(task *rstypes.WatcherTask) error {
-
-	// Skip task if the task is currently being worked on.
-	if w.processing.Has(task.GetID()) {
-		return types.ErrSkipped
-	}
-	w.processing.Add(task.RepoName, struct{}{})
-	defer w.processing.Remove(task.RepoName)
+	defer w.queued.Remove(task.GetID())
 
 	w.log.Debug("Scanning chain for new updates",
 		"Repo", task.RepoName, "Ref", task.Reference, "EndHeight", task.EndHeight)

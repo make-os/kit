@@ -7,7 +7,7 @@ import (
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/mocks"
 	types2 "github.com/make-os/lobe/remote/push/types"
-	types3 "github.com/make-os/lobe/remote/refsync/types"
+	reftypes "github.com/make-os/lobe/remote/refsync/types"
 	"github.com/make-os/lobe/testutil"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
@@ -82,6 +82,18 @@ var _ = Describe("Watcher", func() {
 		})
 	})
 
+	Describe(".Watch", func() {
+		It("should return ErrSkipped if reference has been queued", func() {
+			err := w.Watch("repo1", "refs/heads/master", 0, 0)
+			Expect(err).To(BeNil())
+			err = w.Watch("repo1", "", 0, 0)
+			Expect(err).To(BeNil())
+			err = w.Watch("repo1", "refs/heads/master", 0, 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(types.ErrSkipped))
+		})
+	})
+
 	Describe(".addTask", func() {
 		It("should not add any task if no tracked repository exist", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
@@ -120,16 +132,8 @@ var _ = Describe("Watcher", func() {
 	})
 
 	Describe(".Do", func() {
-		It("should return ErrSkipped when a task with matching ID is already being processed", func() {
-			task := &types3.WatcherTask{RepoName: "repo1"}
-			w.processing.Add(task.GetID(), struct{}{})
-			err := w.Do(task)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(types.ErrSkipped))
-		})
-
 		It("should return error when unable to get block at a specific height", func() {
-			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(&core.TrackedRepo{})
 			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(nil, fmt.Errorf("error"))
 			err := w.Do(task)
@@ -139,7 +143,7 @@ var _ = Describe("Watcher", func() {
 
 		When("no transactions exist in blocks between StartHeight -> EndHeight", func() {
 			It("should just fetch the block at the heights and update the tracked repo LastUpdated height", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 3}
+				task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 3}
 				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
 				mockService.EXPECT().GetBlock(int64(task.StartHeight+2)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
@@ -154,7 +158,7 @@ var _ = Describe("Watcher", func() {
 
 		When("transaction is bad", func() {
 			It("should return error when unable to decode transaction into a BaseTx", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+				task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 				mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
 					Txs: []tmtypes.Tx{[]byte("bad tx")},
 				}}}, nil)
@@ -169,7 +173,7 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("should ignore transaction if it is not a TxPush type", func() {
-			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxCoinTransfer()
 			tx.Value = "10"
 			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
@@ -184,7 +188,7 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("should ignore transaction if it is a TxPush type but not targeting the tracked repo", func() {
-			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxPush()
 			tx.Note = &types2.Note{RepoName: "repo2"}
 			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
@@ -199,7 +203,7 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("should not update repo's track height if repo is not tracked", func() {
-			task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 			tx := txns.NewBareTxPush()
 			tx.Note = &types2.Note{RepoName: "repo2"}
 			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
@@ -211,9 +215,24 @@ var _ = Describe("Watcher", func() {
 			Expect(err).To(BeNil())
 		})
 
+		It("should remove task from queued list on completion", func() {
+			task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+			tx := txns.NewBareTxPush()
+			tx.Note = &types2.Note{RepoName: "repo2"}
+			mockService.EXPECT().GetBlock(int64(task.StartHeight)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{
+				Txs: []tmtypes.Tx{tx.Bytes()},
+			}}}, nil)
+			mockService.EXPECT().GetBlock(int64(task.StartHeight+1)).Return(&core_types.ResultBlock{Block: &tmtypes.Block{Data: tmtypes.Data{}}}, nil)
+			mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
+			w.Watch(task.RepoName, task.Reference, 0, 0)
+			err := w.Do(task)
+			Expect(err).To(BeNil())
+			Expect(w.queued.Len()).To(BeZero())
+		})
+
 		When("a TxPush transaction type is found and it is addressed to the tracked repo", func() {
 			It("should attempt to initialize a new git repo if tracked repo LastUpdated=1 (meaning, first time tracking)", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+				task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 				tx := txns.NewBareTxPush()
 				tx.Note = &types2.Note{RepoName: "repo1"}
 				var didInitRepo = false
@@ -239,7 +258,7 @@ var _ = Describe("Watcher", func() {
 			})
 
 			It("should attempt to initialize a new git repo if tracked repo LastUpdated=1 and return no error if tracked repo is already initialized", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+				task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 				tx := txns.NewBareTxPush()
 				tx.Note = &types2.Note{RepoName: "repo1"}
 				var didInitRepo = false
@@ -258,7 +277,7 @@ var _ = Describe("Watcher", func() {
 			})
 
 			It("should attempt to initialize a new git repo if tracked repo LastUpdated=1 and return error if tracked repo could not be initialized", func() {
-				task := &types3.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
+				task := &reftypes.WatcherTask{RepoName: "repo1", StartHeight: 1, EndHeight: 2}
 				tx := txns.NewBareTxPush()
 				tx.Note = &types2.Note{RepoName: "repo1"}
 				var didInitRepo = false

@@ -130,9 +130,10 @@ var _ = Describe("Reactor", func() {
 
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
+				pn := &types.Note{RepoName: "unknown"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
-				pn := &types.Note{RepoName: "unknown"}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -144,12 +145,13 @@ var _ = Describe("Reactor", func() {
 
 		When("namespace is set but it is unknown", func() {
 			BeforeEach(func() {
+				pn := &types.Note{RepoName: repoName, Namespace: "ns1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 				mockNS.EXPECT().Get(crypto2.MakeNamespaceHash("ns1")).Return(state.BareNamespace())
-				pn := &types.Note{RepoName: repoName, Namespace: "ns1"}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
@@ -162,6 +164,7 @@ var _ = Describe("Reactor", func() {
 		When("authentication fails", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: repoName}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -183,6 +186,7 @@ var _ = Describe("Reactor", func() {
 			var validated bool
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -222,6 +226,7 @@ var _ = Describe("Reactor", func() {
 				cfg.Node.Validator = true
 
 				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -260,6 +265,7 @@ var _ = Describe("Reactor", func() {
 			var validated bool
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -297,6 +303,7 @@ var _ = Describe("Reactor", func() {
 		When("unable to open target repository", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -319,6 +326,7 @@ var _ = Describe("Reactor", func() {
 		When("push note validation fail", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: repoName}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -345,6 +353,7 @@ var _ = Describe("Reactor", func() {
 			var reSyncScheduled bool
 			It("should schedule repo resync", func() {
 				pn := &types.Note{RepoName: repoName}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -375,6 +384,7 @@ var _ = Describe("Reactor", func() {
 
 			BeforeEach(func() {
 				pn = &types.Note{RepoName: repoName}
+				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -614,6 +624,30 @@ var _ = Describe("Reactor", func() {
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
 				err := svr.maybeScheduleReSync(note, refname, false)
 				Expect(err).To(BeNil())
+			})
+
+			It("should return error if watcher returns error", func() {
+				refHash := "29314f0828b3596ca954e83118f30c8f91a2241b"
+				refHash2 := "d303b49c0858c6552c73c6c168099aea3e6a28ba"
+				note := &types.Note{RepoName: "repo1"}
+				repoState := state.BareRepository()
+				repoState.UpdatedAt = 200
+				repoState.References[refname] = &state.Reference{Hash: plumbing2.HashToBytes(refHash)}
+
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().GetState().Return(repoState)
+				note.SetTargetRepo(mockRepo)
+
+				mockRepoSyncInfoKeeper.EXPECT().GetRefLastSyncHeight(note.RepoName, refname).Return(uint64(100), nil)
+				mockRefSync := mocks.NewMockRefSync(ctrl)
+				mockRefSync.EXPECT().Watch(note.RepoName, refname, uint64(100), repoState.UpdatedAt.UInt64()).Return(fmt.Errorf("error"))
+				svr.refSyncer = mockRefSync
+
+				refObj := plumbing.NewReferenceFromStrings(refname, refHash2)
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refname), false).Return(refObj, nil)
+				err := svr.maybeScheduleReSync(note, refname, false)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("refs/heads/master: reference is still being resynchronized (try again later)"))
 			})
 
 			When("reference last update height is the same as the repo's last update height", func() {
