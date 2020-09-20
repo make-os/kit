@@ -321,8 +321,9 @@ func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMis
 	err = h.Server.TryScheduleReSync(note, ref, netMismatch)
 	if err != nil {
 		h.pktEnc.Encode(plumbing.SidebandYellowln(err.Error()))
+		return
 	}
-	h.pktEnc.Encode(plumbing.SidebandYellowln("mismatched reference detected; scheduling resync"))
+	h.pktEnc.Encode(plumbing.SidebandYellowln(fmt.Sprintf("%s: mismatched state detected; resynchronizing...", ref)))
 	return
 }
 
