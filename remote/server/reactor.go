@@ -375,11 +375,13 @@ func (sv *Server) createPushTx(noteID string) error {
 	// Get the list of push endorsements received for the push note
 	endorsements := sv.endorsements.Get(noteID)
 	if endorsements == nil {
+		sv.log.Debug("No endorsement received for note, yet", "ID", noteID)
 		return fmt.Errorf("no endorsements yet")
 	}
 
 	// Ensure there are enough push endorsements
 	endorsementIdx := endorsements.(map[string]*pushtypes.PushEndorsement)
+	sv.log.Debug("Number of push note endorsement collected", "Num", len(endorsementIdx))
 	if len(endorsementIdx) < params.PushEndorseQuorumSize {
 		msg := "cannot create push transaction; note has %d endorsements, wants %d"
 		return fmt.Errorf(msg, len(endorsementIdx), params.PushEndorseQuorumSize)
