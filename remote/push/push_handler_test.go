@@ -532,6 +532,7 @@ var _ = Describe("BasicHandler", func() {
 
 	Describe(".HandleReversion", func() {
 		var errs []error
+
 		When("there is only one reference in the push reader and reversion failed", func() {
 			BeforeEach(func() {
 				handler.Server = svr
@@ -616,6 +617,42 @@ var _ = Describe("BasicHandler", func() {
 				curState := plumbing2.GetRepoState(repo)
 				Expect(curState).To(Equal(handler.OldState))
 			})
+		})
+
+		It("should perform revert operation when HandleReversion has been previously and successfully executed", func() {
+			revertCount := 0
+			handler.Server = svr
+			handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+			remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
+			handler.OldState = plumbing2.GetRepoState(repo)
+			remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
+			handler.Reverter = func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (*types.Changes, error) {
+				revertCount++
+				return nil, nil
+			}
+			errs = handler.HandleReversion()
+			Expect(errs).To(HaveLen(0))
+			errs = handler.HandleReversion()
+			Expect(errs).To(HaveLen(0))
+			Expect(revertCount).To(Equal(1))
+		})
+
+		It("should perform revert operation on multiple HandleReversion if previous call did not succeed", func() {
+			revertCount := 0
+			handler.Server = svr
+			handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
+			remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 1")
+			handler.OldState = plumbing2.GetRepoState(repo)
+			remotetestutil.AppendCommit(path, "file.txt", "line 1", "commit 2")
+			handler.Reverter = func(repo types.LocalRepo, prevState types.RepoRefsState, options ...types.KVOption) (*types.Changes, error) {
+				revertCount++
+				return nil, fmt.Errorf("error")
+			}
+			errs = handler.HandleReversion()
+			Expect(errs).To(HaveLen(1))
+			errs = handler.HandleReversion()
+			Expect(errs).To(HaveLen(1))
+			Expect(revertCount).To(Equal(2))
 		})
 	})
 

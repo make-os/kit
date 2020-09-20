@@ -314,6 +314,7 @@ func (h *BasicHandler) HandleAnnouncement() {
 // the hash of its corresponding local or network reference hash.
 // We react by attempting resyncing the reference.
 func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMismatch bool) (err error) {
+	h.HandleReversion()
 	h.pktEnc.Encode(plumbing.SidebandInfoln("mismatched reference detected; scheduling resync"))
 	return h.Server.TryScheduleReSync(note, ref, netMismatch)
 }
@@ -457,7 +458,7 @@ func (h *BasicHandler) HandleReversion() []error {
 
 		// Revert to old state
 		h.pktEnc.Encode(plumbing.SidebandInfoln(fmt.Sprintf("%s: reverting to pre-push state", ref)))
-		changes, err = h.Reverter(h.Repo, oldState, plumbing.MatchOpt(ref), plumbing.ChangesOpt(changes))
+		_, err = h.Reverter(h.Repo, oldState, plumbing.MatchOpt(ref), plumbing.ChangesOpt(changes))
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "%s: failed to revert to old state", ref))
 		}
