@@ -317,7 +317,6 @@ func (h *BasicHandler) HandleAnnouncement() {
 // the hash of its corresponding local or network reference hash.
 // We react by attempting resyncing the reference.
 func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMismatch bool) (err error) {
-	h.HandleReversion()
 	err = h.Server.TryScheduleReSync(note, ref, netMismatch)
 	if err != nil {
 		h.pktEnc.Encode(plumbing.SidebandYellowln(err.Error()))
@@ -328,34 +327,32 @@ func (h *BasicHandler) HandleRefMismatch(note types.PushNote, ref string, netMis
 }
 
 // HandleUpdate implements Handler
-func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
-	var err error
-
-	// At the end, revert updates and if everything went well, output tx hash.
-	defer func() {
-		h.HandleReversion()
-		if err == nil {
-			h.pktEnc.Encode(plumbing.SidebandProgressln("hash: " + h.NoteID))
-		}
-	}()
+func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) (err error) {
 
 	// Perform garbage collection and repo size limit check.
+	// Revert pushed updates on error.
 	if err = h.HandleGCAndSizeCheck(); err != nil {
+		h.HandleReversion()
 		return err
 	}
 
 	// Process the pushed references
+	// Revert pushed updates on error.
 	h.pktEnc.Encode(plumbing.SidebandInfoln("performing repo and references validation"))
 	err = h.HandleReferences()
 	if err != nil {
+		h.HandleReversion()
 		return err
 	}
+
+	// Revert pushed updates
+	h.HandleReversion()
 
 	// Create and sign push notification only if a target note was not provided.
 	// Then, validate the push note:
 	//  - If we get an error about a pushed reference and its corresponding local/network reference
 	//    having a hash mismatch, we need to determine whether to schedule the local reference
-	//    for re-sync. If so, first we must revert the pushed updates immediately.
+	//    for re-sync.
 	var note = targetNote
 	if note == nil {
 		h.pktEnc.Encode(plumbing.SidebandInfoln("creating and validating push note"))
@@ -371,7 +368,13 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) error {
 		}
 	}
 
-	return h.HandlePushNote(note)
+	if err = h.HandlePushNote(note); err != nil {
+		return err
+	}
+
+	h.pktEnc.Encode(plumbing.SidebandProgressln("hash: " + h.NoteID))
+
+	return nil
 }
 
 // HandlePushNote implements Handler by handing incoming push note
