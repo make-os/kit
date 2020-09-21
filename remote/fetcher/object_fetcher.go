@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/lobe/config"
 	types2 "github.com/make-os/lobe/dht/streamer/types"
 	dhttypes "github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/push/types"
@@ -252,11 +251,11 @@ func (f *BasicObjectFetcher) Operation(task *Task) error {
 }
 
 // do processes a task
-// Try the Operation multiple times using an exponential backoff function
-// as long as the max fetch attempt is not reached.
+// Try the Operation multiple times using an exponential backoff function.
 // On error, call the task's callback function with the error.
 func (f *BasicObjectFetcher) do(task *Task) {
-	bf := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(params.MaxNoteObjectFetchAttempts))
+	bf := backoff.NewExponentialBackOff()
+	bf.MaxElapsedTime = 15 * time.Minute
 	task.resCb(backoff.Retry(func() error { return f.Operation(task) }, bf))
 }
 

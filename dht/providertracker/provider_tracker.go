@@ -12,13 +12,13 @@ import (
 
 var (
 	// MaxFailureBeforeBan is the number of failures before a provider is banned
-	MaxFailureBeforeBan = 3
+	MaxFailureBeforeBan = 30
 
 	// BanDueToFailureDur is the duration of a ban due to failure
 	BanDueToFailureDur = 15 * time.Minute
 
-	// BackOffDurAfterFailure is the backoff time before a failed provider can be good again.
-	BackOffDurAfterFailure = 15 * time.Minute
+	// BackOffDurAfterFailure is the backoff time before a failed provider can be tried again.
+	BackOffDurAfterFailure = 1 * time.Minute
 )
 
 // ProviderTracker is used to track status and behaviour of providers.
