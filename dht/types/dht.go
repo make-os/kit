@@ -21,7 +21,7 @@ type DHT interface {
 	GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error)
 
 	// Announce informs the network that it can provide value for the given key
-	Announce(objType int, repo string, key []byte, doneCB func(error))
+	Announce(objType int, repo string, key []byte, doneCB func(error)) bool
 
 	// NewAnnouncerSession creates an announcer session
 	NewAnnouncerSession() Session

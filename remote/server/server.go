@@ -367,8 +367,8 @@ func (sv *Server) getRepoPath(name string) string {
 }
 
 // AnnounceObject announces a key on the DHT network
-func (sv *Server) Announce(objType int, repo string, hash []byte, doneCB func(error)) {
-	// sv.dht.Announce(objType, repo, hash, doneCB)
+func (sv *Server) Announce(objType int, repo string, hash []byte, doneCB func(error)) bool {
+	return sv.dht.Announce(objType, repo, hash, doneCB)
 }
 
 // gitRequestsHandler handles incoming http request from a git client

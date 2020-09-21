@@ -70,8 +70,9 @@ type RemoteServer interface {
 	// BroadcastNoteAndEndorsement broadcasts repo push note and push endorsement
 	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
 
-	// Announce announces a key on the DHT network
-	Announce(objType int, repo string, hash []byte, doneCB func(error))
+	// Announce announces a key on the DHT network.
+	// Returns true if object was successfully queued.
+	Announce(objType int, repo string, hash []byte, doneCB func(error)) bool
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher

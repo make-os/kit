@@ -82,9 +82,11 @@ func (mr *MockDHTMockRecorder) GetProviders(ctx, key interface{}) *gomock.Call {
 }
 
 // Announce mocks base method
-func (m *MockDHT) Announce(objType int, repo string, key []byte, doneCB func(error)) {
+func (m *MockDHT) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Announce", objType, repo, key, doneCB)
+	ret := m.ctrl.Call(m, "Announce", objType, repo, key, doneCB)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
 // Announce indicates an expected call of Announce

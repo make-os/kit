@@ -248,9 +248,9 @@ func (dht *Server) ObjectStreamer() types.ObjectStreamer {
 	return dht.objectStreamer
 }
 
-// Announce asynchronously informs the network that it can provide value for the given key
-func (dht *Server) Announce(objType int, repo string, key []byte, doneCB func(error)) {
-	dht.announcer.Announce(objType, repo, key, doneCB)
+// Announce a repository object
+func (dht *Server) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
+	return dht.announcer.Announce(objType, repo, key, doneCB)
 }
 
 // NewAnnouncerSession creates an announcer session

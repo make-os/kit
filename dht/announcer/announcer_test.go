@@ -70,8 +70,16 @@ var _ = Describe("Announcer", func() {
 
 	Describe(".Announce", func() {
 		It("should add task to queue", func() {
-			ann.Announce(1, "", []byte("key"), nil)
+			queued := ann.Announce(1, "", []byte("key"), nil)
 			Expect(ann.HasTask()).To(BeTrue())
+			Expect(queued).To(BeTrue())
+		})
+
+		It("should return false if already queued", func() {
+			queued := ann.Announce(1, "", []byte("key"), nil)
+			Expect(queued).To(BeTrue())
+			queued = ann.Announce(1, "", []byte("key"), nil)
+			Expect(queued).To(BeFalse())
 		})
 	})
 
@@ -177,7 +185,7 @@ var _ = Describe("Session", func() {
 		It("should call callback with 0 error count when announcement succeeded", func() {
 			mockAnn.EXPECT().Announce(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(objType int, repo string, key []byte, doneCB func(error)) {
 				doneCB(nil)
-			})
+			}).Return(true)
 			ses.Announce(1, "repo1", []byte("abc"))
 			ses.OnDone(func(errCount int) {
 				Expect(errCount).To(Equal(0))
@@ -187,10 +195,18 @@ var _ = Describe("Session", func() {
 		It("should call callback with 1 error count when announcement failed", func() {
 			mockAnn.EXPECT().Announce(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(objType int, repo string, key []byte, doneCB func(error)) {
 				doneCB(fmt.Errorf("error"))
-			})
+			}).Return(true)
 			ses.Announce(1, "repo1", []byte("abc"))
 			ses.OnDone(func(errCount int) {
 				Expect(errCount).To(Equal(1))
+			})
+		})
+
+		It("should call callback with 0 error count when announcement was not queued", func() {
+			mockAnn.EXPECT().Announce(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+			ses.Announce(1, "repo1", []byte("abc"))
+			ses.OnDone(func(errCount int) {
+				Expect(errCount).To(Equal(0))
 			})
 		})
 	})

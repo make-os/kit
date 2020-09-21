@@ -5,7 +5,8 @@ type Announcer interface {
 	// objType is the type of the object.
 	// key is the unique identifier of the object.
 	// doneCB is called after successful announcement
-	Announce(objType int, repo string, key []byte, doneCB func(error))
+	// Returns true if object has been successfully queued
+	Announce(objType int, repo string, key []byte, doneCB func(error)) bool
 
 	// Start starts the announcer.
 	// Panics if reference announcer is already started.
@@ -35,10 +36,10 @@ type AnnouncerService interface {
 	// objType is the type of the object.
 	// key is the unique identifier of the object.
 	// doneCB is called after successful announcement
-	Announce(objType int, repo string, key []byte, doneCB func(error))
+	Announce(objType int, repo string, key []byte, doneCB func(error)) bool
 }
 
 type Session interface {
-	Announce(objType int, repo string, key []byte)
+	Announce(objType int, repo string, key []byte) bool
 	OnDone(cb func(errCount int))
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cid2 "github.com/ipfs/go-cid"
-	"github.com/k0kubun/pp"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
@@ -55,22 +54,23 @@ func NewSession(a types.Announcer) *Session {
 }
 
 // Announce an object
-func (s *Session) Announce(objType int, repo string, key []byte) {
+func (s *Session) Announce(objType int, repo string, key []byte) bool {
 	s.wg.Add(1)
-	s.a.Announce(objType, repo, key, func(err error) {
+	announced := s.a.Announce(objType, repo, key, func(err error) {
 		if err != nil {
 			s.errCount++
 		}
-		pp.Println("Done called")
 		s.wg.Done()
 	})
-	pp.Println("Announced")
+	if !announced {
+		s.wg.Done()
+	}
+	return announced
 }
 
 // OnDone calls the callback with the number of failed announcements in the session.
 func (s *Session) OnDone(cb func(errCount int)) {
 	s.wg.Wait()
-	pp.Println("released")
 	cb(s.errCount)
 }
 
@@ -127,8 +127,14 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 // repo is the name of the repository where the object can be found.
 // key is the unique identifier of the object.
 // doneCB is called after successful announcement
-func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(error)) {
-	a.queue.Append(&Task{Type: objType, RepoName: repo, Key: key, Done: doneCB})
+// Returns true if object has been successfully queued
+func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
+	task := &Task{Type: objType, RepoName: repo, Key: key, Done: doneCB}
+	if !a.queue.Has(task) {
+		a.queue.Append(task)
+		return true
+	}
+	return false
 }
 
 // NewSession creates an instance of Session
@@ -240,7 +246,6 @@ func (a *Announcer) Do(workerID int, task *Task) (err error) {
 		task.Done = func(err error) {}
 	}
 	defer func() {
-		pp.Println("DONE CALLED")
 		task.Done(err)
 	}()
 
