@@ -153,7 +153,7 @@ type PackObjectArgs struct {
 	// Obj is the target object to pack
 	Obj object.Object
 
-	// Filter filters out objects that should be packed by returning true.
+	// Filter selects objects that should be packed by returning true.
 	Filter func(hash plumbing.Hash) bool
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/make-os/lobe/dht/providertracker"
 	types3 "github.com/make-os/lobe/dht/streamer/types"
 	types4 "github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/repo"
@@ -43,34 +42,6 @@ func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
 	return repoName + hash.String()
 }
 
-// HaveCache describes a module for keeping track of objects known to peers
-type HaveCache interface {
-	GetCache(peerID string) *cache.Cache
-}
-
-// BasicHaveCache implements HaveCache. It is a LRU cache for keeping
-// track of objects known to peers
-type BasicHaveCache struct {
-	cache *cache.Cache
-}
-
-// newHaveCache creates an instance of BasicHaveCache
-func newHaveCache(cap int) *BasicHaveCache {
-	return &BasicHaveCache{cache: cache.NewCacheWithExpiringEntry(cap)}
-}
-
-// GetCache a cache by peerID. If peer has no cache, one is created and returned.
-// A peer cache will have a expiry time after which it is removed.
-func (c *BasicHaveCache) GetCache(peerID string) *cache.Cache {
-	peerCache := c.cache.Get(peerID)
-	if peerCache == nil {
-		newCache := cache.NewCache(100000)
-		c.cache.Add(peerID, newCache, time.Now().Add(15*time.Minute))
-		return newCache
-	}
-	return peerCache.(*cache.Cache)
-}
-
 // BasicObjectStreamer implements ObjectStreamer. It provides a mechanism for
 // announcing or transferring repository objects to/from the DHT.
 type BasicObjectStreamer struct {
@@ -81,7 +52,6 @@ type BasicObjectStreamer struct {
 	tracker          types4.ProviderTracker
 	OnWantHandler    WantSendHandler
 	OnSendHandler    WantSendHandler
-	HaveCache        HaveCache
 	RepoGetter       repo.GetLocalRepoFunc
 	PackObject       plumbing.CommitPacker
 	MakeRequester    MakeObjectRequester
@@ -96,7 +66,6 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 		log:              cfg.G().Log.Module("object-streamer"),
 		gitBinPath:       cfg.Node.GitBinPath,
 		tracker:          providertracker.New(),
-		HaveCache:        newHaveCache(1000),
 		RepoGetter:       repo.GetWithLiteGit,
 		PackObject:       plumbing.PackObject,
 		PackObjectGetter: plumbing.GetObjectFromPack,
@@ -703,21 +672,8 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 	c.log.Debug("SEND<-: Processing message", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
-	peerHaveCache := c.HaveCache.GetCache(remotePeerID)
-
 	// Get the packfile representation of the object.
-	// Filter out objects that we know the peer may have.
-	pack, objs, err := c.PackObject(r, &plumbing.PackObjectArgs{
-		Obj: obj,
-		Filter: func(hash plumb.Hash) bool {
-			if !peerHaveCache.Has(MakeHaveCacheKey(repo, hash)) {
-				return true
-			}
-			c.log.Debug("SEND<-: Skip object already sent to requester", "Hash",
-				commitHash, "Peer", remotePeerID)
-			return false
-		},
-	})
+	pack, objs, err := c.PackObject(r, &plumbing.PackObjectArgs{Obj: obj})
 	if err != nil {
 		s.Reset()
 		return errors.Wrap(err, "failed to generate commit packfile")
@@ -732,13 +688,6 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 	}
 	w.Flush()
 	s.Close()
-
-	// Add the packed object to the peer's have-cache
-	for _, obj := range objs {
-		if !peerHaveCache.Has(obj) {
-			peerHaveCache.Add(MakeHaveCacheKey(repo, obj), struct{}{})
-		}
-	}
 
 	c.log.Debug("->PACK: Wrote object(s) to requester", "Hash",
 		commitHash, "Peer", remotePeerID, "Count", len(objs))

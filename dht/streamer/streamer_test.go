@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -28,6 +29,11 @@ import (
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
+
+func TestStreamer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Streamer Suite")
+}
 
 type fakePackfile struct {
 	name string
@@ -312,13 +318,6 @@ var _ = Describe("BasicObjectStreamer", func() {
 				repoName := "repo1"
 				err := cs.OnSendRequest(repoName, key, mockStream)
 				Expect(err).To(BeNil())
-
-				// It should add packed objects to the peer's HaveCache.
-				cache := cs.HaveCache.GetCache(peerID.Pretty())
-				Expect(cache.Has(hash))
-				for _, obj := range objs {
-					Expect(cache.Has(streamer.MakeHaveCacheKey(repoName, obj))).To(BeTrue())
-				}
 			})
 		})
 	})

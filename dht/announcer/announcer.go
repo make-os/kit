@@ -8,6 +8,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cid2 "github.com/ipfs/go-cid"
+	"github.com/k0kubun/pp"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
@@ -44,13 +45,13 @@ var MaxRetry = 3
 // Session represents a multi-announcement session.
 type Session struct {
 	a        types.Announcer
-	wg       sync.WaitGroup
+	wg       *sync.WaitGroup
 	errCount int
 }
 
 // NewSession creates an instance of Session
 func NewSession(a types.Announcer) *Session {
-	return &Session{a: a, wg: sync.WaitGroup{}}
+	return &Session{a: a, wg: &sync.WaitGroup{}}
 }
 
 // Announce an object
@@ -60,13 +61,16 @@ func (s *Session) Announce(objType int, repo string, key []byte) {
 		if err != nil {
 			s.errCount++
 		}
+		pp.Println("Done called")
 		s.wg.Done()
 	})
+	pp.Println("Announced")
 }
 
 // OnDone calls the callback with the number of failed announcements in the session.
 func (s *Session) OnDone(cb func(errCount int)) {
 	s.wg.Wait()
+	pp.Println("released")
 	cb(s.errCount)
 }
 
@@ -235,7 +239,10 @@ func (a *Announcer) Do(workerID int, task *Task) (err error) {
 	if task.Done == nil {
 		task.Done = func(err error) {}
 	}
-	defer task.Done(err)
+	defer func() {
+		pp.Println("DONE CALLED")
+		task.Done(err)
+	}()
 
 	// If the key's existence needs to be checked, perform check operation.
 	if task.CheckExistence && !a.keyExist(task) {
@@ -272,7 +279,7 @@ func (a *Announcer) Do(workerID int, task *Task) (err error) {
 
 	a.log.Debug("Successfully announced a key", "Key", plumbing.BytesToHex(key))
 
-	return nil
+	return
 }
 
 // Reannounce finds keys that need to be re-announced
