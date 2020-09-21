@@ -278,7 +278,8 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 		r.lck.Unlock()
 
 	case dht.MsgTypeNope:
-		r.log.Debug("NOPE<-: Provider no longer has the object", "Hash", hash)
+		r.log.Debug("NOPE<-: Provider does not have the object",
+			"Hash", hash, "Peer", remotePeer.Pretty())
 		s.Reset()
 		r.tracker.PeerSentNope(remotePeer, r.key)
 		return ErrNopeReceived

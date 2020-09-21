@@ -668,26 +668,57 @@ var _ = Describe("BasicHandler", func() {
 			Expect(err).To(MatchError("error"))
 		})
 
-		It("should return announce repo name", func() {
+		It("should announce repo name and only broadcast note/endorsement if no error", func() {
 			note := &pushtypes.Note{}
 			mockPushPool.EXPECT().Add(note).Return(nil)
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
+
+			mockSess := mocks.NewMockSession(ctrl)
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
+			mockDHT.EXPECT().NewAnnouncerSession().Return(mockSess)
+			mockSess.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()))
+			mockSess.EXPECT().OnDone(gomock.Any()).Do(func(cb func(errCount int)) {
+				cb(0)
+			})
+
 			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
 			handler.HandlePushNote(note)
 		})
 
-		It("should return announce commit and tag objects only", func() {
+		It("should not broadcast note/endorsement if announcement failed", func() {
 			note := &pushtypes.Note{}
 			mockPushPool.EXPECT().Add(note).Return(nil)
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
+
+			mockSess := mocks.NewMockSession(ctrl)
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
+			mockDHT.EXPECT().NewAnnouncerSession().Return(mockSess)
+			mockSess.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()))
+			mockSess.EXPECT().OnDone(gomock.Any()).Do(func(cb func(errCount int)) {
+				cb(1)
+			})
+
+			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note).Times(0)
+			handler.HandlePushNote(note)
+		})
+
+		It("should announce commit and tag objects only", func() {
+			note := &pushtypes.Note{}
+			mockPushPool.EXPECT().Add(note).Return(nil)
 
 			commitObject := &push.PackObject{Type: plumbing.CommitObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
 			tagObject := &push.PackObject{Type: plumbing.TagObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
 			blobObject := &push.PackObject{Type: plumbing.BlobObject, Hash: plumbing2.BytesToHash(util.RandBytes(20))}
 			handler.PushReader.Objects = []*push.PackObject{commitObject, tagObject, blobObject}
 
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), commitObject.Hash[:], nil)
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), tagObject.Hash[:], nil)
+			mockSess := mocks.NewMockSession(ctrl)
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
+			mockDHT.EXPECT().NewAnnouncerSession().Return(mockSess)
+			mockSess.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()))
+			mockSess.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), commitObject.Hash[:])
+			mockSess.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), tagObject.Hash[:])
+			mockSess.EXPECT().OnDone(gomock.Any()).Do(func(cb func(errCount int)) {
+				cb(0)
+			})
+
 			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
 			handler.HandlePushNote(note)
 		})
@@ -873,7 +904,6 @@ var _ = Describe("BasicHandler", func() {
 	Describe(".HandleAnnouncement", func() {
 		It("should announce repo name, commit and tag objects", func() {
 			handler.Server = mockRemoteSrv
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()), nil)
 			c1Hash := plumbing.NewHash("49b3d65702d8dec55a7afa91513e80dcec82707b")
 			t1Hash := plumbing.NewHash("db54d1823c36611a4450086fbdf07e5ff29036bb")
 			b1Hash := plumbing.NewHash("1cd2897a8322731901acd4545bd1d81ab666e316")
@@ -882,9 +912,22 @@ var _ = Describe("BasicHandler", func() {
 				&push.PackObject{Type: plumbing.TagObject, Hash: t1Hash},
 				&push.PackObject{Type: plumbing.BlobObject, Hash: b1Hash},
 			)
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), c1Hash[:], nil)
-			mockRemoteSrv.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), t1Hash[:], nil)
-			handler.HandleAnnouncement()
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
+			mockSess := mocks.NewMockSession(ctrl)
+			mockDHT.EXPECT().NewAnnouncerSession().Return(mockSess)
+			mockSess.EXPECT().Announce(announcer.ObjTypeRepoName, handler.Repo.GetName(), []byte(handler.Repo.GetName()))
+			mockSess.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), c1Hash[:])
+			mockSess.EXPECT().Announce(announcer.ObjTypeGit, handler.Repo.GetName(), t1Hash[:])
+			mockSess.EXPECT().OnDone(gomock.Any()).Do(func(cb func(errCount int)) {
+				cb(0)
+			})
+
+			var cbCalled bool
+			handler.HandleAnnouncement(func(errCount int) {
+				cbCalled = true
+			})
+
+			Expect(cbCalled).To(BeTrue())
 		})
 	})
 })

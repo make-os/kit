@@ -93,6 +93,20 @@ func (mr *MockDHTMockRecorder) Announce(objType, repo, key, doneCB interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), objType, repo, key, doneCB)
 }
 
+// NewAnnouncerSession mocks base method
+func (m *MockDHT) NewAnnouncerSession() types0.Session {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewAnnouncerSession")
+	ret0, _ := ret[0].(types0.Session)
+	return ret0
+}
+
+// NewAnnouncerSession indicates an expected call of NewAnnouncerSession
+func (mr *MockDHTMockRecorder) NewAnnouncerSession() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAnnouncerSession", reflect.TypeOf((*MockDHT)(nil).NewAnnouncerSession))
+}
+
 // RegisterChecker mocks base method
 func (m *MockDHT) RegisterChecker(objType int, f types0.CheckFunc) {
 	m.ctrl.T.Helper()

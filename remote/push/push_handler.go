@@ -303,14 +303,17 @@ func (h *BasicHandler) HandleGCAndSizeCheck() error {
 }
 
 // HandleAnnouncement announces the repository name, pushed commit and tag objects.
-func (h *BasicHandler) HandleAnnouncement() {
+// cb is called with the number of failed announcements.
+func (h *BasicHandler) HandleAnnouncement(cb func(errCount int)) {
+	sess := h.Server.GetDHT().NewAnnouncerSession()
 	repoName := h.Repo.GetName()
-	h.Server.Announce(announcer.ObjTypeRepoName, repoName, []byte(repoName), nil)
+	sess.Announce(announcer.ObjTypeRepoName, repoName, []byte(repoName))
 	for _, obj := range h.PushReader.Objects {
 		if obj.Type == plumb.CommitObject || obj.Type == plumb.TagObject {
-			h.Server.Announce(announcer.ObjTypeGit, repoName, obj.Hash[:], nil)
+			sess.Announce(announcer.ObjTypeGit, repoName, obj.Hash[:])
 		}
 	}
+	sess.OnDone(cb)
 }
 
 // HandleRefMismatch handles cases where a reference in the push note differs from
@@ -387,13 +390,16 @@ func (h *BasicHandler) HandlePushNote(note types.PushNote) (err error) {
 	}
 
 	// Announce the pushed objects (note and endorsement)
-	h.HandleAnnouncement()
-
-	// Broadcast the push note
-	h.pktEnc.Encode(plumbing.SidebandInfoln("broadcasting push note and endorsement"))
-	if err = h.Server.BroadcastNoteAndEndorsement(note); err != nil {
-		h.log.Error("Failed to broadcast push note", "Err", err)
-	}
+	// Broadcast the push note if announcement succeeded without a failure.
+	h.HandleAnnouncement(func(errCount int) {
+		if errCount > 0 {
+			return
+		}
+		h.pktEnc.Encode(plumbing.SidebandInfoln("broadcasting push note and endorsement"))
+		if err = h.Server.BroadcastNoteAndEndorsement(note); err != nil {
+			h.log.Error("Failed to broadcast push note", "Err", err)
+		}
+	})
 
 	return
 }

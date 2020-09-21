@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	cid2 "github.com/ipfs/go-cid"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
@@ -39,6 +40,35 @@ const (
 
 // MaxRetry is the number of times to try to reannounce a key
 var MaxRetry = 3
+
+// Session represents a multi-announcement session.
+type Session struct {
+	a        types.Announcer
+	wg       sync.WaitGroup
+	errCount int
+}
+
+// NewSession creates an instance of Session
+func NewSession(a types.Announcer) *Session {
+	return &Session{a: a, wg: sync.WaitGroup{}}
+}
+
+// Announce an object
+func (s *Session) Announce(objType int, repo string, key []byte) {
+	s.wg.Add(1)
+	s.a.Announce(objType, repo, key, func(err error) {
+		if err != nil {
+			s.errCount++
+		}
+		s.wg.Done()
+	})
+}
+
+// OnDone calls the callback with the number of failed announcements in the session.
+func (s *Session) OnDone(cb func(errCount int)) {
+	s.wg.Wait()
+	cb(s.errCount)
+}
 
 // Task represents a key that needs to be announced.
 type Task struct {
@@ -95,6 +125,11 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 // doneCB is called after successful announcement
 func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(error)) {
 	a.queue.Append(&Task{Type: objType, RepoName: repo, Key: key, Done: doneCB})
+}
+
+// NewSession creates an instance of Session
+func (a *Announcer) NewSession() types.Session {
+	return NewSession(a)
 }
 
 // HasTask checks whether there are one or more unprocessed tasks.
@@ -195,23 +230,25 @@ func (a *Announcer) keyExist(task *Task) bool {
 
 // Do announces the key in the given task.
 // After announcement, the key is (re)added to the announce list.
-func (a *Announcer) Do(workerID int, task *Task) error {
-
-	// If the key's existence needs to be checked, perform check operation.
-	if task.CheckExistence && !a.keyExist(task) {
-		return ErrDelisted
-	}
+func (a *Announcer) Do(workerID int, task *Task) (err error) {
 
 	if task.Done == nil {
 		task.Done = func(err error) {}
 	}
+	defer task.Done(err)
+
+	// If the key's existence needs to be checked, perform check operation.
+	if task.CheckExistence && !a.keyExist(task) {
+		err = ErrDelisted
+		return
+	}
 
 	// Make CID out of the key
-	key := task.Key
-	cid, err := dht2.MakeCID(key)
+	var key = task.Key
+	var cid cid2.Cid
+	cid, err = dht2.MakeCID(key)
 	if err != nil {
-		task.Done(err)
-		return err
+		return
 	}
 
 	// Broadcast as provider of the key to the DHT.
@@ -227,15 +264,11 @@ func (a *Announcer) Do(workerID int, task *Task) error {
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), uint64(MaxRetry)))
 	if err != nil {
 		a.log.Error("Failed to announce key", "Err", err, "Key", plumbing.BytesToHex(key))
-		task.Done(err)
-		return err
+		return
 	}
 
 	// (Re)add the key to the announce list
 	a.keepers.DHTKeeper().AddToAnnounceList(key, task.RepoName, task.Type, time.Now().Add(KeyReannounceDur).Unix())
-
-	// Call the task's callback function if set
-	task.Done(nil)
 
 	a.log.Debug("Successfully announced a key", "Key", plumbing.BytesToHex(key))
 

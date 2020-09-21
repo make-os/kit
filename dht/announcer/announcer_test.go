@@ -2,7 +2,9 @@ package announcer_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -16,6 +18,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestAnnouncer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Announcer Suite")
+}
 
 var _ = Describe("Announcer", func() {
 	var err error
@@ -134,6 +141,57 @@ var _ = Describe("Announcer", func() {
 			})
 			ann.Reannounce()
 			Expect(ann.QueueSize()).To(Equal(2))
+		})
+	})
+})
+
+var _ = Describe("Session", func() {
+	var err error
+	var cfg *config.AppConfig
+	var ctrl *gomock.Controller
+	var mockAnn *mocks.MockAnnouncer
+	var ses *announcer.Session
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		cfg, err = testutil.SetTestCfg()
+		Expect(err).To(BeNil())
+		mockAnn = mocks.NewMockAnnouncer(ctrl)
+		ses = announcer.NewSession(mockAnn)
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+		err = os.RemoveAll(cfg.DataDir())
+		Expect(err).To(BeNil())
+	})
+
+	Describe(".Announce", func() {
+		It("should call Announce internally", func() {
+			mockAnn.EXPECT().Announce(1, "repo1", []byte("abc"), gomock.Any())
+			ses.Announce(1, "repo1", []byte("abc"))
+		})
+	})
+
+	Describe(".Announce", func() {
+		It("should call callback with 0 error count when announcement succeeded", func() {
+			mockAnn.EXPECT().Announce(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(objType int, repo string, key []byte, doneCB func(error)) {
+				doneCB(nil)
+			})
+			ses.Announce(1, "repo1", []byte("abc"))
+			ses.OnDone(func(errCount int) {
+				Expect(errCount).To(Equal(0))
+			})
+		})
+
+		It("should call callback with 1 error count when announcement failed", func() {
+			mockAnn.EXPECT().Announce(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(objType int, repo string, key []byte, doneCB func(error)) {
+				doneCB(fmt.Errorf("error"))
+			})
+			ses.Announce(1, "repo1", []byte("abc"))
+			ses.OnDone(func(errCount int) {
+				Expect(errCount).To(Equal(1))
+			})
 		})
 	})
 })

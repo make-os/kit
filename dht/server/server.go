@@ -253,6 +253,11 @@ func (dht *Server) Announce(objType int, repo string, key []byte, doneCB func(er
 	dht.announcer.Announce(objType, repo, key, doneCB)
 }
 
+// NewAnnouncerSession creates an announcer session
+func (dht *Server) NewAnnouncerSession() types2.Session {
+	return dht.announcer.NewSession()
+}
+
 // RegisterChecker registers an object checker to the announcer.
 func (dht *Server) RegisterChecker(objType int, f types2.CheckFunc) {
 	dht.announcer.RegisterChecker(objType, f)

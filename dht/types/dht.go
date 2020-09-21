@@ -23,6 +23,9 @@ type DHT interface {
 	// Announce informs the network that it can provide value for the given key
 	Announce(objType int, repo string, key []byte, doneCB func(error))
 
+	// NewAnnouncerSession creates an announcer session
+	NewAnnouncerSession() Session
+
 	// RegisterChecker registers an object checker to the announcer.
 	RegisterChecker(objType int, f CheckFunc)
 

@@ -17,6 +17,9 @@ type Announcer interface {
 	// HasTask checks whether there are one or more unprocessed tasks.
 	HasTask() bool
 
+	// NewSession creates an instance of Session
+	NewSession() Session
+
 	// Stop stops the announcer and releases resources
 	Stop()
 
@@ -33,4 +36,9 @@ type AnnouncerService interface {
 	// key is the unique identifier of the object.
 	// doneCB is called after successful announcement
 	Announce(objType int, repo string, key []byte, doneCB func(error))
+}
+
+type Session interface {
+	Announce(objType int, repo string, key []byte)
+	OnDone(cb func(errCount int))
 }
