@@ -115,13 +115,12 @@ var _ = Describe("Validation", func() {
 		var mockRepo *mocks.MockLocalRepo
 		var oldHash = fmt.Sprintf("%x", util.RandBytes(20))
 		var newHash = fmt.Sprintf("%x", util.RandBytes(20))
-		_ = newHash
 
 		BeforeEach(func() {
 			mockRepo = mocks.NewMockLocalRepo(ctrl)
 		})
 
-		When("old hash is non-zero and pushed reference does not exist", func() {
+		When("pushed reference old hash is non-zero and corresponding network reference does not exist", func() {
 			BeforeEach(func() {
 				refs := &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{}}
@@ -134,20 +133,7 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("old hash is zero and pushed reference does not exist", func() {
-			BeforeEach(func() {
-				refs := &types.PushedReference{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)}
-				repository := &state.Repository{References: map[string]*state.Reference{}}
-				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
-			})
-
-			It("should not return error about unknown reference", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("field:references, msg:reference 'refs/heads/master' is unknown"))
-			})
-		})
-
-		When("old hash of reference is different from the local hash of same reference", func() {
+		When("old hash of pushed reference is different from the local hash of same reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
@@ -163,7 +149,23 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("old hash of reference is non-zero and the local equivalent reference is not accessible", func() {
+		When("old hash of pushed reference is non-zero and there was failure to find the corresponding local reference", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
+					Return(nil, fmt.Errorf("error"))
+				err = validation.CheckPushedReferenceConsistency(mockRepo, ref, repository)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:references, msg:failed to find reference 'refs/heads/master'"))
+			})
+		})
+
+		When("old hash of pushed reference is non-zero and the corresponding local reference does not exist", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
@@ -173,27 +175,13 @@ var _ = Describe("Validation", func() {
 				err = validation.CheckPushedReferenceConsistency(mockRepo, ref, repository)
 			})
 
-			It("should return err", func() {
+			It("should return err about pushed reference and local hash mismatch", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' does not exist locally"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
 
-		When("old hash of reference is non-zero and nil repo passed", func() {
-			BeforeEach(func() {
-				refName := "refs/heads/master"
-				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
-				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
-				err = validation.CheckPushedReferenceConsistency(nil, ref, repository)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("field:references, msg:reference 'refs/heads/master' does not exist locally"))
-			})
-		})
-
-		When("old hash of reference is non-zero and it is different from the hash of the equivalent local reference", func() {
+		When("old hash of pushed reference is non-zero and it is different from the hash of the equivalent local reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
@@ -209,15 +197,28 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
+		When("old hash of pushed reference is non-zero, it matches the corresponding local reference hash but not the corresponding network hash", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0, Hash: util.RandBytes(20)}}}
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewReferenceFromStrings("", oldHash), nil)
+				err = validation.CheckPushedReferenceConsistency(mockRepo, ref, repository)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its network version"))
+			})
+		})
+
 		When("pushed reference nonce is unexpected", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				ref := &types.PushedReference{OldHash: oldHash, Name: refName, NewHash: newHash, Nonce: 2}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
-				mockRepo.EXPECT().
-					Reference(plumbing.ReferenceName(refName), false).
-					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
-				err = validation.CheckPushedReferenceConsistency(mockRepo, ref, repository)
+				err = validation.CheckPushedReferenceConsistency(nil, ref, repository)
 			})
 
 			It("should return err", func() {
@@ -231,10 +232,7 @@ var _ = Describe("Validation", func() {
 				refName := "refs/heads/master"
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 0}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
-				mockRepo.EXPECT().
-					Reference(plumbing.ReferenceName(refName), false).
-					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
-				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 			})
 
 			It("should return err", func() {
@@ -247,26 +245,36 @@ var _ = Describe("Validation", func() {
 			var refName, newHash string
 			BeforeEach(func() {
 				refName = plumbing2.MakeMergeRequestReference(1)
-				_ = refName
 				newHash = util.RandString(40)
-				_ = newHash
 				oldHash = strings.Repeat("0", 40)
 			})
 
 			It("should return err when repo does not require a proposal fee but 'Value' is non-zero ", func() {
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "1"}
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
-				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:value, msg:" + constants.ErrProposalFeeNotExpected.Error()))
 			})
 
-			It("should return err when repo requires a proposal fee and 'Value' is zero (0)", func() {
+			It("should return nil when repo does not require a proposal fee and 'Value' is zero ", func() {
+				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
+				repository := &state.Repository{Config: state.DefaultRepoConfig}
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return err when repo requires a proposal fee and 'Value' is zero (0) or empty string('')", func() {
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
 				repository.Config.Gov.PropFee = 100
 				repository.Config.Gov.NoPropFeeForMergeReq = false
-				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
+
+				refs = &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: ""}
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
 			})
@@ -277,7 +285,7 @@ var _ = Describe("Validation", func() {
 					repository := &state.Repository{Config: state.DefaultRepoConfig}
 					repository.Config.Gov.PropFee = 100
 					repository.Config.Gov.NoPropFeeForMergeReq = true
-					err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
+					err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -289,7 +297,7 @@ var _ = Describe("Validation", func() {
 				newHash := util.RandString(40)
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1"}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
-				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
+				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 			})
 
 			It("should return err", func() {

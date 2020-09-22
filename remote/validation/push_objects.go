@@ -45,7 +45,7 @@ const ErrCodeRefAndNetStateMismatch = "refAndNetMismatch"
 //
 // targetRepo is a reference to the local repo. If unset, the pushed
 // reference's old hash will not be compared to the corresponding local
-// reference current hash.
+// and network reference current hash.
 //
 // ref is the pushed reference.
 //
@@ -55,24 +55,33 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 	repoState *state.Repository) error {
 
 	name, nonce := ref.Name, ref.Nonce
-	oldHashIsZero := plumbing.NewHash(ref.OldHash).IsZero()
+	refIsNew := plumbing.NewHash(ref.OldHash).IsZero()
 
 	// We need to check if the reference exists in the repository network state.
 	// Ignore references whose old hash is a 0-hash, these are new references
 	// and as such we don't expect to find it in the repo network state.
-	if !oldHashIsZero && !repoState.References.Has(name) {
+	if !refIsNew && !repoState.References.Has(name) {
 		return fe(-1, "references", fmt.Sprintf("reference '%s' is unknown", name))
 	}
 
 	// If target repo is set and the pushed reference old hash is non-zero, we
 	// need to:
 	//  1. Ensure that the current hash of the local version of the pushed
-	//     reference matches the old hash of note's pushed reference.
-	if targetRepo != nil && !oldHashIsZero {
+	//     reference matches the old hash of note's pushed reference. If the local
+	//     reference is not found, use zero hash as its reference hash.
+	if targetRepo != nil && !refIsNew {
+
+		// Get the local reference.
+		// If not found, we use a default reference with zero hash.
 		localRef, err := targetRepo.Reference(plumbing.ReferenceName(name), false)
 		if err != nil {
-			return fe(-1, "references", fmt.Sprintf("reference '%s' does not exist locally", name))
+			if err != plumbing.ErrReferenceNotFound {
+				return fe(-1, "references", fmt.Sprintf("failed to find reference '%s'", name))
+			}
+			localRef = plumbing.NewHashReference("", plumbing.ZeroHash)
 		}
+
+		// Do mismatch check: Compare push reference old hash with local reference hash
 		if ref.OldHash != localRef.Hash().String() {
 			msg := fmt.Sprintf("reference '%s' old hash does not match its local version", name)
 			return fe(-1, "references", msg, &RefMismatchErr{MismatchLocal: true, Ref: ref.Name})
@@ -84,7 +93,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 	// current network-wide hash of the same reference.
 	if targetRepo != nil {
 		refStateHash := plumbing.ZeroHash.String()
-		if refState := targetRepo.GetState().References.Get(name); !refState.IsNil() {
+		if refState := repoState.References.Get(name); !refState.IsNil() {
 			refStateHash = refState.Hash.HexStr(true)
 		}
 		if refStateHash != ref.OldHash {
@@ -113,7 +122,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 		// Skip to end when repo does not require proposal fee
 		repoPropFee := govCfg.PropFee
 		if repoPropFee == 0 {
-			if !refPropFee.Empty() {
+			if !refPropFee.IsZero() {
 				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
 			}
 			goto end
