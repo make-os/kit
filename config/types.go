@@ -119,6 +119,7 @@ type DHTConfig struct {
 // RemoteConfig describes repository manager config parameters
 type RemoteConfig struct {
 	Address string `json:"address" mapstructure:"address"`
+	Name    string `json:"name" mapstructure:"name"`
 }
 
 // MempoolConfig describes mempool config parameters

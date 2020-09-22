@@ -46,7 +46,7 @@ var signCommitCmd = &cobra.Command{
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
-		targetRepo, client := getRepoAndClient("", cmd)
+		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -102,7 +102,7 @@ var signTagCmd = &cobra.Command{
 		tokenOnly, _ := cmd.Flags().GetBool("token-only")
 		forceSign, _ := cmd.Flags().GetBool("force-sign")
 
-		targetRepo, client := getRepoAndClient("", cmd)
+		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -152,7 +152,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client := getRepoAndClient("", cmd)
+		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}

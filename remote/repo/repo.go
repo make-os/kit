@@ -10,6 +10,7 @@ import (
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/types/state"
+	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/config"
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -290,13 +291,17 @@ func (r *Repo) IsContributor(pushKeyID string) (isContrib bool) {
 	return
 }
 
-// GetRemoteURLs returns the remote URLS of the repository
-func (r *Repo) GetRemoteURLs() (urls []string) {
+// GetRemoteURLs returns the remote URLS of the repository.
+// Use `names` to select specific remotes with matching name.
+func (r *Repo) GetRemoteURLs(names ...string) (urls []string) {
 	remotes, err := r.Remotes()
 	if err != nil {
 		return
 	}
 	for _, r := range remotes {
+		if len(names) > 0 && !funk.Contains(names, r.Config().Name) {
+			continue
+		}
 		urls = append(urls, r.Config().URLs...)
 	}
 	return

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/make-os/lobe/remote/plumbing"
@@ -13,31 +12,43 @@ import (
 	"github.com/make-os/lobe/rpc/client"
 	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
-// getRPCClient creates and returns an RPC using RPC-related flags in the given command.
-// It will return nil client and nil error if --no.rpc flag is set.
-func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
-	rpcAddress, _ := cmd.Flags().GetString("remote.address")
-	rpcUser, _ := cmd.Flags().GetString("rpc.user")
-	rpcPassword, _ := cmd.Flags().GetString("rpc.password")
-	rpcSecured, _ := cmd.Flags().GetBool("rpc.https")
+// getRPCClient returns an RPC client. If target repo is provided,
+// the RPC server information will be extracted from one of the remote URLs.
+// The target remote is set via viper's "remote.name" or "--remote" root flag.
+func getRPCClient(targetRepo types.LocalRepo) (*client.RPCClient, error) {
+	remoteName := viper.GetString("remote.name")
+	rpcAddress := viper.GetString("remote.address")
+	rpcUser := viper.GetString("rpc.user")
+	rpcPassword := viper.GetString("rpc.password")
+	rpcSecured := viper.GetBool("rpc.https")
 
-	host, port, err := net.SplitHostPort(rpcAddress)
+	var err error
+	var host, port string
+
+	// If a target repo is provided, get the URL from the specified remote
+	if targetRepo != nil {
+		h, p, ok := getRemoteAddrFromRepo(targetRepo, remoteName)
+		if ok {
+			host, port = h, cast.ToString(p)
+			goto create
+		}
+	}
+
+	host, port, err = net.SplitHostPort(rpcAddress)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed parse rpc address")
 	}
 
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed convert rpc port")
-	}
-
+create:
 	c := client.NewClient(&types2.Options{
 		Host:     host,
-		Port:     portInt,
+		Port:     cast.ToInt(port),
 		User:     rpcUser,
 		Password: rpcPassword,
 		HTTPS:    rpcSecured,
@@ -46,11 +57,26 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	return c, nil
 }
 
+// getRemoteAddrFromRepo gets remote address from the given repo.
+// It will return false if no (good) url was found.
+// The target remote whose url will be return can be set via --remote flag.
+func getRemoteAddrFromRepo(repo types.LocalRepo, remoteName string) (string, int, bool) {
+	urls := repo.GetRemoteURLs(remoteName)
+	if len(urls) > 0 {
+		for _, url := range urls {
+			ep, err := transport.NewEndpoint(url)
+			if err != nil {
+				continue
+			}
+			return ep.Host, ep.Port, true
+		}
+	}
+	return "", 0, false
+}
+
 // getRepoAndClient opens a the repository on the current working directory
-// and returns an initialized RPC client.
-// If a repository is found on the current working directory,
-// the remote urls are collected and used to initialize the client.
-func getRepoAndClient(repoDir string, cmd *cobra.Command) (types.LocalRepo, types2.Client) {
+// and returns an RPC client.
+func getRepoAndClient(repoDir string) (types.LocalRepo, types2.Client) {
 
 	var err error
 	var targetRepo types.LocalRepo
@@ -61,8 +87,7 @@ func getRepoAndClient(repoDir string, cmd *cobra.Command) (types.LocalRepo, type
 		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
 	}
 
-	// Get JSON RPCClient client
-	rpcClient, err := getRPCClient(cmd)
+	rpcClient, err := getRPCClient(targetRepo)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -92,7 +117,9 @@ func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
 	}
 }
 
-func getMergeRef(curRepo types.LocalRepo, args []string) string {
+// normalMergeReferenceName normalizes a reference from args[0] to one that
+// is a valid full merge request reference name.
+func normalMergeReferenceName(curRepo types.LocalRepo, args []string) string {
 	var ref string
 	var err error
 
@@ -100,6 +127,8 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 		ref = strings.ToLower(args[0])
 	}
 
+	// If reference is not set, use the HEAD as the reference.
+	// But only if the reference is a valid merge request reference.
 	if ref == "" {
 		ref, err = curRepo.Head()
 		if err != nil {
@@ -110,12 +139,19 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 		}
 	}
 
+	// If the reference begins with 'merges',
+	// Add the full prefix 'refs/heads/' to make it `refs/heads/merges/<ref>`
 	if strings.HasPrefix(ref, plumbing.MergeRequestBranchPrefix) {
 		ref = fmt.Sprintf("refs/heads/%s", ref)
 	}
+
+	// If the reference does not begin with 'refs/heads/merges',
+	// convert to 'refs/heads/merges/<ref>'
 	if !plumbing.IsMergeRequestReferencePath(ref) {
 		ref = plumbing.MakeMergeRequestReference(ref)
 	}
+
+	// Finally, if reference is not of the form `refs/heads/merges/*`
 	if !plumbing.IsMergeRequestReference(ref) {
 		log.Fatal(fmt.Sprintf("not a valid merge request path (%s)", ref))
 	}
@@ -123,7 +159,9 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 	return ref
 }
 
-func getIssueRef(curRepo types.LocalRepo, args []string) string {
+// normalizeIssueReferenceName normalizes a reference from args[0] to one that
+// is a valid full issue reference name.
+func normalizeIssueReferenceName(curRepo types.LocalRepo, args []string) string {
 	var ref string
 	var err error
 
@@ -131,6 +169,8 @@ func getIssueRef(curRepo types.LocalRepo, args []string) string {
 		ref = args[0]
 	}
 
+	// If reference is not set, use the HEAD as the reference.
+	// But only if the reference is a valid issue reference.
 	if ref == "" {
 		ref, err = curRepo.Head()
 		if err != nil {
@@ -141,13 +181,20 @@ func getIssueRef(curRepo types.LocalRepo, args []string) string {
 		}
 	}
 
+	// If the reference begins with 'issues',
+	// Add the full prefix 'refs/heads/' to make it `refs/heads/issues/<ref>`
 	ref = strings.ToLower(ref)
 	if strings.HasPrefix(ref, plumbing.IssueBranchPrefix) {
 		ref = fmt.Sprintf("refs/heads/%s", ref)
 	}
+
+	// If the reference does not begin with 'refs/heads/issues',
+	// convert to 'refs/heads/issues/<ref>'
 	if !plumbing.IsIssueReferencePath(ref) {
 		ref = plumbing.MakeIssueReference(ref)
 	}
+
+	// Finally, if reference is not of the form `refs/heads/issues/*`
 	if !plumbing.IsIssueReference(ref) {
 		log.Fatal(fmt.Sprintf("not an issue path (%s)", ref))
 	}

@@ -34,8 +34,9 @@ type LocalRepo interface {
 	// GetConfig finds and returns a config value
 	GetConfig(path string) string
 
-	// GetRemoteURLs returns the remote URLS of the repository
-	GetRemoteURLs() (urls []string)
+	// GetRemoteURLs returns remote URLS of the repository.
+	// Use `names` to select specific remotes with matching name.
+	GetRemoteURLs(names ...string) (urls []string)
 
 	// DeleteObject deletes an object from a repository.
 	DeleteObject(hash plumbing.Hash) error

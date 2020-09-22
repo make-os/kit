@@ -4,12 +4,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/make-os/lobe/crypto"
 	rr "github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/remote/types"
 	state2 "github.com/make-os/lobe/types/state"
+	config2 "gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/make-os/lobe/config"
@@ -20,6 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
+
+func TestRepo(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "RepoContext Suite")
+}
 
 var _ = Describe("Repo", func() {
 	var err error
@@ -139,6 +146,23 @@ var _ = Describe("Repo", func() {
 			n, err := r.NumIssueBranches()
 			Expect(err).To(BeNil())
 			Expect(n).To(Equal(0))
+		})
+	})
+
+	Describe(".GetRemoteURLs", func() {
+		It("should get all remote URLs", func() {
+			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
+			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
+			urls := r.GetRemoteURLs()
+			Expect(urls).To(Equal([]string{"http://r.com", "http://r2.com"}))
+		})
+
+		It("should get only remotes with matching name", func() {
+			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
+			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
+			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r3", URLs: []string{"http://r3.com"}})
+			urls := r.GetRemoteURLs("r1", "r3")
+			Expect(urls).To(And(ContainElement("http://r.com"), ContainElement("http://r3.com")))
 		})
 	})
 

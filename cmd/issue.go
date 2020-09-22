@@ -171,7 +171,7 @@ var issueReadCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueReadCmd(curRepo, &issuecmd.IssueReadArgs{
-			Reference:     getIssueRef(curRepo, args),
+			Reference:     normalizeIssueReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -202,7 +202,7 @@ var issueCloseCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueCloseCmd(curRepo, &issuecmd.IssueCloseArgs{
-			Reference:          getIssueRef(curRepo, args),
+			Reference:          normalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -226,7 +226,7 @@ var issueReopenCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueReopenCmd(curRepo, &issuecmd.IssueReopenArgs{
-			Reference:          getIssueRef(curRepo, args),
+			Reference:          normalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -248,7 +248,7 @@ var issueStatusCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueStatusCmd(curRepo, &issuecmd.IssueStatusArgs{
-			Reference:    getIssueRef(curRepo, args),
+			Reference:    normalizeIssueReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {

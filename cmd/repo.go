@@ -50,7 +50,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client := getRepoAndClient("", cmd)
+		_, client := getRepoAndClient("")
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
@@ -130,7 +130,7 @@ var repoVoteCmd = &cobra.Command{
 			proposalID = "MR" + mrID
 		}
 
-		_, client := getRepoAndClient("", cmd)
+		_, client := getRepoAndClient("")
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          proposalID,
@@ -190,7 +190,7 @@ var repoConfigCmd = &cobra.Command{
 			}
 		}
 
-		targetRepo, client := getRepoAndClient(targetRepoDir, cmd)
+		targetRepo, client := getRepoAndClient(targetRepoDir)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -289,7 +289,7 @@ var repoHookCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		authMode, _ := cmd.Flags().GetBool("askpass")
 
-		targetRepo, client := getRepoAndClient("", cmd)
+		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}

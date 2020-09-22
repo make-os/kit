@@ -216,7 +216,7 @@ var mergeReqReadCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeRequestReadCmd(curRepo, &mergecmd.MergeRequestReadArgs{
-			Reference:     getMergeRef(curRepo, args),
+			Reference:     normalMergeReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -247,7 +247,7 @@ var mergeReqCloseCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
-			Reference:          getMergeRef(curRepo, args),
+			Reference:          normalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -271,7 +271,7 @@ var mergeReqReopenCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
-			Reference:          getMergeRef(curRepo, args),
+			Reference:          normalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -293,7 +293,7 @@ var mergeReqStatusCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqStatusCmd(curRepo, &mergecmd.MergeReqStatusArgs{
-			Reference:    getMergeRef(curRepo, args),
+			Reference:    normalMergeReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {
@@ -325,7 +325,7 @@ var mergeReqCheckoutCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqCheckoutCmd(curRepo, &mergecmd.MergeReqCheckoutArgs{
-			Reference:             getMergeRef(curRepo, args),
+			Reference:             normalMergeReferenceName(curRepo, args),
 			ReadPostBody:          plumbing.ReadPostBody,
 			ForceCheckout:         force,
 			ForceFetch:            forceFetch,
@@ -361,7 +361,7 @@ var mergeReqFetchCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqFetchCmd(curRepo, &mergecmd.MergeReqFetchArgs{
-			Reference:    getMergeRef(curRepo, args),
+			Reference:    normalMergeReferenceName(curRepo, args),
 			ForceFetch:   forceFetch,
 			ReadPostBody: plumbing.ReadPostBody,
 			Remote:       remote,
