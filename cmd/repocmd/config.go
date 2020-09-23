@@ -137,9 +137,6 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 		}
 	}
 
-	// Set `sign.noUsername` to true.
-	rcfg.Raw.Section("sign").SetOption("noUsername", "true")
-
 	// Set credential helper
 	rcfg.Raw.Section("credential").SetOption("helper", "store --file .git/.git-credentials")
 

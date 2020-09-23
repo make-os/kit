@@ -58,9 +58,6 @@ type SignTagArgs struct {
 	// CreatePushTokenOnly indicates that only the remote token should be created and signed.
 	CreatePushTokenOnly bool
 
-	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
-	SetRemotePushTokensOptionOnly bool
-
 	// NoPrompt prevents key unlocker prompt
 	NoPrompt bool
 
@@ -238,8 +235,5 @@ func populateSignTagArgsFromRepoConfig(repo types.LocalRepo, args *SignTagArgs) 
 	}
 	if args.Value == "" {
 		args.Value = repo.GetGitConfigOption("user.value")
-	}
-	if args.SetRemotePushTokensOptionOnly == false {
-		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetGitConfigOption("sign.noUsername"))
 	}
 }

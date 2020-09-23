@@ -185,14 +185,6 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(prePush).ToNot(BeEmpty())
 		})
 
-		It("should set sign.noUsername", func() {
-			args := &ConfigArgs{}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("sign").Option("noUsername")).To(Equal("true"))
-		})
-
 		It("should set credential.helper", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)

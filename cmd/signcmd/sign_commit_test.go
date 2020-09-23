@@ -77,7 +77,6 @@ var _ = Describe("SignCommit", func() {
 			mockRepo.EXPECT().GetGitConfigOption("user.nonce").Return("1")
 			mockRepo.EXPECT().GetGitConfigOption("user.value").Return("34.5")
 			mockRepo.EXPECT().GetGitConfigOption("commit.amend").Return("true")
-			mockRepo.EXPECT().GetGitConfigOption("sign.noUsername").Return("true")
 			mockRepo.EXPECT().GetGitConfigOption("sign.mergeID").Return("123")
 			args := &SignCommitArgs{}
 			populateSignCommitArgsFromRepoConfig(mockRepo, args)
@@ -87,7 +86,6 @@ var _ = Describe("SignCommit", func() {
 			Expect(args.Nonce).To(Equal(uint64(1)))
 			Expect(args.Value).To(Equal("34.5"))
 			Expect(args.AmendCommit).To(Equal(true))
-			Expect(args.SetRemotePushTokensOptionOnly).To(BeTrue())
 			Expect(args.MergeID).To(Equal("123"))
 		})
 	})

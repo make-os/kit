@@ -43,9 +43,6 @@ type SignNoteArgs struct {
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
-	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
-	SetRemotePushTokensOptionOnly bool
-
 	// NoPrompt prevents key unlocker prompt
 	NoPrompt bool
 
@@ -156,8 +153,5 @@ func populateSignNoteArgsFromRepoConfig(repo types.LocalRepo, args *SignNoteArgs
 	}
 	if args.Value == "" {
 		args.Value = repo.GetGitConfigOption("user.value")
-	}
-	if args.SetRemotePushTokensOptionOnly == false {
-		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetGitConfigOption("sign.noUsername"))
 	}
 }

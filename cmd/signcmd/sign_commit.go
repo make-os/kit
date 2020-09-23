@@ -74,9 +74,6 @@ type SignCommitArgs struct {
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
 
-	// SetRemotePushTokensOptionOnly indicates that only remote.*.tokens should hold the push token
-	SetRemotePushTokensOptionOnly bool
-
 	// NoPrompt prevents key unlocker prompt
 	NoPrompt bool
 
@@ -287,9 +284,6 @@ func populateSignCommitArgsFromRepoConfig(repo types.LocalRepo, args *SignCommit
 	}
 	if args.AmendCommit == false {
 		args.AmendCommit = cast.ToBool(repo.GetGitConfigOption("commit.amend"))
-	}
-	if args.SetRemotePushTokensOptionOnly == false {
-		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetGitConfigOption("sign.noUsername"))
 	}
 	if args.MergeID == "" {
 		args.MergeID = repo.GetGitConfigOption("sign.mergeID")
