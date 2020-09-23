@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -682,6 +683,7 @@ var _ = Describe("BasicHandler", func() {
 
 			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
 			handler.HandlePushNote(note)
+			time.Sleep(1 * time.Millisecond)
 		})
 
 		It("should not broadcast note/endorsement if announcement failed", func() {
@@ -698,6 +700,7 @@ var _ = Describe("BasicHandler", func() {
 
 			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note).Times(0)
 			handler.HandlePushNote(note)
+			time.Sleep(1 * time.Millisecond)
 		})
 
 		It("should announce commit and tag objects only", func() {
@@ -721,6 +724,7 @@ var _ = Describe("BasicHandler", func() {
 
 			mockRemoteSrv.EXPECT().BroadcastNoteAndEndorsement(note)
 			handler.HandlePushNote(note)
+			time.Sleep(1 * time.Millisecond)
 		})
 	})
 
@@ -926,6 +930,7 @@ var _ = Describe("BasicHandler", func() {
 			handler.HandleAnnouncement(func(errCount int) {
 				cbCalled = true
 			})
+			time.Sleep(1 * time.Millisecond)
 
 			Expect(cbCalled).To(BeTrue())
 		})

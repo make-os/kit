@@ -313,7 +313,7 @@ func (h *BasicHandler) HandleAnnouncement(cb func(errCount int)) {
 			sess.Announce(announcer.ObjTypeGit, repoName, obj.Hash[:])
 		}
 	}
-	sess.OnDone(cb)
+	go sess.OnDone(cb)
 }
 
 // HandleRefMismatch handles cases where a reference in the push note differs from
