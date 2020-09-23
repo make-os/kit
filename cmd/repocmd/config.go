@@ -82,6 +82,8 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Set fee at `user.fee`
 	if args.Fee != nil {
 		rcfg.Raw.Section("user").SetOption("fee", cast.ToString(*args.Fee))
+	} else {
+		rcfg.Raw.Section("user").SetOption("fee", "0")
 	}
 
 	// Set value at `user.value`
@@ -92,12 +94,14 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Set nonce at `user.nonce`
 	if args.Nonce != nil {
 		rcfg.Raw.Section("user").SetOption("nonce", cast.ToString(*args.Nonce))
+	} else {
+		rcfg.Raw.Section("user").SetOption("nonce", "0")
 	}
 
 	// Set signing key at `user.signingKey` only if args.PushKey is unset, otherwise use args.PushKey.
 	if args.SigningKey != nil && (args.PushKey == nil || *args.PushKey == "") {
 		rcfg.Raw.Section("user").SetOption("signingKey", *args.SigningKey)
-	} else if args.PushKey != nil {
+	} else if args.PushKey != nil && *args.PushKey != "" {
 		rcfg.Raw.Section("user").SetOption("signingKey", *args.PushKey)
 	}
 

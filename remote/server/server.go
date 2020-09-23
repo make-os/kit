@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/dht/announcer"
@@ -439,6 +440,8 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		pktEnc.Flush()
 		return
 	}
+
+	pp.Println(txDetails)
 
 	// Attempt to load the repository at the given path
 	repo, err := sv.GetRepo(repoName)

@@ -64,6 +64,14 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Raw.Section("user").Option("fee")).To(Equal("12.3"))
 		})
 
+		It("should set user.fee = 0 if args.Fee is unset", func() {
+			args := &ConfigArgs{Fee: nil}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(cfg, mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Raw.Section("user").Option("fee")).To(Equal("0"))
+		})
+
 		It("should set user.value if args.Value is set", func() {
 			value := 12.3
 			args := &ConfigArgs{Value: &value}
@@ -80,6 +88,14 @@ var _ = Describe("ConfigCmd", func() {
 			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("nonce")).To(Equal("23"))
+		})
+
+		It("should set user.nonce=0 if args.Nonce is unset", func() {
+			args := &ConfigArgs{Nonce: nil}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(cfg, mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Raw.Section("user").Option("nonce")).To(Equal("0"))
 		})
 
 		It("should set user.signingKey if args.SigningKey is set", func() {
