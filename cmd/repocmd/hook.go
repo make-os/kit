@@ -1,7 +1,6 @@
 package repocmd
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -14,8 +13,6 @@ import (
 	"github.com/make-os/lobe/remote/types"
 	types2 "github.com/make-os/lobe/rpc/types"
 	"github.com/make-os/lobe/util/api"
-	"github.com/make-os/lobe/util/colorfmt"
-	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -24,9 +21,6 @@ type HookArgs struct {
 
 	// Args is the command arguments
 	Args []string
-
-	// AuthMode outputs credentials
-	AskPass bool
 
 	// RpcClient is the RPC client
 	RPCClient types2.Client
@@ -52,10 +46,6 @@ type HookArgs struct {
 // HookCmd handles pre-push calls by git
 func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error {
 
-	if args.AskPass {
-		return HandleAskPass(args.Stdout, args.Stderr, repo, args.Args)
-	}
-
 	updates, err := ioutil.ReadAll(args.Stdin)
 	if err != nil {
 		return err
@@ -66,18 +56,6 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	for _, line := range strings.Split(strings.TrimSpace(string(updates)), "\n") {
 		refname := strings.Split(strings.TrimSpace(line), " ")[0]
 		references = append(references, plumbing.ReferenceName(refname))
-	}
-
-	rcfg, err := repo.Config()
-	if err != nil {
-		return err
-	}
-
-	// Set hook.origin config var to be used
-	// by HandleAskPass to determine which remote tokens to use
-	rcfg.Raw.Section("hook").SetOption("curRemote", args.Args[0])
-	if err = repo.SetConfig(rcfg); err != nil {
-		return errors.Wrap(err, "failed to set `hook.curRemote` value")
 	}
 
 	// Sign each reference
@@ -132,42 +110,4 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 	}
 
 	return nil
-}
-
-// HandleAskPass handles git's askpass request. It collects the push token
-// created by SignCmd and passes it to git as the password. It also resets
-// fields
-func HandleAskPass(stdout, stderr io.Writer, repo types.LocalRepo, args []string) error {
-
-	// Output nothing for password request
-	if strings.HasPrefix(args[0], "Password") {
-		fmt.Fprint(stdout, "")
-		return nil
-	}
-
-	// Get the remote currently being pushed by the push hook.
-	// HookCmd will store it at `hook.curRemote`.
-	// Remove the 'hook' section afterwards.
-	rcfg, err := repo.Config()
-	if err != nil {
-		return errors.Wrap(err, "failed to get repo config")
-	}
-	curRemote := rcfg.Raw.Section("hook").Option("curRemote")
-	rcfg.Raw.RemoveSection("hook")
-
-	// Get the remote's push token
-	tokens := rcfg.Raw.Section("remote").Subsection(curRemote).Option("tokens")
-	if tokens == "" {
-		fmt.Fprintln(stderr, colorfmt.RedString("Push token was not found for remote (%)", curRemote))
-		return fmt.Errorf("push token was not found")
-	}
-
-	// Output push token as username
-	fmt.Fprintf(stdout, tokens)
-
-	// Clear the remote.*.tokens and sign.mergeID fields since these
-	// fields' values are supposed to be for one-time use
-	rcfg.Raw.Section("remote").Subsection(curRemote).RemoveOption("tokens")
-	rcfg.Raw.Section("sign").RemoveOption("mergeID")
-	return repo.SetConfig(rcfg)
 }

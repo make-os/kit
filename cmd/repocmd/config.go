@@ -41,9 +41,6 @@ type ConfigArgs struct {
 	// CommitAmend amends and sign the last commit instead of creating new one.
 	AmendCommit *bool
 
-	// PrintOutForEval indicates that extra config for evaluation should be printed
-	PrintOutForEval bool
-
 	// SigningKey is the key that will be used to sign the transaction.
 	SigningKey *string
 
@@ -139,19 +136,12 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Set `sign.noUsername` to true.
 	rcfg.Raw.Section("sign").SetOption("noUsername", "true")
 
-	// Set auth hook to `core.askPass` and clear GIT_ASKPASS env var
-	rcfg.Raw.Section("core").SetOption("askPass", filepath.Join(".git", "hooks", "askpass"))
+	// Set credential helper
+	rcfg.Raw.Section("credential").SetOption("helper", "store --file .git/.git-credentials")
 
 	// Set the config
 	if err = repo.SetConfig(rcfg); err != nil {
 		return err
-	}
-
-	// Output more configurations that can only be evaluated in the parent environment.
-	// If you are suspicious about the use of eval on the config command, this
-	// is what is executed by eval:
-	if args.PrintOutForEval && runtime.GOOS != "windows" {
-		fmt.Fprint(os.Stdout, `unset GIT_ASKPASS`) // Unset so core.askPass is used instead.
 	}
 
 	return nil
@@ -161,12 +151,8 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 // If not already added the hook command already exist, it will not be re-added.
 // If the hook file does not exist, create it and make it an executable on non-windows system.
 func addHooks(appExecName string, path string) error {
-	for _, hook := range []string{"pre-push", "askpass"} {
+	for _, hook := range []string{"pre-push"} {
 		cmd := fmt.Sprintf("%s repo hook $1", config.ExecName)
-
-		if hook == "askpass" {
-			cmd = fmt.Sprintf("%s repo hook --askpass $1", config.ExecName)
-		}
 
 		os.Mkdir(filepath.Join(path, "hooks"), 0700)
 		prePushFile := filepath.Join(path, "hooks", hook)

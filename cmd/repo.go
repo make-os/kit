@@ -179,7 +179,6 @@ var repoConfigCmd = &cobra.Command{
 		noSign, _ := cmd.Flags().GetBool("no-sign")
 		amendCommit, _ := cmd.Flags().GetBool("commit.amend")
 		remotes, _ := cmd.Flags().GetStringSlice("remote")
-		evalPrintOut, _ := cmd.Flags().GetBool("print-out")
 
 		var targetRepoDir string
 		var err error
@@ -205,20 +204,19 @@ var repoConfigCmd = &cobra.Command{
 		}
 
 		configArgs := &repocmd.ConfigArgs{
-			Value:           &value,
-			Nonce:           &nonce,
-			Fee:             &fee,
-			AmendCommit:     &amendCommit,
-			RPCClient:       client,
-			PushKey:         &pushKey,
-			SigningKey:      &signingKey,
-			SigningKeyPass:  &signingKeyPass,
-			NoHook:          noSign,
-			PrintOutForEval: evalPrintOut,
-			Remotes:         remoteObjs,
-			KeyUnlocker:     common.UnlockKey,
-			GetNextNonce:    api.GetNextNonceOfAccount,
-			Stdout:          os.Stdout,
+			Value:          &value,
+			Nonce:          &nonce,
+			Fee:            &fee,
+			AmendCommit:    &amendCommit,
+			RPCClient:      client,
+			PushKey:        &pushKey,
+			SigningKey:     &signingKey,
+			SigningKeyPass: &signingKeyPass,
+			NoHook:         noSign,
+			Remotes:        remoteObjs,
+			KeyUnlocker:    common.UnlockKey,
+			GetNextNonce:   api.GetNextNonceOfAccount,
+			Stdout:         os.Stdout,
 		}
 
 		if !cmd.Flags().Changed("fee") {
@@ -257,7 +255,6 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 	f.StringSliceP("remote", "r", []string{}, "Set one or more remotes")
 	f.Bool("no-sign", false, "Do not enable automatic signing hook")
 	f.Bool("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
-	f.BoolP("print-out", "o", false, "Print out more config to pass to eval()")
 
 	if f.Lookup("value") == nil {
 		f.Float64P("value", "v", 0, "Set transaction value")
@@ -287,8 +284,6 @@ var repoHookCmd = &cobra.Command{
 	Use:   "hook [flags] <remote>",
 	Short: "Handles git hook events",
 	Run: func(cmd *cobra.Command, args []string) {
-		authMode, _ := cmd.Flags().GetBool("askpass")
-
 		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
@@ -296,7 +291,6 @@ var repoHookCmd = &cobra.Command{
 
 		if err := repocmd.HookCmd(cfg, targetRepo, &repocmd.HookArgs{
 			Args:               args,
-			AskPass:            authMode,
 			RPCClient:          client,
 			KeyUnlocker:        common.UnlockKey,
 			GetNextNonce:       api.GetNextNonceOfPushKeyOwner,
@@ -311,11 +305,6 @@ var repoHookCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "hook error").Error())
 		}
 	},
-}
-
-func setupRepoHookCmd(cmd *cobra.Command) {
-	bf := repoHookCmd.Flags().Bool
-	bf("askpass", false, "Mode for outputting credentials to git")
 }
 
 // repoInitCmd represents a sub-command to initialize a new repository
@@ -397,6 +386,5 @@ func init() {
 	setupRepoCreateCmd(repoCreateCmd)
 	setupRepoVoteCmd(repoVoteCmd)
 	setupRepoConfigCmd(repoConfigCmd)
-	setupRepoHookCmd(repoHookCmd)
 	setupRepoInitCmd(repoInitCmd)
 }

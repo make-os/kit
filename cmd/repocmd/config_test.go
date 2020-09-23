@@ -167,9 +167,6 @@ var _ = Describe("ConfigCmd", func() {
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
-			askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
-			Expect(err).To(BeNil())
-			Expect(askPass).ToNot(BeEmpty())
 		})
 
 		It("should set sign.noUsername", func() {
@@ -180,12 +177,12 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Raw.Section("sign").Option("noUsername")).To(Equal("true"))
 		})
 
-		It("should set core.askPass", func() {
+		It("should set credential.helper", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
 			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("core").Option("askPass")).To(Equal(".git/hooks/askpass"))
+			Expect(repoCfg.Raw.Section("credential").Option("helper")).To(Equal("store --file .git/.git-credentials"))
 		})
 	})
 
@@ -196,25 +193,17 @@ var _ = Describe("ConfigCmd", func() {
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
-			askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
-			Expect(err).To(BeNil())
-			Expect(askPass).ToNot(BeEmpty())
 		})
 
 		When("hook files already exist but the have no CLIName command", func() {
 			It("should add CLIName command to the files", func() {
 				err := ioutil.WriteFile(filepath.Join(hooksDir, "pre-push"), []byte("line 1"), 0700)
 				Expect(err).To(BeNil())
-				err = ioutil.WriteFile(filepath.Join(hooksDir, "askpass"), []byte("line 1"), 0700)
-				Expect(err).To(BeNil())
 				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
 				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
-				askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
-				Expect(err).To(BeNil())
-				Expect(string(askPass)).To(ContainSubstring(config.ExecName))
 			})
 		})
 
@@ -225,19 +214,13 @@ var _ = Describe("ConfigCmd", func() {
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
 				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
-				askPass, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
-				Expect(err).To(BeNil())
-				Expect(string(askPass)).To(ContainSubstring(config.ExecName))
 
 				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush2, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
 				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
-				askPass2, err := ioutil.ReadFile(filepath.Join(hooksDir, "askpass"))
-				Expect(err).To(BeNil())
 				Expect(prePush).To(Equal(prePush2))
-				Expect(askPass).To(Equal(askPass2))
 			})
 		})
 	})
