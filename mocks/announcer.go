@@ -186,9 +186,11 @@ func (m *MockSession) EXPECT() *MockSessionMockRecorder {
 }
 
 // Announce mocks base method
-func (m *MockSession) Announce(objType int, repo string, key []byte) {
+func (m *MockSession) Announce(objType int, repo string, key []byte) bool {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Announce", objType, repo, key)
+	ret := m.ctrl.Call(m, "Announce", objType, repo, key)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
 // Announce indicates an expected call of Announce

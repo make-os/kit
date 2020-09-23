@@ -150,14 +150,12 @@ func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
 }
 
 // RemotePushTokenSetter describes a function for setting push tokens on a remote config
-type RemotePushTokenSetter func(targetRepo remotetypes.LocalRepo,
-	args *SetRemotePushTokenArgs) (string, error)
+type RemotePushTokenSetter func(targetRepo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (string, error)
 
-// SetRemotePushTokenArgs contains arguments for SetRemotePushToken
-type SetRemotePushTokenArgs struct {
+// GenSetPushTokenArgs contains arguments for GenSetPushToken
+type GenSetPushTokenArgs struct {
 
 	// TargetRemote the name of the remote to update.
-	// If unset, all remotes are updated.
 	TargetRemote string
 
 	// TxDetail is the transaction information to include in the push token.
@@ -166,112 +164,95 @@ type SetRemotePushTokenArgs struct {
 	// PushKey is the key to sign the token.
 	PushKey types.StoredKey
 
-	// SetRemotePushTokensOptionOnly forces only the tokens remote option to be set.
-	SetRemotePushTokensOptionOnly bool
-
 	// ResetTokens forces removes all tokens from all URLS before updating.
 	ResetTokens bool
 
 	Stderr io.Writer
 }
 
-// SetRemotePushToken creates and sets a push request token for
-// URLS and `pushToken` option of a given remote. It will append
-// the new token to the existing tokens or clear the existing tokens
-// if ResetTokens is true. If TargetRemote is not set, all remotes
-// will be updated with the new token.
-func SetRemotePushToken(repo remotetypes.LocalRepo, args *SetRemotePushTokenArgs) (string, error) {
+// GenSetPushToken generates a push request token for a target remote and
+// updates the credential file with a url that includes the token. It will
+// also store the token under the <remote>.tokens option to be combined
+// with future tokens.
+//
+// Existing tokens found in <remote>.tokens are concatenated and used to
+// update the credential file. Existing tokens that point to same reference
+// as the target reference of a call will be replaced with the token generated
+// in the call.
+func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (string, error) {
 	if args.Stderr == nil {
 		args.Stderr = ioutil.Discard
 	}
 
+	// Get the repo configuration
 	repoCfg, err := repo.Config()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get config")
 	}
 
 	// If target remote is set, but it is not listed in the config, return err
-	if args.TargetRemote != "" && repoCfg.Remotes[args.TargetRemote] == nil {
-		return "", fmt.Errorf("remote (%s): does not exist", args.TargetRemote)
+	remote := repoCfg.Remotes[args.TargetRemote]
+	if remote == nil {
+		return "", fmt.Errorf("remote was not found")
 	}
 
-	found := false
-	lastURLRepoName, lastURLRepoNamespace, token := "", "", ""
-	for name, remote := range repoCfg.Remotes {
+	// Get existing push tokens from `tokens` option of the remote as long as reset was
+	// not requested. Ignore bad tokens or matching tokens of the target reference to
+	// avoid creating duplicate tokens.
+	var existingTokens = make(map[string]struct{})
+	if !args.ResetTokens {
+		pt := strings.TrimSpace(repoCfg.Raw.Section("remote").Subsection(remote.Name).Option("tokens"))
+		for _, t := range strings.Split(strings.Trim(pt, ","), ",") {
+			detail, err := DecodePushToken(t)
+			if err != nil || detail.Reference == args.TxDetail.Reference {
+				continue
+			}
+			existingTokens[t] = struct{}{}
+		}
+	}
 
-		if args.TargetRemote != "" && name != args.TargetRemote {
+	var lastRepoName, lastRepoNS, token, tokens string
+	for i, v := range remote.URLs {
+		rawURL, err := url.Parse(v)
+		if err != nil {
+			fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote url (%s) found and skipped", v))
 			continue
 		}
 
-		if name == args.TargetRemote {
-			found = true
+		// Split the url path; ignore urls with less than 2 path sections
+		pathPath := strings.Split(strings.Trim(rawURL.Path, "/"), "/")
+		if len(pathPath) < 2 {
+			continue
 		}
 
-		// Get existing push tokens from `tokens` option of the current remote
-		// as long reset was not requested. Ignore bad tokens or matching tokens
-		// of the target reference to avoid creating duplicate tokens.
-		var existingTokens = make(map[string]struct{})
-		if !args.ResetTokens {
-			pt := strings.TrimSpace(repoCfg.Raw.Section("remote").Subsection(name).Option("tokens"))
-			for _, t := range strings.Split(strings.Trim(pt, ","), ",") {
-				detail, err := DecodePushToken(t)
-				if err != nil || detail.Reference == args.TxDetail.Reference {
-					continue
-				}
-				existingTokens[t] = struct{}{}
-			}
+		// Set repo name and namespace
+		txp := *args.TxDetail
+		txp.RepoName = pathPath[1]
+		if pathPath[0] != remotetypes.DefaultNS {
+			txp.RepoNamespace = pathPath[0]
 		}
 
-		for i, v := range remote.URLs {
-			rawURL, err := url.Parse(v)
-			if err != nil {
-				fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote url (%s) found and skipped", v))
-				continue
-			}
-
-			// Split the url path; ignore urls with less than 2 path sections
-			pathPath := strings.Split(strings.Trim(rawURL.Path, "/"), "/")
-			if len(pathPath) < 2 {
-				continue
-			}
-
-			// Set repo name and namespace
-			txp := *args.TxDetail
-			txp.RepoName = pathPath[1]
-			if pathPath[0] != remotetypes.DefaultNS {
-				txp.RepoNamespace = pathPath[0]
-			}
-
-			// Ensure URLS of this remote do not point to different repos or namespaces.
-			if i > 0 && (txp.RepoName != lastURLRepoName || txp.RepoNamespace != lastURLRepoNamespace) {
-				msg := "remote (%s): multiple urls cannot point to different repositories or namespaces"
-				return "", fmt.Errorf(msg, args.TargetRemote)
-			}
-
-			// Remove existing token if reset is false.
-			// Create and sign new token and add to existing tokens
-			token = MakePushToken(args.PushKey, &txp)
-			existingTokens[token] = struct{}{}
-			tokens := strings.Join(funk.Keys(existingTokens).([]string), ",")
-
-			// Set URL username section to tokens value, if noUsername option is false
-			if !args.SetRemotePushTokensOptionOnly {
-				rawURL.User = url.UserPassword(tokens, "-")
-				remote.URLs[i] = rawURL.String()
-			}
-
-			lastURLRepoName, lastURLRepoNamespace = txp.RepoName, txp.RepoNamespace
+		// Ensure URLS do not point to different repos or namespaces.
+		if i > 0 && (txp.RepoName != lastRepoName || txp.RepoNamespace != lastRepoNS) {
+			msg := "remote (%s): multiple urls cannot point to different repositories or namespaces"
+			return "", fmt.Errorf(msg, args.TargetRemote)
 		}
+		lastRepoName, lastRepoNS = txp.RepoName, txp.RepoNamespace
 
-		// Set remote.*.tokens
-		repoCfg.Raw.Section("remote").Subsection(name).
-			SetOption("tokens", strings.Join(funk.Keys(existingTokens).([]string), ","))
+		// Create, sign new token and add to existing tokens list
+		token = MakePushToken(args.PushKey, &txp)
+		existingTokens[token] = struct{}{}
 
-		if found {
-			break
-		}
+		// Use tokens as URL username and update credential file
+		tokens = strings.Join(funk.Keys(existingTokens).([]string), ",")
+		rawURL.User = url.UserPassword(tokens, "-")
+		repo.UpdateCredentialFile(rawURL.String())
 	}
 
+	// Update remote.*.tokens
+	repoCfg.Raw.Section("remote").Subsection(remote.Name).SetOption("tokens", tokens)
+
+	// Update the repo configuration
 	if err := repo.SetConfig(repoCfg); err != nil {
 		return "", errors.Wrap(err, "failed to update config")
 	}

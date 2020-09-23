@@ -115,7 +115,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
 				return "", fmt.Errorf("error")
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
@@ -134,7 +134,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
 				return "", nil
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
@@ -156,7 +156,7 @@ var _ = Describe("SignNote", func() {
 					Expect(address).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}
-				args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.SetRemotePushTokenArgs) (string, error) {
+				args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
 					Expect(args.TxDetail.PushKeyID).To(Equal(key.PushAddr().String()))
 					return "", nil
 				}

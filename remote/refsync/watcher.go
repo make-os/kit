@@ -22,13 +22,13 @@ import (
 // It compares the last synced height of the tracked repository with the last network
 // update height to tell when to start traversing the blockchain in search of updates.
 type Watcher struct {
-	cfg       *config.AppConfig
-	log       logger.Logger
-	queue     chan *rstypes.WatcherTask
-	txHandler TxHandlerFunc
-	keepers   core.Keepers
-	service   services.Service
-	queued    *cache.Cache
+	cfg            *config.AppConfig
+	log            logger.Logger
+	queue          chan *rstypes.WatcherTask
+	refSyncHandler TxHandlerFunc
+	keepers        core.Keepers
+	service        services.Service
+	processing     *cache.Cache
 
 	lck     *sync.Mutex
 	started bool
@@ -41,14 +41,14 @@ type Watcher struct {
 // NewWatcher creates an instance of Watcher
 func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Keepers) *Watcher {
 	w := &Watcher{
-		lck:       &sync.Mutex{},
-		cfg:       cfg,
-		log:       cfg.G().Log.Module("repo-watcher"),
-		queue:     make(chan *rstypes.WatcherTask, 10000),
-		txHandler: txHandler,
-		keepers:   keepers,
-		queued:    cache.NewCache(1000),
-		initRepo:  repo.InitRepository,
+		lck:            &sync.Mutex{},
+		cfg:            cfg,
+		log:            cfg.G().Log.Module("repo-watcher"),
+		queue:          make(chan *rstypes.WatcherTask, 10000),
+		refSyncHandler: txHandler,
+		keepers:        keepers,
+		processing:     cache.NewCache(1000),
+		initRepo:       repo.InitRepository,
 	}
 
 	w.service = services.New(w.cfg.G().TMConfig.RPC.ListenAddress)
@@ -104,11 +104,10 @@ func (w *Watcher) Watch(repo, reference string, startHeight, endHeight uint64) e
 	}
 
 	// Skip task if the task is currently being worked on.
-	if w.queued.Has(task.GetID()) {
+	if w.processing.Has(task.GetID()) {
 		return types.ErrSkipped
 	}
-
-	w.queued.Add(task.GetID(), struct{}{})
+	w.processing.Add(task.GetID(), struct{}{})
 	w.queue <- task
 	return nil
 }
@@ -121,7 +120,7 @@ func (w *Watcher) Start() {
 	started := w.started
 	w.lck.Unlock()
 
-	w.ticker = time.NewTicker(5 * time.Second)
+	w.ticker = time.NewTicker(60 * time.Second)
 	go func() {
 		for range w.ticker.C {
 			if !w.stopped {
@@ -167,7 +166,6 @@ func (w *Watcher) Stop() {
 
 // Do finds push transactions that have not been applied to a repository.
 func (w *Watcher) Do(task *rstypes.WatcherTask) error {
-	defer w.queued.Remove(task.GetID())
 
 	w.log.Debug("Scanning chain for new updates",
 		"Repo", task.RepoName, "Ref", task.Reference, "EndHeight", task.EndHeight)
@@ -177,16 +175,19 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	// Walk up the blocks until the task's end height.
 	// Find push transactions addressed to the target repository.
 	start := task.StartHeight
+	var foundTx bool
 	for start <= task.EndHeight {
 		block, err := w.service.GetBlock(int64(start))
 		if err != nil {
+			w.processing.Remove(task.GetID())
 			return errors.Wrapf(err, "failed to get block (height=%d)", start)
 		}
 
-		foundTx := false
+		foundTxInBlock := false
 		for i, tx := range block.Block.Data.Txs {
 			txObj, err := txns.DecodeTx(tx)
 			if err != nil {
+				w.processing.Remove(task.GetID())
 				return fmt.Errorf("unable to decode transaction #%d in height %d", i, start)
 			}
 
@@ -201,23 +202,36 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 			if task.StartHeight == 1 {
 				err := w.initRepo(task.RepoName, w.cfg.GetRepoRoot(), w.cfg.Node.GitBinPath)
 				if err != nil && errors.Cause(err) != git.ErrRepositoryAlreadyExists {
+					w.processing.Remove(task.GetID())
 					return errors.Wrap(err, "failed to initialize repository")
 				}
 			}
 
+			foundTxInBlock = true
+			foundTx = true
+
 			w.log.Debug("Found update for repo",
 				"Repo", task.RepoName, "Ref", task.Reference, "Height", start)
-			w.txHandler(obj, task.Reference, i, int64(start))
-			foundTx = true
+
+			// Pass the transaction to the reference sync handler and pass a callback that removes
+			// the task from the watcher queue once the refsync-er finishes with the task.
+			w.refSyncHandler(obj, task.Reference, i, int64(start), func() {
+				w.processing.Remove(task.GetID())
+			})
 		}
 
 		// If no push transaction was found in this block and the repo is being tracked,
 		// update the last synced block height of the tracked repo.
-		if !foundTx && isRepoTracked {
+		if !foundTxInBlock && isRepoTracked {
 			w.keepers.RepoSyncInfoKeeper().Track(task.RepoName, start)
 		}
 
 		start++
+	}
+
+	// Remove task from processing list if no tx was found
+	if !foundTx {
+		w.processing.Remove(task.GetID())
 	}
 
 	return nil

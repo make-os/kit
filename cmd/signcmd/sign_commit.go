@@ -247,12 +247,11 @@ create_token:
 	}
 
 	hash, _ := repo.GetRecentCommitHash()
-	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
-		TargetRemote:                  args.Remote,
-		PushKey:                       key,
-		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
-		Stderr:                        args.Stderr,
-		ResetTokens:                   args.ResetTokens,
+	if _, err = args.SetRemotePushToken(repo, &server.GenSetPushTokenArgs{
+		TargetRemote: args.Remote,
+		PushKey:      key,
+		Stderr:       args.Stderr,
+		ResetTokens:  args.ResetTokens,
 		TxDetail: &types.TxDetail{
 			Fee:             util.String(args.Fee),
 			Value:           util.String(args.Value),

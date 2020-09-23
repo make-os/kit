@@ -1,6 +1,8 @@
 package repo_test
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -163,6 +165,70 @@ var _ = Describe("Repo", func() {
 			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r3", URLs: []string{"http://r3.com"}})
 			urls := r.GetRemoteURLs("r1", "r3")
 			Expect(urls).To(And(ContainElement("http://r.com"), ContainElement("http://r3.com")))
+		})
+	})
+
+	Describe(".UpdateCredentialFile", func() {
+		It("should return error if url is malformed", func() {
+			err := r.UpdateCredentialFile("http://x.com:www")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("bad url"))
+		})
+
+		It("should add url to credential file", func() {
+			err := r.UpdateCredentialFile("http://user:pass@127.0.0.1:9002/r/repo1")
+			Expect(err).To(BeNil())
+			credentialFile := filepath.Join(r.GetPath(), ".git/.git-credentials")
+			bz, err := ioutil.ReadFile(credentialFile)
+			Expect(err).To(BeNil())
+			Expect(string(bz)).To(Equal("http://user:pass@127.0.0.1:9002/r/repo1"))
+
+			// Add unique URL
+			err = r.UpdateCredentialFile("http://xyz:abc@127.0.0.2:9002/r/repo1")
+			Expect(err).To(BeNil())
+
+			// Add matching URL
+			err = r.UpdateCredentialFile("http://user2:pass2@127.0.0.1:9002/r/repo1")
+			Expect(err).To(BeNil())
+
+			bz, err = ioutil.ReadFile(credentialFile)
+			Expect(err).To(BeNil())
+			parts := bytes.Split(bz, []byte("\n"))
+			Expect(parts).To(ContainElement([]byte("http://user2:pass2@127.0.0.1:9002/r/repo1")))
+			Expect(parts).To(ContainElement([]byte("http://xyz:abc@127.0.0.2:9002/r/repo1")))
+		})
+
+		It("should remove bad urls found in the file", func() {
+			credentialFile := filepath.Join(r.GetPath(), ".git/.git-credentials")
+			err = ioutil.WriteFile(credentialFile, []byte("http://x.com:bad-url"), 0644)
+			Expect(err).To(BeNil())
+
+			err = r.UpdateCredentialFile("http://user2:pass2@127.0.0.1:9002/r/repo1")
+			Expect(err).To(BeNil())
+
+			bz, err := ioutil.ReadFile(credentialFile)
+			Expect(err).To(BeNil())
+			parts := bytes.Split(bz, []byte("\n"))
+			Expect(parts).To(ContainElement([]byte("http://user2:pass2@127.0.0.1:9002/r/repo1")))
+		})
+	})
+
+	Describe(".ReadCredentialFile", func() {
+		It("should return error if credential file does not exist", func() {
+			_, err := r.ReadCredentialFile()
+			Expect(err).ToNot(BeNil())
+		})
+
+		It("should return valid urls if file exists", func() {
+			err = r.UpdateCredentialFile("http://user2:pass2@127.0.0.1:9001/r/repo1")
+			Expect(err).To(BeNil())
+			err = r.UpdateCredentialFile("http://user2:pass2@127.0.0.1:9002/r/repo1")
+			Expect(err).To(BeNil())
+			urls, err := r.ReadCredentialFile()
+			Expect(err).To(BeNil())
+			Expect(urls).To(HaveLen(2))
+			Expect(urls).To(ContainElement("http://user2:pass2@127.0.0.1:9001/r/repo1"))
+			Expect(urls).To(ContainElement("http://user2:pass2@127.0.0.1:9002/r/repo1"))
 		})
 	})
 

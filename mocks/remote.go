@@ -307,9 +307,11 @@ func (mr *MockRemoteServerMockRecorder) BroadcastNoteAndEndorsement(note interfa
 }
 
 // Announce mocks base method
-func (m *MockRemoteServer) Announce(objType int, repo string, hash []byte, doneCB func(error)) {
+func (m *MockRemoteServer) Announce(objType int, repo string, hash []byte, doneCB func(error)) bool {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Announce", objType, repo, hash, doneCB)
+	ret := m.ctrl.Call(m, "Announce", objType, repo, hash, doneCB)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
 // Announce indicates an expected call of Announce

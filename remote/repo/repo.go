@@ -1,7 +1,11 @@
 package repo
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	url2 "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +14,7 @@ import (
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/lobe/util"
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/config"
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
@@ -289,6 +294,70 @@ func (r *Repo) IsContributor(pushKeyID string) (isContrib bool) {
 		return ns.Contributors.Has(pushKeyID)
 	}
 	return
+}
+
+// GetCredentialFile returns the content of the credential file located at <repo-path>/.git/.git-credentials.
+func (r *Repo) ReadCredentialFile() (res []string, err error) {
+	bz, err := ioutil.ReadFile(filepath.Join(r.path, ".git/.git-credentials"))
+	if err != nil {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(bz))
+	for scanner.Scan() {
+		res = append(res, scanner.Text())
+	}
+	return res, nil
+}
+
+// UpdateCredentialFile adds a url to the credential file located at <repo-path>/.git/.git-credentials.
+// If a URL with protocol,host,path exist, it is replaced.
+func (r *Repo) UpdateCredentialFile(url string) error {
+
+	parsed, err := url2.Parse(url)
+	if err != nil {
+		return errors.Wrap(err, "bad url")
+	}
+
+	// Create the file if it does not exist
+	pathToCredentialFile := filepath.Join(r.path, ".git/.git-credentials")
+	if !util.IsPathOk(pathToCredentialFile) {
+		f, err := os.Create(pathToCredentialFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to create credential file")
+		}
+		f.Close()
+	}
+
+	// Open the file
+	f, err := os.OpenFile(pathToCredentialFile, os.O_RDWR, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to open credential file")
+	}
+	defer f.Close()
+
+	var good []string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		existing, err := url2.Parse(scanner.Text())
+		if err != nil {
+			continue
+		}
+		if existing.Scheme == parsed.Scheme &&
+			existing.Host == parsed.Host &&
+			existing.Path == parsed.Path {
+			continue
+		}
+		good = append(good, existing.String())
+	}
+
+	good = append(good, parsed.String())
+	f.Truncate(0)
+	f.Seek(0, 0)
+	if _, err := f.WriteString(strings.Join(good, "\n")); err != nil {
+		return errors.Wrap(err, "failed to write to file")
+	}
+
+	return nil
 }
 
 // GetRemoteURLs returns the remote URLS of the repository.

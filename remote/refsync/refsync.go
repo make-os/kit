@@ -83,7 +83,7 @@ func New(cfg *config.AppConfig,
 
 	go func() {
 		for evt := range cfg.G().Bus.On(core.EvtTxPushProcessed) {
-			rs.OnNewTx(evt.Args[0].(*txns.TxPush), "", evt.Args[2].(int), evt.Args[1].(int64))
+			rs.OnNewTx(evt.Args[0].(*txns.TxPush), "", evt.Args[2].(int), evt.Args[1].(int64), nil)
 		}
 	}()
 
@@ -124,14 +124,14 @@ func (rs *RefSync) Watch(repo, reference string, startHeight, endHeight uint64) 
 	return rs.watcher.Watch(repo, reference, startHeight, endHeight)
 }
 
-type TxHandlerFunc func(*txns.TxPush, string, int, int64)
+type TxHandlerFunc func(*txns.TxPush, string, int, int64, func())
 
 // OnNewTx receives push transactions and adds non-delete
 // pushed references to the task queue.
 // targetRef is the specific pushed reference that will be queued. If unset, all references are queued.
 // txIndex is the index of the transaction it its containing block.
 // height is the block height that contains the transaction.
-func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64) {
+func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64, doneCb func()) {
 
 	// Ignore already queued transaction
 	if rs.queued.Has(tx.GetID()) {
@@ -168,6 +168,9 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, heigh
 			Timestamp:    tx.GetTimestamp(),
 			Done: func() {
 				rs.queued.Remove(tx.GetID())
+				if doneCb != nil {
+					doneCb()
+				}
 			},
 		})
 	}

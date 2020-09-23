@@ -152,7 +152,7 @@ func (m *MockRefSync) EXPECT() *MockRefSyncMockRecorder {
 }
 
 // OnNewTx mocks base method
-func (m *MockRefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64) {
+func (m *MockRefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64, doneCb func()) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnNewTx", tx, targetRef, txIndex, height)
 }

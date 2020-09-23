@@ -120,12 +120,11 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	}
 
 	// Create & set push request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
-		TargetRemote:                  args.Remote,
-		PushKey:                       key,
-		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
-		ResetTokens:                   args.ResetTokens,
-		Stderr:                        args.Stderr,
+	if _, err = args.SetRemotePushToken(repo, &server.GenSetPushTokenArgs{
+		TargetRemote: args.Remote,
+		PushKey:      key,
+		ResetTokens:  args.ResetTokens,
+		Stderr:       args.Stderr,
 		TxDetail: &types.TxDetail{
 			Fee:       util.String(args.Fee),
 			Value:     util.String(args.Value),

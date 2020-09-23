@@ -74,7 +74,7 @@ var signCommitCmd = &cobra.Command{
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
-			SetRemotePushToken:            server.SetRemotePushToken,
+			SetRemotePushToken:            server.GenSetPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -127,7 +127,7 @@ var signTagCmd = &cobra.Command{
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
-			SetRemotePushToken:            server.SetRemotePushToken,
+			SetRemotePushToken:            server.GenSetPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -172,7 +172,7 @@ var signNoteCmd = &cobra.Command{
 			Stderr:                        os.Stderr,
 			KeyUnlocker:                   common.UnlockKey,
 			GetNextNonce:                  api.GetNextNonceOfPushKeyOwner,
-			SetRemotePushToken:            server.SetRemotePushToken,
+			SetRemotePushToken:            server.GenSetPushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}

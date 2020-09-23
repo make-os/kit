@@ -38,7 +38,7 @@ type RefSync interface {
 	// targetRef is the specific pushed reference that will be queued. If unset, all references are queued.
 	// txIndex is the index of the transaction it its containing block.
 	// height is the block height that contains the transaction.
-	OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64)
+	OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64, doneCb func())
 
 	// Watch adds a repository to the watch queue
 	Watch(repo, reference string, startHeight, endHeight uint64) error

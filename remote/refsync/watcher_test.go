@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func handleTx(*txns.TxPush, string, int, int64) {}
+func handleTx(*txns.TxPush, string, int, int64, func()) {}
 
 var _ = Describe("Watcher", func() {
 	var err error
@@ -227,7 +227,7 @@ var _ = Describe("Watcher", func() {
 			w.Watch(task.RepoName, task.Reference, 0, 0)
 			err := w.Do(task)
 			Expect(err).To(BeNil())
-			Expect(w.queued.Len()).To(BeZero())
+			Expect(w.processing.Len()).To(BeZero())
 		})
 
 		When("a TxPush transaction type is found and it is addressed to the tracked repo", func() {
@@ -238,7 +238,7 @@ var _ = Describe("Watcher", func() {
 				var didInitRepo = false
 				var didHandleTx = false
 
-				w = NewWatcher(cfg, func(push *txns.TxPush, ref string, index int, i int64) {
+				w = NewWatcher(cfg, func(push *txns.TxPush, ref string, index int, i int64, done func()) {
 					didHandleTx = true
 				}, mockKeepers)
 				w.service = mockService

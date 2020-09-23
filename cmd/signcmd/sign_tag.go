@@ -202,12 +202,11 @@ create_token:
 
 	// Create & set request token to remote URLs in config
 	tagRef, _ = repo.Tag(gitArgs[0])
-	if _, err = args.SetRemotePushToken(repo, &server.SetRemotePushTokenArgs{
-		TargetRemote:                  args.Remote,
-		PushKey:                       key,
-		SetRemotePushTokensOptionOnly: args.SetRemotePushTokensOptionOnly,
-		ResetTokens:                   args.ResetTokens,
-		Stderr:                        args.Stderr,
+	if _, err = args.SetRemotePushToken(repo, &server.GenSetPushTokenArgs{
+		TargetRemote: args.Remote,
+		PushKey:      key,
+		ResetTokens:  args.ResetTokens,
+		Stderr:       args.Stderr,
 		TxDetail: &types.TxDetail{
 			Fee:       util.String(args.Fee),
 			Value:     util.String(args.Value),

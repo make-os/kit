@@ -300,7 +300,7 @@ var repoHookCmd = &cobra.Command{
 			RPCClient:          client,
 			KeyUnlocker:        common.UnlockKey,
 			GetNextNonce:       api.GetNextNonceOfPushKeyOwner,
-			SetRemotePushToken: server.SetRemotePushToken,
+			SetRemotePushToken: server.GenSetPushToken,
 			CommitSigner:       signcmd.SignCommitCmd,
 			TagSigner:          signcmd.SignTagCmd,
 			NoteSigner:         signcmd.SignNoteCmd,
