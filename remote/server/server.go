@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/dht/announcer"
@@ -225,7 +224,7 @@ func (sv *Server) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
 
 // checkRepo implements dhttypes.CheckFunc for checking
 // the existence of a repository.
-func (sv *Server) checkRepo(repo string, key []byte) bool {
+func (sv *Server) checkRepo(_ string, key []byte) bool {
 	_, err := sv.GetRepo(string(key))
 	return err == nil
 }
@@ -440,8 +439,6 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		pktEnc.Flush()
 		return
 	}
-
-	pp.Println(txDetails)
 
 	// Attempt to load the repository at the given path
 	repo, err := sv.GetRepo(repoName)
