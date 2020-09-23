@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/config"
@@ -644,6 +643,19 @@ var _ = Describe("Auth", func() {
 			Expect(err).To(MatchError("remote was not found"))
 		})
 
+		It("should return err when unable to read repo config file (.git/repocfg)", func() {
+			gitCfg := gogitcfg.NewConfig()
+			gitCfg.Remotes["master"] = &gogitcfg.RemoteConfig{
+				URLs: []string{"https://push.node/r/repo1", "https://push.node/ns/repo1"},
+			}
+			mockRepo.EXPECT().Config().Return(gitCfg, nil)
+			mockRepo.EXPECT().GetRepoConfig().Return(nil, fmt.Errorf("error"))
+			_, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "master", TxDetail: txDetail,
+				PushKey: mockStoreKey, ResetTokens: false})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to read repocfg file: error"))
+		})
+
 		It("should return err when remote urls point to different namespaces", func() {
 			mockStoreKey.EXPECT().GetKey().Return(key)
 			gitCfg := gogitcfg.NewConfig()
@@ -651,6 +663,7 @@ var _ = Describe("Auth", func() {
 				URLs: []string{"https://push.node/r/repo1", "https://push.node/ns/repo1"},
 			}
 			mockRepo.EXPECT().Config().Return(gitCfg, nil)
+			mockRepo.EXPECT().GetRepoConfig().Return(types.EmptyLocalConfig(), nil)
 			mockRepo.EXPECT().UpdateCredentialFile(gomock.Any())
 			_, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "master", TxDetail: txDetail,
 				PushKey: mockStoreKey, ResetTokens: false})
@@ -665,6 +678,7 @@ var _ = Describe("Auth", func() {
 				URLs: []string{"https://push.node/ns/repo1", "https://push.node/ns/repo2"},
 			}
 			mockRepo.EXPECT().Config().Return(gitCfg, nil)
+			mockRepo.EXPECT().GetRepoConfig().Return(types.EmptyLocalConfig(), nil)
 			mockRepo.EXPECT().UpdateCredentialFile(gomock.Any())
 			_, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "master", TxDetail: txDetail,
 				PushKey: mockStoreKey, ResetTokens: false})
@@ -680,8 +694,10 @@ var _ = Describe("Auth", func() {
 					URLs: []string{"https://push.node/r/repo1", "https://push.node/r/repo1"},
 				}
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
+				repocfg := types.EmptyLocalConfig()
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
 				mockRepo.EXPECT().UpdateCredentialFile(gomock.Any()).Times(2)
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "master",
 					TxDetail: txDetail, PushKey: mockStoreKey, ResetTokens: false})
 			})
@@ -689,6 +705,27 @@ var _ = Describe("Auth", func() {
 			It("should return no error", func() {
 				Expect(err).To(BeNil())
 				Expect(token).ToNot(BeEmpty())
+			})
+		})
+
+		When("on failure to update repo config file", func() {
+			BeforeEach(func() {
+				mockStoreKey.EXPECT().GetKey().Return(key).Times(2)
+				gitCfg := gogitcfg.NewConfig()
+				gitCfg.Remotes["master"] = &gogitcfg.RemoteConfig{
+					URLs: []string{"https://push.node/r/repo1", "https://push.node/r/repo1"},
+				}
+				mockRepo.EXPECT().Config().Return(gitCfg, nil)
+				repocfg := types.EmptyLocalConfig()
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
+				mockRepo.EXPECT().UpdateCredentialFile(gomock.Any()).Times(2)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(fmt.Errorf("error"))
+				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "master",
+					TxDetail: txDetail, PushKey: mockStoreKey, ResetTokens: false})
+			})
+
+			It("should return error", func() {
+				Expect(err).To(MatchError("failed to save token(s): error"))
 			})
 		})
 
@@ -707,16 +744,20 @@ var _ = Describe("Auth", func() {
 		When("existing token(s) are present on remote", func() {
 			var gitCfg *gogitcfg.Config
 			var existingToken string
+			var repocfg *types.LocalConfig
 
 			BeforeEach(func() {
 				mockStoreKey.EXPECT().GetKey().Return(key).Times(2)
 				existingToken = MakePushToken(mockStoreKey, &types.TxDetail{RepoName: "some_repo", Reference: "refs/heads/branch"})
 				gitCfg = gogitcfg.NewConfig()
 				gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{"https://push.node/r/repo1"}}
-				gitCfg.Raw.Section("remote").Subsection("origin").SetOption("tokens", existingToken)
+				repocfg = &types.LocalConfig{Tokens: map[string][]string{
+					"origin": {existingToken},
+				}}
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
 				mockRepo.EXPECT().UpdateCredentialFile(gomock.Any())
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TxDetail: txDetail, TargetRemote: "origin", PushKey: mockStoreKey,
 					ResetTokens: false})
 				Expect(err).To(BeNil())
@@ -724,16 +765,17 @@ var _ = Describe("Auth", func() {
 			})
 
 			Specify("that previously existing tokens are added to new token", func() {
-				val := gitCfg.Raw.Section("remote").Subsection("origin").Option("tokens")
-				Expect(val).ToNot(BeEmpty())
-				Expect(strings.Split(val, ",")).To(HaveLen(2))
-				Expect(strings.Split(val, ",")).To(And(ContainElement(existingToken), ContainElement(token)))
+				tokens := repocfg.Tokens["origin"]
+				Expect(tokens).ToNot(BeEmpty())
+				Expect(tokens).To(HaveLen(2))
+				Expect(tokens).To(And(ContainElement(existingToken), ContainElement(token)))
 			})
 		})
 
 		When("existing token of same target reference exist on remote", func() {
 			var gitCfg *gogitcfg.Config
 			var existingToken string
+			var repocfg *types.LocalConfig
 
 			BeforeEach(func() {
 				txDetail = &types.TxDetail{RepoName: "some_repo", Reference: "refs/heads/branch"}
@@ -741,10 +783,13 @@ var _ = Describe("Auth", func() {
 				existingToken = MakePushToken(mockStoreKey, txDetail)
 				gitCfg = gogitcfg.NewConfig()
 				gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{"https://push.node/r/repo1"}}
-				gitCfg.Raw.Section("remote").Subsection("origin").SetOption("tokens", existingToken)
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
+				repocfg = &types.LocalConfig{Tokens: map[string][]string{
+					"origin": {existingToken},
+				}}
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
 				mockRepo.EXPECT().UpdateCredentialFile(gomock.Any())
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "origin", TxDetail: txDetail, PushKey: mockStoreKey,
 					ResetTokens: false})
 				Expect(err).To(BeNil())
@@ -752,26 +797,30 @@ var _ = Describe("Auth", func() {
 			})
 
 			Specify("that previously existing token is replaced with the new token", func() {
-				val := gitCfg.Raw.Section("remote").Subsection("origin").Option("tokens")
-				Expect(val).ToNot(BeEmpty())
-				Expect(strings.Split(val, ",")).To(HaveLen(1))
-				Expect(strings.Split(val, ",")).To(And(ContainElement(token)))
+				tokens := repocfg.Tokens["origin"]
+				Expect(tokens).ToNot(BeEmpty())
+				Expect(tokens).To(HaveLen(1))
+				Expect(tokens).To(And(ContainElement(token)))
 			})
 		})
 
 		When("an invalid token exist on remote", func() {
 			var gitCfg *gogitcfg.Config
 			var existingToken string
+			var repocfg *types.LocalConfig
 
 			BeforeEach(func() {
 				mockStoreKey.EXPECT().GetKey().Return(key).Times(1)
 				existingToken = "bad_token"
 				gitCfg = gogitcfg.NewConfig()
 				gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{"https://push.node/r/repo1"}}
-				gitCfg.Raw.Section("remote").Subsection("origin").SetOption("tokens", existingToken)
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
+				repocfg = &types.LocalConfig{Tokens: map[string][]string{
+					"origin": {existingToken},
+				}}
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
 				mockRepo.EXPECT().UpdateCredentialFile(gomock.Any())
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "origin", TxDetail: txDetail, PushKey: mockStoreKey,
 					ResetTokens: false})
 				Expect(err).To(BeNil())
@@ -779,21 +828,26 @@ var _ = Describe("Auth", func() {
 			})
 
 			Specify("that previously existing bad token was removed", func() {
-				val := gitCfg.Raw.Section("remote").Subsection("origin").Option("tokens")
-				Expect(val).ToNot(BeEmpty())
-				Expect(strings.Split(val, ",")).To(HaveLen(1))
-				Expect(strings.Split(val, ",")).To(And(ContainElement(token)))
+				tokens := repocfg.Tokens["origin"]
+				Expect(tokens).ToNot(BeEmpty())
+				Expect(tokens).To(HaveLen(1))
+				Expect(tokens).To(And(ContainElement(token)))
 			})
 		})
 
 		When("remote has only one url and it is not valid", func() {
 			var gitCfg *gogitcfg.Config
+			var repocfg *types.LocalConfig
 
 			BeforeEach(func() {
 				gitCfg = gogitcfg.NewConfig()
 				gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{"https://abc\\;&.com"}}
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				repocfg = &types.LocalConfig{Tokens: map[string][]string{
+					"origin": {},
+				}}
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "origin", TxDetail: txDetail, PushKey: mockStoreKey,
 					ResetTokens: false})
 				Expect(err).To(BeNil())
@@ -801,19 +855,24 @@ var _ = Describe("Auth", func() {
 
 			Specify("that no token was set", func() {
 				Expect(token).To(BeEmpty())
-				val := gitCfg.Raw.Section("remote").Subsection("origin").Option("tokens")
-				Expect(val).To(BeEmpty())
+				tokens := repocfg.Tokens["origin"]
+				Expect(tokens).To(BeEmpty())
 			})
 		})
 
 		When("remote has only one url with no namespace and reponame part", func() {
 			var gitCfg *gogitcfg.Config
+			var repocfg *types.LocalConfig
 
 			BeforeEach(func() {
 				gitCfg = gogitcfg.NewConfig()
 				gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{"https://push.node"}}
 				mockRepo.EXPECT().Config().Return(gitCfg, nil)
-				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
+				repocfg = &types.LocalConfig{Tokens: map[string][]string{
+					"origin": {},
+				}}
+				mockRepo.EXPECT().GetRepoConfig().Return(repocfg, nil)
+				mockRepo.EXPECT().UpdateRepoConfig(repocfg).Return(nil)
 				token, err = GenSetPushToken(mockRepo, &GenSetPushTokenArgs{TargetRemote: "origin", TxDetail: txDetail, PushKey: mockStoreKey,
 					ResetTokens: false})
 				Expect(err).To(BeNil())
@@ -821,8 +880,8 @@ var _ = Describe("Auth", func() {
 
 			Specify("that no token was set", func() {
 				Expect(token).To(BeEmpty())
-				val := gitCfg.Raw.Section("remote").Subsection("origin").Option("tokens")
-				Expect(val).To(BeEmpty())
+				tokens := repocfg.Tokens["origin"]
+				Expect(tokens).To(BeEmpty())
 			})
 		})
 	})

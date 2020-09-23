@@ -154,13 +154,13 @@ func (m *MockRefSync) EXPECT() *MockRefSyncMockRecorder {
 // OnNewTx mocks base method
 func (m *MockRefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64, doneCb func()) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnNewTx", tx, targetRef, txIndex, height)
+	m.ctrl.Call(m, "OnNewTx", tx, targetRef, txIndex, height, doneCb)
 }
 
 // OnNewTx indicates an expected call of OnNewTx
-func (mr *MockRefSyncMockRecorder) OnNewTx(tx, targetRef, txIndex, height interface{}) *gomock.Call {
+func (mr *MockRefSyncMockRecorder) OnNewTx(tx, targetRef, txIndex, height, doneCb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, targetRef, txIndex, height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewTx", reflect.TypeOf((*MockRefSync)(nil).OnNewTx), tx, targetRef, txIndex, height, doneCb)
 }
 
 // Watch mocks base method

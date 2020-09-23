@@ -11,6 +11,7 @@ replace (
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
+	github.com/BurntSushi/toml v0.3.1
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1

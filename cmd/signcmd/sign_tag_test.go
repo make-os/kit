@@ -46,7 +46,7 @@ var _ = Describe("SignTag", func() {
 
 	Describe(".SignTagCmd", func() {
 		It("should return error when unable to get push key", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).AnyTimes()
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
 
 			err := SignTagCmd(cfg, []string{}, mockRepo, &SignTagArgs{})
 			Expect(err).ToNot(BeNil())
@@ -54,7 +54,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when failed to unlock the signing key", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -67,7 +67,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to get tag", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -84,7 +84,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to get existing tag object", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -104,7 +104,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should use existing tag's message if none was provided and return error if unable to get nonce", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -127,7 +127,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to create tag", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -153,7 +153,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return no error when tag is created", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -179,7 +179,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should return error when unable to create and set push token", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -207,7 +207,7 @@ var _ = Describe("SignTag", func() {
 
 		When("args.SigningKey is a user address", func() {
 			It("should pass push key id to CreateTagWithMsg, TxDetail object and GetNextNonce", func() {
-				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 					"user.signingKey": key.PushAddr().String(),
 				})).AnyTimes()
 
@@ -240,7 +240,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should set args.PushKeyID to value of git flag --local-user", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -267,7 +267,7 @@ var _ = Describe("SignTag", func() {
 		})
 
 		It("should set args.Message to value of git flag --message", func() {
-			mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
@@ -296,7 +296,7 @@ var _ = Describe("SignTag", func() {
 
 		When(".SignRefOnly is set to true", func() {
 			It("should skip code for push token creation and signing", func() {
-				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 					"user.signingKey": key.PushAddr().String(),
 				})).AnyTimes()
 
@@ -322,7 +322,7 @@ var _ = Describe("SignTag", func() {
 
 		When(".CreatePushTokenOnly is set to true", func() {
 			It("should skip code for reference signing", func() {
-				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 					"user.signingKey": key.PushAddr().String(),
 				})).AnyTimes()
 
@@ -349,7 +349,7 @@ var _ = Describe("SignTag", func() {
 
 		When("tag already exist and it is signed", func() {
 			BeforeEach(func() {
-				mockRepo.EXPECT().GetConfig(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
+				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 					"user.signingKey": key.PushAddr().String(),
 				})).AnyTimes()
 			})

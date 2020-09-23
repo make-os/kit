@@ -733,18 +733,18 @@ func (mr *MockLocalRepoMockRecorder) GetAncestors(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAncestors", reflect.TypeOf((*MockLocalRepo)(nil).GetAncestors), arg0, arg1, arg2)
 }
 
-// GetConfig mocks base method
-func (m *MockLocalRepo) GetConfig(arg0 string) string {
+// GetGitConfigOption mocks base method
+func (m *MockLocalRepo) GetGitConfigOption(arg0 string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfig", arg0)
+	ret := m.ctrl.Call(m, "GetGitConfigOption", arg0)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetConfig indicates an expected call of GetConfig
-func (mr *MockLocalRepoMockRecorder) GetConfig(arg0 interface{}) *gomock.Call {
+// GetGitConfigOption indicates an expected call of GetGitConfigOption
+func (mr *MockLocalRepoMockRecorder) GetGitConfigOption(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockLocalRepo)(nil).GetConfig), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGitConfigOption", reflect.TypeOf((*MockLocalRepo)(nil).GetGitConfigOption), arg0)
 }
 
 // GetHEAD mocks base method
@@ -944,6 +944,21 @@ func (m *MockLocalRepo) GetRemoteURLs(arg0 ...string) []string {
 func (mr *MockLocalRepoMockRecorder) GetRemoteURLs(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteURLs", reflect.TypeOf((*MockLocalRepo)(nil).GetRemoteURLs), arg0...)
+}
+
+// GetRepoConfig mocks base method
+func (m *MockLocalRepo) GetRepoConfig() (*types.LocalConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepoConfig")
+	ret0, _ := ret[0].(*types.LocalConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepoConfig indicates an expected call of GetRepoConfig
+func (mr *MockLocalRepoMockRecorder) GetRepoConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoConfig", reflect.TypeOf((*MockLocalRepo)(nil).GetRepoConfig))
 }
 
 // GetState mocks base method
@@ -1469,6 +1484,20 @@ func (m *MockLocalRepo) UpdateCredentialFile(arg0 string) error {
 func (mr *MockLocalRepoMockRecorder) UpdateCredentialFile(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCredentialFile", reflect.TypeOf((*MockLocalRepo)(nil).UpdateCredentialFile), arg0)
+}
+
+// UpdateRepoConfig mocks base method
+func (m *MockLocalRepo) UpdateRepoConfig(arg0 *types.LocalConfig) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRepoConfig", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRepoConfig indicates an expected call of UpdateRepoConfig
+func (mr *MockLocalRepoMockRecorder) UpdateRepoConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoConfig", reflect.TypeOf((*MockLocalRepo)(nil).UpdateRepoConfig), arg0)
 }
 
 // Var mocks base method

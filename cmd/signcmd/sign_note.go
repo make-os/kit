@@ -73,7 +73,7 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.SigningKey == "" {
-		args.SigningKey = repo.GetConfig("user.signingKey")
+		args.SigningKey = repo.GetGitConfigOption("user.signingKey")
 		if args.SigningKey == "" {
 			return ErrMissingPushKeyID
 		}
@@ -143,21 +143,21 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 // populateSignNoteArgsFromRepoConfig populates empty arguments field from repo config.
 func populateSignNoteArgsFromRepoConfig(repo types.LocalRepo, args *SignNoteArgs) {
 	if args.SigningKey == "" {
-		args.SigningKey = repo.GetConfig("user.signingKey")
+		args.SigningKey = repo.GetGitConfigOption("user.signingKey")
 	}
 	if args.PushKeyPass == "" {
-		args.PushKeyPass = repo.GetConfig("user.passphrase")
+		args.PushKeyPass = repo.GetGitConfigOption("user.passphrase")
 	}
 	if args.Fee == "" {
-		args.Fee = repo.GetConfig("user.fee")
+		args.Fee = repo.GetGitConfigOption("user.fee")
 	}
 	if args.Nonce == 0 {
-		args.Nonce = cast.ToUint64(repo.GetConfig("user.nonce"))
+		args.Nonce = cast.ToUint64(repo.GetGitConfigOption("user.nonce"))
 	}
 	if args.Value == "" {
-		args.Value = repo.GetConfig("user.value")
+		args.Value = repo.GetGitConfigOption("user.value")
 	}
 	if args.SetRemotePushTokensOptionOnly == false {
-		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetConfig("sign.noUsername"))
+		args.SetRemotePushTokensOptionOnly = cast.ToBool(repo.GetGitConfigOption("sign.noUsername"))
 	}
 }

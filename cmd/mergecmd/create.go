@@ -170,7 +170,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 	if args.UseEditor == true {
 		var editor = args.EditorPath
 		if editor == "" {
-			editor = r.GetConfig("core.editor")
+			editor = r.GetGitConfigOption("core.editor")
 		}
 		args.Body, err = args.EditorReader(editor, args.StdIn, os.Stdout, os.Stderr)
 		if err != nil {

@@ -156,7 +156,7 @@ var _ = Describe("Repo", func() {
 			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
 			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
 			urls := r.GetRemoteURLs()
-			Expect(urls).To(Equal([]string{"http://r.com", "http://r2.com"}))
+			Expect(urls).To(ContainElements("http://r.com", "http://r2.com"))
 		})
 
 		It("should get only remotes with matching name", func() {
@@ -164,7 +164,7 @@ var _ = Describe("Repo", func() {
 			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
 			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r3", URLs: []string{"http://r3.com"}})
 			urls := r.GetRemoteURLs("r1", "r3")
-			Expect(urls).To(And(ContainElement("http://r.com"), ContainElement("http://r3.com")))
+			Expect(urls).To(ContainElements("http://r.com", "http://r3.com"))
 		})
 	})
 
@@ -213,6 +213,24 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".UpdateRepoConfig & .GetRepoConfig", func() {
+		Specify("that .GetRepoConfig returns empty config object when no repo config file exist", func() {
+			lcfg, err := r.GetRepoConfig()
+			Expect(err).To(BeNil())
+			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{}}))
+		})
+
+		It("should update and get local config object correctly", func() {
+			repocfg := &types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b"}}}
+			err = r.UpdateRepoConfig(repocfg)
+			Expect(err).To(BeNil())
+
+			lcfg, err := r.GetRepoConfig()
+			Expect(err).To(BeNil())
+			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b"}}}))
+		})
+	})
+
 	Describe(".ReadCredentialFile", func() {
 		It("should return error if credential file does not exist", func() {
 			_, err := r.ReadCredentialFile()
@@ -243,21 +261,21 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	Describe(".GetConfig", func() {
+	Describe(".GetGitConfigOption", func() {
 		It("should empty result if key does not contain a section", func() {
-			Expect(r.GetConfig("key")).To(BeEmpty())
+			Expect(r.GetGitConfigOption("key")).To(BeEmpty())
 		})
 
 		It("should empty result if key does contains more than one subsections", func() {
-			Expect(r.GetConfig("key")).To(BeEmpty())
+			Expect(r.GetGitConfigOption("key")).To(BeEmpty())
 		})
 
 		It("should empty result if key does contains more than one subsections", func() {
-			Expect(r.GetConfig("section.key")).To(BeEmpty())
+			Expect(r.GetGitConfigOption("section.key")).To(BeEmpty())
 		})
 
 		It("should empty result if key does not exist", func() {
-			Expect(r.GetConfig("section.subsection.subsection.key")).To(BeEmpty())
+			Expect(r.GetGitConfigOption("section.subsection.subsection.key")).To(BeEmpty())
 		})
 
 		It("should expected result if key exist", func() {
@@ -267,7 +285,7 @@ var _ = Describe("Repo", func() {
 			Expect(r.SetConfig(c)).To(BeNil())
 			c.Raw.Section("section").Subsection("subsection").SetOption("key", "stuff")
 			Expect(r.SetConfig(c)).To(BeNil())
-			Expect(r.GetConfig("section.subsection.key")).To(Equal("stuff"))
+			Expect(r.GetGitConfigOption("section.subsection.key")).To(Equal("stuff"))
 		})
 	})
 

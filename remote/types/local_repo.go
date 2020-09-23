@@ -40,8 +40,8 @@ type LocalRepo interface {
 	// the repository or its namespace
 	IsContributor(pushKeyID string) bool
 
-	// GetConfig finds and returns a config value
-	GetConfig(path string) string
+	// GetGitConfigOption finds and returns git config option value
+	GetGitConfigOption(path string) string
 
 	// GetRemoteURLs returns remote URLS of the repository.
 	// Use `names` to select specific remotes with matching name.
@@ -82,7 +82,7 @@ type LocalRepo interface {
 	// Tag returns a tag from the repository.
 	Tag(name string) (*plumbing.Reference, error)
 
-	// Config return the repository config
+	// Config return the repository's git config
 	Config() (*config.Config, error)
 
 	// SetConfig sets the repo config
@@ -146,6 +146,21 @@ type LocalRepo interface {
 	// The stop hash ancestor is not included in the result.
 	// Reverse reverses the result
 	GetAncestors(commit *object.Commit, stopHash string, reverse bool) (ancestors []*object.Commit, err error)
+
+	// UpdateRepoConfig updates the 'repocfg' configuration file
+	UpdateRepoConfig(cfg *LocalConfig) (err error)
+
+	// GetLobeConfig returns the 'repocfg' config object
+	GetRepoConfig() (*LocalConfig, error)
+}
+
+type LocalConfig struct {
+	Tokens map[string][]string `toml:"tokens"`
+}
+
+// EmptyLocalConfig returns an instance of LocalConfig with fields initialized to zero values.
+func EmptyLocalConfig() *LocalConfig {
+	return &LocalConfig{Tokens: map[string][]string{}}
 }
 
 type RefFetchArgs struct {

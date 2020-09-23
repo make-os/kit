@@ -142,7 +142,7 @@ var _ = Describe("IssueCreate", func() {
 				})
 
 				It("should request fetch core.editor from git config", func() {
-					mockRepo.EXPECT().GetConfig("core.editor")
+					mockRepo.EXPECT().GetGitConfigOption("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
 					issuecmd.IssueCreateCmd(mockRepo, args)
 				})
@@ -157,7 +157,7 @@ var _ = Describe("IssueCreate", func() {
 				})
 
 				It("should return error if reading from editor failed", func() {
-					mockRepo.EXPECT().GetConfig("core.editor")
+					mockRepo.EXPECT().GetGitConfigOption("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
 						return "", fmt.Errorf("error")
 					}
@@ -167,7 +167,7 @@ var _ = Describe("IssueCreate", func() {
 				})
 
 				It("should return error when body is unset through editor", func() {
-					mockRepo.EXPECT().GetConfig("core.editor")
+					mockRepo.EXPECT().GetGitConfigOption("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
 					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())

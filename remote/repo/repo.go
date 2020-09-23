@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/types/state"
@@ -169,8 +170,8 @@ func (r *Repo) SetPath(path string) {
 	r.Path = path
 }
 
-// GetConfig finds and returns a config value
-func (lg *Repo) GetConfig(path string) string {
+// GetGitConfigOption finds and returns git config option value
+func (lg *Repo) GetGitConfigOption(path string) string {
 	cfg, _ := lg.Config()
 	if cfg == nil {
 		return ""
@@ -473,4 +474,47 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 	}
 
 	return
+}
+
+// UpdateLocalConfig updates the repo's 'repocfg' configuration file
+func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
+
+	var f *os.File
+	cfgFile := filepath.Join(r.Path, ".git", "repocfg")
+	if !util.IsFileOk(cfgFile) {
+		f, err = os.Create(cfgFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to create repo config file")
+		}
+		defer f.Close()
+	}
+
+	if f == nil {
+		f, err = os.OpenFile(cfgFile, os.O_RDWR, 0644)
+		if err != nil {
+			return errors.Wrap(err, "failed to open repo config file")
+		}
+		defer f.Close()
+	}
+
+	enc := toml.NewEncoder(f)
+	return enc.Encode(cfg)
+}
+
+// GetLocalConfig returns the repo's 'repocfg' config object.
+// Returns an empty LocalConfig and nil if no repo config file was found
+func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
+
+	cfgFile := filepath.Join(r.Path, ".git", "repocfg")
+	if !util.IsFileOk(cfgFile) {
+		return types.EmptyLocalConfig(), nil
+	}
+
+	var cfg types.LocalConfig
+	_, err := toml.DecodeFile(cfgFile, &cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }

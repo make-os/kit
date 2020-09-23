@@ -172,28 +172,36 @@ type GenSetPushTokenArgs struct {
 
 // GenSetPushToken generates a push request token for a target remote and
 // updates the credential file with a url that includes the token. It will
-// also store the token under the <remote>.tokens option to be combined
-// with future tokens.
+// also store the token under the <remote>.tokens option in .git/repocfg
+// for future/third-party use.
 //
-// Existing tokens found in <remote>.tokens are concatenated and used to
-// update the credential file. Existing tokens that point to same reference
-// as the target reference of a call will be replaced with the token generated
-// in the call.
+// Existing tokens found in <remote>.tokens of repocfg are concatenated and
+// used to update the credential file. Existing tokens that point to same
+// reference as the target reference of a call will be replaced with the
+// token generated in the call.
 func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (string, error) {
 	if args.Stderr == nil {
 		args.Stderr = ioutil.Discard
 	}
 
 	// Get the repo configuration
-	repoCfg, err := repo.Config()
+	gitCfg, err := repo.Config()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get config")
 	}
 
 	// If target remote is set, but it is not listed in the config, return err
-	remote := repoCfg.Remotes[args.TargetRemote]
+	remote := gitCfg.Remotes[args.TargetRemote]
 	if remote == nil {
 		return "", fmt.Errorf("remote was not found")
+	}
+
+	// Get the content of repocfg
+	repoCfg, err := repo.GetRepoConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read repocfg file")
+	} else if _, ok := repoCfg.Tokens[remote.Name]; !ok {
+		repoCfg.Tokens[remote.Name] = []string{}
 	}
 
 	// Get existing push tokens from `tokens` option of the remote as long as reset was
@@ -201,8 +209,7 @@ func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (str
 	// avoid creating duplicate tokens.
 	var existingTokens = make(map[string]struct{})
 	if !args.ResetTokens {
-		pt := strings.TrimSpace(repoCfg.Raw.Section("remote").Subsection(remote.Name).Option("tokens"))
-		for _, t := range strings.Split(strings.Trim(pt, ","), ",") {
+		for _, t := range repoCfg.Tokens[remote.Name] {
 			detail, err := DecodePushToken(t)
 			if err != nil || detail.Reference == args.TxDetail.Reference {
 				continue
@@ -211,7 +218,7 @@ func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (str
 		}
 	}
 
-	var lastRepoName, lastRepoNS, token, tokens string
+	var lastRepoName, lastRepoNS, token string
 	for i, v := range remote.URLs {
 		rawURL, err := url.Parse(v)
 		if err != nil {
@@ -244,17 +251,14 @@ func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (str
 		existingTokens[token] = struct{}{}
 
 		// Use tokens as URL username and update credential file
-		tokens = strings.Join(funk.Keys(existingTokens).([]string), ",")
-		rawURL.User = url.UserPassword(tokens, "-")
+		rawURL.User = url.UserPassword(strings.Join(funk.Keys(existingTokens).([]string), ","), "-")
 		repo.UpdateCredentialFile(rawURL.String())
 	}
 
-	// Update remote.*.tokens
-	repoCfg.Raw.Section("remote").Subsection(remote.Name).SetOption("tokens", tokens)
-
-	// Update the repo configuration
-	if err := repo.SetConfig(repoCfg); err != nil {
-		return "", errors.Wrap(err, "failed to update config")
+	// Update <remote>.tokens in repocfg
+	repoCfg.Tokens[remote.Name] = append([]string{}, funk.Keys(existingTokens).([]string)...)
+	if err = repo.UpdateRepoConfig(repoCfg); err != nil {
+		return "", errors.Wrap(err, "failed to save token(s)")
 	}
 
 	return token, nil
