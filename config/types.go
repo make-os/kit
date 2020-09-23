@@ -204,11 +204,8 @@ func EmptyAppConfig() *AppConfig {
 	}
 }
 
-// GetExecName returns the app's executable name
-func (c *AppConfig) GetExecName() string {
-	if c.IsProd() {
-		return ExecName
-	}
+// GetAppName returns the app's name
+func (c *AppConfig) GetAppName() string {
 	return AppName
 }
 

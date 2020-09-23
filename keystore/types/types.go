@@ -49,6 +49,11 @@ func (sm StoredKeyMeta) Get(key string) interface{} {
 	return sm[key]
 }
 
+// Map returns base map
+func (sm StoredKeyMeta) Map() map[string]interface{} {
+	return sm
+}
+
 // KeyPayload contains key data that will  be stored on disk
 type KeyPayload struct {
 	Type          int    `json:"type" msgpack:"type"`

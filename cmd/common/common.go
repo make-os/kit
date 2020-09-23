@@ -88,8 +88,8 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 
 	// If passphrase is unset and target repo is set, attempt to get the
 	// passphrase from 'user.passphrase' config.
-	unprotected := key.IsUnprotected()
-	if !unprotected && args.Passphrase == "" && args.TargetRepo != nil {
+	protected := !key.IsUnprotected()
+	if protected && args.Passphrase == "" && args.TargetRepo != nil {
 		repoCfg, err := args.TargetRepo.Config()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get repo config")
@@ -98,18 +98,18 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 
 		// If we still don't have a passphrase, get it from the repo scoped env variable.
 		if args.Passphrase == "" {
-			args.Passphrase = os.Getenv(MakeRepoScopedEnvVar(cfg.GetExecName(), args.TargetRepo.GetName(), "PASS"))
+			args.Passphrase = os.Getenv(MakeRepoScopedEnvVar(cfg.GetAppName(), args.TargetRepo.GetName(), "PASS"))
 		}
 	}
 
 	// If key is protected and still no passphrase,
 	// try to get it from the general passphrase env variable
-	if !unprotected && args.Passphrase == "" {
-		args.Passphrase = os.Getenv(MakePassEnvVar(cfg.GetExecName()))
+	if protected && args.Passphrase == "" {
+		args.Passphrase = os.Getenv(MakePassEnvVar(cfg.GetAppName()))
 	}
 
 	// If key is protected, still no passphrase and prompting is not allowed -> exit with error
-	if !unprotected && args.Passphrase == "" && args.NoPrompt {
+	if protected && args.Passphrase == "" && args.NoPrompt {
 		return nil, fmt.Errorf("passphrase of signing key is required")
 	}
 

@@ -48,7 +48,6 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error 
 	// Get and unlock the pusher key
 	key, err := args.PushKeyUnlocker(cfg, &common.UnlockKeyArgs{
 		KeyStoreID: pushKeyID,
-		Passphrase: "",
 		NoPrompt:   false,
 		TargetRepo: repo,
 	})

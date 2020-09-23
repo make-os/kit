@@ -643,8 +643,8 @@ func IsGitInstalled(path string) (bool, string) {
 }
 
 // Notify displays a desktop notification
-func Notify(val string) {
-	beeep.Alert("", val, "")
+func Notify(val ...interface{}) {
+	beeep.Alert("", fmt.Sprint(val...), "")
 }
 
 // ParseLogLevel parse value from --loglevel flag

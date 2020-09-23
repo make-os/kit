@@ -110,7 +110,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Set merge ID from env if unset
 	if args.MergeID == "" {
-		args.MergeID = strings.ToUpper(os.Getenv(fmt.Sprintf("%s_MR_ID", cfg.GetExecName())))
+		args.MergeID = strings.ToUpper(os.Getenv(fmt.Sprintf("%s_MR_ID", cfg.GetAppName())))
 	}
 
 	// Signing key is required
@@ -136,7 +136,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Updated the push key passphrase to the actual passphrase used to unlock the key.
 	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
+	args.PushKeyPass = objx.New(key.GetMeta().Map()).Get("passphrase").Str(args.PushKeyPass)
 
 	// if MergeID is set, validate it.
 	if args.MergeID != "" {
@@ -190,7 +190,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase to unlock the push key.
-	passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), repo.GetName(), "PASS")
+	passVar := common.MakeRepoScopedEnvVar(cfg.GetAppName(), repo.GetName(), "PASS")
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
 	}

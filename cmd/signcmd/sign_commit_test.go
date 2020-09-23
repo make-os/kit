@@ -467,7 +467,7 @@ var _ = Describe("SignCommit", func() {
 				err := SignCommitCmd(cfg, mockRepo, args)
 				Expect(err).To(BeNil())
 
-				passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), "repo_name", "PASS")
+				passVar := common.MakeRepoScopedEnvVar(cfg.GetAppName(), "repo_name", "PASS")
 				Expect(os.Getenv(passVar)).To(Equal(args.PushKeyPass))
 			})
 		})

@@ -132,7 +132,7 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Add hooks if allowed
 	dotGitPath := filepath.Join(repo.GetPath(), ".git")
 	if !args.NoHook {
-		if err = addHooks(cfg.GetExecName(), dotGitPath); err != nil {
+		if err = addHooks(cfg.GetAppName(), dotGitPath); err != nil {
 			return err
 		}
 	}

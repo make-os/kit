@@ -165,7 +165,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 
 	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
 	// This is required to allow git-sign learn the passphrase to unlock the push key.
-	passVar := common.MakeRepoScopedEnvVar(cfg.GetExecName(), repo.GetName(), "PASS")
+	passVar := common.MakeRepoScopedEnvVar(cfg.GetAppName(), repo.GetName(), "PASS")
 	if len(os.Getenv(passVar)) == 0 {
 		os.Setenv(passVar, args.PushKeyPass)
 	}
