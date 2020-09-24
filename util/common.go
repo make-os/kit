@@ -631,6 +631,16 @@ func ParseUint(s string, base int, bitSize int) (UInt64, error) {
 	return UInt64(v), err
 }
 
+// ParseGitVersion extracts semver version from `git version` output
+func ParseGitVersion(version string) (ver string) {
+	gitVer := strings.Fields(version)[2]
+	verSplit := strings.SplitN(gitVer, ".", 4)
+	if len(verSplit) < 3 {
+		return strings.Join(verSplit, ".")
+	}
+	return strings.Join(verSplit[:3], ".")
+}
+
 // IsGitInstalled checks whether git executable exist in the given path.
 // Returns true and git version if installed or false.
 func IsGitInstalled(path string) (bool, string) {
@@ -639,7 +649,7 @@ func IsGitInstalled(path string) (bool, string) {
 	if err != nil {
 		return false, ""
 	}
-	return true, strings.Fields(string(out))[2]
+	return true, ParseGitVersion(strings.Fields(string(out))[2])
 }
 
 // Notify displays a desktop notification
