@@ -1,11 +1,13 @@
 package keystore
 
 import (
+	"io"
 	"path/filepath"
 	"strings"
 
 	"github.com/make-os/lobe/keystore/types"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/pkg/errors"
 )
 
 // UnlockKeyUI unlocks a target key by rendering prompt to collect a passphrase.
@@ -35,7 +37,10 @@ func (ks *Keystore) UnlockKeyUI(addressOrIndex, passphrase, promptMsg string) (t
 
 	// Ask for passphrase if unset
 	if passphrase == "" {
-		passphrase, _ = ks.AskForPasswordOnce(promptMsg)
+		passphrase, err = ks.AskForPasswordOnce(promptMsg)
+		if err == io.EOF {
+			return nil, "", errors.Wrap(io.EOF, "failed to ask for passphrase")
+		}
 	}
 
 	// If passphrase is not a path to a file, proceed to unlock the key.

@@ -633,8 +633,7 @@ func ParseUint(s string, base int, bitSize int) (UInt64, error) {
 
 // ParseGitVersion extracts semver version from `git version` output
 func ParseGitVersion(version string) (ver string) {
-	gitVer := strings.Fields(version)[2]
-	verSplit := strings.SplitN(gitVer, ".", 4)
+	verSplit := strings.SplitN(version, ".", 4)
 	if len(verSplit) < 3 {
 		return strings.Join(verSplit, ".")
 	}
