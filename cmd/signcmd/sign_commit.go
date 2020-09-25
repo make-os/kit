@@ -201,13 +201,13 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 	if headObj != nil && headObj.(*object.Commit).PGPSignature != "" && !args.ForceSign {
 		txd, _ := types.DecodeSignatureHeader([]byte(headObj.(*object.Commit).PGPSignature))
 		if txd != nil && txd.PushKeyID == pushKeyID {
-			goto create_token
+			goto createToken
 		}
 	}
 
 	// Skip signing if CreatePushTokenOnly is true
 	if args.CreatePushTokenOnly {
-		goto create_token
+		goto createToken
 	}
 
 	// If commit amendment is not required, create and sign a new commit instead
@@ -215,7 +215,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 		if err := repo.CreateEmptyCommit(args.Message, args.SigningKey); err != nil {
 			return err
 		}
-		goto create_token
+		goto createToken
 	}
 
 	// At this point, recent commit amendment is required.
@@ -236,7 +236,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Create & set push request token on the remote in config.
 	// Also get the post-sign hash of the current branch.
-create_token:
+createToken:
 
 	// Skip token creation if only the reference needs to be signed
 	if args.SignRefOnly {
