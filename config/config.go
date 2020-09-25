@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/lobe/data"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
+	"github.com/mitchellh/go-homedir"
 	"github.com/olebedev/emitter"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/common"
@@ -70,6 +71,10 @@ var (
 		"/dns4/s4.seeders.live/tcp/9003/p2p/12D3KooWE7KybnAaoxuw6UiMpof2LT9hMky8k83tZgpdNCqRWx9P",
 	}
 )
+
+func init() {
+	DefaultDataDir, _ = homedir.Expand(path.Join("~", "."+AppName))
+}
 
 // RawStateToGenesisData returns the genesis data
 func RawStateToGenesisData(state json.RawMessage) (entries []*GenDataEntry) {
@@ -141,7 +146,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	// If home.prefix is set, set mode to dev mode.
 	if devDataDirPrefix != "" {
 		devMode = true
-		dataDir = dataDir + "_" + devDataDirPrefix
+		dataDir, _ = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
 	}
 
 	// In development mode, use the development data directory.
