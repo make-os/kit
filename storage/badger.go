@@ -29,6 +29,7 @@ func NewBadger() *Badger {
 func (b *Badger) Init(dir string) error {
 
 	opts := badger.DefaultOptions(dir)
+	opts = opts.WithTruncate(true)
 	if dir == "" {
 		opts = opts.WithInMemory(true)
 	}

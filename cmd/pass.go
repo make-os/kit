@@ -28,8 +28,8 @@ var pass = &cobra.Command{
 		pf := pflag.NewFlagSet("", pflag.ContinueOnError)
 		pf.StringP("key", "k", "", "The index or address of the key")
 		pf.StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
-		pf.Bool("start-agent", false, "Start the passphrase agent service")
-		pf.Bool("stop-agent", false, "Stop the passphrase agent service")
+		pf.Bool("start-agent", false, "Start the cache agent service")
+		pf.Bool("stop-agent", false, "Stop the cache agent service")
 		pf.String("port", config.DefaultCacheAgentPort, "Set the cache agent listening port")
 		pf.ParseErrorsWhitelist.UnknownFlags = true
 		if err = pf.Parse(args); err != nil {
