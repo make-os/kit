@@ -385,7 +385,7 @@ func XorBytes(a, b []byte) []byte {
 }
 
 // RemoveFlag takes a slice of arguments and remove specific flags
-func RemoveFlag(args []string, flags []string) []string {
+func RemoveFlag(args []string, flags ...string) []string {
 	var newArgs []string
 	curFlag := ""
 	curFlagRemoved := false

@@ -485,31 +485,36 @@ var _ = Describe("Common", func() {
 
 	Describe(".RemoveFlag", func() {
 		Specify("case 1", func() {
-			res := RemoveFlag([]string{"-nickname", "abc", "--age", "12"}, []string{"name", "height"})
+			res := RemoveFlag([]string{"-nickname", "abc", "--age", "12"}, "name", "height")
 			Expect(res).To(Equal([]string{"-nickname", "abc", "--age", "12"}))
 		})
 		Specify("case 2", func() {
-			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, []string{"name", "age"})
+			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, "name", "age")
 			Expect(res).To(Equal([]string{"--nickname", "abc"}))
 		})
 		Specify("case 3", func() {
-			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, []string{"nickname", "height"})
+			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, "nickname", "height")
 			Expect(res).To(Equal([]string{"--age", "12"}))
 		})
 
 		Specify("case 4", func() {
-			res := RemoveFlag([]string{"--nickname=abc", "--age", "12"}, []string{"nickname", "height"})
+			res := RemoveFlag([]string{"--nickname=abc", "--age", "12"}, "nickname", "height")
 			Expect(res).To(Equal([]string{"--age", "12"}))
 		})
 
 		Specify("case 5", func() {
-			res := RemoveFlag([]string{"--nickname", "logan", "xmen"}, []string{"nickname"})
+			res := RemoveFlag([]string{"--nickname", "logan", "xmen"}, "nickname")
 			Expect(res).To(Equal([]string{"xmen"}))
 		})
 
 		Specify("case 6", func() {
-			res := RemoveFlag([]string{"--nickname", "logan", "xmen", "--sex", "female"}, []string{"nickname"})
+			res := RemoveFlag([]string{"--nickname", "logan", "xmen", "--sex", "female"}, "nickname")
 			Expect(res).To(Equal([]string{"xmen", "--sex", "female"}))
+		})
+
+		Specify("case 1", func() {
+			res := RemoveFlag([]string{"-n", "abc", "--age", "12"}, "name", "height", "n")
+			Expect(res).To(Equal([]string{"--age", "12"}))
 		})
 	})
 

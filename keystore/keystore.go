@@ -80,6 +80,8 @@ func (ks *Keystore) AskForPassword(prompt ...string) (string, error) {
 	}
 }
 
+type AskPassOnceFunc func(prompt ...string) (string, error)
+
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
 func (ks *Keystore) AskForPasswordOnce(prompt ...string) (string, error) {

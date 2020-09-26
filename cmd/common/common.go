@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/make-os/lobe/cmd/passcmd/agent"
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/keystore"
 	"github.com/make-os/lobe/keystore/types"
@@ -106,6 +107,42 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 	// try to get it from the general passphrase env variable
 	if protected && args.Passphrase == "" {
 		args.Passphrase = os.Getenv(MakePassEnvVar(cfg.GetAppName()))
+	}
+
+	// Attempt to get the passphrase from the pass agent
+	if protected && args.Passphrase == "" {
+
+		// Determine the port; Use default or the value of env <APPNAME>_PASSAGENT_PORT
+		port := config.DefaultCacheAgentPort
+		if envPort := os.Getenv(fmt.Sprintf("%s_PASSAGENT_PORT",
+			strings.ToUpper(config.AppName))); envPort != "" {
+			port = envPort
+		}
+
+		// Get passphrase from pass-agent associated with the key's user address
+		if passphrase, err := agent.SendGetRequest(port, key.GetUserAddress()); err == nil && passphrase != "" {
+			args.Passphrase = passphrase
+			goto endAgentQuery
+		}
+
+		// Get passphrase from pass-agent associated with the key's push address
+		if passphrase, err := agent.SendGetRequest(port, key.GetPushKeyAddress()); err == nil && passphrase != "" {
+			args.Passphrase = passphrase
+			goto endAgentQuery
+		}
+
+		// Get passphrase from pass-agent associated with the original query key
+		if passphrase, err := agent.SendGetRequest(port, args.KeyStoreID); err == nil && passphrase != "" {
+			args.Passphrase = passphrase
+			goto endAgentQuery
+		}
+
+		// Get passphrase from pass-agent associated with the repository as the key
+		if passphrase, err := agent.SendGetRequest(port, args.TargetRepo.GetName()); err == nil && passphrase != "" {
+			args.Passphrase = passphrase
+			goto endAgentQuery
+		}
+	endAgentQuery:
 	}
 
 	// If key is protected, still no passphrase and prompting is not allowed -> exit with error

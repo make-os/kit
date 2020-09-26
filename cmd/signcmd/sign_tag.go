@@ -152,7 +152,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	}
 
 	// Remove -m, --message, -u, -local-user flag from the git args
-	gitArgs = util.RemoveFlag(gitArgs, []string{"m", "message", "u", "local-user"})
+	gitArgs = util.RemoveFlag(gitArgs, "m", "message", "u", "local-user")
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
