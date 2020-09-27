@@ -131,9 +131,19 @@ var rootCmd = &cobra.Command{
 }
 
 // isGitSignRequest checks whether the program arguments
-// indicate a request from git to sign a message
-func isGitSignRequest(args []string) bool {
-	return len(args) == 4 && args[1] == "--status-fd=2" && args[2] == "-bsau"
+// indicate a request from git to sign a message.
+// Returns the signing key and true if args indicate a sign
+// request. Otherwise, an empty string and false is returned.
+func isGitSignRequest(args []string) (string, bool) {
+	if len(args) == 4 && args[1] == "--status-fd=2" && args[2] == "-bsau" {
+		return args[3], true
+	}
+
+	if len(args) == 3 && args[1] == "-bsau" {
+		return args[2], true
+	}
+
+	return "", false
 }
 
 // isGitVerifyRequest checks whether the program arguments
@@ -146,10 +156,10 @@ func isGitVerifyRequest(args []string) bool {
 var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if isGitSignRequest(args) {
+		if signingKey, ok := isGitSignRequest(args); ok {
 			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
 				Args:            os.Args,
+				PushKeyID:       signingKey,
 				RepoGetter:      repo.Get,
 				PushKeyUnlocker: common.UnlockKey,
 				StdErr:          os.Stderr,
@@ -173,7 +183,7 @@ var fallbackCmd = &cobra.Command{
 				StdErr:          os.Stderr,
 				StdIn:           os.Stdin,
 			}); err != nil {
-				log.Fatal(err.Error())
+				os.Exit(1)
 			}
 			os.Exit(0)
 		}
