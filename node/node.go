@@ -296,7 +296,7 @@ func (n *Node) GetModulesHub() types2.ModulesHub {
 
 // Stop the node
 func (n *Node) Stop() {
-	n.log.Info("lobe is stopping...")
+	n.log.Info("stopping...")
 
 	if n.dht != nil {
 		n.dht.Stop()
@@ -318,5 +318,5 @@ func (n *Node) Stop() {
 		n.log.Info("Databases have been closed")
 	}
 
-	n.log.Info("lobe has stopped")
+	n.log.Info("stopped")
 }
