@@ -375,7 +375,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) (err error) {
 		return err
 	}
 
-	h.pktEnc.Encode(plumbing.SidebandProgressln("hash: " + h.NoteID))
+	h.pktEnc.Encode(plumbing.SidebandProgressln(fmt.Sprintf("hash: %s ", h.NoteID)))
 
 	return nil
 }
