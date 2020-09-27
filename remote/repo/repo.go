@@ -510,11 +510,11 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 		return types.EmptyLocalConfig(), nil
 	}
 
-	var cfg types.LocalConfig
-	_, err := toml.DecodeFile(cfgFile, &cfg)
+	var cfg = types.EmptyLocalConfig()
+	_, err := toml.DecodeFile(cfgFile, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

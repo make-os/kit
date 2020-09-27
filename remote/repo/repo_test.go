@@ -225,9 +225,13 @@ var _ = Describe("Repo", func() {
 			err = r.UpdateRepoConfig(repocfg)
 			Expect(err).To(BeNil())
 
+			repocfg.Tokens["origin"] = append(repocfg.Tokens["origin"], "something")
+			err = r.UpdateRepoConfig(repocfg)
+			Expect(err).To(BeNil())
+
 			lcfg, err := r.GetRepoConfig()
 			Expect(err).To(BeNil())
-			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b"}}}))
+			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b", "something"}}}))
 		})
 	})
 
