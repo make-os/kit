@@ -113,7 +113,7 @@ var _ = Describe("GitVerify", func() {
 
 			err := GitVerifyCmd(cfg, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to unlock push key: error"))
+			Expect(err).To(MatchError("error"))
 		})
 
 		It("should return err when unable to verify signature", func() {

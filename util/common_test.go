@@ -637,10 +637,8 @@ var _ = Describe("Common", func() {
 
 	Describe(".ParseGitVersion", func() {
 		It("should return expected values", func() {
-			Expect(ParseGitVersion("git version 2.26.2.windows.1")).To(Equal("2.26.2"))
-			Expect(ParseGitVersion("git version 2.26.2")).To(Equal("2.26.2"))
-			Expect(ParseGitVersion("git version 2.26")).To(Equal("2.26"))
-			Expect(ParseGitVersion("git version 2")).To(Equal("2"))
+			Expect(ParseGitVersion("git version 2.26.2.windows.1")).To(Equal("git version 2.26.2"))
+			Expect(ParseGitVersion("git version 2.26.2")).To(Equal("git version 2.26.2"))
 		})
 	})
 })

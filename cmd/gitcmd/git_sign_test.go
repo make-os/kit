@@ -63,7 +63,7 @@ var _ = Describe("GitSign", func() {
 
 		It("should successfully create and output a PEM encoded signature with expected headers", func() {
 			out := bytes.NewBuffer(nil)
-			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}, StdOut: out, StdErr: out}
+			args := &GitSignArgs{Args: []string{"", "", "", key.PushAddr().String()}, PushKeyID: key.PushAddr().String(), StdOut: out, StdErr: out}
 			args.RepoGetter = func(path string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.PushKeyUnlocker = func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (types.StoredKey, error) {
