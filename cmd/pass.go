@@ -30,14 +30,14 @@ var pass = &cobra.Command{
 		pf.StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
 		pf.Bool("start-agent", false, "Start the passphrase agent service")
 		pf.Bool("stop-agent", false, "Stop the passphrase agent service")
-		pf.String("port", config.DefaultCacheAgentPort, "Set the cache agent listening port")
+		pf.StringP("port", "p", config.DefaultCacheAgentPort, "Set the cache agent listening port")
 		pf.ParseErrorsWhitelist.UnknownFlags = true
 		if err = pf.Parse(args); err != nil {
 			log.Fatal(err.Error())
 		}
 
 		// Remove known flags
-		args = util.RemoveFlag(args, "key", "k", "cache", "t", "port")
+		args = util.RemoveFlag(args, "key", "k", "cache", "c", "port", "p")
 
 		key, _ := pf.GetString("key")
 		cacheDurStr, _ := pf.GetString("cache")
