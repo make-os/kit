@@ -18,6 +18,10 @@ type GitSignArgs struct {
 	// Args is the program arguments
 	Args []string
 
+	// PushKeyID is the push key to be used to sign.
+	// It is extracted from the program argument
+	PushKeyID string
+
 	// RepoGetter is the function for getting a local repository
 	RepoGetter func(path string) (types.LocalRepo, error)
 
@@ -36,7 +40,7 @@ type GitSignArgs struct {
 func GitSignCmd(cfg *config.AppConfig, data io.Reader, args *GitSignArgs) error {
 
 	// Get the data to be signed and the key id to use
-	pushKeyID := args.Args[3]
+	pushKeyID := args.PushKeyID
 
 	// Get the target repo
 	repoDir, _ := os.Getwd()

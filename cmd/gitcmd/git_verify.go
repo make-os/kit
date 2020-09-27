@@ -87,11 +87,10 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	key, err := args.PushKeyUnlocker(cfg, &common.UnlockKeyArgs{
 		KeyStoreID: txDetail.PushKeyID,
 		Passphrase: "",
-		NoPrompt:   false,
+		NoPrompt:   true,
 		TargetRepo: targetRepo,
 	})
 	if err != nil {
-		err = errors.Wrap(err, "failed to unlock push key")
 		fmt.Fprintf(args.StdErr, err.Error()+"\n")
 		return err
 	}
