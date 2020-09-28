@@ -30,6 +30,7 @@ var _ = Describe("RPC", func() {
 
 	BeforeEach(func() {
 		cfg = config.EmptyAppConfig()
+		cfg.RPC.On = true
 		cfg.G().Log = logger.NewLogrusNoOp()
 		mux = http.NewServeMux()
 		rpc = New(mux, cfg)
@@ -54,6 +55,13 @@ var _ = Describe("RPC", func() {
 			Expect(resp.Err.Message).To(Equal("Parse error"))
 			Expect(resp.Result).To(BeNil())
 			Expect(rr.Code).To(Equal(400))
+		})
+
+		It("should return not set handler if RPC.ON is false", func() {
+			cfg.RPC.On = false
+			rpc = &Handler{cfg: cfg}
+			rpc.registerHandler(mux, "/rpc")
+			Expect(rpc.handlerSet).To(BeFalse())
 		})
 	})
 

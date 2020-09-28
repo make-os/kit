@@ -63,6 +63,12 @@ func (s *Handler) Methods() (methodsInfo []MethodInfo) {
 
 // registerHandler registers the main handler
 func (s *Handler) registerHandler(mux *http.ServeMux, path string) {
+
+	// Do not register handler if RPC service is not turned on
+	if !s.cfg.RPC.On {
+		return
+	}
+
 	if !s.handlerSet {
 		mux.Handle(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if resp := s.handle(w, r); resp != nil {
