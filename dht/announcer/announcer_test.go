@@ -97,7 +97,7 @@ var _ = Describe("Announcer", func() {
 		When("task.CheckExistence is true", func() {
 			It("should return ErrDelisted and remove key from announce list if no checker for the key type is set", func() {
 				mockDHTKeeper.EXPECT().RemoveFromAnnounceList(key)
-				err := ann.Do(1, &announcer.Task{Key: key, CheckExistence: true, Done: nil})
+				err := ann.Do(&announcer.Task{Key: key, CheckExistence: true, Done: nil})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(announcer.ErrDelisted))
 			})
@@ -107,13 +107,14 @@ var _ = Describe("Announcer", func() {
 					Expect(key).To(Equal(k))
 					return false
 				})
-				err := ann.Do(1, &announcer.Task{Key: key, Type: 1, CheckExistence: true, Done: nil})
+				err := ann.Do(&announcer.Task{Key: key, Type: 1, CheckExistence: true, Done: nil})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(announcer.ErrDelisted))
 			})
 		})
 
-		When("Connected to a DHT peer", func() {
+		When("annoucement is successful", func() {
+			task := &announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}}
 			BeforeEach(func() {
 				dhtB, err = server.New(context.Background(), nil, cfg2)
 				Expect(err).To(BeNil())
@@ -124,15 +125,24 @@ var _ = Describe("Announcer", func() {
 
 			It("should re-add key to announce list and return nil error", func() {
 				mockDHTKeeper.EXPECT().AddToAnnounceList(key, "repo1", 1, gomock.Any())
-				err := ann.Do(1, &announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}})
+				err := ann.Do(task)
 				Expect(err).To(BeNil())
+			})
+
+			It("should remove task from queued index", func() {
+				mockDHTKeeper.EXPECT().AddToAnnounceList(key, "repo1", 1, gomock.Any())
+				ann.Announce(task.Type, task.RepoName, task.Key, task.Done)
+				Expect(ann.GetQueued()).To(HaveKey(task.GetID()))
+				err := ann.Do(task)
+				Expect(err).To(BeNil())
+				Expect(ann.GetQueued()).ToNot(HaveKey(task.GetID()))
 			})
 		})
 
 		When("Not connected to a DHT peer", func() {
 			It("should return error", func() {
 				announcer.MaxRetry = 0
-				err := ann.Do(1, &announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}})
+				err := ann.Do(&announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to find any peer in table"))
 			})

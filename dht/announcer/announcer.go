@@ -12,13 +12,10 @@ import (
 	"github.com/make-os/lobe/config"
 	dht2 "github.com/make-os/lobe/dht"
 	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/pkgs/queue"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
-	"github.com/thoas/go-funk"
 )
 
 const (
@@ -97,7 +94,8 @@ type Announcer struct {
 	dht         *dht.IpfsDHT
 	checkers    *sync.Map
 	lck         *sync.Mutex
-	queue       *queue.UniqueQueue
+	queue       chan *Task
+	queued      map[string]struct{}
 	reannouncer *time.Ticker
 	started     bool
 	stopped     bool
@@ -111,7 +109,8 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 		checkers: &sync.Map{},
 		lck:      &sync.Mutex{},
 		log:      cfg.G().Log.Module("announcer"),
-		queue:    queue.NewUnique(),
+		queue:    make(chan *Task, 10000),
+		queued:   make(map[string]struct{}),
 	}
 
 	go func() {
@@ -122,6 +121,31 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 	return rs
 }
 
+// addTask adds a new announcement task to the queue.
+// Returns true if task was added or false if it already exist in the queue.
+func (a *Announcer) addTask(task *Task) bool {
+	a.lck.Lock()
+	defer a.lck.Unlock()
+	if _, ok := a.queued[task.GetID().(string)]; !ok {
+		a.queue <- task
+		a.queued[task.GetID().(string)] = struct{}{}
+		return true
+	}
+	return false
+}
+
+// GetQueued returns the index containing tasks awaiting processing.
+func (a *Announcer) GetQueued() map[string]struct{} {
+	return a.queued
+}
+
+// finishedTask removes the task from the queued index
+func (a *Announcer) finishedTask(task *Task) {
+	a.lck.Lock()
+	defer a.lck.Unlock()
+	delete(a.queued, task.GetID().(string))
+}
+
 // Announce queues an object to be announced.
 // objType is the type of the object.
 // repo is the name of the repository where the object can be found.
@@ -130,11 +154,7 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 // Returns true if object has been successfully queued
 func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
 	task := &Task{Type: objType, RepoName: repo, Key: key, Done: doneCB}
-	if !a.queue.Has(task) {
-		a.queue.Append(task)
-		return true
-	}
-	return false
+	return a.addTask(task)
 }
 
 // NewSession creates an instance of Session
@@ -144,12 +164,12 @@ func (a *Announcer) NewSession() types.Session {
 
 // HasTask checks whether there are one or more unprocessed tasks.
 func (a *Announcer) HasTask() bool {
-	return !a.queue.Empty()
+	return len(a.queue) > 0
 }
 
 // QueueSize returns the size of the queue
 func (a *Announcer) QueueSize() int {
-	return a.queue.Size()
+	return len(a.queue)
 }
 
 // Start starts the workers.
@@ -171,9 +191,11 @@ func (a *Announcer) Start() {
 		}
 	}()
 
-	for i := 0; i < params.NumAnnouncerWorker; i++ {
-		go a.createWorker(i)
-	}
+	go func() {
+		for task := range a.queue {
+			go a.Do(task)
+		}
+	}()
 
 	a.lck.Lock()
 	a.started = true
@@ -185,20 +207,6 @@ func (a *Announcer) IsRunning() bool {
 	return a.started
 }
 
-// createWorker creates a worker that performs tasks in the queue
-func (a *Announcer) createWorker(id int) {
-	for !a.hasStopped() {
-		task := a.getTask()
-		if task != nil {
-			if err := a.Do(id, task); err != nil && err != ErrDelisted {
-				a.log.Error(err.Error())
-			}
-			continue
-		}
-		time.Sleep(time.Duration(funk.RandomInt(1, 5)) * time.Second)
-	}
-}
-
 // hasStopped checks whether the announcer has been stopped
 func (a *Announcer) hasStopped() bool {
 	a.lck.Lock()
@@ -206,13 +214,9 @@ func (a *Announcer) hasStopped() bool {
 	return a.stopped
 }
 
-// getTask returns a task
+// getTask returns a task from the queue
 func (a *Announcer) getTask() *Task {
-	item := a.queue.Head()
-	if item == nil {
-		return nil
-	}
-	return item.(*Task)
+	return <-a.queue
 }
 
 // Stop stops the announcer
@@ -240,12 +244,13 @@ func (a *Announcer) keyExist(task *Task) bool {
 
 // Do announces the key in the given task.
 // After announcement, the key is (re)added to the announce list.
-func (a *Announcer) Do(workerID int, task *Task) (err error) {
+func (a *Announcer) Do(task *Task) (err error) {
 
 	if task.Done == nil {
 		task.Done = func(err error) {}
 	}
 	defer func() {
+		a.finishedTask(task)
 		task.Done(err)
 	}()
 
@@ -292,7 +297,7 @@ func (a *Announcer) Reannounce() {
 	a.keepers.DHTKeeper().IterateAnnounceList(func(key []byte, entry *core.AnnounceListEntry) {
 		annTime := time.Unix(entry.NextTime, 0)
 		if time.Now().After(annTime) || time.Now().Equal(annTime) {
-			a.queue.Append(&Task{Type: entry.Type, RepoName: entry.Repo, Key: key, CheckExistence: true})
+			a.addTask(&Task{Type: entry.Type, RepoName: entry.Repo, Key: key, CheckExistence: true})
 		}
 	})
 }
