@@ -55,6 +55,7 @@ func ToBytes(s interface{}) []byte {
 	var buf bytes.Buffer
 	if err := msgpack.NewEncoder(&buf).
 		SortMapKeys(true).
+		UseCompactEncoding(true).
 		Encode(s); err != nil {
 		panic(err)
 	}

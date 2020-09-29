@@ -51,24 +51,24 @@ var _ = Describe("Common", func() {
 
 	Describe(".ToObject", func() {
 
-		var bs []byte
+		var bz []byte
 		var m = map[string]interface{}{"stuff": int8(10)}
 
 		BeforeEach(func() {
-			bs = ToBytes(m)
-			Expect(bs).ToNot(BeEmpty())
+			bz = ToBytes(m)
+			Expect(bz).ToNot(BeEmpty())
 		})
 
 		It("should decode to expected value", func() {
 			var actual map[string]interface{}
-			err := ToObject(bs, &actual)
+			err := ToObject(bz, &actual)
 			Expect(err).To(BeNil())
 			Expect(actual).To(Equal(m))
 		})
 
 		It("should return expected bytes", func() {
-			expected := []uint8{0x81, 0xa5, 0x73, 0x74, 0x75, 0x66, 0x66, 0xd0, 0x0a}
-			Expect(expected).To(Equal(bs))
+			expected := []uint8{0x81, 0xa5, 0x73, 0x74, 0x75, 0x66, 0x66, 0x0a}
+			Expect(expected).To(Equal(bz))
 		})
 	})
 
