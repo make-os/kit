@@ -6,4 +6,5 @@ const (
 	EvtMempoolTxRemoved   = "mempool_tx_removed"
 	EvtMempoolTxRejected  = "mempool_tx_rejected"
 	EvtMempoolTxCommitted = "mempool_tx_committed"
+	EvtMempoolBroadcastTx = "mempool_broadcast"
 )

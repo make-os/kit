@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/make-os/lobe/config"
+	memtypes "github.com/make-os/lobe/mempool/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
+	"github.com/olebedev/emitter"
 
 	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/pkgs/logger"
@@ -31,6 +33,7 @@ type Reactor struct {
 	mempool *Mempool
 	cache   *cache.Cache
 	log     logger.Logger
+	bus     *emitter.Emitter
 }
 
 // NewReactor returns a new Reactor with the given config and mempool.
@@ -39,15 +42,24 @@ func NewReactor(cfg *config.AppConfig, mempool *Mempool) *Reactor {
 		config:  cfg.G().TMConfig.Mempool,
 		mempool: mempool,
 		cache:   cache.NewCache(cfg.Mempool.CacheSize),
+		bus:     cfg.G().Bus,
 		log:     cfg.G().Log.Module("mempool/reactor"),
 	}
 	r.BaseReactor = *p2p.NewBaseReactor("Reactor", r)
-
 	return r
 }
 
 // OnStart implements p2p.BaseReactor.
 func (r *Reactor) OnStart() error {
+
+	// Listen for EvtMempoolBroadcastTx event.
+	// Rebroadcast the received transaction
+	go func() {
+		for evt := range r.bus.On(memtypes.EvtMempoolBroadcastTx) {
+			r.broadcastTx(evt.Args[0].(types.BaseTx))
+		}
+	}()
+
 	return nil
 }
 

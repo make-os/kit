@@ -1,9 +1,12 @@
 package pool
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/pkgs/cache"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/identifier"
@@ -107,6 +110,7 @@ type Cache struct {
 	lck            *sync.Mutex
 	c              chan types.BaseTx
 	senderNonceIdx senderNonces
+	firstSeen      *cache.Cache
 }
 
 // NewCache creates an instance of Cache
@@ -115,15 +119,32 @@ func NewCache() *Cache {
 		lck:            &sync.Mutex{},
 		c:              make(chan types.BaseTx, 10000),
 		senderNonceIdx: make(map[identifier.Address]*nonceCollection),
+		firstSeen:      cache.NewCache(10000),
 	}
 }
 
 // Add adds a tx.
-// Returns true no existing transaction from same sender and nonce exists.
-func (c *Cache) Add(tx types.BaseTx) bool {
+// Returns true if the tx was added to the cache.
+// Returns false:
+//  - If there is an existing transaction from same sender and nonce exists.
+//  - If the transaction has spent more than MempoolTxTTL in the cache.
+func (c *Cache) Add(tx types.BaseTx) error {
 	if c.Has(tx) {
-		return false
+		return fmt.Errorf("cache already contains a transaction with matching sender and nonce")
 	}
+
+	// Check if the same tx has been added to the cache before
+	// and if the time difference between now and when it was first
+	// added exceed the MempoolTxTTL - If yes, return false
+	firstSeen := c.getFirstSeen(tx.GetID())
+	if !firstSeen.IsZero() {
+		expiryTime := firstSeen.Add(params.MempoolTxTTL)
+		if time.Now().After(expiryTime) {
+			c.firstSeen.Remove(tx.GetID())
+			return fmt.Errorf("refused to cache old transaction")
+		}
+	}
+	c.markFirstSeenTime(tx.GetID())
 
 	c.c <- tx
 
@@ -134,7 +155,24 @@ func (c *Cache) Add(tx types.BaseTx) bool {
 	senderNonces.add(tx.GetNonce(), &nonceInfo{})
 	c.senderNonceIdx[tx.GetFrom()] = senderNonces
 
-	return true
+	return nil
+}
+
+// markFirstSeenTime records the first time the tx hash was firstSeen
+func (c *Cache) markFirstSeenTime(hash string) {
+	val := c.firstSeen.Get(hash)
+	if val == nil {
+		c.firstSeen.Add(hash, time.Now().UnixNano())
+	}
+}
+
+// getSeenMarks returns the last time the tx hash was seen
+func (c *Cache) getFirstSeen(hash string) time.Time {
+	count := c.firstSeen.Get(hash)
+	if count == nil {
+		return time.Time{}
+	}
+	return time.Unix(0, count.(int64))
 }
 
 // SizeByAddr returns the number of transactions signed by a given address
@@ -153,11 +191,15 @@ func (c *Cache) Size() int {
 
 // Get returns a tx from the cache
 func (c *Cache) Get() types.BaseTx {
-	tx := <-c.c
-	c.lck.Lock()
-	c.senderNonceIdx.remove(tx.GetFrom(), tx.GetNonce())
-	c.lck.Unlock()
-	return tx
+	select {
+	case tx := <-c.c:
+		c.lck.Lock()
+		c.senderNonceIdx.remove(tx.GetFrom(), tx.GetNonce())
+		c.lck.Unlock()
+		return tx
+	default:
+		return nil
+	}
 }
 
 // Has checks if a tx with matching sender address and nonce exist in the cache

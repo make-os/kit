@@ -21,10 +21,10 @@ var (
 	ErrContainerFull = fmt.Errorf("container is full")
 
 	// ErrTxAlreadyAdded is an error about a transaction
-	// that is in the pool.
+	// that is in the container.
 	ErrTxAlreadyAdded = fmt.Errorf("exact transaction already in the pool")
 
-	// ErrSenderTxLimitReached is an error about a sender reaching the pool's tx limit per sender
+	// ErrSenderTxLimitReached is an error about a sender reaching the container's tx limit per sender
 	ErrSenderTxLimitReached = fmt.Errorf("sender's pool transaction limit reached")
 
 	// ErrFailedReplaceByFee means an attempt to replace by fee failed due to the replacement
@@ -34,12 +34,12 @@ var (
 		"existing transaction, the new transaction fee must be higher")
 )
 
-// Container represents the internal container used by the pool.
+// Container represents the internal container used by the container.
 // It provides a Put operation with sorting by fee rate and nonce.
 // The container is thread-safe.
 type Container struct {
 	lck              *sync.RWMutex
-	container        *dll.List              // main transaction container (the pool).
+	container        *dll.List              // main transaction container (the container).
 	cap              int                    // cap is the maximum amount of transactions allowed.
 	noSorting        bool                   // indicates that sorting should be disabled.
 	hashIndex        map[string]interface{} // indexes a transactions hash for quick existence lookup.
@@ -116,10 +116,16 @@ func calcFeeRate(tx types.BaseTx) util.String {
 	return util.String(tx.GetFee().Decimal().Div(txSizeDec).String())
 }
 
-// Add adds a transaction to the end of the container.
-// Returns false if container capacity has been reached.
-// It computes the fee rate and sorts the transactions
-// after addition.
+// Add adds a transaction to the container.
+//
+// After addition:
+//  - The pool is sorted (if sorting is enabled).
+//  - EvtMempoolTxAdded is fired.
+//  - Expired txs are removed from the container.
+//
+// Returns true and nil if tx was added to the container.
+// Returns false and nil if tx was added to the cache.
+// Returns error if there was a problem with the tx.
 func (c *Container) Add(tx types.BaseTx) (bool, error) {
 	c.lck.Lock()
 	defer c.lck.Unlock()
@@ -180,11 +186,11 @@ add:
 	}
 
 	// When the tx nonce is not the next expected nonce
-	// and the immediate nonce (n-1) of the tx is not in the pool, cache the tx.
+	// and the immediate nonce (n-1) of the tx is not in the container, cache the tx.
 	if tx.GetNonce()-curSenderNonce > 1 {
 		if !senderNonceInfo.has(tx.GetNonce() - 1) {
-			if !c.cache.Add(tx) {
-				return false, fmt.Errorf("cache already contains a transaction with matching sender and nonce")
+			if err := c.cache.Add(tx); err != nil {
+				return false, err
 			}
 			return false, nil
 		}
@@ -199,10 +205,32 @@ add:
 		c.Sort()
 	}
 
-	c.bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
+	go c.maybeProcessCache()
 	c.clean()
+	c.bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
 
 	return true, nil
+}
+
+// maybeProcessCache attempts a add tx in the cache to the main pool
+func (c *Container) maybeProcessCache() (added bool, err error) {
+	for {
+		// Get a tx from the cache
+		tx := c.cache.Get()
+		if tx == nil {
+			return false, nil
+		}
+
+		// Attempt to add it to the container.
+		added, err = c.Add(tx)
+		if err != nil || !added {
+			c.bus.Emit(memtypes.EvtMempoolTxRejected, err, tx)
+			return false, err
+		}
+
+		// Emit EvtMempoolBroadcastTx to broadcast the tx
+		c.bus.Emit(memtypes.EvtMempoolBroadcastTx, tx)
+	}
 }
 
 // sizeByAddr returns the number of transactions signed by a given address.
@@ -396,7 +424,7 @@ func (c *Container) Remove(txs ...types.BaseTx) {
 	c.remove(txs...)
 }
 
-// GetByHash get a transaction by its hash from the pool
+// GetByHash get a transaction by its hash from the container
 func (c *Container) GetByHash(hash string) types.BaseTx {
 	c.lck.RLock()
 	defer c.lck.RUnlock()

@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/make-os/lobe/crypto"
+	types2 "github.com/make-os/lobe/mempool/types"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
 	"github.com/olebedev/emitter"
 
 	. "github.com/onsi/ginkgo"
@@ -194,8 +194,10 @@ var _ = Describe("Container", func() {
 
 				_, err := q.Add(tx)
 				Expect(err).To(BeNil())
-				added := q.cache.Add(tx)
-				Expect(added).To(BeTrue())
+
+				time.Sleep(1 * time.Millisecond) // wait for defer calls in q.Add to finish
+				err = q.cache.Add(tx)
+				Expect(err).To(BeNil())
 
 				count := q.SizeByAddr(tx.GetFrom())
 				Expect(count).To(Equal(2))
@@ -449,30 +451,44 @@ var _ = Describe("Container", func() {
 		})
 	})
 
-	Describe(".clean", func() {
-
+	Describe(".maybeProcessCache", func() {
 		var c *Container
-		var tx, tx2 types.BaseTx
-		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
 			c = NewContainer(4, emitter.New(1), zeroNonceGetter)
-			tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			c.Add(tx)
-			time.Sleep(5 * time.Millisecond)
-
-			tx2 = txns.NewCoinTransferTx(2, "something2", sender, "0", "0", time.Now().Unix())
-			c.Add(tx2)
-
-			Expect(c.Size()).To(Equal(2))
 		})
 
-		It("should remove expired transaction", func() {
-			params.MempoolTxTTL = 3 * time.Millisecond
-			c.clean()
+		It("should return false and nil error if cache is empty", func() {
+			added, err := c.maybeProcessCache()
+			Expect(added).To(BeFalse())
+			Expect(err).To(BeNil())
+		})
+
+		It("should emit EvtMempoolBroadcastTx event when tx is added from cache", func() {
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
+			c.cache.Add(tx)
+			Expect(c.cache.Size()).To(Equal(1))
+			go c.maybeProcessCache()
+			evt := <-c.bus.On(types2.EvtMempoolBroadcastTx)
+			Expect(tx).To(Equal(evt.Args[0]))
+		})
+
+		It("should emit EvtMempoolTxRejected event when tx from cache failed to be added to the pool", func() {
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
+			c.Add(tx)
 			Expect(c.Size()).To(Equal(1))
-			Expect(c.Has(tx2)).To(BeTrue())
-			Expect(c.Has(tx)).To(BeFalse())
+			time.Sleep(1 * time.Millisecond)
+
+			// Add same tx to cache to force a duplicate error when attempting to add to pool container again
+			c.cache.Add(tx)
+			Expect(c.cache.Size()).To(Equal(1))
+			time.Sleep(1 * time.Millisecond)
+
+			go c.maybeProcessCache()
+			evt := <-c.bus.On(types2.EvtMempoolTxRejected)
+			Expect(evt.Args[0]).ToNot(BeNil())
+			Expect(evt.Args[0]).To(MatchError(ErrFailedReplaceByFee))
+			Expect(tx).To(Equal(evt.Args[1]))
 		})
 	})
 
@@ -569,121 +585,6 @@ var _ = Describe("Container", func() {
 			Expect(q.byteSize).To(BeZero())
 			Expect(q.hashIndex).To(BeEmpty())
 			Expect(q.senderNonceIndex).To(BeEmpty())
-		})
-	})
-})
-
-var _ = Describe("senderNonces", func() {
-	var sender = crypto.NewKeyFromIntSeed(1)
-	var tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-	var tx2 = txns.NewCoinTransferTx(2, "something", sender, "0", "0.2", time.Now().Unix())
-	var nc *nonceCollection
-	var sn senderNonces
-
-	BeforeEach(func() {
-		nc = newNonceCollection()
-		sn = map[identifier.Address]*nonceCollection{}
-	})
-
-	Describe(".remove", func() {
-		When("sender address is not in the collection", func() {
-			BeforeEach(func() {
-				sn["addr_1"] = newNonceCollection()
-				sn["addr_2"] = nc
-				nc.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash()})
-				nc.add(tx2.GetNonce(), &nonceInfo{TxHash: tx2.GetHash()})
-				sn.remove("addr_3", tx.GetNonce())
-			})
-
-			It("should leave the collection unchanged", func() {
-				Expect(nc.nonces).To(HaveLen(2))
-			})
-		})
-
-		When("sender address is in the collection and has one transaction", func() {
-			BeforeEach(func() {
-				sn[tx.GetFrom()] = nc
-				Expect(sn.len()).To(Equal(1))
-				nc.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash()})
-				Expect(nc.nonces).To(HaveLen(1))
-				sn.remove(tx.GetFrom(), tx.GetNonce())
-			})
-
-			Specify("that nonce has been deleted", func() {
-				Expect(nc.nonces).To(HaveLen(0))
-			})
-
-			Specify("that the sender address record is removed since it has no nonce", func() {
-				Expect(sn.len()).To(Equal(0))
-			})
-		})
-	})
-})
-
-var _ = Describe("NonceCollection", func() {
-	nc := newNonceCollection()
-
-	Describe(".has", func() {
-		Context("when nonce is not part of the collection", func() {
-			It("should return false", func() {
-				Expect(nc.has(1)).To(BeFalse())
-			})
-		})
-
-		Context("when nonce is part of the collection", func() {
-			nc := nonceCollection{
-				nonces: map[uint64]*nonceInfo{
-					1: {TxHash: util.HexBytes{1, 2}},
-				},
-			}
-
-			It("should return false", func() {
-				Expect(nc.has(1)).To(BeTrue())
-			})
-		})
-	})
-
-	Describe(".Add", func() {
-		BeforeEach(func() {
-			nc.add(1, &nonceInfo{})
-			Expect(nc.nonces).To(HaveLen(1))
-		})
-
-		It("should Add nonce", func() {
-			Expect(nc.has(1)).To(BeTrue())
-		})
-	})
-
-	Describe(".get", func() {
-		nonce := &nonceInfo{TxHash: util.HexBytes{1, 2}}
-		BeforeEach(func() {
-			nc.add(1, nonce)
-			Expect(nc.nonces).To(HaveLen(1))
-		})
-
-		It("should get nonce", func() {
-			res := nc.get(1)
-			Expect(res).To(Equal(nonce))
-		})
-
-		When("nonce does not exist", func() {
-			It("should return nil", func() {
-				res := nc.get(2)
-				Expect(res).To(BeNil())
-			})
-		})
-	})
-
-	Describe(".remove", func() {
-		BeforeEach(func() {
-			nc.add(1, &nonceInfo{})
-			Expect(nc.nonces).To(HaveLen(1))
-		})
-
-		It("should Add nonce", func() {
-			nc.remove(1)
-			Expect(nc.has(1)).To(BeFalse())
-			Expect(nc.nonces).To(HaveLen(0))
 		})
 	})
 })
