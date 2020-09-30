@@ -2,6 +2,7 @@ package pool
 
 import (
 	"sync"
+	"time"
 
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/util"
@@ -11,13 +12,14 @@ import (
 // containerItem represents the a container item.
 // It wraps a transaction and other important properties.
 type containerItem struct {
-	Tx      types.BaseTx
-	FeeRate util.String
+	Tx        types.BaseTx
+	FeeRate   util.String
+	TimeAdded time.Time
 }
 
 // newItem creates an instance of ContainerItem
 func newItem(tx types.BaseTx) *containerItem {
-	item := &containerItem{Tx: tx}
+	item := &containerItem{Tx: tx, TimeAdded: time.Now()}
 	return item
 }
 

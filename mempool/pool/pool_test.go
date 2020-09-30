@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/mocks"
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
@@ -181,41 +180,6 @@ var _ = Describe("pool", func() {
 				rmTx := tp.container.Last()
 				s := tp.ByteSize()
 				Expect(s).To(Equal(curByteSize - rmTx.GetEcoSize()))
-			})
-		})
-	})
-
-	Describe(".clean", func() {
-
-		var tx, tx2 types.BaseTx
-		var tp *Pool
-		var sender = crypto.NewKeyFromIntSeed(1)
-
-		When("TxTTL is 1 day", func() {
-
-			BeforeEach(func() {
-				params.TxTTL = 1 * time.Hour
-
-				mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
-				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
-				tp = New(2, mockKeepers, emitter.New(10))
-
-				tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-				tx.SetTimestamp(time.Now().UTC().Add(-2 * time.Hour).Unix())
-
-				tx2 = txns.NewCoinTransferTx(2, "something2", sender, "0", "0", time.Now().Unix())
-				tx2.SetTimestamp(time.Now().Unix())
-
-				tp.container.Add(tx)
-				tp.container.Add(tx2)
-				Expect(tp.Size()).To(Equal(2))
-			})
-
-			It("should remove expired transaction", func() {
-				tp.clean()
-				Expect(tp.Size()).To(Equal(1))
-				Expect(tp.Has(tx2)).To(BeTrue())
-				Expect(tp.Has(tx)).To(BeFalse())
 			})
 		})
 	})

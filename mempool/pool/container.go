@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
 	memtypes "github.com/make-os/lobe/mempool/types"
@@ -33,13 +34,13 @@ var (
 		"existing transaction, the new transaction fee must be higher")
 )
 
-// TxContainer represents the internal container used by the pool.
+// Container represents the internal container used by the pool.
 // It provides a Put operation with sorting by fee rate and nonce.
 // The container is thread-safe.
-type TxContainer struct {
+type Container struct {
 	lck              *sync.RWMutex
 	container        *dll.List              // main transaction container (the pool).
-	Cap              int                    // cap is the maximum amount of transactions allowed.
+	cap              int                    // cap is the maximum amount of transactions allowed.
 	noSorting        bool                   // indicates that sorting should be disabled.
 	hashIndex        map[string]interface{} // indexes a transactions hash for quick existence lookup.
 	byteSize         int64                  // the total transaction size of the container
@@ -49,12 +50,12 @@ type TxContainer struct {
 	bus              *emitter.Emitter       // Event emitter
 }
 
-// NewTxContainer creates a new container
-func NewTxContainer(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *TxContainer {
-	return &TxContainer{
+// NewContainer creates a new Container
+func NewContainer(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *Container {
+	return &Container{
 		lck:              &sync.RWMutex{},
 		container:        dll.New(),
-		Cap:              cap,
+		cap:              cap,
 		hashIndex:        make(map[string]interface{}),
 		senderNonceIndex: make(map[identifier.Address]*nonceCollection),
 		cache:            NewCache(),
@@ -66,11 +67,11 @@ func NewTxContainer(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *Tx
 
 // NewTxContainerNoSort creates a new container
 // with sorting turned off
-func NewTxContainerNoSort(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *TxContainer {
-	return &TxContainer{
+func NewTxContainerNoSort(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *Container {
+	return &Container{
 		lck:              &sync.RWMutex{},
 		container:        dll.New(),
-		Cap:              cap,
+		cap:              cap,
 		hashIndex:        make(map[string]interface{}),
 		senderNonceIndex: make(map[identifier.Address]*nonceCollection),
 		cache:            NewCache(),
@@ -82,31 +83,31 @@ func NewTxContainerNoSort(cap int, bus *emitter.Emitter, getNonce NonceGetterFun
 }
 
 // Size returns the number of items in the container
-func (q *TxContainer) Size() int {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.container.Size()
+func (c *Container) Size() int {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.container.Size()
 }
 
 // ByteSize gets the total byte size of
 // all transactions in the container.
 // Note: The size of fee field of transactions are not calculated.
-func (q *TxContainer) ByteSize() int64 {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.byteSize
+func (c *Container) ByteSize() int64 {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.byteSize
 }
 
 // Full checks if the container's capacity has been reached
-func (q *TxContainer) Full() bool {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.Size() >= q.Cap
+func (c *Container) Full() bool {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.Size() >= c.cap
 }
 
 // CacheSize returns the size of the cache
-func (q *TxContainer) CacheSize() int {
-	return q.cache.Size()
+func (c *Container) CacheSize() int {
+	return c.cache.Size()
 }
 
 // calcFeeRate calculates the fee rate of a transaction
@@ -119,9 +120,9 @@ func calcFeeRate(tx types.BaseTx) util.String {
 // Returns false if container capacity has been reached.
 // It computes the fee rate and sorts the transactions
 // after addition.
-func (q *TxContainer) Add(tx types.BaseTx) (bool, error) {
-	q.lck.Lock()
-	defer q.lck.Unlock()
+func (c *Container) Add(tx types.BaseTx) (bool, error) {
+	c.lck.Lock()
+	defer c.lck.Unlock()
 
 	// Calculate the transaction's fee rate (tx fee / size)
 	item := newItem(tx)
@@ -129,7 +130,7 @@ func (q *TxContainer) Add(tx types.BaseTx) (bool, error) {
 
 	// Get the sender's nonce info. If not found create a new one
 	sender := tx.GetFrom()
-	senderNonceInfo := q.senderNonceIndex.get(sender)
+	senderNonceInfo := c.senderNonceIndex.get(sender)
 	var ni *nonceInfo
 
 	// If no existing transaction with a matching nonce, Add this tx nonce to
@@ -150,23 +151,23 @@ func (q *TxContainer) Add(tx types.BaseTx) (bool, error) {
 	// At the point, the new transaction has a higher fee rate, therefore we
 	// need to remove the existing transaction and replace with the new one
 	// and also replace the nonce information
-	q.removeByHash(ni.TxHash)
+	c.removeByHash(ni.TxHash)
 	senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), Fee: item.Tx.GetFee()})
 
 add:
 
 	// Check per-sender pool transaction limit
-	if q.sizeByAddr(sender) == params.MempoolSenderTxLimit {
+	if c.sizeByAddr(sender) == params.MempoolSenderTxLimit {
 		return false, ErrSenderTxLimitReached
 	}
 
 	// Ensure cap has not been reached
-	if q.container.Size() >= q.Cap {
+	if c.container.Size() >= c.cap {
 		return false, ErrContainerFull
 	}
 
 	// Get the current nonce of sender
-	curSenderNonce, err := q.getNonce(tx.GetFrom().String())
+	curSenderNonce, err := c.getNonce(tx.GetFrom().String())
 	if err != nil {
 		if err != types.ErrAccountUnknown {
 			return false, err
@@ -182,50 +183,51 @@ add:
 	// and the immediate nonce (n-1) of the tx is not in the pool, cache the tx.
 	if tx.GetNonce()-curSenderNonce > 1 {
 		if !senderNonceInfo.has(tx.GetNonce() - 1) {
-			if !q.cache.Add(tx) {
+			if !c.cache.Add(tx) {
 				return false, fmt.Errorf("cache already contains a transaction with matching sender and nonce")
 			}
 			return false, nil
 		}
 	}
 
-	q.senderNonceIndex[sender] = senderNonceInfo
-	q.container.Append(item)
-	q.hashIndex[tx.GetHash().String()] = struct{}{}
-	q.byteSize += tx.GetEcoSize()
+	c.senderNonceIndex[sender] = senderNonceInfo
+	c.container.Append(item)
+	c.hashIndex[tx.GetHash().String()] = struct{}{}
+	c.byteSize += tx.GetEcoSize()
 
-	if !q.noSorting {
-		q.Sort()
+	if !c.noSorting {
+		c.Sort()
 	}
 
-	q.bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
+	c.bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
+	c.clean()
 
 	return true, nil
 }
 
 // sizeByAddr returns the number of transactions signed by a given address.
 // Not thread safe; Must be called with lock held.
-func (q *TxContainer) sizeByAddr(addr identifier.Address) int {
+func (c *Container) sizeByAddr(addr identifier.Address) int {
 	var poolCount int
-	ni, ok := q.senderNonceIndex[addr]
+	ni, ok := c.senderNonceIndex[addr]
 	if ok {
 		poolCount = len(ni.nonces)
 	}
-	return q.cache.SizeByAddr(addr) + poolCount
+	return c.cache.SizeByAddr(addr) + poolCount
 }
 
 // SizeByAddr returns the number of transactions signed by a given address
-func (q *TxContainer) SizeByAddr(addr identifier.Address) int {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.sizeByAddr(addr)
+func (c *Container) SizeByAddr(addr identifier.Address) int {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.sizeByAddr(addr)
 }
 
 // Get returns a transaction at the given index
-func (q *TxContainer) Get(index int) *containerItem {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	res, ok := q.container.Get(index)
+func (c *Container) Get(index int) *containerItem {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	res, ok := c.container.Get(index)
 	if ok {
 		return res.(*containerItem)
 	}
@@ -233,74 +235,74 @@ func (q *TxContainer) Get(index int) *containerItem {
 }
 
 // Has checks whether a transaction is in the container
-func (q *TxContainer) Has(tx types.BaseTx) bool {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.hashIndex[tx.GetHash().String()] != nil
+func (c *Container) Has(tx types.BaseTx) bool {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.hashIndex[tx.GetHash().String()] != nil
 }
 
 // HasByHash is like Has but accepts a transaction hash
-func (q *TxContainer) HasByHash(hash string) bool {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.hashIndex[hash] != nil
+func (c *Container) HasByHash(hash string) bool {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.hashIndex[hash] != nil
 }
 
 // First returns the transaction at the head of the container.
 // Returns nil if container is empty
-func (q *TxContainer) First() types.BaseTx {
+func (c *Container) First() types.BaseTx {
 
-	if q.Size() <= 0 {
+	if c.Size() <= 0 {
 		return nil
 	}
 
-	q.lck.Lock()
-	defer q.lck.Unlock()
+	c.lck.Lock()
+	defer c.lck.Unlock()
 
 	// Get a transaction from the list
-	item, _ := q.container.Get(0)
-	q.container.Remove(0)
+	item, _ := c.container.Get(0)
+	c.container.Remove(0)
 	tx := item.(*containerItem).Tx
 
 	// Delete the tx from caches
-	delete(q.hashIndex, tx.GetHash().String())
-	q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
+	delete(c.hashIndex, tx.GetHash().String())
+	c.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
 
 	// Decrement counts
-	q.byteSize -= tx.GetEcoSize()
+	c.byteSize -= tx.GetEcoSize()
 
 	return tx
 }
 
 // Last returns the transaction at the back of the container.
 // Returns nil if container is empty
-func (q *TxContainer) Last() types.BaseTx {
+func (c *Container) Last() types.BaseTx {
 
-	if q.Size() <= 0 {
+	if c.Size() <= 0 {
 		return nil
 	}
 
-	q.lck.Lock()
-	defer q.lck.Unlock()
+	c.lck.Lock()
+	defer c.lck.Unlock()
 
 	// Get a transaction from the list
-	item, _ := q.container.Get(q.container.Size() - 1)
-	q.container.Remove(q.container.Size() - 1)
+	item, _ := c.container.Get(c.container.Size() - 1)
+	c.container.Remove(c.container.Size() - 1)
 	tx := item.(*containerItem).Tx
 
 	// Delete the tx from caches
-	delete(q.hashIndex, tx.GetHash().String())
-	q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
+	delete(c.hashIndex, tx.GetHash().String())
+	c.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
 
 	// Decrement counts
-	q.byteSize -= tx.GetEcoSize()
+	c.byteSize -= tx.GetEcoSize()
 
 	return tx
 }
 
 // Sort sorts the container
-func (q *TxContainer) Sort() {
-	q.container.Sort(func(a, b interface{}) int {
+func (c *Container) Sort() {
+	c.container.Sort(func(a, b interface{}) int {
 		aItem := a.(*containerItem)
 		bItem := b.(*containerItem)
 
@@ -328,9 +330,10 @@ func (q *TxContainer) Sort() {
 // Find calls the given function once for every transaction and
 // returns the transaction for which the function returns true for.
 // Not safe for concurrent use.
-func (q *TxContainer) find(iteratee func(types.BaseTx, util.String) bool) types.BaseTx {
-	_, res := q.container.Find(func(index int, value interface{}) bool {
-		return iteratee(value.(*containerItem).Tx, value.(*containerItem).FeeRate)
+func (c *Container) find(iteratee func(types.BaseTx, util.String, time.Time) bool) types.BaseTx {
+	_, res := c.container.Find(func(index int, value interface{}) bool {
+		item := value.(*containerItem)
+		return iteratee(item.Tx, item.FeeRate, item.TimeAdded)
 	})
 	if res != nil {
 		return res.(*containerItem).Tx
@@ -340,16 +343,17 @@ func (q *TxContainer) find(iteratee func(types.BaseTx, util.String) bool) types.
 
 // remove removes one or more transactions.
 // Note: Not safe for concurrent calls
-func (q *TxContainer) remove(txsToDel ...types.BaseTx) {
-	q.container = q.container.Select(func(index int, value interface{}) bool {
+func (c *Container) remove(txsToDel ...types.BaseTx) {
+	defer c.clean()
+	c.container = c.container.Select(func(index int, value interface{}) bool {
 		tx := value.(*containerItem).Tx
 		for _, txToDel := range txsToDel {
 			if !tx.GetHash().Equal(txToDel.GetHash()) {
 				continue
 			}
-			delete(q.hashIndex, tx.GetHash().String())
-			q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
-			q.byteSize -= tx.GetEcoSize()
+			delete(c.hashIndex, tx.GetHash().String())
+			c.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
+			c.byteSize -= tx.GetEcoSize()
 			return false
 		}
 		return true
@@ -358,43 +362,55 @@ func (q *TxContainer) remove(txsToDel ...types.BaseTx) {
 
 // removeByHash removes transactions by hash
 // Note: Not safe for concurrent calls
-func (q *TxContainer) removeByHash(txsHash ...util.HexBytes) {
-	q.container.Each(func(index int, value interface{}) {
+func (c *Container) removeByHash(txsHash ...util.HexBytes) {
+	c.container.Each(func(index int, value interface{}) {
 		tx := value.(*containerItem).Tx
 		for _, hash := range txsHash {
 			if !tx.GetHash().Equal(hash) {
 				continue
 			}
-			q.container.Remove(index)
-			delete(q.hashIndex, tx.GetHash().String())
-			q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
-			q.byteSize -= tx.GetEcoSize()
+			c.container.Remove(index)
+			delete(c.hashIndex, tx.GetHash().String())
+			c.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
+			c.byteSize -= tx.GetEcoSize()
 		}
 	})
 }
 
+// clean removes old transactions.
+// Note: not thread safe.
+func (c *Container) clean() {
+	c.find(func(tx types.BaseTx, feeRate util.String, timeAdded time.Time) bool {
+		expTime := timeAdded.Add(params.MempoolTxTTL)
+		if time.Now().After(expTime) {
+			c.remove(tx)
+		}
+		return false
+	})
+}
+
 // Remove removes a transaction
-func (q *TxContainer) Remove(txs ...types.BaseTx) {
-	q.lck.Lock()
-	defer q.lck.Unlock()
-	q.remove(txs...)
+func (c *Container) Remove(txs ...types.BaseTx) {
+	c.lck.Lock()
+	defer c.lck.Unlock()
+	c.remove(txs...)
 }
 
 // GetByHash get a transaction by its hash from the pool
-func (q *TxContainer) GetByHash(hash string) types.BaseTx {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.find(func(tx types.BaseTx, feeRate util.String) bool {
+func (c *Container) GetByHash(hash string) types.BaseTx {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
+	return c.find(func(tx types.BaseTx, _ util.String, _ time.Time) bool {
 		return tx.GetHash().String() == hash
 	})
 }
 
 // GetFeeRateByHash get a transaction's fee rate by its hash
-func (q *TxContainer) GetFeeRateByHash(hash string) util.String {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
+func (c *Container) GetFeeRateByHash(hash string) util.String {
+	c.lck.RLock()
+	defer c.lck.RUnlock()
 	var res util.String
-	item := q.find(func(tx types.BaseTx, feeRate util.String) bool {
+	item := c.find(func(tx types.BaseTx, feeRate util.String, timeAdded time.Time) bool {
 		res = feeRate
 		return tx.GetHash().String() == hash
 	})
@@ -405,11 +421,11 @@ func (q *TxContainer) GetFeeRateByHash(hash string) util.String {
 }
 
 // Flush clears the container and caches
-func (q *TxContainer) Flush() {
-	q.lck.Lock()
-	defer q.lck.Unlock()
-	q.container.Clear()
-	q.hashIndex = make(map[string]interface{})
-	q.byteSize = 0
-	q.senderNonceIndex = senderNonces{}
+func (c *Container) Flush() {
+	c.lck.Lock()
+	defer c.lck.Unlock()
+	c.container.Clear()
+	c.hashIndex = make(map[string]interface{})
+	c.byteSize = 0
+	c.senderNonceIndex = senderNonces{}
 }

@@ -20,6 +20,9 @@ const (
 var (
 	// MempoolSenderTxLimit is the number of unprocessed tx a sender can have in the pool (and its cache)
 	MempoolSenderTxLimit = 64
+
+	// MempoolTxTTL is the duration within which an transaction can remain in the pool
+	MempoolTxTTL = 2 * time.Hour
 )
 
 // Block and State Config
@@ -29,9 +32,6 @@ var (
 
 	// FeePerByte is the cost per byte of a transaction
 	FeePerByte = decimal.NewFromFloat(0.00001)
-
-	// TxTTL is the duration within which an transaction can remain in the pool
-	TxTTL = 2 * time.Hour
 
 	// MinTicketMatDur is the number of blocks that must be created
 	// before a ticket is considered matured.

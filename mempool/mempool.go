@@ -3,6 +3,7 @@ package mempool
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	types2 "github.com/make-os/lobe/mempool/types"
 	"github.com/make-os/lobe/params"
@@ -239,7 +240,7 @@ func (mp *Mempool) Unlock() {
 // recheckTxs rechecks transactions in the mempool and will remove invalidated transactions.
 // This is called when a new block has been committed.
 func (mp *Mempool) recheckTxs() {
-	mp.pool.Find(func(tx types.BaseTx, u util.String) bool {
+	mp.pool.Find(func(tx types.BaseTx, u util.String, timeAdded time.Time) bool {
 		if err := mp.validateTx(tx, -1, mp.logic); err != nil {
 			mp.pool.Remove(tx)
 			mp.log.Debug("Removed invalidated transaction", "Hash", tx.GetHash())

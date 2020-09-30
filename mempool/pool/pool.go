@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
@@ -17,7 +16,7 @@ import (
 // inclusion into blocks.
 type Pool struct {
 	sync.RWMutex
-	container *TxContainer
+	container *Container
 	keeper    core.Keepers
 }
 
@@ -27,7 +26,7 @@ type Pool struct {
 // bus is the app's event emitter provider.
 func New(cap int, keepers core.Keepers, bus *emitter.Emitter) *Pool {
 	pool := &Pool{RWMutex: sync.RWMutex{}, keeper: keepers}
-	pool.container = NewTxContainer(cap, bus, pool.getNonce)
+	pool.container = NewContainer(cap, bus, pool.getNonce)
 	return pool
 }
 
@@ -45,7 +44,6 @@ func (tp *Pool) Remove(txs ...types.BaseTx) {
 	tp.Lock()
 	defer tp.Unlock()
 	tp.container.remove(txs...)
-	tp.clean()
 }
 
 // Put adds a transaction.
@@ -63,27 +61,7 @@ func (tp *Pool) Put(tx types.BaseTx) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	tp.clean()
 	return addedToPool, nil
-}
-
-// isExpired checks whether a transaction has expired
-func (tp *Pool) isExpired(tx types.BaseTx) bool {
-	expTime := time.Unix(tx.GetTimestamp(), 0).UTC().Add(params.TxTTL)
-	return time.Now().UTC().After(expTime)
-}
-
-// clean removes old transactions
-// FIXME: clean transactions that have spent x period in the pool as opposed
-// to how long they have existed themselves.
-// Not safe for current use.
-func (tp *Pool) clean() {
-	tp.container.find(func(tx types.BaseTx, feeRate util.String) bool {
-		if tp.isExpired(tx) {
-			tp.container.remove(tx)
-		}
-		return false
-	})
 }
 
 // addTx adds a transaction to the container.
@@ -109,7 +87,7 @@ func (tp *Pool) HasByHash(hash string) bool {
 // each transaction. The iteratee is invoked the transaction as the
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.
-func (tp *Pool) Find(iteratee func(types.BaseTx, util.String) bool) types.BaseTx {
+func (tp *Pool) Find(iteratee func(tx types.BaseTx, feeRate util.String, timeAdded time.Time) bool) types.BaseTx {
 	return tp.container.find(iteratee)
 }
 

@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/make-os/lobe/config"
 	"github.com/make-os/lobe/types"
@@ -101,7 +102,7 @@ func (r *Reactor) GetPoolSize() *core.PoolSizeInfo {
 // It will return all transactions if n is zero or negative.
 func (r *Reactor) GetTop(n int) []types.BaseTx {
 	var txs []types.BaseTx
-	r.mempool.pool.Find(func(tx types.BaseTx, feeRate util.String) bool {
+	r.mempool.pool.Find(func(tx types.BaseTx, feeRate util.String, timeAdded time.Time) bool {
 		txs = append(txs, tx)
 		if n > 0 && len(txs) == n {
 			return true
