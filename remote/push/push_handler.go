@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/lobe/remote/push/types"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/remote/validation"
+	types2 "github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/crypto"
@@ -408,6 +409,7 @@ func (h *BasicHandler) HandlePushNote(note types.PushNote) (err error) {
 func (h *BasicHandler) createPushNote() (*types.Note, error) {
 
 	var note = &types.Note{
+		Meta:            types2.NewMeta(),
 		TargetRepo:      h.Repo,
 		PushKeyID:       crypto.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
 		RepoName:        h.TxDetails.GetRepoName(),

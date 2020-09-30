@@ -17,6 +17,11 @@ const (
 	PrivateKeyVersion byte = 94
 )
 
+var (
+	// MempoolSenderTxLimit is the number of unprocessed tx a sender can have in the pool (and its cache)
+	MempoolSenderTxLimit = 64
+)
+
 // Block and State Config
 var (
 	// BlockTime is the number of seconds between blocks
@@ -25,9 +30,8 @@ var (
 	// FeePerByte is the cost per byte of a transaction
 	FeePerByte = decimal.NewFromFloat(0.00001)
 
-	// TxTTL is the number of days a transaction
-	// can last for in the pool
-	TxTTL = 7
+	// TxTTL is the duration within which an transaction can remain in the pool
+	TxTTL = 2 * time.Hour
 
 	// MinTicketMatDur is the number of blocks that must be created
 	// before a ticket is considered matured.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 
 	dhtserver "github.com/make-os/lobe/dht/server"
 	"github.com/make-os/lobe/dht/types"
@@ -66,16 +67,18 @@ type Node struct {
 	dht            types.DHT
 	modules        types2.ModulesHub
 	remoteServer   core.RemoteServer
+	closeOnce      *sync.Once
 }
 
 // NewNode creates an instance of RPCServer
 func NewNode(cfg *config.AppConfig) *Node {
 	return &Node{
-		cfg:     cfg,
-		nodeKey: cfg.G().NodeKey,
-		log:     cfg.G().Log.Module("node"),
-		service: services.New(cfg.G().TMConfig.RPC.ListenAddress),
-		acctMgr: keystore.New(cfg.KeystoreDir()),
+		cfg:       cfg,
+		nodeKey:   cfg.G().NodeKey,
+		log:       cfg.G().Log.Module("node"),
+		service:   services.New(cfg.G().TMConfig.RPC.ListenAddress),
+		acctMgr:   keystore.New(cfg.KeystoreDir()),
+		closeOnce: &sync.Once{},
 	}
 }
 
@@ -105,8 +108,8 @@ func (n *Node) OpenDB() error {
 
 // createCustomMempool creates a custom mempool and mempool reactor
 // to replace tendermint's default mempool
-func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMempool {
-	memp := mempool.NewMempool(cfg)
+func createCustomMempool(cfg *config.AppConfig, logic core.Logic) *nm.CustomMempool {
+	memp := mempool.NewMempool(cfg, logic)
 	mempReactor := mempool.NewReactor(cfg, memp)
 	return &nm.CustomMempool{
 		Mempool:        memp,
@@ -162,7 +165,7 @@ func (n *Node) Start() error {
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch seed generator function
-	cusMemp := createCustomMempool(n.cfg, n.log)
+	cusMemp := createCustomMempool(n.cfg, n.logic)
 	memp := cusMemp.Mempool.(*mempool.Mempool)
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
 
@@ -296,27 +299,29 @@ func (n *Node) GetModulesHub() types2.ModulesHub {
 
 // Stop the node
 func (n *Node) Stop() {
-	n.log.Info("stopping...")
+	n.closeOnce.Do(func() {
+		n.log.Info("Stopping...")
 
-	if n.dht != nil {
-		n.dht.Stop()
-	}
+		if n.dht != nil {
+			n.dht.Stop()
+		}
 
-	if n.tm != nil && n.tm.IsRunning() {
-		n.tm.Stop()
-	}
+		if n.tm != nil && n.tm.IsRunning() {
+			n.tm.Stop()
+		}
 
-	if n.db != nil {
-		n.db.Close()
-	}
+		if n.db != nil {
+			n.db.Close()
+		}
 
-	if n.stateTreeDB != nil {
-		n.stateTreeDB.Close()
-	}
+		if n.stateTreeDB != nil {
+			n.stateTreeDB.Close()
+		}
 
-	if !n.cfg.IsAttachMode() {
-		n.log.Info("Databases have been closed")
-	}
+		if !n.cfg.IsAttachMode() {
+			n.log.Info("Databases have been closed")
+		}
 
-	n.log.Info("stopped")
+		n.log.Info("Stopped")
+	})
 }

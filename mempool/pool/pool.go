@@ -4,10 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
-
 	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/util/identifier"
+	"github.com/olebedev/emitter"
 )
 
 // PushPool wraps the transaction container providing a pool
@@ -16,15 +18,26 @@ import (
 type Pool struct {
 	sync.RWMutex
 	container *TxContainer
+	keeper    core.Keepers
 }
 
 // New creates a new instance of pool.
-// Cap size is the max amount of transactions
-// that can be maintained in the pool.
-func New(cap int) *Pool {
-	tp := new(Pool)
-	tp.container = NewTxContainer(cap)
-	return tp
+// cap is the max amount of transactions that can be maintained in the pool.
+// keepers is the application data keeper provider.
+// bus is the app's event emitter provider.
+func New(cap int, keepers core.Keepers, bus *emitter.Emitter) *Pool {
+	pool := &Pool{RWMutex: sync.RWMutex{}, keeper: keepers}
+	pool.container = NewTxContainer(cap, bus, pool.getNonce)
+	return pool
+}
+
+// getNonce returns the account nonce of a given address
+func (tp *Pool) getNonce(address string) (uint64, error) {
+	acct := tp.keeper.AccountKeeper().Get(identifier.Address(address))
+	if acct.IsNil() {
+		return 0, types.ErrAccountUnknown
+	}
+	return acct.Nonce.UInt64(), nil
 }
 
 // Remove removes one or many transactions
@@ -36,21 +49,27 @@ func (tp *Pool) Remove(txs ...types.BaseTx) {
 }
 
 // Put adds a transaction.
-// CONTRACT: No two transactions with same sender, nonce and fee rate is allowed.
-// CONTRACT: Transactions are always ordered by nonce (ASC) and fee rate (DESC).
-func (tp *Pool) Put(tx types.BaseTx) error {
+//  - Returns true and nil of tx was added to the pool.
+//  - Returns false and nil if tx was added to the cache.
+//  - Emits EvtMempoolTxCommitted if tx was successfully
+//
+// CONTRACTS:
+//  - No two transactions with same sender, nonce and fee rate is allowed.
+//  - Transactions are always ordered by nonce (ASC) and fee rate (DESC).
+func (tp *Pool) Put(tx types.BaseTx) (bool, error) {
 	tp.Lock()
 	defer tp.Unlock()
-	if err := tp.addTx(tx); err != nil {
-		return err
+	addedToPool, err := tp.addTx(tx)
+	if err != nil {
+		return false, err
 	}
 	tp.clean()
-	return nil
+	return addedToPool, nil
 }
 
 // isExpired checks whether a transaction has expired
 func (tp *Pool) isExpired(tx types.BaseTx) bool {
-	expTime := time.Unix(tx.GetTimestamp(), 0).UTC().AddDate(0, 0, params.TxTTL)
+	expTime := time.Unix(tx.GetTimestamp(), 0).UTC().Add(params.TxTTL)
 	return time.Now().UTC().After(expTime)
 }
 
@@ -69,19 +88,11 @@ func (tp *Pool) clean() {
 
 // addTx adds a transaction to the container.
 // Not safe for concurrent use.
-func (tp *Pool) addTx(tx types.BaseTx) error {
-
-	// Ensure the transaction does not already exist in the queue
+func (tp *Pool) addTx(tx types.BaseTx) (bool, error) {
 	if tp.container.Has(tx) {
-		return ErrTxAlreadyAdded
+		return false, ErrTxAlreadyAdded
 	}
-
-	// Append the the transaction to the container
-	if err := tp.container.Add(tx); err != nil {
-		return err
-	}
-
-	return nil
+	return tp.container.Add(tx)
 }
 
 // Has checks whether a transaction is in the pool
@@ -108,15 +119,20 @@ func (tp *Pool) ByteSize() int64 {
 	return tp.container.ByteSize()
 }
 
-// ActualSize gets the total byte size of all transactions in the pool.
-// All fields are calculated, unlike ByteSize.
-func (tp *Pool) ActualSize() int64 {
-	return tp.container.ActualSize()
-}
-
 // Size gets the total number of transactions in the pool
 func (tp *Pool) Size() int {
 	return tp.container.Size()
+}
+
+// CacheSize returns the size of the cache
+func (tp *Pool) CacheSize() int {
+	return tp.container.CacheSize()
+}
+
+// GetFromCache gets a transaction from the cache.
+// Blocks if cache channel is empty
+func (tp *Pool) GetFromCache() types.BaseTx {
+	return tp.container.cache.Get()
 }
 
 // Flush clears the container and caches

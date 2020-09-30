@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/mempool"
+	types2 "github.com/make-os/lobe/mempool/types"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
@@ -33,7 +33,7 @@ func (sv *Server) subscribe() {
 	// On EvtMempoolTxRemoved:
 	// Remove the transaction from the push pool
 	go func() {
-		for evt := range sv.cfg.G().Bus.On(mempool.EvtMempoolTxRemoved) {
+		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRemoved) {
 			handleFailedPushTxEvt(sv, evt)
 		}
 	}()
@@ -41,7 +41,7 @@ func (sv *Server) subscribe() {
 	// On EvtMempoolTxRejected:
 	// Remove the transaction from the push pool
 	go func() {
-		for evt := range sv.cfg.G().Bus.On(mempool.EvtMempoolTxRejected) {
+		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRejected) {
 			handleFailedPushTxEvt(sv, evt)
 		}
 	}()

@@ -67,7 +67,7 @@ var _ = Describe("Contract", func() {
 				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
-				err = ct.DryExec(123)
+				err = ct.DryExec(123, false)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("unexpected address type"))
 			})
@@ -78,20 +78,44 @@ var _ = Describe("Contract", func() {
 				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
-				err := ct.DryExec(sender.PubKey())
+				err := ct.DryExec(sender.PubKey(), false)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value+fee, msg:sender's spendable account balance is insufficient"))
 			})
 		})
 
-		Context("when nonce is invalid", func() {
-			It("should return no error", func() {
+		Context("when nonce is not the next nonce and allowNonceGap=false", func() {
+			It("should return error", func() {
 				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 3}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
-				err := ct.DryExec(sender.PubKey())
+				err := ct.DryExec(sender.PubKey(), false)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:tx has invalid nonce (3); expected (1)"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (3); expected (1)"))
+			})
+		})
+
+		Context("when nonce is lower than or equal to the current nonce and allowNonceGap=true", func() {
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "1000", Nonce: 10, Stakes: state.BareAccountStakes()})
+			})
+
+			It("should return error when lower", func() {
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 3}}
+				ct := transfercoin.NewContract()
+				ct.Init(logic, tx, 1)
+				err := ct.DryExec(sender.PubKey(), true)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (3); expected a nonce that is greater than the current account nonce (10)"))
+			})
+
+			It("should return error when equal", func() {
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 10}}
+				ct := transfercoin.NewContract()
+				ct.Init(logic, tx, 1)
+				err := ct.DryExec(sender.PubKey(), true)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (10); expected a nonce that is greater than the current account nonce (10)"))
 			})
 		})
 
@@ -107,7 +131,7 @@ var _ = Describe("Contract", func() {
 				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 0)
-				err := ct.DryExec(sender.PubKey())
+				err := ct.DryExec(sender.PubKey(), false)
 				Expect(err).To(BeNil())
 			})
 		})

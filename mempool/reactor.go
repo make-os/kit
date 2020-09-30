@@ -93,6 +93,7 @@ func (r *Reactor) GetPoolSize() *core.PoolSizeInfo {
 	return &core.PoolSizeInfo{
 		TotalTxSize: r.mempool.TxsBytes(),
 		TxCount:     r.mempool.Size(),
+		CacheSize:   r.mempool.CacheSize(),
 	}
 }
 
@@ -112,12 +113,15 @@ func (r *Reactor) GetTop(n int) []types.BaseTx {
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
 func (r *Reactor) AddTx(tx types.BaseTx) (hash util.HexBytes, err error) {
-	err = r.mempool.Add(tx)
+	addedToPool, err := r.mempool.Add(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	r.broadcastTx(tx)
+	// Broadcast tx if added to the pool
+	if addedToPool {
+		r.broadcastTx(tx)
+	}
 
 	return tx.GetHash(), nil
 }

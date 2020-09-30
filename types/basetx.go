@@ -84,6 +84,12 @@ type BaseTx interface {
 	// GetMeta returns the meta information of the transaction
 	GetMeta() map[string]interface{}
 
+	// SetMeta set key and value
+	SetMeta(key string, val interface{})
+
+	// HasMetaKey checks if a key exists in the metadata map
+	HasMetaKey(key string) bool
+
 	// Id checks if the tx is a given type
 	Is(txType TxCode) bool
 }

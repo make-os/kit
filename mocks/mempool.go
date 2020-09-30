@@ -237,11 +237,11 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 }
 
 // Add mocks base method
-func (m *MockMempool) Add(tx types.BaseTx) error {
+func (m *MockMempool) Add(tx types.BaseTx) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
 	ret0, _ := ret[0].(error)
-	return ret0
+	return false, ret0
 }
 
 // Add indicates an expected call of Add

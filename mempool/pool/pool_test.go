@@ -1,45 +1,96 @@
 package pool
 
 import (
+	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/lobe/mocks"
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util/identifier"
+	"github.com/olebedev/emitter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
+func TestPool(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Pool Suite")
+}
+
 var _ = Describe("pool", func() {
+	var ctrl *gomock.Controller
+	var mockKeepers *mocks.MockKeepers
+	var mockAcctKeeper *mocks.MockAccountKeeper
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockKeepers = mocks.NewMockKeepers(ctrl)
+		mockAcctKeeper = mocks.NewMockAccountKeeper(ctrl)
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
 
 	Describe(".Put", func() {
 		It("should return err = 'capacity reached' when pool capacity is reached", func() {
-			tp := New(0)
+			tp := New(0, nil, nil)
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			err := tp.Put(tx)
+			_, err := tp.Put(tx)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(ErrContainerFull))
 		})
 
 		It("should return err = 'exact transaction already in the pool' when transaction has already been added", func() {
-			tp := New(10)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount())
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+
+			tp := New(10, mockKeepers, emitter.New(10))
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			err := tp.Put(tx)
+			_, err := tp.Put(tx)
 			Expect(err).To(BeNil())
-			err = tp.Put(tx)
+			_, err = tp.Put(tx)
 			Expect(err).To(Equal(ErrTxAlreadyAdded))
 		})
 
 		It("should return nil and added to queue", func() {
-			tp := New(1)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount())
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+
+			tp := New(1, mockKeepers, emitter.New(10))
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
-			err := tp.Put(tx)
+			_, err := tp.Put(tx)
 			Expect(err).To(BeNil())
 			Expect(tp.container.Size()).To(Equal(1))
+		})
+	})
+
+	Describe(".getNonce", func() {
+		It("should return ErrAccountUnknown if account does not exist", func() {
+			mockAcctKeeper.EXPECT().Get(identifier.Address("some_address")).Return(state.BareAccount())
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+			tp := New(1, mockKeepers, emitter.New(10))
+			_, err := tp.getNonce("some_address")
+			Expect(err).To(Equal(types.ErrAccountUnknown))
+		})
+
+		It("should return nonce if account exist", func() {
+			acct := state.BareAccount()
+			acct.Nonce = 10
+			mockAcctKeeper.EXPECT().Get(identifier.Address("some_address")).Return(acct)
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+			tp := New(1, mockKeepers, emitter.New(10))
+			nonce, err := tp.getNonce("some_address")
+			Expect(err).To(BeNil())
+			Expect(nonce).To(Equal(uint64(10)))
 		})
 	})
 
@@ -49,17 +100,19 @@ var _ = Describe("pool", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
-			tp = New(1)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+			tp = New(1, mockKeepers, emitter.New(10))
 		})
 
 		It("should return true when tx exist", func() {
-			tx := txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			Expect(tp.Has(tx)).To(BeTrue())
 		})
 
 		It("should return false when tx does not exist", func() {
-			tx := txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			Expect(tp.Has(tx)).To(BeFalse())
 		})
 	})
@@ -70,12 +123,15 @@ var _ = Describe("pool", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
-			tp = New(1)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+
+			tp = New(1, mockKeepers, emitter.New(10))
 			Expect(tp.Size()).To(Equal(0))
 		})
 
 		It("should return 1", func() {
-			tx := txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
+			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			Expect(tp.Size()).To(Equal(1))
 		})
@@ -89,12 +145,14 @@ var _ = Describe("pool", func() {
 		var sender2 = crypto.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
-			tp = New(2)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+			tp = New(2, mockKeepers, emitter.New(10))
 		})
 
 		BeforeEach(func() {
-			tx = txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
-			tx2 = txns.NewCoinTransferTx(100, "something_2", sender2, "0", "0", time.Now().Unix())
+			tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
+			tx2 = txns.NewCoinTransferTx(1, "something_2", sender2, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			tp.Put(tx2)
 		})
@@ -127,68 +185,25 @@ var _ = Describe("pool", func() {
 		})
 	})
 
-	Describe(".ActualSize", func() {
-
-		var tx, tx2 types.BaseTx
-		var tp *Pool
-		var sender = crypto.NewKeyFromIntSeed(1)
-		var sender2 = crypto.NewKeyFromIntSeed(2)
-
-		BeforeEach(func() {
-			tp = New(2)
-		})
-
-		BeforeEach(func() {
-			tx = txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
-			tx2 = txns.NewCoinTransferTx(100, "something_2", sender2, "0", "0", time.Now().Unix())
-			tp.Put(tx)
-			tp.Put(tx2)
-		})
-
-		It("should return expected actual size", func() {
-			s := tp.ActualSize()
-			Expect(s).To(Equal(tx.GetSize() + tx2.GetSize()))
-		})
-
-		When("a transaction is removed", func() {
-
-			var curByteSize int64
-
-			BeforeEach(func() {
-				curByteSize = tp.ActualSize()
-				Expect(curByteSize).To(Equal(tx.GetSize() + tx2.GetSize()))
-			})
-
-			It("should reduce the actual byte size when First is called", func() {
-				rmTx := tp.container.First()
-				s := tp.ActualSize()
-				Expect(s).To(Equal(curByteSize - rmTx.GetSize()))
-			})
-
-			It("should reduce the actual byte size when Last is called", func() {
-				rmTx := tp.container.Last()
-				s := tp.ActualSize()
-				Expect(s).To(Equal(curByteSize - rmTx.GetSize()))
-			})
-		})
-	})
-
 	Describe(".clean", func() {
 
 		var tx, tx2 types.BaseTx
 		var tp *Pool
 		var sender = crypto.NewKeyFromIntSeed(1)
 
-		Context("when TxTTL is 1 day", func() {
+		When("TxTTL is 1 day", func() {
 
 			BeforeEach(func() {
-				params.TxTTL = 1
-				tp = New(2)
+				params.TxTTL = 1 * time.Hour
 
-				tx = txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
-				tx.SetTimestamp(time.Now().UTC().AddDate(0, 0, -2).Unix())
+				mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+				tp = New(2, mockKeepers, emitter.New(10))
 
-				tx2 = txns.NewCoinTransferTx(101, "something2", sender, "0", "0", time.Now().Unix())
+				tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
+				tx.SetTimestamp(time.Now().UTC().Add(-2 * time.Hour).Unix())
+
+				tx2 = txns.NewCoinTransferTx(2, "something2", sender, "0", "0", time.Now().Unix())
 				tx2.SetTimestamp(time.Now().Unix())
 
 				tp.container.Add(tx)
@@ -214,15 +229,17 @@ var _ = Describe("pool", func() {
 		var sender3 = crypto.NewKeyFromIntSeed(3)
 
 		BeforeEach(func() {
-			tp = New(100)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+			tp = New(100, mockKeepers, emitter.New(10))
 
-			tx = txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
+			tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 
-			tx2 = txns.NewCoinTransferTx(100, "something2", sender2, "0", "0", time.Now().Unix())
+			tx2 = txns.NewCoinTransferTx(1, "something2", sender2, "0", "0", time.Now().Unix())
 			tp.Put(tx2)
 
-			tx3 = txns.NewCoinTransferTx(100, "something3", sender3, "0", "0", time.Now().Unix())
+			tx3 = txns.NewCoinTransferTx(1, "something3", sender3, "0", "0", time.Now().Unix())
 			tp.Put(tx3)
 		})
 
@@ -242,12 +259,14 @@ var _ = Describe("pool", func() {
 		var sender2 = crypto.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
-			tp = New(100)
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+			tp = New(100, mockKeepers, emitter.New(10))
 
-			tx = txns.NewCoinTransferTx(100, "something", sender, "0", "0", time.Now().Unix())
+			tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 
-			tx2 = txns.NewCoinTransferTx(100, "something2", sender2, "0", "0", time.Now().Unix())
+			tx2 = txns.NewCoinTransferTx(1, "something2", sender2, "0", "0", time.Now().Unix())
 		})
 
 		It("It should not be equal", func() {

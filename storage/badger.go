@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/make-os/lobe/storage/common"
@@ -16,12 +17,13 @@ var ErrRecordNotFound = fmt.Errorf("record not found")
 // storage functions built on top of badger.
 type Badger struct {
 	*WrappedTx
-	db *badger.DB
+	lck *sync.Mutex
+	db  *badger.DB
 }
 
 // NewBadger creates an instance of Badger storage engine.
 func NewBadger() *Badger {
-	return &Badger{}
+	return &Badger{lck: &sync.Mutex{}}
 }
 
 // Init starts the database.
@@ -46,7 +48,7 @@ func (b *Badger) Init(dir string) error {
 	// on success ops or discards on failure.
 	// It also enables the renewal of the underlying transaction
 	// after executing a read/write operation
-	b.WrappedTx = NewBadgerFunctions(db, true, true)
+	b.WrappedTx = NewTx(db, true, true)
 
 	return nil
 }
@@ -64,11 +66,13 @@ func (b *Badger) GetDB() *badger.DB {
 // renew: re-initializes the transaction after each operation. Requires
 // autoFinish to be enabled.
 func (b *Badger) NewTx(autoFinish, renew bool) types.Tx {
-	return NewBadgerFunctions(b.db, autoFinish, renew)
+	return NewTx(b.db, autoFinish, renew)
 }
 
 // Close closes the database engine and frees resources
 func (b *Badger) Close() error {
+	b.lck.Lock()
+	defer b.lck.Unlock()
 	if b.db != nil {
 		return b.db.Close()
 	}

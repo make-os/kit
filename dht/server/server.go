@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	badger "github.com/ipfs/go-ds-badger"
@@ -41,6 +42,7 @@ type Server struct {
 	objectStreamer types.ObjectStreamer
 	announcer      types2.Announcer
 	stopped        bool
+	stopOnce       *sync.Once
 }
 
 // New creates a new Server
@@ -84,6 +86,7 @@ func New(ctx context.Context, keepers core.Keepers, cfg *config.AppConfig) (*Ser
 		dht:        server,
 		cfg:        cfg,
 		log:        log,
+		stopOnce:   &sync.Once{},
 		connTicker: time.NewTicker(ConnectTickerInterval),
 		announcer:  announcer2.New(cfg, server, keepers),
 	}
@@ -264,27 +267,26 @@ func (dht *Server) RegisterChecker(objType int, f types2.CheckFunc) {
 }
 
 // Stop stops the server
-func (dht *Server) Stop() error {
-	var err error
+func (dht *Server) Stop() (err error) {
+	dht.stopOnce.Do(func() {
+		dht.stopped = true
 
-	dht.stopped = true
+		if dht.connTicker != nil {
+			dht.connTicker.Stop()
+		}
 
-	if dht.connTicker != nil {
-		dht.connTicker.Stop()
-	}
+		if dht.announcer != nil {
+			dht.announcer.Stop()
+		}
 
-	if dht.announcer != nil {
-		dht.announcer.Stop()
-	}
+		if dht.host != nil {
+			err = dht.host.Close()
+		}
 
-	if dht.host != nil {
-		err = dht.host.Close()
-	}
-
-	if dht.dht != nil {
-		dht.dht.RoutingTable().Close()
-		dht.dht.Close()
-	}
-
-	return err
+		if dht.dht != nil {
+			dht.dht.RoutingTable().Close()
+			dht.dht.Close()
+		}
+	})
+	return
 }

@@ -6,9 +6,12 @@ import (
 	"sync"
 
 	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
+	memtypes "github.com/make-os/lobe/mempool/types"
+	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/identifier"
+	"github.com/olebedev/emitter"
 	"github.com/shopspring/decimal"
 )
 
@@ -20,6 +23,9 @@ var (
 	// that is in the pool.
 	ErrTxAlreadyAdded = fmt.Errorf("exact transaction already in the pool")
 
+	// ErrSenderTxLimitReached is an error about a sender reaching the pool's tx limit per sender
+	ErrSenderTxLimitReached = fmt.Errorf("sender's pool transaction limit reached")
+
 	// ErrFailedReplaceByFee means an attempt to replace by fee failed due to the replacement
 	// tx having a lower/equal fee to the current
 	ErrFailedReplaceByFee = fmt.Errorf("an existing transaction by " +
@@ -27,126 +33,52 @@ var (
 		"existing transaction, the new transaction fee must be higher")
 )
 
-// containerItem represents the a container item.
-// It wraps a transaction and other important properties.
-type containerItem struct {
-	Tx      types.BaseTx
-	FeeRate util.String
-}
-
-// newItem creates an instance of ContainerItem
-func newItem(tx types.BaseTx) *containerItem {
-	item := &containerItem{Tx: tx}
-	return item
-}
-
-// nonceInfo stores information about a transaction
-// that is associated with a specific nonce
-type nonceInfo struct {
-	TxHash util.HexBytes
-	Fee    util.String
-}
-
-// nonceCollection maps nonces with transaction information
-type nonceCollection struct {
-	nonces map[uint64]*nonceInfo
-}
-
-// defaultNonceCollection returns a base nonceCollection instance
-func defaultNonceCollection() *nonceCollection {
-	return &nonceCollection{nonces: map[uint64]*nonceInfo{}}
-}
-
-// has checks whether a nonce exists in the collection
-func (c *nonceCollection) has(nonce uint64) bool {
-	if _, ok := c.nonces[nonce]; ok {
-		return true
-	}
-	return false
-}
-
-// get returns a nonce information.
-// Returns nil if no result is found for the given nonce.
-func (c *nonceCollection) get(nonce uint64) *nonceInfo {
-	if !c.has(nonce) {
-		return nil
-	}
-	return c.nonces[nonce]
-}
-
-// Add adds a nonce information. If a matching nonce
-// already exist, it is replaced with the new nonce info.
-func (c *nonceCollection) add(nonce uint64, ni *nonceInfo) {
-	c.nonces[nonce] = ni
-}
-
-// remove removes a nonce information.
-func (c *nonceCollection) remove(nonce uint64) {
-	delete(c.nonces, nonce)
-}
-
-type senderNonces map[identifier.Address]*nonceCollection
-
-// remove removes a nonce associated with a sender address.
-// The entire map entry for the sender is removed if no other
-// nonce exist after the operation
-func (sn *senderNonces) remove(senderAddr identifier.Address, nonce uint64) {
-	nc, ok := (*sn)[senderAddr]
-	if !ok {
-		return
-	}
-	nc.remove(nonce)
-	if len(nc.nonces) == 0 {
-		delete(*sn, senderAddr)
-	}
-}
-
-// len returns the length of the collection
-func (sn *senderNonces) len() int {
-	return len(*sn)
-}
-
-// TxContainer represents the internal container
-// used by pool. It provides a Put operation
-// with automatic sorting by fee rate and nonce.
+// TxContainer represents the internal container used by the pool.
+// It provides a Put operation with sorting by fee rate and nonce.
 // The container is thread-safe.
 type TxContainer struct {
-	lck        *sync.RWMutex
-	container  *dll.List              // main transaction container (the pool)
-	Cap        int                    // cap is the amount of transactions in the
-	noSorting  bool                   // noSorting indicates that sorting is enabled/disabled
-	hashIndex  map[string]interface{} // hashIndex caches tx hashes for quick existence lookup
-	byteSize   int64                  // byteSize is the total txs size of the container (excluding fee field)
-	actualSize int64                  // actualSize is the total tx size of the container (includes all fields)
-
-	// senderNonceIndex maps sending addresses to nonces of transaction.
-	// We use this to find transactions from same sender with matching nonce for
-	// implementing a replay-by-fee mechanism.
-	senderNonceIndex senderNonces
+	lck              *sync.RWMutex
+	container        *dll.List              // main transaction container (the pool).
+	Cap              int                    // cap is the maximum amount of transactions allowed.
+	noSorting        bool                   // indicates that sorting should be disabled.
+	hashIndex        map[string]interface{} // indexes a transactions hash for quick existence lookup.
+	byteSize         int64                  // the total transaction size of the container
+	senderNonceIndex senderNonces           // indexes sending addresses to nonce of transactions signed by them.
+	cache            *Cache                 // Transactions to be re-attempted
+	getNonce         NonceGetterFunc        // Function for getting nonce of an account
+	bus              *emitter.Emitter       // Event emitter
 }
 
 // NewTxContainer creates a new container
-func NewTxContainer(cap int) *TxContainer {
-	q := new(TxContainer)
-	q.container = dll.New()
-	q.Cap = cap
-	q.lck = &sync.RWMutex{}
-	q.hashIndex = map[string]interface{}{}
-	q.senderNonceIndex = map[identifier.Address]*nonceCollection{}
-	return q
+func NewTxContainer(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *TxContainer {
+	return &TxContainer{
+		lck:              &sync.RWMutex{},
+		container:        dll.New(),
+		Cap:              cap,
+		hashIndex:        make(map[string]interface{}),
+		senderNonceIndex: make(map[identifier.Address]*nonceCollection),
+		cache:            NewCache(),
+		getNonce:         getNonce,
+		byteSize:         0,
+		bus:              bus,
+	}
 }
 
 // NewTxContainerNoSort creates a new container
 // with sorting turned off
-func NewTxContainerNoSort(cap int) *TxContainer {
-	q := new(TxContainer)
-	q.container = dll.New()
-	q.Cap = cap
-	q.lck = &sync.RWMutex{}
-	q.hashIndex = map[string]interface{}{}
-	q.noSorting = true
-	q.senderNonceIndex = map[identifier.Address]*nonceCollection{}
-	return q
+func NewTxContainerNoSort(cap int, bus *emitter.Emitter, getNonce NonceGetterFunc) *TxContainer {
+	return &TxContainer{
+		lck:              &sync.RWMutex{},
+		container:        dll.New(),
+		Cap:              cap,
+		hashIndex:        make(map[string]interface{}),
+		senderNonceIndex: make(map[identifier.Address]*nonceCollection),
+		cache:            NewCache(),
+		noSorting:        true,
+		getNonce:         getNonce,
+		byteSize:         0,
+		bus:              bus,
+	}
 }
 
 // Size returns the number of items in the container
@@ -165,13 +97,6 @@ func (q *TxContainer) ByteSize() int64 {
 	return q.byteSize
 }
 
-// ActualSize is like ByteSize but its result includes all fields
-func (q *TxContainer) ActualSize() int64 {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.actualSize
-}
-
 // Full checks if the container's capacity has been reached
 func (q *TxContainer) Full() bool {
 	q.lck.RLock()
@@ -179,11 +104,9 @@ func (q *TxContainer) Full() bool {
 	return q.Size() >= q.Cap
 }
 
-// noSort checks whether sorting is disabled
-func (q *TxContainer) noSort() bool {
-	q.lck.RLock()
-	defer q.lck.RUnlock()
-	return q.noSorting
+// CacheSize returns the size of the cache
+func (q *TxContainer) CacheSize() int {
+	return q.cache.Size()
 }
 
 // calcFeeRate calculates the fee rate of a transaction
@@ -196,13 +119,9 @@ func calcFeeRate(tx types.BaseTx) util.String {
 // Returns false if container capacity has been reached.
 // It computes the fee rate and sorts the transactions
 // after addition.
-func (q *TxContainer) Add(tx types.BaseTx) error {
-
-	if q.Full() {
-		return ErrContainerFull
-	}
-
+func (q *TxContainer) Add(tx types.BaseTx) (bool, error) {
 	q.lck.Lock()
+	defer q.lck.Unlock()
 
 	// Calculate the transaction's fee rate (tx fee / size)
 	item := newItem(tx)
@@ -210,11 +129,7 @@ func (q *TxContainer) Add(tx types.BaseTx) error {
 
 	// Get the sender's nonce info. If not found create a new one
 	sender := tx.GetFrom()
-	senderNonceInfo, ok := q.senderNonceIndex[sender]
-	if !ok {
-		senderNonceInfo = defaultNonceCollection()
-	}
-
+	senderNonceInfo := q.senderNonceIndex.get(sender)
 	var ni *nonceInfo
 
 	// If no existing transaction with a matching nonce, Add this tx nonce to
@@ -229,31 +144,81 @@ func (q *TxContainer) Add(tx types.BaseTx) error {
 	// CONTRACT: To replace-by-fee, the new transaction must have a higher fee.
 	ni = senderNonceInfo.get(tx.GetNonce())
 	if ni.Fee.Decimal().GreaterThanOrEqual(item.Tx.GetFee().Decimal()) {
-		q.lck.Unlock()
-		return ErrFailedReplaceByFee
+		return false, ErrFailedReplaceByFee
 	}
 
 	// At the point, the new transaction has a higher fee rate, therefore we
 	// need to remove the existing transaction and replace with the new one
-	// and also Add also replace the nonce information
+	// and also replace the nonce information
 	q.removeByHash(ni.TxHash)
 	senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), Fee: item.Tx.GetFee()})
 
 add:
 
+	// Check per-sender pool transaction limit
+	if q.sizeByAddr(sender) == params.MempoolSenderTxLimit {
+		return false, ErrSenderTxLimitReached
+	}
+
+	// Ensure cap has not been reached
+	if q.container.Size() >= q.Cap {
+		return false, ErrContainerFull
+	}
+
+	// Get the current nonce of sender
+	curSenderNonce, err := q.getNonce(tx.GetFrom().String())
+	if err != nil {
+		if err != types.ErrAccountUnknown {
+			return false, err
+		}
+	}
+
+	// Ensure the transaction nonce is not lower/equal than/to current account nonce.
+	if curSenderNonce >= tx.GetNonce() {
+		return false, fmt.Errorf("tx nonce cannot be less than or equal to current account nonce")
+	}
+
+	// When the tx nonce is not the next expected nonce
+	// and the immediate nonce (n-1) of the tx is not in the pool, cache the tx.
+	if tx.GetNonce()-curSenderNonce > 1 {
+		if !senderNonceInfo.has(tx.GetNonce() - 1) {
+			if !q.cache.Add(tx) {
+				return false, fmt.Errorf("cache already contains a transaction with matching sender and nonce")
+			}
+			return false, nil
+		}
+	}
+
 	q.senderNonceIndex[sender] = senderNonceInfo
 	q.container.Append(item)
 	q.hashIndex[tx.GetHash().String()] = struct{}{}
 	q.byteSize += tx.GetEcoSize()
-	q.actualSize += int64(len(tx.Bytes()))
 
-	q.lck.Unlock()
-
-	if !q.noSort() {
+	if !q.noSorting {
 		q.Sort()
 	}
 
-	return nil
+	q.bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
+
+	return true, nil
+}
+
+// sizeByAddr returns the number of transactions signed by a given address.
+// Not thread safe; Must be called with lock held.
+func (q *TxContainer) sizeByAddr(addr identifier.Address) int {
+	var poolCount int
+	ni, ok := q.senderNonceIndex[addr]
+	if ok {
+		poolCount = len(ni.nonces)
+	}
+	return q.cache.SizeByAddr(addr) + poolCount
+}
+
+// SizeByAddr returns the number of transactions signed by a given address
+func (q *TxContainer) SizeByAddr(addr identifier.Address) int {
+	q.lck.RLock()
+	defer q.lck.RUnlock()
+	return q.sizeByAddr(addr)
 }
 
 // Get returns a transaction at the given index
@@ -303,7 +268,6 @@ func (q *TxContainer) First() types.BaseTx {
 
 	// Decrement counts
 	q.byteSize -= tx.GetEcoSize()
-	q.actualSize -= int64(len(tx.Bytes()))
 
 	return tx
 }
@@ -330,15 +294,12 @@ func (q *TxContainer) Last() types.BaseTx {
 
 	// Decrement counts
 	q.byteSize -= tx.GetEcoSize()
-	q.actualSize -= int64(len(tx.Bytes()))
 
 	return tx
 }
 
 // Sort sorts the container
 func (q *TxContainer) Sort() {
-	q.lck.Lock()
-	defer q.lck.Unlock()
 	q.container.Sort(func(a, b interface{}) int {
 		aItem := a.(*containerItem)
 		bItem := b.(*containerItem)
@@ -389,7 +350,6 @@ func (q *TxContainer) remove(txsToDel ...types.BaseTx) {
 			delete(q.hashIndex, tx.GetHash().String())
 			q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
 			q.byteSize -= tx.GetEcoSize()
-			q.actualSize -= int64(len(tx.Bytes()))
 			return false
 		}
 		return true
@@ -409,7 +369,6 @@ func (q *TxContainer) removeByHash(txsHash ...util.HexBytes) {
 			delete(q.hashIndex, tx.GetHash().String())
 			q.senderNonceIndex.remove(tx.GetFrom(), tx.GetNonce())
 			q.byteSize -= tx.GetEcoSize()
-			q.actualSize -= int64(len(tx.Bytes()))
 		}
 	})
 }
@@ -452,6 +411,5 @@ func (q *TxContainer) Flush() {
 	q.container.Clear()
 	q.hashIndex = make(map[string]interface{})
 	q.byteSize = 0
-	q.actualSize = 0
 	q.senderNonceIndex = senderNonces{}
 }

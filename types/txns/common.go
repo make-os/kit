@@ -33,16 +33,6 @@ const (
 	MergeRequestProposalAction                                // For identifying merge request proposal
 )
 
-// TxMeta stores arbitrary, self-contained state information for a transaction
-type TxMeta struct {
-	meta map[string]interface{}
-}
-
-// GetMeta returns the meta information of the transaction
-func (m *TxMeta) GetMeta() map[string]interface{} {
-	return m.meta
-}
-
 // TxType implements some of BaseTx, it includes type information about a transaction
 type TxType struct {
 	Type types.TxCode `json:"type" msgpack:"type" mapstructure:"type"`
@@ -66,7 +56,7 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
 	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxMeta        `json:"-" msgpack:"-" mapstructure:"-"`
+	*types.Meta    `json:"-" msgpack:"-" mapstructure:"-"`
 	Nonce          uint64           `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
 	Fee            util.String      `json:"fee" msgpack:"fee" mapstructure:"fee"`
 	Sig            util.Bytes       `json:"sig" msgpack:"sig" mapstructure:"sig"`
@@ -95,7 +85,7 @@ func (tx *TxCommon) DecodeMsgpack(dec *msgpack2.Decoder) error {
 // NewBareTxCommon returns an instance of TxCommon with zero values
 func NewBareTxCommon() *TxCommon {
 	return &TxCommon{
-		TxMeta:       &TxMeta{meta: make(map[string]interface{})},
+		Meta:         types.NewMeta(),
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,

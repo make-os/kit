@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/make-os/lobe/crypto"
 	"github.com/make-os/lobe/remote/types"
+	types2 "github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/util"
 	crypto2 "github.com/make-os/lobe/util/crypto"
 	"github.com/make-os/lobe/util/identifier"
@@ -14,6 +15,7 @@ import (
 // PushNote implements types.PushNote
 type Note struct {
 	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
+	*types2.Meta   `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
 	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
@@ -420,6 +422,8 @@ type PushNote interface {
 	GetFee() util.String
 	GetValue() util.String
 	IsFromRemotePeer() bool
+	GetMeta() map[string]interface{}
+	HasMetaKey(key string) bool
 }
 
 // PushedReference represents a reference that was pushed by git client

@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"sync"
 
+	types2 "github.com/make-os/lobe/mempool/types"
 	"github.com/make-os/lobe/params"
+	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/txns"
 	"github.com/make-os/lobe/util"
+	"github.com/make-os/lobe/validation"
 
 	"github.com/make-os/lobe/config"
 
-	t "github.com/make-os/lobe/types"
+	"github.com/make-os/lobe/types"
 
 	"github.com/make-os/lobe/pkgs/logger"
 
@@ -19,15 +22,7 @@ import (
 	auto "github.com/tendermint/tendermint/libs/autofile"
 	"github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/proxy"
-	"github.com/tendermint/tendermint/types"
-)
-
-// Mempool related events
-const (
-	EvtMempoolTxAdded     = "mempool_tx_added"
-	EvtMempoolTxRemoved   = "mempool_tx_removed"
-	EvtMempoolTxRejected  = "mempool_tx_rejected"
-	EvtMempoolTxCommitted = "mempool_tx_committed"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 // Option sets an optional parameter on the mempool.
@@ -35,17 +30,15 @@ type Option func(*Mempool)
 
 // Mempool implements mempool.Mempool
 type Mempool struct {
-	cfg *config.AppConfig
+	cfg   *config.AppConfig
+	logic core.Logic
 
 	proxyMtx     sync.Mutex
 	proxyAppConn proxy.AppConnMempool
 	pool         *pool.Pool
 	preCheck     mempool.PreCheckFunc
 	postCheck    mempool.PostCheckFunc
-
-	// notify listeners (ie. consensus) when txs are available
-	notifiedTxsAvailable bool
-	txsAvailable         chan struct{} // fires once for each height, when the mempool is not empty
+	validateTx   validation.ValidateTxFunc
 
 	// A log of mempool txs
 	wal *auto.AutoFile
@@ -55,11 +48,13 @@ type Mempool struct {
 }
 
 // NewMempool creates an instance of Mempool
-func NewMempool(cfg *config.AppConfig) *Mempool {
+func NewMempool(cfg *config.AppConfig, logic core.Logic) *Mempool {
 	return &Mempool{
-		cfg:  cfg,
-		pool: pool.New(cfg.Mempool.Size),
-		log:  cfg.G().Log.Module("mempool"),
+		cfg:        cfg,
+		pool:       pool.New(cfg.Mempool.Size, logic, cfg.G().Bus),
+		logic:      logic,
+		log:        cfg.G().Log.Module("mempool"),
+		validateTx: validation.ValidateTx,
 	}
 }
 
@@ -72,35 +67,53 @@ func (mp *Mempool) SetProxyApp(proxyApp proxy.AppConnMempool) {
 
 // CheckTx executes a new transaction against the application to determine
 // its validity and whether it should be added to the mempool.
-func (mp *Mempool) CheckTx(tx types.Tx, callback func(*abci.Response)) error {
+func (mp *Mempool) CheckTx(tx tmtypes.Tx, callback func(*abci.Response)) error {
 	return mp.CheckTxWithInfo(tx, callback, mempool.TxInfo{SenderID: mempool.UnknownPeerID})
 }
 
 // Add attempts to add a transaction to the pool
-func (mp *Mempool) Add(tx t.BaseTx) error {
-	var errCh = make(chan error, 1)
-	_ = mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
-		if chkRes := res.GetCheckTx(); chkRes.Code != 0 {
-			errCh <- fmt.Errorf(chkRes.GetLog())
-			return
-		}
-		errCh <- nil
-	})
-	return <-errCh
+func (mp *Mempool) Add(tx types.BaseTx) (bool, error) {
+
+	// Check if there is capacity for another transaction.
+	if err := mp.checkCapacity(tx); err != nil {
+		return false, err
+	}
+
+	// Set TxMetaKeyAllowNonceGap: Causes tx checks to allow nonce with > 1 difference
+	// than the sender's current account nonce.
+	tx.SetMeta(types.TxMetaKeyAllowNonceGap, true)
+
+	// Check the transaction
+	if err := mp.validateTx(tx, -1, mp.logic); err != nil {
+		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRejected, err, tx)
+		mp.log.Debug("Rejected an invalid transaction", "Reason", err.Error())
+		return false, err
+	}
+
+	// Add valid transaction to the pool
+	addedToPool, err := mp.pool.Put(tx)
+	if err != nil {
+		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRejected, err, tx)
+		return false, err
+	}
+
+	if addedToPool {
+		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash(),
+			"PoolSize", mp.Size())
+	} else {
+		mp.log.Info("Added a new transaction to the cache", "Hash", tx.GetHash(),
+			"CacheSize", mp.CacheSize())
+	}
+
+	return addedToPool, nil
 }
 
-// CheckTxWithInfo performs the same operation as CheckTx, but with extra
-// meta data about the tx.
-// Currently this metadata is the peer who sent it, used to prevent the tx
-// from being gossiped back to them.
-func (mp *Mempool) CheckTxWithInfo(tx types.Tx, callback func(*abci.Response), txInfo mempool.TxInfo) error {
-	mp.proxyMtx.Lock()
-	defer mp.proxyMtx.Unlock()
-
+// checkCapacity checks whether there is enough pool capacity for the new transaction
+func (mp *Mempool) checkCapacity(tx types.BaseTx) error {
 	var (
 		memSize  = mp.Size()
 		txsBytes = mp.TxsBytes()
-		txSize   = len(tx)
+		txSize   = len(tx.Bytes())
 	)
 
 	// Check whether the pool has sufficient capacity
@@ -114,20 +127,18 @@ func (mp *Mempool) CheckTxWithInfo(tx types.Tx, callback func(*abci.Response), t
 	// can't be larger than the maxMsgSize, otherwise we can't
 	// relay it to peers.
 	if txSize > mp.cfg.Mempool.MaxTxSize {
-		return fmt.Errorf("tx is too large. Max size is %d, but got %d",
-			mp.cfg.Mempool.MaxTxSize, txSize)
+		return fmt.Errorf("transaction is too large. Max size is %d, but got %d", mp.cfg.Mempool.MaxTxSize, txSize)
 	}
-
-	// NOTE: proxyAppConn may error if tx buffer is full
-	if err := mp.proxyAppConn.Error(); err != nil {
-		return err
-	}
-
-	// Pass the transaction to the proxy app so checks are performed
-	reqRes := mp.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: tx})
-	reqRes.SetCallback(mp.onTxCheckFinished(tx, txInfo.SenderID, callback))
 
 	return nil
+}
+
+// CheckTxWithInfo performs the same operation as CheckTx, but with extra
+// meta data about the tx.
+// Currently this metadata is the peer who sent it, used to prevent the tx
+// from being gossiped back to them.
+func (mp *Mempool) CheckTxWithInfo(tx tmtypes.Tx, callback func(*abci.Response), txInfo mempool.TxInfo) error {
+	panic("not implemented")
 }
 
 // onTxCheckFinished returns a callback function that is called
@@ -135,61 +146,9 @@ func (mp *Mempool) CheckTxWithInfo(tx types.Tx, callback func(*abci.Response), t
 // The argument externalCb is a callback that is called after onTxCheckFinished
 // has finished its operations. It used by external callers to initiate
 // other operations that need to be executed after onTxCheckFinished finishes.
-func (mp *Mempool) onTxCheckFinished(tx []byte, peerID uint16,
-	externalCb func(*abci.Response)) func(res *abci.Response) {
+func (mp *Mempool) onTxCheckFinished(_ []byte, _ uint16, _ func(*abci.Response)) func(res *abci.Response) {
 	return func(res *abci.Response) {
-
-		// Add the transaction to the pool
-		mp.addTx(tx, res)
-
-		// passed in by the caller of CheckTx, eg. the RPC
-		if externalCb != nil {
-			externalCb(res)
-		}
-	}
-}
-
-// addTx adds a transaction to the pool
-func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
-
-	switch r := res.Value.(type) {
-	case *abci.Response_CheckTx:
-
-		tx, _ := txns.DecodeTx(bs)
-
-		// At this point, the transaction failed the ABCI check
-		if r.CheckTx.Code != abci.CodeTypeOK {
-			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, fmt.Errorf(r.CheckTx.Log), tx)
-			mp.log.Debug("Rejected an invalid transaction", "Reason", r.CheckTx.Log)
-			return
-		}
-
-		err := mp.pool.Put(tx)
-		if err != nil {
-			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, err, tx)
-			r.CheckTx.Code = t.ErrCodeTxPoolReject
-			r.CheckTx.Log = err.Error()
-			return
-		}
-
-		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash(), "PoolSize", mp.Size())
-		mp.cfg.G().Bus.Emit(EvtMempoolTxAdded, nil, tx)
-		mp.notifyTxsAvailable()
-	}
-}
-
-// notifiedTxsAvailable signals through a channel that a transaction is available
-func (mp *Mempool) notifyTxsAvailable() {
-	if mp.Size() == 0 {
-		panic("notified txs available but mempool is empty!")
-	}
-	if mp.txsAvailable != nil && !mp.notifiedTxsAvailable {
-		// channel cap is 1, so this will send once
-		mp.notifiedTxsAvailable = true
-		select {
-		case mp.txsAvailable <- struct{}{}:
-		default:
-		}
+		panic("not implemented")
 	}
 }
 
@@ -197,15 +156,15 @@ func (mp *Mempool) notifyTxsAvailable() {
 // bytes total. If both maxBytes are negative, there is no cap on the
 // size of all returned transactions.
 // NOTE: maxGas is ignored since this mempool does not apply the concept of gas
-func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
+func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) tmtypes.Txs {
 	mp.proxyMtx.Lock()
 	defer mp.proxyMtx.Unlock()
 
 	var totalBytes int64
-	var ignoredTx []t.BaseTx
+	var ignoredTx []types.BaseTx
 	var numValTicketTxReaped int
 	var selectedProposals = make(map[string]map[string]struct{})
-	var txs = make([]types.Tx, 0, mp.pool.Size())
+	var txs = make([]tmtypes.Tx, 0, mp.pool.Size())
 
 	for {
 
@@ -218,7 +177,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		// If tx is a proposal creator, we need to ensure we do not allow same
 		// proposal ID for same repo to be selected. If we find a matching proposal ID
 		// targeting same repository, we have to put the transaction back in the pool.
-		if proposal, ok := memTx.(t.ProposalTx); ok {
+		if proposal, ok := memTx.(types.ProposalTx); ok {
 			repoName := proposal.GetProposalRepoName()
 			selected := selectedProposals[repoName]
 			if selected == nil {
@@ -263,9 +222,8 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 // ReapMaxTxs reaps up to max transactions from the mempool.
 // If max is negative, there is no cap on the size of all returned
 // transactions (~ all available transactions).
-func (mp *Mempool) ReapMaxTxs(max int) types.Txs {
-	// not implemented
-	return nil
+func (mp *Mempool) ReapMaxTxs(max int) tmtypes.Txs {
+	panic("not implemented")
 }
 
 // Lock locks the mempool. The consensus must be able to hold lock to safely update.
@@ -281,15 +239,11 @@ func (mp *Mempool) Unlock() {
 // recheckTxs rechecks transactions in the mempool and will remove invalidated transactions.
 // This is called when a new block has been committed.
 func (mp *Mempool) recheckTxs() {
-	mp.pool.Find(func(tx t.BaseTx, u util.String) bool {
-		txData := tx.Bytes()
-		reqRes := mp.proxyAppConn.CheckTxAsync(abci.RequestCheckTx{Tx: txData})
-		reqRes.SetCallback(func(res *abci.Response) {
-			if res.GetCheckTx().Code != abci.CodeTypeOK {
-				mp.pool.Remove(tx)
-				mp.log.Debug("Removed invalidated transaction", "Hash", tx.GetHash())
-			}
-		})
+	mp.pool.Find(func(tx types.BaseTx, u util.String) bool {
+		if err := mp.validateTx(tx, -1, mp.logic); err != nil {
+			mp.pool.Remove(tx)
+			mp.log.Debug("Removed invalidated transaction", "Hash", tx.GetHash())
+		}
 		return false
 	})
 }
@@ -297,28 +251,28 @@ func (mp *Mempool) recheckTxs() {
 // Update informs the mempool that the given txs were committed and can be discarded.
 // NOTE: this should be called *after* block is committed by consensus.
 // NOTE: unsafe; Lock/Unlock must be managed by caller
-func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
-	deliverTxResponses []*abci.ResponseDeliverTx, _ mempool.PreCheckFunc, _ mempool.PostCheckFunc) error {
+func (mp *Mempool) Update(blockHeight int64, txs tmtypes.Txs,
+	responses []*abci.ResponseDeliverTx, _ mempool.PreCheckFunc, _ mempool.PostCheckFunc) error {
 
-	mp.notifiedTxsAvailable = false
-
-	// Remove the transactions
 	for i, txBs := range txs {
-		tx, _ := txns.DecodeTx(txBs)
-		mp.pool.Remove(tx)
-		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, nil, tx)
 
-		if deliverTxResponses[i].GetCode() == 0 {
-			mp.cfg.G().Bus.Emit(EvtMempoolTxCommitted, nil, tx)
+		// Decode the transaction
+		tx, err := txns.DecodeTx(txBs)
+		if err != nil {
+			return err
+		}
+
+		// Remove it from the pool
+		mp.pool.Remove(tx)
+		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRemoved, nil, tx)
+
+		// If the tx was processed into a block, emit event
+		if len(responses) > 0 && responses[i].GetCode() == abci.CodeTypeOK {
+			mp.cfg.G().Bus.Emit(types2.EvtMempoolTxCommitted, nil, tx)
 		}
 	}
 
-	// Notify that there are transactions still in the pool
-	// if it is not empty
-	if mp.Size() > 0 {
-		mp.notifyTxsAvailable()
-	}
-
+	// Recheck existing transactions in the pool
 	mp.recheckTxs()
 
 	return nil
@@ -333,23 +287,28 @@ func (mp *Mempool) Flush() {
 // and only when transactions are available in the mempool.
 // NOTE: the returned channel may be nil if EnableTxsAvailable was not called.
 func (mp *Mempool) TxsAvailable() <-chan struct{} {
-	return mp.txsAvailable
+	return nil
 }
 
 // EnableTxsAvailable initializes the TxsAvailable channel, ensuring it will
 // trigger once every height when transactions are available.
 func (mp *Mempool) EnableTxsAvailable() {
-	mp.txsAvailable = make(chan struct{}, 1)
+
 }
 
 // Size returns the number of transactions in the mempool.
 func (mp *Mempool) Size() int {
-	return int(mp.pool.Size())
+	return mp.pool.Size()
+}
+
+// CacheSize returns the number of transactions in the mempool cache.
+func (mp *Mempool) CacheSize() int {
+	return mp.pool.CacheSize()
 }
 
 // TxsBytes returns the total size of all txs in the mempool.
 func (mp *Mempool) TxsBytes() int64 {
-	return mp.pool.ActualSize()
+	return mp.pool.ByteSize()
 }
 
 func (mp *Mempool) globalCb(req *abci.Request, res *abci.Response) {}

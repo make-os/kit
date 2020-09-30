@@ -596,3 +596,31 @@ func (mr *MockPushNoteMockRecorder) IsFromRemotePeer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromRemotePeer", reflect.TypeOf((*MockPushNote)(nil).IsFromRemotePeer))
 }
+
+// GetMeta mocks base method
+func (m *MockPushNote) GetMeta() map[string]interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMeta")
+	ret0, _ := ret[0].(map[string]interface{})
+	return ret0
+}
+
+// GetMeta indicates an expected call of GetMeta
+func (mr *MockPushNoteMockRecorder) GetMeta() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeta", reflect.TypeOf((*MockPushNote)(nil).GetMeta))
+}
+
+// HasMetaKey mocks base method
+func (m *MockPushNote) HasMetaKey(key string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasMetaKey", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasMetaKey indicates an expected call of HasMetaKey
+func (mr *MockPushNoteMockRecorder) HasMetaKey(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMetaKey", reflect.TypeOf((*MockPushNote)(nil).HasMetaKey), key)
+}

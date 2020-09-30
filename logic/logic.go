@@ -27,13 +27,12 @@ type Logic struct {
 	// cfg is the application's config
 	cfg *config.AppConfig
 
-	// _db is the db handle for instantly committed database operations.
+	// _db is the tx handle for instantly committed database operations.
 	// Use this to store records that should be be run in a transaction.
 	_db storagetypes.Engine
 
-	// db is the db handle for transaction-centric operations.
-	// Use this to store records that should run a transaction managed by ABCI app.
-	db storagetypes.Tx
+	// tx is the active database transaction
+	tx storagetypes.Tx
 
 	// stateTree is the chain's state tree
 	stateTree *tree.SafeTree
@@ -118,7 +117,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storagetypes.Tx, cfg *config.AppConfig) 
 	}
 
 	// Create the logic instances
-	l := &Logic{stateTree: safeTree, cfg: cfg, db: dbTx}
+	l := &Logic{stateTree: safeTree, cfg: cfg, tx: dbTx}
 	l.validator = &Validator{logic: l}
 
 	// Create the keepers
@@ -155,7 +154,7 @@ func (l *Logic) GetRemoteServer() core.RemoteServer {
 
 // GetDBTx returns the db transaction used by the logic providers and keepers
 func (l *Logic) GetDBTx() storagetypes.Tx {
-	return l.db
+	return l.tx
 }
 
 // Commit the state tree, database transaction and other
@@ -171,12 +170,12 @@ func (l *Logic) Commit() error {
 	}
 
 	// Commit the database transaction.
-	if err := l.db.Commit(); err != nil {
+	if err := l.tx.Commit(); err != nil {
 		return errors.Wrap(err, "failed to commit transaction")
 	}
 
 	// Renew the database transaction
-	l.db.RenewTx()
+	l.tx.RenewTx()
 
 	return nil
 }
@@ -189,9 +188,9 @@ func (l *Logic) Config() *config.AppConfig {
 // Discard the underlying transaction and renew it.
 // Also rollback any uncommitted tree modifications.
 func (l *Logic) Discard() {
-	l.db.Discard()
+	l.tx.Discard()
 	l.stateTree.Rollback()
-	l.db.RenewTx()
+	l.tx.RenewTx()
 }
 
 // SetTicketManager sets the ticket manager
@@ -207,18 +206,24 @@ func (l *Logic) GetTicketManager() tickettypes.TicketManager {
 // DrySend checks whether the given sender can execute the transaction
 //
 // sender can be an address, identifier.Address or *crypto.PubKey
-func DrySend(keepers core.Keepers, sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+func DrySend(keepers core.Keepers, allowNonceGap bool, sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
 	tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: value}, TxCommon: &txns.TxCommon{Fee: fee, Nonce: nonce}}
 	ct := transfercoin.NewContract()
 	ct.Init(keepers, tx, chainHeight)
-	return ct.DryExec(sender)
+	return ct.DryExec(sender, allowNonceGap)
 }
 
 // DrySend checks whether the given sender can execute the transaction
 //
-// sender can be an address, identifier.Address or *crypto.PubKey
-func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
-	return DrySend(l, sender, value, fee, nonce, chainHeight)
+// sender can be an address, identifier.Address or *crypto.PubKey.
+// value is the amount to transfer out of the sender account.
+// fee is the amount of coins to pay for network fee.
+// nonce is the sending account next nonce
+// allowNonceGap allows current nonce and next nonce to have a difference > 1
+// chainHeight is the block height to query the account from.
+func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce uint64,
+	allowNonceGap bool, chainHeight uint64) error {
+	return DrySend(l, allowNonceGap, sender, value, fee, nonce, chainHeight)
 }
 
 // DB returns the hubs db reference

@@ -1035,17 +1035,17 @@ func (mr *MockAtomicLogicMockRecorder) GetRemoteServer() *gomock.Call {
 }
 
 // DrySend mocks base method
-func (m *MockAtomicLogic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+func (m *MockAtomicLogic) DrySend(sender interface{}, value, fee util.String, nonce uint64, allowNonceGap bool, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, chainHeight)
+	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, allowNonceGap, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DrySend indicates an expected call of DrySend
-func (mr *MockAtomicLogicMockRecorder) DrySend(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+func (mr *MockAtomicLogicMockRecorder) DrySend(sender, value, fee, nonce, allowNonceGap, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockAtomicLogic)(nil).DrySend), sender, value, fee, nonce, chainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockAtomicLogic)(nil).DrySend), sender, value, fee, nonce, allowNonceGap, chainHeight)
 }
 
 // ExecTx mocks base method
@@ -1414,17 +1414,17 @@ func (mr *MockLogicMockRecorder) GetRemoteServer() *gomock.Call {
 }
 
 // DrySend mocks base method
-func (m *MockLogic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+func (m *MockLogic) DrySend(sender interface{}, value, fee util.String, nonce uint64, allowNonceGap bool, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, chainHeight)
+	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, allowNonceGap, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DrySend indicates an expected call of DrySend
-func (mr *MockLogicMockRecorder) DrySend(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+func (mr *MockLogicMockRecorder) DrySend(sender, value, fee, nonce, allowNonceGap, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockLogic)(nil).DrySend), sender, value, fee, nonce, chainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockLogic)(nil).DrySend), sender, value, fee, nonce, allowNonceGap, chainHeight)
 }
 
 // ExecTx mocks base method

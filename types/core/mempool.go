@@ -76,7 +76,7 @@ type Mempool interface {
 	CloseWAL()
 
 	// Register attempts to add a transaction to the pool
-	Add(tx types.BaseTx) error
+	Add(tx types.BaseTx) (bool, error)
 }
 
 // MempoolReactor provides access to mempool operations
@@ -91,4 +91,5 @@ type MempoolReactor interface {
 type PoolSizeInfo struct {
 	TotalTxSize int64 `json:"size"`
 	TxCount     int   `json:"count"`
+	CacheSize   int   `json:"cache"`
 }

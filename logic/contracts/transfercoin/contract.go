@@ -128,7 +128,10 @@ func (c *Contract) Exec() error {
 // DryExec checks whether the given sender can execute the transaction.
 //
 // sender can be an address, identifier.Address or *crypto.PubKey
-func (c *Contract) DryExec(sender interface{}) error {
+//
+// allowNonceGap allows nonce to have a number greater than the current account
+// by more than 1.
+func (c *Contract) DryExec(sender interface{}, allowNonceGap bool) error {
 
 	senderAddr := ""
 	switch o := sender.(type) {
@@ -146,10 +149,20 @@ func (c *Contract) DryExec(sender interface{}) error {
 	acctKeeper := c.AccountKeeper()
 	senderAcct := acctKeeper.Get(identifier.Address(senderAddr))
 
-	// Ensure the transaction nonce is the next expected nonce
-	expectedNonce := senderAcct.Nonce + 1
-	if expectedNonce.UInt64() != c.tx.Nonce {
-		return fe("nonce", fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
+	// When allowNonceGap is true, let nonce be anything greater than current nonce.
+	// The mode is required in places like the mempool where strict monotonically
+	// increasing nonce number is not required.
+	if allowNonceGap {
+		if c.tx.Nonce <= senderAcct.Nonce.UInt64() {
+			return fe("nonce", fmt.Sprintf("tx has an invalid nonce (%d); expected a "+
+				"nonce that is greater than the current account nonce (%d)", c.tx.Nonce, senderAcct.Nonce.UInt64()))
+		}
+	} else {
+		// Ensure the transaction nonce is the next expected nonce
+		expectedNonce := senderAcct.Nonce + 1
+		if expectedNonce.UInt64() != c.tx.Nonce {
+			return fe("nonce", fmt.Sprintf("tx has an invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
+		}
 	}
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee

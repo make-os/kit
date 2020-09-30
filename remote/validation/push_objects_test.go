@@ -480,7 +480,7 @@ var _ = Describe("Validation", func() {
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
-				mockLogic.EXPECT().DrySend(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), uint64(1)).
+				mockLogic.EXPECT().DrySend(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), false, uint64(1)).
 					Return(fmt.Errorf("insufficient"))
 
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)

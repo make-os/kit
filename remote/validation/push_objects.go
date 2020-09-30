@@ -8,9 +8,10 @@ import (
 	"github.com/make-os/lobe/crypto/bdn"
 	"github.com/make-os/lobe/params"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/push/types"
+	pptyp "github.com/make-os/lobe/remote/push/types"
 	remotetypes "github.com/make-os/lobe/remote/types"
 	tickettypes "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
@@ -51,7 +52,7 @@ const ErrCodeRefAndNetStateMismatch = "refAndNetMismatch"
 //
 // repoState is the repository's network state.
 func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
-	ref *types.PushedReference,
+	ref *pptyp.PushedReference,
 	repoState *state.Repository) error {
 
 	name, nonce := ref.Name, ref.Nonce
@@ -151,7 +152,7 @@ end:
 
 // GetTxDetailsFromNote creates a slice of TxDetail objects from a push note.
 // Limit to references specified in targetRefs
-func GetTxDetailsFromNote(note types.PushNote, targetRefs ...string) (details []*remotetypes.TxDetail) {
+func GetTxDetailsFromNote(note pptyp.PushNote, targetRefs ...string) (details []*remotetypes.TxDetail) {
 	for _, ref := range note.GetPushedReferences() {
 		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
 			continue
@@ -177,7 +178,7 @@ func GetTxDetailsFromNote(note types.PushNote, targetRefs ...string) (details []
 }
 
 // CheckPushNoteSanity performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSanity(note types.PushNote) error {
+func CheckPushNoteSanity(note pptyp.PushNote) error {
 
 	if note.GetRepoName() == "" {
 		return util.FieldError("repo", "repo name is required")
@@ -267,10 +268,14 @@ func CheckPushNoteSanity(note types.PushNote) error {
 	return nil
 }
 
+type CheckOptions struct {
+	AllowNonceGap bool
+}
+
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparison is not performed.
-func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
+func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
@@ -332,8 +337,12 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
-	if err = logic.DrySend(note.GetPusherAddress(), note.GetValue(), note.GetFee(),
-		note.GetPusherAccountNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(note.GetPusherAddress(),
+		note.GetValue(),
+		note.GetFee(),
+		note.GetPusherAccountNonce(),
+		note.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		uint64(bi.Height)); err != nil {
 		return err
 	}
 
@@ -341,10 +350,10 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 }
 
 // CheckPushNoteFunc describes a function for checking a push note
-type CheckPushNoteFunc func(tx types.PushNote, logic core.Logic) error
+type CheckPushNoteFunc func(tx pptyp.PushNote, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(note types.PushNote, logic core.Logic) error {
+func CheckPushNote(note pptyp.PushNote, logic core.Logic) error {
 	if err := CheckPushNoteSanity(note); err != nil {
 		return err
 	}
@@ -359,7 +368,7 @@ func CheckPushNote(note types.PushNote, logic core.Logic) error {
 // EXPECT: Sanity check to have been performed using CheckEndorsementSanity
 func CheckEndorsementConsistencyUsingHost(
 	hosts tickettypes.SelectedTickets,
-	end *types.PushEndorsement,
+	end *pptyp.PushEndorsement,
 	noBLSSigCheck bool, index int) error {
 
 	// Check if the sender is one of the top hosts.
@@ -387,7 +396,7 @@ func CheckEndorsementConsistencyUsingHost(
 // CheckEndorsementConsistency performs consistency checks on the given Endorsement object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckEndorsementSanity
-func CheckEndorsementConsistency(end *types.PushEndorsement, logic core.Logic, noBLSSigCheck bool, index int) error {
+func CheckEndorsementConsistency(end *pptyp.PushEndorsement, logic core.Logic, noBLSSigCheck bool, index int) error {
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
@@ -398,7 +407,7 @@ func CheckEndorsementConsistency(end *types.PushEndorsement, logic core.Logic, n
 // CheckEndorsementSanity performs sanity checks on the given Endorsement object.
 // fromPushTx indicates that the endorsement was retrieved from a push transaction.
 // noBLSSigRequiredCheck prevents BLS signature requirement check.
-func CheckEndorsementSanity(e *types.PushEndorsement, fromPushTx bool, index int) error {
+func CheckEndorsementSanity(e *pptyp.PushEndorsement, fromPushTx bool, index int) error {
 
 	// Push note id must be set
 	if !fromPushTx && len(e.NoteID) == 0 {
@@ -449,10 +458,10 @@ func CheckEndorsementSanity(e *types.PushEndorsement, fromPushTx bool, index int
 }
 
 // CheckEndorsementFunc describes a function for validating a push endorsement
-type CheckEndorsementFunc func(end *types.PushEndorsement, logic core.Logic, index int) error
+type CheckEndorsementFunc func(end *pptyp.PushEndorsement, logic core.Logic, index int) error
 
 // CheckEndorsement performs sanity and state consistency checks on the given Endorsement object
-func CheckEndorsement(end *types.PushEndorsement, logic core.Logic, index int) error {
+func CheckEndorsement(end *pptyp.PushEndorsement, logic core.Logic, index int) error {
 	if err := CheckEndorsementSanity(end, false, index); err != nil {
 		return err
 	}

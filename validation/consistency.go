@@ -9,10 +9,12 @@ import (
 	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/validation"
+	"github.com/make-os/lobe/types"
 	"github.com/make-os/lobe/types/constants"
 	"github.com/make-os/lobe/types/core"
 	"github.com/make-os/lobe/types/state"
 	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/lobe/util"
 	crypto2 "github.com/make-os/lobe/util/crypto"
 	"github.com/make-os/lobe/util/identifier"
 	"github.com/pkg/errors"
@@ -48,7 +50,12 @@ check:
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey,
+		tx.Value,
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -83,7 +90,12 @@ func CheckTxTicketPurchaseConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey,
+		tx.Value,
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -127,7 +139,12 @@ func CheckTxUnbondTicketConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err = logic.DrySend(pubKey,
+		"0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -143,7 +160,12 @@ func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.L
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey,
+		tx.Value,
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -153,7 +175,12 @@ func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.L
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
 func CheckTxSetDelegateCommissionConsistency(tx *txns.TxSetDelegateCommission, index int, logic core.Logic) error {
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey,
+		"0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 	return nil
@@ -173,7 +200,10 @@ func CheckTxRegisterPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap), 0); err != nil {
 		return err
 	}
 
@@ -206,7 +236,11 @@ func CheckTxUpDelPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -285,6 +319,9 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 		return errors.Wrap(err, "could not verify aggregated endorsers' signature")
 	}
 
+	// Copy tx meta into the note's meta so it is accessible to CheckPushNoteConsistency
+	util.CopyMap(tx.GetMeta(), tx.Note.GetMeta())
+
 	// Check push note
 	if err := validation.CheckPushNoteConsistency(tx.Note, logic); err != nil {
 		return err
@@ -323,7 +360,12 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, tx.Value, tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err = logic.DrySend(pubKey,
+		tx.Value,
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -346,7 +388,11 @@ func CheckTxNamespaceDomainUpdateConsistency(tx *txns.TxNamespaceDomainUpdate, i
 		return feI(index, "senderPubKey", "sender not permitted to perform this operation")
 	}
 
-	if err := logic.DrySend(pubKey, "0", tx.Fee, tx.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return err
 	}
 
@@ -400,7 +446,12 @@ func CheckProposalCommonConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, prop.Value, txCommon.Fee, txCommon.GetNonce(), 0); err != nil {
+	if err := logic.DrySend(pubKey,
+		prop.Value,
+		txCommon.Fee,
+		txCommon.GetNonce(),
+		txCommon.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
 		return nil, err
 	}
 
@@ -486,8 +537,11 @@ func CheckTxVoteConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		uint64(bi.Height)); err != nil {
 		return err
 	}
 
@@ -533,8 +587,11 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.DrySend(pubKey, "0", tx.Fee,
-		tx.GetNonce(), uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		uint64(bi.Height)); err != nil {
 		return err
 	}
 

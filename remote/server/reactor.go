@@ -450,7 +450,7 @@ func (sv *Server) createPushTx(noteID string) error {
 	pushTx.AggregatedSig = aggSig
 
 	// Register push transaction to mempool
-	if err := sv.GetMempool().Add(pushTx); err != nil {
+	if _, err := sv.GetMempool().Add(pushTx); err != nil {
 		return errors.Wrap(err, "failed to add push tx to mempool")
 	}
 

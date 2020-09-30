@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"runtime/debug"
 
 	"github.com/make-os/lobe/pkgs/logger"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
@@ -48,9 +47,6 @@ func (e *Executor) exec(in interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt2.Red("Panic: %s\n", r)
-			if e.console.cfg.IsDev() {
-				fmt.Print(string(debug.Stack()))
-			}
 		}
 	}()
 
