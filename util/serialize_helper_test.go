@@ -77,17 +77,6 @@ var _ = Describe("CodecUtil", func() {
 				Expect(err).To(BeNil())
 			})
 		})
-
-		When("[]int8 slice is nil", func() {
-			It("should be converted to map[string]interface{}", func() {
-				mockEncoder := mocks.NewMockEncoder(ctrl)
-				mockEncoder.EXPECT().EncodeMulti("").Return(nil)
-				mockEncoder.EXPECT().EncodeMulti(gomock.AssignableToTypeOf([]uint8{})).Return(nil)
-				var x []uint8
-				err := sh.EncodeMulti(mockEncoder, x)
-				Expect(err).To(BeNil())
-			})
-		})
 	})
 
 	Context("Encode and decode an object with a codec version", func() {

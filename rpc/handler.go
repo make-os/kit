@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"runtime/debug"
 	"strings"
 
 	"github.com/make-os/lobe/config"
@@ -168,9 +167,9 @@ func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response
 		w.WriteHeader(respCode)
 
 		// In dev mode, print out the stack for easy debugging
-		if s.cfg.IsDev() {
-			fmt.Println(string(debug.Stack()))
-		}
+		// if s.cfg.IsDev() {
+		// 	fmt.Println(string(debug.Stack()))
+		// }
 	}()
 
 	// Run the method

@@ -83,15 +83,9 @@ func (h *CodecUtil) EncodeMulti(enc Encoder, v ...interface{}) error {
 
 		switch kind {
 		case reflect.Map:
-			// Convert to map[string]interface if map value type is not string/interface
+			// Convert to maps with non-interface value type to  map[string]interface
 			if value.Type().Elem().Kind() != reflect.String && value.Type().Elem().Kind() != reflect.Interface {
 				v[i] = ToStringMapInter(vv)
-			}
-
-		case reflect.Slice:
-			// Convert to empty byte slice if element is a nil byte slice
-			if value.Type().Elem().Kind() == reflect.Uint8 && value.IsNil() {
-				v[i] = []uint8{}
 			}
 		}
 	}
