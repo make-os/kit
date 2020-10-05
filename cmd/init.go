@@ -12,6 +12,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/lobe/config"
+	"github.com/make-os/lobe/config/chains"
 	"github.com/make-os/lobe/crypto"
 	fmt2 "github.com/make-os/lobe/util/colorfmt"
 	"github.com/spf13/cobra"
@@ -158,7 +159,20 @@ var initCmd = &cobra.Command{
 		validatorKey, _ := cmd.Flags().GetString("validator-key")
 		genesisTime, _ := cmd.Flags().GetUint64("gen-time")
 		genState, _ := cmd.Flags().GetString("gen-state")
-		tendermintInit(validatorKey, validators, genState, genesisTime)
+		configureTestnetV1, _ := cmd.Flags().GetBool("v1")
+
+		// If testnet v1 present is requested, overwrite validators, genesis time and state
+		if configureTestnetV1 {
+			validators = chains.TestnetV1.Validators
+			genesisTime = chains.TestnetV1.GenesisTime
+			genState = ""
+		}
+
+		// Initialize tendermint
+		if err := tendermintInit(validatorKey, validators, genState, genesisTime); err != nil {
+			log.Fatal(err.Error())
+		}
+
 		fmt.Fprintln(os.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Node initialized!"))
 	},
 }
@@ -169,4 +183,5 @@ func init() {
 	initCmd.Flags().StringP("validator-key", "k", "", "Private key to use for validator role")
 	initCmd.Flags().Uint64P("gen-time", "t", 0, "Specify genesis time (default: current UTC time)")
 	initCmd.Flags().StringP("gen-state", "s", "", "Specify raw or path to genesis state")
+	initCmd.Flags().Bool("v1", false, "Configure the node for testnet v1")
 }

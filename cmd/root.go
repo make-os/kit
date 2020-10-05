@@ -10,6 +10,7 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/make-os/lobe/cmd/common"
 	"github.com/make-os/lobe/cmd/gitcmd"
+	"github.com/make-os/lobe/config/chains"
 	"github.com/make-os/lobe/pkgs/logger"
 	"github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/util"
@@ -76,6 +77,11 @@ var rootCmd = &cobra.Command{
 
 		curCmd := cmd.CalledAs()
 
+		// Override net.version if --v1 network preset flag is provided in an `init` call.
+		if curCmd == "init" && cmd.Flags().Lookup("v1").Changed {
+			viper.Set("net.version", chains.TestnetV1.NetVersion)
+		}
+
 		// Configure the node's home directory
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
@@ -103,6 +109,7 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		// Verify git version compliance
 		if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
 			if semver.New(version).LessThan(*semver.New("2.11.0")) {
 				log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.` +
