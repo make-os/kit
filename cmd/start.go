@@ -68,7 +68,7 @@ func setStartFlags(cmd *cobra.Command) {
 	f.StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 	f.StringSliceP("repo.track", "t", []string{}, "Specify one or more repositories to track")
 	f.StringSliceP("repo.untrack", "u", []string{}, "Untrack one or more repositories")
-	f.BoolP("repo.untrackall", "x", false, "Untrack one or more repositories")
+	f.BoolP("repo.untrackall", "x", false, "Untrack all previously tracked repositories")
 
 	extArgsMap := map[string]string{}
 	f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
