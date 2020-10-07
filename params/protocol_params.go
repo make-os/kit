@@ -27,8 +27,8 @@ var (
 
 // Block and State Config
 var (
-	// BlockTime is the number of seconds between blocks
-	BlockTime = 15
+	// DevModeBlockTime is the number of seconds between blocks (for development environment)
+	DevModeBlockTime = 15
 
 	// FeePerByte is the cost per byte of a transaction
 	FeePerByte = decimal.NewFromFloat(0.00001)

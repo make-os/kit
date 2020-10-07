@@ -226,18 +226,16 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 		cfg.G().Log.SetToError()
 	}
 
-	// Set block time
-	tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.BlockTime)
+	// Set dev mode block time
+	if devMode {
+		tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.DevModeBlockTime)
+	}
 
 	// Disable tendermint's tx indexer
 	tmcfg.TxIndex.Indexer = "null"
 
 	// Set default version information
 	cfg.VersionInfo = &VersionInfo{}
-	cfg.VersionInfo.BuildCommit = ""
-	cfg.VersionInfo.BuildDate = ""
-	cfg.VersionInfo.GoVersion = "go1.12.4"
-	cfg.VersionInfo.BuildVersion = ""
 
 	// Use some of the native config to override tendermint's config
 	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
