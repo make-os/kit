@@ -17,8 +17,9 @@ var ErrRecordNotFound = fmt.Errorf("record not found")
 // storage functions built on top of badger.
 type Badger struct {
 	*WrappedTx
-	lck *sync.Mutex
-	db  *badger.DB
+	lck    *sync.Mutex
+	db     *badger.DB
+	closed bool
 }
 
 // NewBadger creates an instance of Badger storage engine.
@@ -69,11 +70,19 @@ func (b *Badger) NewTx(autoFinish, renew bool) types.Tx {
 	return NewTx(b.db, autoFinish, renew)
 }
 
+// Closed checks whether the DB has been closed
+func (b *Badger) Closed() bool {
+	b.lck.Lock()
+	defer b.lck.Unlock()
+	return b.closed
+}
+
 // Close closes the database engine and frees resources
 func (b *Badger) Close() error {
 	b.lck.Lock()
 	defer b.lck.Unlock()
 	if b.db != nil {
+		b.closed = true
 		return b.db.Close()
 	}
 	return nil
