@@ -110,6 +110,13 @@ func (m *UserModule) methods() []*types.VMMember {
 
 // globals are functions exposed in the VM's global namespace
 func (m *UserModule) globals() []*types.VMMember {
+
+	defer func() {
+		if err := recover(); err != nil {
+			m.cfg.G().Log.Error(fmt.Sprint(err))
+		}
+	}()
+
 	return []*types.VMMember{
 		{
 			Name:        "accounts",
