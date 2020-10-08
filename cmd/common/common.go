@@ -192,9 +192,9 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client)
 		}
 		lastStatus = resp.Status
 		if resp.Status == types3.TxStatusInMempool {
-			s.Suffix = colorfmt.YellowString(" In mempool")
+			s.Suffix = colorfmt.YellowStringf(" In mempool")
 		} else if resp.Status == types3.TxStatusInPushpool {
-			s.Suffix = colorfmt.YellowString(" In pushpool")
+			s.Suffix = colorfmt.YellowStringf(" In pushpool")
 		} else {
 			s.FinalMSG = colorfmt.GreenString("   Confirmed!\n")
 			s.Stop()

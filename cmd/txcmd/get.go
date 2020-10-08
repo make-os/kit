@@ -50,9 +50,9 @@ func GetCmd(args *GetArgs) error {
 			case types2.TxStatusInBlock:
 				fmt.Fprintln(args.Stdout, colorfmt.GreenString("Confirmed"))
 			case types2.TxStatusInMempool:
-				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Mempool"))
+				fmt.Fprintln(args.Stdout, colorfmt.YellowStringf("In Mempool"))
 			case types2.TxStatusInPushpool:
-				fmt.Fprintln(args.Stdout, colorfmt.YellowString("In Pushpool"))
+				fmt.Fprintln(args.Stdout, colorfmt.YellowStringf("In Pushpool"))
 			}
 			return nil
 		}

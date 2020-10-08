@@ -180,7 +180,7 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 		a.isCurrentBlockProposer = true
 	}
 
-	a.log.Info(fmt2.YellowString("Processing a new block"),
+	a.log.Info(fmt2.YellowStringf("Processing a new block"),
 		"Height", req.Header.Height, "IsProposer", a.isCurrentBlockProposer)
 
 	return abcitypes.ResponseBeginBlock{}

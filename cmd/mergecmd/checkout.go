@@ -141,7 +141,7 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 	// At this point, the local branch and the merge request hash
 	// are not in sync. We need to inform the user and ask them to
 	// confirm whether they want us to check it out
-	fmt.Fprintf(args.StdOut, fmt2.YellowString("The %s merge request branch tip (%s) differs "+
+	fmt.Fprintf(args.StdOut, fmt2.YellowStringf("The %s merge request branch tip (%s) differs "+
 		"from the local tip. \n"), targetLbl, selectedBranch, selectedBranch)
 	if !args.ConfirmInput("\u001B[1;32m? \u001B[1;37mDo you wish to continue checkout? \u001B[0m", false) {
 		return fmt.Errorf("aborted")

@@ -36,7 +36,7 @@ func (c *ColorFmt) Sprint(format interface{}) string {
 	for _, a := range c.attrs {
 		v = a(v)
 	}
-	return aurora.Sprintf(v)
+	return v.String()
 }
 
 func (c *ColorFmt) Sprintf(format string, args ...interface{}) string {
@@ -54,8 +54,12 @@ func RedString(format string, a ...interface{}) string {
 	return colorSprintf(format, []Attribute{aurora.Red}, a...)
 }
 
-func YellowString(fmt string, a ...interface{}) string {
+func YellowStringf(fmt string, a ...interface{}) string {
 	return colorSprintf(fmt, []Attribute{aurora.Yellow}, a...)
+}
+
+func YellowString(fmt string) string {
+	return colorSprint(fmt, []Attribute{aurora.Yellow})
 }
 
 func GreenString(format string, a ...interface{}) string {

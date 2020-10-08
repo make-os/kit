@@ -333,18 +333,18 @@ var repoInitCmd = &cobra.Command{
 		}
 
 		// Try to create the repo on the network
-		fmt.Println(colorfmt.YellowString("Step 1:"), "Registering repository on the network")
+		fmt.Println(colorfmt.YellowStringf("Step 1:"), "Registering repository on the network")
 		repoCreateCmd.Run(cmd, args)
 
 		// Git initialize the repository
-		fmt.Println(colorfmt.YellowString("Step 2:"), "Initialized repository")
+		fmt.Println(colorfmt.YellowStringf("Step 2:"), "Initialized repository")
 		_, err = git.PlainInit(repoPath, false)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
 		// Configure the repository
-		fmt.Println(colorfmt.YellowString("Step 3:"), "Configured repository")
+		fmt.Println(colorfmt.YellowStringf("Step 3:"), "Configured repository")
 		repoConfigCmd.Run(cmd, args)
 
 		fmt.Printf(`

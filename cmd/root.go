@@ -112,12 +112,12 @@ var rootCmd = &cobra.Command{
 		// Verify git version compliance
 		if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
 			if semver.New(version).LessThan(*semver.New("2.11.0")) {
-				log.Fatal(colorfmt.YellowString(`Git version is outdated. Please update git executable.` +
+				log.Fatal(colorfmt.YellowStringf(`Git version is outdated. Please update git executable.` +
 					`Visit https://git-scm.com/downloads to download and install the latest version.`,
 				))
 			}
 		} else {
-			log.Fatal(colorfmt.YellowString(`Git executable was not found.` +
+			log.Fatal(colorfmt.YellowStringf(`Git executable was not found.` +
 				`If you already have Git installed, provide the executable's location using --gitpath, otherwise ` +
 				`visit https://git-scm.com/downloads to download and install it.`,
 			))
