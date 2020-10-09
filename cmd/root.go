@@ -78,8 +78,10 @@ var rootCmd = &cobra.Command{
 		curCmd := cmd.CalledAs()
 
 		// Override net.version if --v1 network preset flag is provided in an `init` call.
-		if curCmd == "init" && cmd.Flags().Lookup("v1").Changed {
-			viper.Set("net.version", chains.TestnetV1.NetVersion)
+		if curCmd == "init" {
+			if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
+				viper.Set("net.version", chains.TestnetV1.NetVersion)
+			}
 		}
 
 		// Configure the node's home directory
@@ -87,11 +89,12 @@ var rootCmd = &cobra.Command{
 		log = cfg.G().Log
 
 		// Set version information
-		cfg.VersionInfo = &config.VersionInfo{}
-		cfg.VersionInfo.BuildCommit = BuildCommit
-		cfg.VersionInfo.BuildDate = BuildDate
-		cfg.VersionInfo.GoVersion = GoVersion
-		cfg.VersionInfo.BuildVersion = BuildVersion
+		cfg.VersionInfo = &config.VersionInfo{
+			BuildCommit:  BuildCommit,
+			BuildDate:    BuildDate,
+			GoVersion:    GoVersion,
+			BuildVersion: BuildVersion,
+		}
 
 		// Load keys in the config object
 		if curCmd != "init" {
