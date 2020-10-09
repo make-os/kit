@@ -155,9 +155,3 @@ var (
 	// MaxRepoSize is the maximum size of a repository
 	MaxRepoSize = 1024 * 1024 * 300 // 300 MB
 )
-
-// DHT Config
-var (
-	// NumAnnouncerWorker is the number of workers working on object announcement
-	NumAnnouncerWorker = 10
-)

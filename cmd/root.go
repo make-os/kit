@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/lobe/remote/repo"
 	"github.com/make-os/lobe/util"
 	"github.com/make-os/lobe/util/colorfmt"
+	"github.com/pkg/profile"
 	"github.com/thoas/go-funk"
 
 	"github.com/make-os/lobe/config"
@@ -35,7 +36,7 @@ var (
 	BuildDate = ""
 
 	// GoVersion is the version of go used to build the client
-	GoVersion = "go1.13"
+	GoVersion = ""
 )
 
 var (
@@ -49,6 +50,8 @@ var (
 
 	// itr is used to inform the stoppage of all modules
 	itr = util.Interrupt(make(chan struct{}))
+
+	profiler interface{ Stop() }
 )
 
 // Execute the root command or fallback command when command is unknown.
@@ -63,8 +66,29 @@ func Execute() {
 		return
 	}
 
+	// Stop the profiler if is running
+	defer func() {
+		if profiler != nil {
+			profiler.Stop()
+		}
+	}()
+
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
+	}
+}
+
+func setupProfiler(rootCmd *cobra.Command, cfg *config.AppConfig) {
+	profileMode, _ := rootCmd.PersistentFlags().GetString("profile.mode")
+	switch profileMode {
+	case "cpu":
+		profiler = profile.Start(profile.CPUProfile, profile.ProfilePath(cfg.DataDir()))
+	case "mem":
+		profiler = profile.Start(profile.MemProfile, profile.ProfilePath(cfg.DataDir()))
+	case "mutex":
+		profiler = profile.Start(profile.MutexProfile, profile.ProfilePath(cfg.DataDir()))
+	case "block":
+		profiler = profile.Start(profile.BlockProfile, profile.ProfilePath(cfg.DataDir()))
 	}
 }
 
@@ -75,18 +99,19 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-		curCmd := cmd.CalledAs()
-
 		// Override net.version if --v1 network preset flag is provided in an `init` call.
-		if curCmd == "init" {
+		if cmd.CalledAs() == "init" {
 			if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
 				viper.Set("net.version", chains.TestnetV1.NetVersion)
 			}
 		}
 
-		// Configure the node's home directory
+		// Configure the node
 		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
+
+		// Setup the profiler
+		setupProfiler(cmd.Root(), cfg)
 
 		// Set version information
 		cfg.VersionInfo = &config.VersionInfo{
@@ -97,18 +122,13 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Load keys in the config object
-		if curCmd != "init" {
+		if cmd.CalledAs() != "init" {
 			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
 		}
 
 		// Skip git exec check for certain commands
-		if !funk.ContainsString([]string{
-			"init",
-			"start",
-			"console",
-			"sign",
-			"attach",
-			"config"}, curCmd) {
+		if !funk.ContainsString([]string{"init", "start", "console", "sign",
+			"attach", "config"}, cmd.CalledAs()) {
 			return
 		}
 
@@ -127,6 +147,7 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+
 		version, _ := cmd.Flags().GetBool("version")
 		if version {
 			fmt.Println("Client:", BuildVersion)
@@ -217,6 +238,7 @@ func init() {
 	rootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
 	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
 	rootCmd.PersistentFlags().StringToString("loglevel", map[string]string{}, "Set log level for modules")
+	rootCmd.PersistentFlags().String("profile.mode", "", "Enable profiling mode, one of [cpu, mem, mutex, block]")
 
 	// Remote API connection flags
 	rootCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
