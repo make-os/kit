@@ -356,7 +356,7 @@ Enter the repository by typing:
 
 Inside that repository, you can run the following commands:
 
-  `+colorfmt.CyanString("git push")+`:
+  `+colorfmt.CyanString(config.ExecName+" pass git push")+`:
     To push your commits, tags and notes with automatic signing.
 
   `+colorfmt.CyanString(config.ExecName+" config")+`:
@@ -365,7 +365,7 @@ Inside that repository, you can run the following commands:
   `+colorfmt.CyanString(config.ExecName+" sign")+`:
     To manually sign your commit, tags and nodes.
 
-Happy hacking!
+Happy coding!
 `, colorfmt.CyanString(args[0]))
 	},
 }
