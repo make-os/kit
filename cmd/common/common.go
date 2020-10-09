@@ -137,10 +137,12 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 			goto endAgentQuery
 		}
 
-		// Get passphrase from pass-agent associated with the repository as the key
-		if passphrase, err := agent.SendGetRequest(port, args.TargetRepo.GetName()); err == nil && passphrase != "" {
-			args.Passphrase = passphrase
-			goto endAgentQuery
+		// Get passphrase from pass-agent associated with the target repository as the key
+		if args.TargetRepo != nil {
+			if passphrase, err := agent.SendGetRequest(port, args.TargetRepo.GetName()); err == nil && passphrase != "" {
+				args.Passphrase = passphrase
+				goto endAgentQuery
+			}
 		}
 	endAgentQuery:
 	}
