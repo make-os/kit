@@ -473,8 +473,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return err = nil", func() {
-			pk, err := PrivKeyFromBase58("waS1jBBgdyYgpNtTjKbt6MZbDTYweLtzkNxueyyEc6ss33" +
-				"kPG58VcJNmpDK82BwuX8LAoqZuBCdaoXbxHPM99k8HFvqueW")
+			pk, err := PrivKeyFromBase58("waS1jBBgdyYgpNtTjKbt6MZbDTYweLtzkNxueyyEc6ss33kPG58VcJNmpDK82BwuX8LAoqZuBCdaoXbxHPM99k8HFvqueW")
 			Expect(err).To(BeNil())
 			Expect(pk).ToNot(BeNil())
 		})
@@ -514,6 +513,21 @@ var _ = Describe("Key", func() {
 			Expect(err).To(BeNil())
 
 			Expect(tmPrivKey).To(Equal(sk))
+		})
+	})
+
+	Describe(".NewKeyFromPrivKey", func() {
+		It("should return nil if nil is passed", func() {
+			k := NewKeyFromPrivKey(nil)
+			Expect(k).To(BeNil())
+		})
+
+		It("should wrap PrivKey in Key", func() {
+			sk, err := PrivKeyFromBase58("waS1jBBgdyYgpNtTjKbt6MZbDTYweLtzkNxueyyEc6ss33kPG58VcJNmpDK82BwuX8LAoqZuBCdaoXbxHPM99k8HFvqueW")
+			Expect(err).To(BeNil())
+			k := NewKeyFromPrivKey(sk)
+			Expect(k).ToNot(BeNil())
+			Expect(k.PrivKey()).To(Equal(sk))
 		})
 	})
 })

@@ -65,6 +65,9 @@ func NewKeyFromIntSeed(seed int) *Key {
 
 // NewKeyFromPrivKey creates a new Key instance from a PrivKey
 func NewKeyFromPrivKey(sk *PrivKey) *Key {
+	if sk == nil {
+		return nil
+	}
 	return &Key{privKey: sk}
 }
 
