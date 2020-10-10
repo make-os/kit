@@ -7,10 +7,8 @@ import (
 	"os"
 	path "path/filepath"
 	"strings"
-	"time"
 
 	"github.com/make-os/lobe/data"
-	"github.com/make-os/lobe/params"
 	"github.com/make-os/lobe/util"
 	"github.com/mitchellh/go-homedir"
 	"github.com/olebedev/emitter"
@@ -227,9 +225,9 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	}
 
 	// Set dev mode block time
-	if devMode {
-		tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.DevModeBlockTime)
-	}
+	// if devMode {
+	// 	tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.DevModeBlockTime)
+	// }
 
 	// Disable tendermint's tx indexer
 	tmcfg.TxIndex.Indexer = "null"
