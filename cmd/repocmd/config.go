@@ -125,7 +125,11 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 
 	// If no remote was set, add default remote pointing to the local remote.
 	if len(rcfg.Remotes) == 0 {
-		url := fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, repo.GetName())
+		defaultAddr := config.DefaultRemoteServerAddress
+		if defaultAddr[:1] == ":" {
+			defaultAddr = "127.0.0.1" + defaultAddr
+		}
+		url := fmt.Sprintf("http://%s/r/%s", defaultAddr, repo.GetName())
 		rcfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
