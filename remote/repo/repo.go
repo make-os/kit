@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	plumbing2 "github.com/make-os/lobe/remote/plumbing"
 	"github.com/make-os/lobe/remote/types"
 	"github.com/make-os/lobe/types/state"
@@ -21,6 +20,7 @@ import (
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/storage"
+	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4"
@@ -497,8 +497,7 @@ func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 		defer f.Close()
 	}
 
-	enc := toml.NewEncoder(f)
-	return enc.Encode(cfg)
+	return yaml.NewEncoder(f).Encode(cfg)
 }
 
 // GetLocalConfig returns the repo's 'repocfg' config object.
@@ -510,9 +509,13 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 		return types.EmptyLocalConfig(), nil
 	}
 
-	var cfg = types.EmptyLocalConfig()
-	_, err := toml.DecodeFile(cfgFile, cfg)
+	bz, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
+		return nil, err
+	}
+
+	var cfg = types.EmptyLocalConfig()
+	if err := yaml.Unmarshal(bz, cfg); err != nil {
 		return nil, err
 	}
 
