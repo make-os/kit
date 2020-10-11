@@ -142,7 +142,9 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	}
 
 	// Set credential helper
-	rcfg.Raw.Section("credential").SetOption("helper", "store --file .git/.git-credentials")
+	rcfg.Raw.Section("credential").
+		SetOption("helper", ""). // Used to clear other helpers from system/global config
+		AddOption("helper", "store --file .git/.git-credentials")
 
 	// Set the config
 	if err = repo.SetConfig(rcfg); err != nil {
