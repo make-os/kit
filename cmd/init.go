@@ -61,10 +61,12 @@ func genNodeKey(filePath string, pk ed25519.PrivKeyEd25519) (*p2p.NodeKey, error
 // genesisTime: sets the genesis file time. If zero, current UTC time is used.
 func tendermintInit(validatorKey string, genesisValidators []string, genesisState string, genesisTime uint64) error {
 
-	if config.IsInitialized(tmconfig) {
+	// If already initialized, return immediately
+	if config.IsTendermintInitialized(tmconfig) {
 		return nil
 	}
 
+	// Run tendermint initialization command
 	defer tmcfg.EnsureRoot(tmconfig.RootDir)
 	commands.SetConfig(tmconfig)
 	commands.InitFilesCmd.RunE(nil, nil)

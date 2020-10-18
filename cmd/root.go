@@ -94,71 +94,84 @@ func setupProfiler(rootCmd *cobra.Command, cfg *config.AppConfig) {
 
 // rootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
-	Use:   "lob",
+	Use:   config.ExecName,
 	Short: "Lobe is the official client for the MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-		// Override net.version if --v1 network preset flag is provided in an `init` call.
-		if cmd.CalledAs() == "init" {
-			if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
-				viper.Set("net.version", chains.TestnetV1.NetVersion)
-			}
-		}
-
-		// Configure the node
-		config.Configure(cfg, tmconfig, &itr)
-		log = cfg.G().Log
-
-		// Setup the profiler
-		setupProfiler(cmd.Root(), cfg)
-
 		// Set version information
-		cfg.VersionInfo = &config.VersionInfo{
-			BuildCommit:  BuildCommit,
-			BuildDate:    BuildDate,
-			GoVersion:    GoVersion,
-			BuildVersion: BuildVersion,
-		}
+		setVersionInfo()
 
-		// Load keys in the config object
-		if cmd.CalledAs() != "init" {
-			cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
-		}
-
-		// Skip git exec check for certain commands
-		if !funk.ContainsString([]string{"init", "start", "console", "sign",
-			"attach", "config"}, cmd.CalledAs()) {
-			return
-		}
-
-		// Verify git version compliance
-		if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
-			if semver.New(version).LessThan(*semver.New("2.11.0")) {
-				log.Fatal(colorfmt.YellowStringf(`Git version is outdated. Please update git executable.` +
-					`Visit https://git-scm.com/downloads to download and install the latest version.`,
-				))
-			}
-		} else {
-			log.Fatal(colorfmt.YellowStringf(`Git executable was not found.` +
-				`If you already have Git installed, provide the executable's location using --gitpath, otherwise ` +
-				`visit https://git-scm.com/downloads to download and install it.`,
-			))
+		// Run pre-run routine if current called command is not in the pre-run ignore list
+		preRunIgnoreList := []string{cmd.Root().Name()}
+		if !funk.ContainsString(preRunIgnoreList, cmd.CalledAs()) {
+			preRun(cmd)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-
 		version, _ := cmd.Flags().GetBool("version")
 		if version {
 			fmt.Println("Client:", BuildVersion)
 			fmt.Println("Build:", BuildCommit)
 			fmt.Println("Go:", GoVersion)
-			fmt.Println("NodeID:", cfg.G().NodeKey.ID())
+			if cfg.G().NodeKey != nil {
+				fmt.Println("NodeID:", cfg.G().NodeKey.ID())
+			}
 			return
 		}
-
 		cmd.Help()
 	},
+}
+
+func preRun(cmd *cobra.Command) {
+
+	// Override net.version if --v1 network preset flag is provided in an `init` call.
+	isInit := cmd.CalledAs() == "init"
+	if isInit {
+		if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
+			viper.Set("net.version", chains.TestnetV1.NetVersion)
+		}
+	}
+
+	// Configure the node
+	config.Configure(cfg, tmconfig, isInit, &itr)
+	log = cfg.G().Log
+
+	// Setup the profiler
+	setupProfiler(cmd.Root(), cfg)
+
+	// Load keys in the config object
+	if !isInit {
+		cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
+	}
+
+	// Skip git exec check for certain commands
+	if !funk.ContainsString([]string{"init", "start", "console", "sign", "attach", "config"}, cmd.CalledAs()) {
+		return
+	}
+
+	// Verify git version compliance
+	if yes, version := util.IsGitInstalled(cfg.Node.GitBinPath); yes {
+		if semver.New(version).LessThan(*semver.New("2.11.0")) {
+			log.Fatal(colorfmt.YellowStringf(`Git version is outdated. Please update git executable.` +
+				`Visit https://git-scm.com/downloads to download and install the latest version.`,
+			))
+		}
+	} else {
+		log.Fatal(colorfmt.YellowStringf(`Git executable was not found.` +
+			`If you already have Git installed, provide the executable's location using --gitpath, otherwise ` +
+			`visit https://git-scm.com/downloads to download and install it.`,
+		))
+	}
+}
+
+func setVersionInfo() {
+	cfg.VersionInfo = &config.VersionInfo{
+		BuildCommit:  BuildCommit,
+		BuildDate:    BuildDate,
+		GoVersion:    GoVersion,
+		BuildVersion: BuildVersion,
+	}
 }
 
 // isGitSignRequest checks whether the program arguments

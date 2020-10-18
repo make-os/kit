@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	golog "log"
+	"log"
 	"os"
 	path "path/filepath"
 	"strings"
@@ -121,15 +121,15 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 	return nil
 }
 
-// IsInitialized checks if node is initialized
-func IsInitialized(tmcfg *config.Config) bool {
+// IsTendermintInitialized checks if node is initialized
+func IsTendermintInitialized(tmcfg *config.Config) bool {
 	return common.FileExists(tmcfg.PrivValidatorKeyFile())
 }
 
 // ConfigureVM sets up the application command structure, tendermint
 // and lobe configuration. This is where all configuration and
 // settings are prepared
-func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
+func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
 	NoColorFormatting = viper.GetBool("no-colors")
 
 	// Populate viper from environment variables
@@ -169,26 +169,40 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 	viper.AddConfigPath(dataDir)
 	viper.AddConfigPath(".")
 
-	// Create the config file if it does not exist
+	// Attempt to read the config file
+	noConfigFile := false
 	if err := viper.ReadInConfig(); err != nil {
-		if strings.Index(err.Error(), "Not Found") != -1 {
-			viper.SetConfigType("yaml")
-			if err = viper.WriteConfigAs(path.Join(dataDir, AppName+".yml")); err != nil {
-				golog.Fatalf("Failed to create config file: %s", err)
-			}
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			noConfigFile = true
 		} else {
-			golog.Fatalf("Failed to read config file: %s", err)
+			log.Fatalf("Failed to read config file: %s", err)
 		}
 	}
 
-	// Read the loaded config into AppConfig
-	if err := viper.Unmarshal(&cfg); err != nil {
-		golog.Fatalf("Failed to unmarshal configuration file: %s", err)
+	// Set tendermint root directory
+	tmcfg.SetRoot(path.Join(dataDir, viper.GetString("net.version")))
+
+	// Ensure tendermint files have been initialized in the network directory
+	if !initializing && !IsTendermintInitialized(tmcfg) {
+		log.Fatalf("data directory has not been initialized (Run `%s "+
+			"init` to initialize this instance)", ExecName)
 	}
 
-	// Set network version environment variable
-	// if not already set and then reset protocol
-	// handlers version.
+	// Create the config file if it doesn't exist
+	if noConfigFile {
+		viper.SetConfigType("yaml")
+		if err := viper.WriteConfigAs(path.Join(dataDir, AppName+".yml")); err != nil {
+			log.Fatalf("Failed to create config file: %s", err)
+		}
+	}
+
+	// Read the config file into AppConfig if it exists
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Fatalf("Failed to unmarshal configuration file: %s", err)
+	}
+
+	// Set network version environment variable if not already
+	// set and then reset protocol handlers version.
 	SetVersions(uint64(viper.GetInt64("net.version")))
 
 	// Set data and network directories
@@ -224,11 +238,6 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 		cfg.G().Log.SetToError()
 	}
 
-	// Set dev mode block time
-	// if devMode {
-	// 	tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.DevModeBlockTime)
-	// }
-
 	// Disable tendermint's tx indexer
 	tmcfg.TxIndex.Indexer = "null"
 
@@ -260,5 +269,4 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	cfg.G().Bus = emitter.New(0)
 	cfg.G().TMConfig = tmcfg
-	tmcfg.SetRoot(cfg.NetDataDir())
 }
