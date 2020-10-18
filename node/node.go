@@ -196,7 +196,7 @@ func (n *Node) Start() error {
 	}
 
 	// Register the custom reactors
-	n.tm.Switch().AddReactor("PushReactor", remoteServer)
+	n.tm.Switch().AddReactor("RemoteServerReactor", remoteServer)
 
 	// Pass the proxy app to the mempool
 	memp.SetProxyApp(n.tm.ProxyApp().Mempool())
