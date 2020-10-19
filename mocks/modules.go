@@ -101,7 +101,7 @@ func (mr *MockModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockModule)(nil).ConfigureVM), vm)
 }
 
-// MockChainModule is a mock of ChainModule interface
+// MockChainModule is a mock of NodeModule interface
 type MockChainModule struct {
 	ctrl     *gomock.Controller
 	recorder *MockChainModuleMockRecorder

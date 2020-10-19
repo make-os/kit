@@ -308,6 +308,7 @@ func (n *Node) Stop() {
 
 		if n.tm != nil && n.tm.IsRunning() {
 			n.tm.Stop()
+			n.tm.Wait()
 		}
 
 		if n.db != nil {

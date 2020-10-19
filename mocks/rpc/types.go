@@ -125,17 +125,17 @@ func (mr *MockClientMockRecorder) Call(method, params interface{}) *gomock.Call 
 }
 
 // Chain mocks base method
-func (m *MockClient) Chain() types.Chain {
+func (m *MockClient) Node() types.Node {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Chain")
-	ret0, _ := ret[0].(types.Chain)
+	ret := m.ctrl.Call(m, "Node")
+	ret0, _ := ret[0].(types.Node)
 	return ret0
 }
 
 // Chain indicates an expected call of Chain
 func (mr *MockClientMockRecorder) Chain() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Chain", reflect.TypeOf((*MockClient)(nil).Chain))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Node", reflect.TypeOf((*MockClient)(nil).Node))
 }
 
 // PushKey mocks base method
@@ -250,7 +250,7 @@ func (mr *MockClientMockRecorder) Ticket() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ticket", reflect.TypeOf((*MockClient)(nil).Ticket))
 }
 
-// MockChain is a mock of Chain interface
+// MockChain is a mock of Node interface
 type MockChain struct {
 	ctrl     *gomock.Controller
 	recorder *MockChainMockRecorder

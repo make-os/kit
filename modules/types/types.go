@@ -35,7 +35,7 @@ type ModulesHub interface {
 // Modules contains all supported modules
 type Modules struct {
 	Tx      TxModule
-	Chain   ChainModule
+	Chain   NodeModule
 	Pool    PoolModule
 	User    UserModule
 	PushKey PushKeyModule
@@ -65,12 +65,13 @@ type Module interface {
 	ConfigureVM(vm *otto.Otto) prompt.Completer
 }
 
-type ChainModule interface {
+type NodeModule interface {
 	Module
 	GetBlock(height string) util.Map
 	GetHeight() string
 	GetBlockInfo(height string) util.Map
 	GetValidators(height string) (res []util.Map)
+	IsSyncing() bool
 }
 
 type TxModule interface {

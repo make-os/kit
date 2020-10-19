@@ -20,30 +20,30 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// ChainModule provides access to chain information
-type ChainModule struct {
+// NodeModule provides access to chain information
+type NodeModule struct {
 	types.ModuleCommon
 	service services.Service
 	keepers core.Keepers
 }
 
-// NewChainModule creates an instance of ChainModule
-func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule {
-	return &ChainModule{service: service, keepers: keepers}
+// NewChainModule creates an instance of NodeModule
+func NewChainModule(service services.Service, keepers core.Keepers) *NodeModule {
+	return &NodeModule{service: service, keepers: keepers}
 }
 
-// NewAttachableChainModule creates an instance of ChainModule suitable in attach mode
-func NewAttachableChainModule(client types2.Client) *ChainModule {
-	return &ChainModule{ModuleCommon: types.ModuleCommon{Client: client}}
+// NewAttachableChainModule creates an instance of NodeModule suitable in attach mode
+func NewAttachableChainModule(client types2.Client) *NodeModule {
+	return &NodeModule{ModuleCommon: types.ModuleCommon{Client: client}}
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *ChainModule) globals() []*types.VMMember {
+func (m *NodeModule) globals() []*types.VMMember {
 	return []*types.VMMember{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *ChainModule) methods() []*types.VMMember {
+func (m *NodeModule) methods() []*types.VMMember {
 	return []*types.VMMember{
 		{
 			Name:        "getBlock",
@@ -65,20 +65,25 @@ func (m *ChainModule) methods() []*types.VMMember {
 			Value:       m.GetValidators,
 			Description: "Get validators at a given height",
 		},
+		{
+			Name:        "isSyncing",
+			Value:       m.IsSyncing,
+			Description: "Check if the node is synchronizing with peers",
+		},
 	}
 }
 
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
+func (m *NodeModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	nsMap := map[string]interface{}{}
-	util.VMSet(vm, constants.NamespaceChain, nsMap)
+	util.VMSet(vm, constants.NamespaceNode, nsMap)
 
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceChain, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNode, f.Name)
 		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
@@ -91,11 +96,11 @@ func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// getBlock fetches a block at the given height
-func (m *ChainModule) GetBlock(height string) util.Map {
+// GetBlock fetches a block at the given height
+func (m *NodeModule) GetBlock(height string) util.Map {
 
 	if m.IsAttached() {
-		res, err := m.Client.Chain().GetBlock(cast.ToUint64(height))
+		res, err := m.Client.Node().GetBlock(cast.ToUint64(height))
 		if err != nil {
 			panic(err)
 		}
@@ -115,11 +120,11 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 	return util.ToMap(res)
 }
 
-// getHeight returns the current block height
-func (m *ChainModule) GetHeight() string {
+// GetHeight returns the current block height
+func (m *NodeModule) GetHeight() string {
 
 	if m.IsAttached() {
-		res, err := m.Client.Chain().GetHeight()
+		res, err := m.Client.Node().GetHeight()
 		if err != nil {
 			panic(err)
 		}
@@ -133,11 +138,11 @@ func (m *ChainModule) GetHeight() string {
 	return cast.ToString(bi.Height.Int64())
 }
 
-// getBlockInfo Get summarized block information at a given height
-func (m *ChainModule) GetBlockInfo(height string) util.Map {
+// GetBlockInfo Get summarized block information at a given height
+func (m *NodeModule) GetBlockInfo(height string) util.Map {
 
 	if m.IsAttached() {
-		res, err := m.Client.Chain().GetBlockInfo(cast.ToUint64(height))
+		res, err := m.Client.Node().GetBlockInfo(cast.ToUint64(height))
 		if err != nil {
 			panic(err)
 		}
@@ -157,7 +162,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 	return util.ToBasicMap(res)
 }
 
-// getValidators returns validators of a given block
+// GetValidators returns validators of a given block
 //
 //  - height: The target block height
 //
@@ -166,10 +171,10 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 //  - address <string>: The bech32 address of the validator
 //  - tmAddr <string>: The tendermint address and the validator
 //  - ticketId <string>: The id of the validator ticket
-func (m *ChainModule) GetValidators(height string) (res []util.Map) {
+func (m *NodeModule) GetValidators(height string) (res []util.Map) {
 
 	if m.IsAttached() {
-		res, err := m.Client.Chain().GetValidators(cast.ToUint64(height))
+		res, err := m.Client.Node().GetValidators(cast.ToUint64(height))
 		if err != nil {
 			panic(err)
 		}
@@ -200,4 +205,23 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 	}
 
 	return vList
+}
+
+// IsSyncing checks whether the node is synchronizing with peers
+func (m *NodeModule) IsSyncing() bool {
+
+	if m.IsAttached() {
+		syncing, err := m.Client.Node().IsSyncing()
+		if err != nil {
+			panic(err)
+		}
+		return syncing
+	}
+
+	syncing, err := m.service.IsSyncing()
+	if err != nil {
+		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return syncing
 }

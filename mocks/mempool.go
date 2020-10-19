@@ -240,8 +240,9 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 func (m *MockMempool) Add(tx types.BaseTx) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
-	ret0, _ := ret[0].(error)
-	return false, ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Add indicates an expected call of Add

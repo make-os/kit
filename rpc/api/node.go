@@ -42,32 +42,45 @@ func (c *ChainAPI) getValidators(params interface{}) (resp *rpc.Response) {
 	})
 }
 
+// isSync checks whether the node is syncing with peers
+func (c *ChainAPI) isSyncing(_ interface{}) (resp *rpc.Response) {
+	return rpc.Success(util.Map{
+		"syncing": c.mods.Chain.IsSyncing(),
+	})
+}
+
 // APIs returns all API handlers
 func (c *ChainAPI) APIs() rpc.APISet {
 	return []rpc.MethodInfo{
 		{
 			Name:        "getBlock",
-			Namespace:   constants.NamespaceChain,
+			Namespace:   constants.NamespaceNode,
 			Description: "Get a block at a given chain height",
 			Func:        c.getBlock,
 		},
 		{
 			Name:        "getHeight",
-			Namespace:   constants.NamespaceChain,
+			Namespace:   constants.NamespaceNode,
 			Description: "Get the current height of the blockchain",
 			Func:        c.getHeight,
 		},
 		{
 			Name:        "getBlockInfo",
-			Namespace:   constants.NamespaceChain,
+			Namespace:   constants.NamespaceNode,
 			Description: "Get summarized block data at the given height",
 			Func:        c.getBlockInfo,
 		},
 		{
 			Name:        "getValidators",
-			Namespace:   constants.NamespaceChain,
+			Namespace:   constants.NamespaceNode,
 			Description: "Get validators at a given height",
 			Func:        c.getValidators,
+		},
+		{
+			Name:        "isSyncing",
+			Namespace:   constants.NamespaceNode,
+			Description: "Get validators at a given height",
+			Func:        c.isSyncing,
 		},
 	}
 }

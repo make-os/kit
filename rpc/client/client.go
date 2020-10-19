@@ -63,7 +63,7 @@ func (c *RPCClient) GetOptions() *types.Options {
 }
 
 // Chain exposes methods for accessing chain information
-func (c *RPCClient) Chain() types.Chain {
+func (c *RPCClient) Node() types.Node {
 	return &ChainAPI{c: c}
 }
 

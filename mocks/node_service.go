@@ -47,3 +47,33 @@ func (mr *MockServiceMockRecorder) GetBlock(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockService)(nil).GetBlock), height)
 }
+
+// IsSyncing mocks base method
+func (m *MockService) IsSyncing() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSyncing")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSyncing indicates an expected call of IsSyncing
+func (mr *MockServiceMockRecorder) IsSyncing() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSyncing", reflect.TypeOf((*MockService)(nil).IsSyncing))
+}
+
+// NetInfo mocks base method
+func (m *MockService) NetInfo() (*core_types.ResultNetInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetInfo")
+	ret0, _ := ret[0].(*core_types.ResultNetInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetInfo indicates an expected call of NetInfo
+func (mr *MockServiceMockRecorder) NetInfo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetInfo", reflect.TypeOf((*MockService)(nil).NetInfo))
+}

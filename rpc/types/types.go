@@ -27,8 +27,8 @@ type Client interface {
 	// Call calls a method on the RPCClient service.
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 
-	// Chain exposes methods for accessing chain information
-	Chain() Chain
+	// Node exposes methods for accessing chain information
+	Node() Node
 
 	// PushKey exposes methods for managing push keys
 	PushKey() PushKey
@@ -55,8 +55,8 @@ type Client interface {
 	Ticket() Ticket
 }
 
-// Chain provides access to the chain-related RPC methods
-type Chain interface {
+// Node provides access to the chain-related RPC methods
+type Node interface {
 	// GetBlock gets a block by height
 	GetBlock(height uint64) (*api.ResultBlock, error)
 
@@ -68,6 +68,9 @@ type Chain interface {
 
 	// GetValidators gets validators at a given block height
 	GetValidators(height uint64) ([]*api.ResultValidator, error)
+
+	// IsSyncing checks whether the node is synchronizing with peers
+	IsSyncing() (bool, error)
 }
 
 // DHT provides access to the DHT-related RPC methods

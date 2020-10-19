@@ -19,8 +19,8 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-var _ = Describe("ChainModule", func() {
-	var m *modules.ChainModule
+var _ = Describe("NodeModule", func() {
+	var m *modules.NodeModule
 	var ctrl *gomock.Controller
 	var mockService *mocks.MockService
 	var mockKeepers *mocks.MockKeepers
@@ -46,7 +46,7 @@ var _ = Describe("ChainModule", func() {
 		It("should configure namespace(s) into VM context", func() {
 			vm := otto.New()
 			m.ConfigureVM(vm)
-			val, err := vm.Get(constants.NamespaceChain)
+			val, err := vm.Get(constants.NamespaceNode)
 			Expect(err).To(BeNil())
 			Expect(val.IsObject()).To(BeTrue())
 		})
@@ -124,6 +124,21 @@ var _ = Describe("ChainModule", func() {
 			Expect(res[0]["address"]).To(Equal(identifier.Address("os1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7c07k8")))
 			Expect(res[0]["tmAddr"]).To(Equal("171E68F02E6F66BF9FF65C13C75D9B2B492C2F40"))
 			Expect(res[0]["ticketId"]).To(Equal("0x7469636b65745f6964"))
+		})
+	})
+
+	Describe(".IsSyncing", func() {
+		It("should panic if unable to check sync status", func() {
+			mockService.EXPECT().IsSyncing().Return(false, fmt.Errorf("error"))
+			Expect(func() { m.IsSyncing() }).To(Panic())
+		})
+
+		It("should return no error if able to check sync status", func() {
+			mockService.EXPECT().IsSyncing().Return(true, nil)
+			Expect(func() {
+				res := m.IsSyncing()
+				Expect(res).To(BeTrue())
+			}).ToNot(Panic())
 		})
 	})
 })
