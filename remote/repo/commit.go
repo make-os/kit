@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/kit/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )

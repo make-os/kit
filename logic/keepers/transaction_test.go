@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	storagemocks "github.com/make-os/lobe/storage/mocks"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/txns"
+	storagemocks "github.com/make-os/kit/storage/mocks"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/txns"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

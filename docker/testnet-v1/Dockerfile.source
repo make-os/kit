@@ -1,4 +1,4 @@
-# Description: Build a lobe image from source
+# Description: Build a kit image from source
 FROM golang:1.15-buster
 
 # Expose ports
@@ -13,10 +13,10 @@ WORKDIR /home
 # Add source root
 ADD . /home/makeos
 
-# Download Lobe binary and its dependencies
+# Download Kit binary and its dependencies
 RUN apt-get update && apt-get install git
-RUN cd makeos && make install && mv /go/bin/lobe /go/bin/lob
+RUN cd makeos && make install && mv /go/bin/kit /go/bin/kit
 
 # Start the node (in dev mode).
 # Note: Initiator must have initialized the node and pass the home directory as a volume target.
-ENTRYPOINT ["lob", "start", "--dev", "--rpc.on"]
+ENTRYPOINT ["kit", "start", "--dev", "--rpc.on"]

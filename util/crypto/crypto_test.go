@@ -3,8 +3,8 @@ package crypto
 import (
 	"encoding/hex"
 
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/libs/bech32"

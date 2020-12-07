@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/lobe/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	"gopkg.in/src-d/go-git.v4"
 )
 

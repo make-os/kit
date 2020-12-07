@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/mocks"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/mocks"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	config2 "gopkg.in/src-d/go-git.v4/config"
@@ -150,7 +150,7 @@ var _ = Describe("ConfigCmd", func() {
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
 			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("gpg").Option("program")).To(Equal(config.ExecName))
+			Expect(repoCfg.Raw.Section("gpg").Option("program")).To(Equal(config.AppName))
 		})
 
 		It("should set remotes", func() {
@@ -211,7 +211,7 @@ var _ = Describe("ConfigCmd", func() {
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
+				Expect(string(prePush)).To(ContainSubstring(config.AppName))
 			})
 		})
 
@@ -221,13 +221,13 @@ var _ = Describe("ConfigCmd", func() {
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
+				Expect(string(prePush)).To(ContainSubstring(config.AppName))
 
 				err = addHooks("", gitDir)
 				Expect(err).To(BeNil())
 				prePush2, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
-				Expect(string(prePush)).To(ContainSubstring(config.ExecName))
+				Expect(string(prePush)).To(ContainSubstring(config.AppName))
 				Expect(prePush).To(Equal(prePush2))
 			})
 		})

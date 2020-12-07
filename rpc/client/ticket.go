@@ -3,11 +3,11 @@ package client
 import (
 	"time"
 
-	"github.com/make-os/lobe/ticket/types"
-	types2 "github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/api"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/ticket/types"
+	types2 "github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/api"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )

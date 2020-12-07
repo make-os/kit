@@ -6,13 +6,13 @@ import (
 	"strconv"
 
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/rpc/types"
-	api2 "github.com/make-os/lobe/types/api"
-	"github.com/make-os/lobe/util/api"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/rpc/types"
+	api2 "github.com/make-os/kit/types/api"
+	"github.com/make-os/kit/util/api"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
 )
 

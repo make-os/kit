@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/make-os/lobe/remote/plumbing"
+	"github.com/make-os/kit/remote/plumbing"
 	. "github.com/onsi/ginkgo"
 
 	. "github.com/onsi/gomega"

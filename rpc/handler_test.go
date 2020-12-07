@@ -8,10 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

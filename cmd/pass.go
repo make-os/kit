@@ -4,10 +4,10 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/make-os/lobe/cmd/passcmd"
-	"github.com/make-os/lobe/config"
-	rr "github.com/make-os/lobe/remote/repo"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/cmd/passcmd"
+	"github.com/make-os/kit/config"
+	rr "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

@@ -1,15 +1,15 @@
 package gitpush
 
 import (
-	"github.com/make-os/lobe/logic/contracts/common"
-	"github.com/make-os/lobe/logic/contracts/mergerequest"
-	"github.com/make-os/lobe/remote/plumbing"
-	pushtypes "github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/logic/contracts/common"
+	"github.com/make-os/kit/logic/contracts/mergerequest"
+	"github.com/make-os/kit/remote/plumbing"
+	pushtypes "github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/thoas/go-funk"
 )
 

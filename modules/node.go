@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/node/services"
-	types2 "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/node/services"
+	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
 	"github.com/spf13/cast"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
-	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/kit/crypto"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"

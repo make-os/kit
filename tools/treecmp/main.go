@@ -9,12 +9,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/go-cmp/cmp"
 	"github.com/k0kubun/pp"
-	"github.com/make-os/lobe/logic/keepers"
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/logic/keepers"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
+	"github.com/make-os/kit/util/crypto"
 	"github.com/tendermint/iavl"
 )
 
@@ -111,8 +111,8 @@ func printRawStrDiff(diffs []Diffs) {
 func main() {
 	diffs := findAndPrintDiffKeys(
 		1505,
-		"/Users/ncodes/.lobe_dev_node1/1/data/appstate.db",
-		"/Users/ncodes/.lobe_dev_node2/1/data/appstate.db")
+		"/Users/ncodes/.kit_dev_node1/1/data/appstate.db",
+		"/Users/ncodes/.kit_dev_node2/1/data/appstate.db")
 
 	// printRawStrDiff(diffs)
 	printBytesDiff(diffs)

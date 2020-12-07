@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/types/state"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -150,7 +150,7 @@ type LocalRepo interface {
 	// UpdateRepoConfig updates the 'repocfg' configuration file
 	UpdateRepoConfig(cfg *LocalConfig) (err error)
 
-	// GetLobeConfig returns the 'repocfg' config object
+	// GetKitConfig returns the 'repocfg' config object
 	GetRepoConfig() (*LocalConfig, error)
 }
 

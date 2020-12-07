@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/make-os/lobe/pkgs/cache"
+	"github.com/make-os/kit/pkgs/cache"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

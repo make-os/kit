@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/repocmd"
-	"github.com/make-os/lobe/cmd/signcmd"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/remote/server"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/api"
-	"github.com/make-os/lobe/util/colorfmt"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/repocmd"
+	"github.com/make-os/kit/cmd/signcmd"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/server"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/api"
+	"github.com/make-os/kit/util/colorfmt"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -356,13 +356,13 @@ Enter the repository by typing:
 
 Inside that repository, you can run the following commands:
 
-  `+colorfmt.CyanString(config.ExecName+" pass git push")+`:
+  `+colorfmt.CyanString(config.AppName+" pass git push")+`:
     To push your commits, tags and notes with automatic signing.
 
-  `+colorfmt.CyanString(config.ExecName+" config")+`:
+  `+colorfmt.CyanString(config.AppName+" config")+`:
     To change network and repository configurations (e.g fees, nonce, remotes etc)
 
-  `+colorfmt.CyanString(config.ExecName+" sign")+`:
+  `+colorfmt.CyanString(config.AppName+" sign")+`:
     To manually sign your commit, tags and nodes.
 
 Happy coding!

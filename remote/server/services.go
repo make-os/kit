@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/policy"
-	"github.com/make-os/lobe/remote/push"
-	"github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/policy"
+	"github.com/make-os/kit/remote/push"
+	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )

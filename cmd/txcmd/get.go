@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	types2 "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/api"
-	"github.com/make-os/lobe/util/colorfmt"
+	types2 "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/api"
+	"github.com/make-os/kit/util/colorfmt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/pkg/errors"
 )

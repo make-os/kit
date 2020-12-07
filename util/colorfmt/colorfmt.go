@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 )
 
 type Attribute func(arg interface{}) aurora.Value

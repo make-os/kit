@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/make-os/lobe/remote/types"
-	types2 "github.com/make-os/lobe/types"
-	io2 "github.com/make-os/lobe/util/io"
+	"github.com/make-os/kit/remote/types"
+	types2 "github.com/make-os/kit/types"
+	io2 "github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"

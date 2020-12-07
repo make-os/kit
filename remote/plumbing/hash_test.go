@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

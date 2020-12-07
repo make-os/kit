@@ -3,13 +3,13 @@ package storage_test
 import (
 	"os"
 
-	"github.com/make-os/lobe/storage/types"
+	"github.com/make-os/kit/storage/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/testutil"
 )
 
 var _ = Describe("TMDBAdapter", func() {

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/make-os/lobe/params"
-	tickettypes "github.com/make-os/lobe/ticket/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/params"
+	tickettypes "github.com/make-os/kit/ticket/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 )

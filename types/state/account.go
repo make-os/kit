@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/objx"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 	"github.com/vmihailenco/msgpack"
 )
 

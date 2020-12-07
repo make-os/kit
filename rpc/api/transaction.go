@@ -1,9 +1,9 @@
 package api
 
 import (
-	types2 "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types/constants"
+	types2 "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/types/constants"
 	"github.com/spf13/cast"
 )
 

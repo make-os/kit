@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/make-os/lobe/keystore/types"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/keystore/types"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
 )
 

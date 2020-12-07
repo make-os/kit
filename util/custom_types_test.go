@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/json"
 
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

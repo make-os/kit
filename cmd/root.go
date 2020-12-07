@@ -8,17 +8,17 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/gen2brain/beeep"
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/gitcmd"
-	"github.com/make-os/lobe/config/chains"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/remote/repo"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/gitcmd"
+	"github.com/make-os/kit/config/chains"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/profile"
 	"github.com/thoas/go-funk"
 
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 	tmcfg "github.com/tendermint/tendermint/config"
 
 	"github.com/spf13/cobra"
@@ -94,8 +94,8 @@ func setupProfiler(rootCmd *cobra.Command, cfg *config.AppConfig) {
 
 // rootCmd represents the base command when called without any sub-commands
 var rootCmd = &cobra.Command{
-	Use:   config.ExecName,
-	Short: "Lobe is the official client for the MakeOS network",
+	Use:   config.AppName,
+	Short: "Kit is the official client for the MakeOS network",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 

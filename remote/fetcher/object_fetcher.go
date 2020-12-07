@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/make-os/lobe/config"
-	types2 "github.com/make-os/lobe/dht/streamer/types"
-	dhttypes "github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/push/types"
-	io2 "github.com/make-os/lobe/util/io"
+	"github.com/make-os/kit/config"
+	types2 "github.com/make-os/kit/dht/streamer/types"
+	dhttypes "github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/push/types"
+	io2 "github.com/make-os/kit/util/io"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 

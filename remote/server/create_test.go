@@ -4,15 +4,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/lobe/dht/announcer"
-	"github.com/make-os/lobe/mocks"
+	"github.com/make-os/kit/dht/announcer"
+	"github.com/make-os/kit/mocks"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 )
 
 var _ = Describe("Create", func() {

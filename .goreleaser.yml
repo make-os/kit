@@ -1,9 +1,9 @@
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
-project_name: lobe
+project_name: kit
 builds:
   - binary: lob
-    main: ./cmd/lobe/main.go
+    main: ./cmd/kit/main.go
     goos:
       - linux
       - darwin
@@ -22,11 +22,10 @@ archives:
       386: i386
       amd64: x86_64
 brews:
-  -
-    name: lobe
+  - name: kit
     tap:
       owner: make-os
-      name: homebrew-lobe
+      name: homebrew-kit
     commit_author:
       name: Kennedy Idialu
       email: contact@makeos.org

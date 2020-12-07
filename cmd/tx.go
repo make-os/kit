@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/make-os/lobe/cmd/txcmd"
-	"github.com/make-os/lobe/util/api"
+	"github.com/make-os/kit/cmd/txcmd"
+	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
 )
 

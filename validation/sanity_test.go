@@ -6,19 +6,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
 
-	"github.com/make-os/lobe/params"
+	"github.com/make-os/kit/params"
 	"github.com/shopspring/decimal"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/util"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/validation"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/validation"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

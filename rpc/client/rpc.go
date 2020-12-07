@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/util"
 )
 
 // RPCAPI provides access to the rpc server-related methods

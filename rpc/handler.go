@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 )
 

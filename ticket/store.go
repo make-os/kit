@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/make-os/lobe/storage/common"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	types2 "github.com/make-os/lobe/ticket/types"
+	"github.com/make-os/kit/storage/common"
+	storagetypes "github.com/make-os/kit/storage/types"
+	types2 "github.com/make-os/kit/ticket/types"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 )
 
 const (

@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/repo"
-	testutil2 "github.com/make-os/lobe/remote/testutil"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/repo"
+	testutil2 "github.com/make-os/kit/remote/testutil"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

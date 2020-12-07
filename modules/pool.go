@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	modulestypes "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/remote/push/types"
-	types2 "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
+	modulestypes "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/remote/push/types"
+	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 	"github.com/robertkrimen/otto"
 )
 

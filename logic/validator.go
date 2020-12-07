@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 

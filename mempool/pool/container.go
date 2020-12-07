@@ -7,11 +7,11 @@ import (
 	"time"
 
 	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
-	memtypes "github.com/make-os/lobe/mempool/types"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	memtypes "github.com/make-os/kit/mempool/types"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/olebedev/emitter"
 	"github.com/shopspring/decimal"
 )

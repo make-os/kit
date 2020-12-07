@@ -3,10 +3,10 @@ package server
 import (
 	"fmt"
 
-	types2 "github.com/make-os/lobe/mempool/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	types2 "github.com/make-os/kit/mempool/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/olebedev/emitter"
 )
 

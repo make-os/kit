@@ -3,13 +3,13 @@ package keepers
 import (
 	"os"
 
-	"github.com/make-os/lobe/crypto"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	state2 "github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/crypto"
+	storagetypes "github.com/make-os/kit/storage/types"
+	state2 "github.com/make-os/kit/types/state"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"

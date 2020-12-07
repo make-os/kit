@@ -1,7 +1,7 @@
 package plumbing
 
 import (
-	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/kit/remote/types"
 )
 
 // GetKVOpt finds and returns an option matching the given key

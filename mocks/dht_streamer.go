@@ -9,8 +9,8 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	network "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	types "github.com/make-os/lobe/dht/streamer/types"
-	io "github.com/make-os/lobe/util/io"
+	types "github.com/make-os/kit/dht/streamer/types"
+	io "github.com/make-os/kit/util/io"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	reflect "reflect"
 )

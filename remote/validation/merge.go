@@ -3,10 +3,10 @@ package validation
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/logic/contracts/mergerequest"
-	"github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/kit/logic/contracts/mergerequest"
+	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

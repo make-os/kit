@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/mocks"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/remote/push/types"
-	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/mocks"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/remote/push/types"
+	crypto2 "github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -3,11 +3,11 @@ package pool
 import (
 	"time"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

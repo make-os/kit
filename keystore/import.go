@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/keystore/types"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/keystore/types"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
 )
 

@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

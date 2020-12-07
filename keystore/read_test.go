@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/make-os/lobe/crypto"
-	keystoretypes "github.com/make-os/lobe/keystore/types"
-	"github.com/make-os/lobe/types"
+	"github.com/make-os/kit/crypto"
+	keystoretypes "github.com/make-os/kit/keystore/types"
+	"github.com/make-os/kit/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

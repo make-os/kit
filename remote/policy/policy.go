@@ -3,8 +3,8 @@ package policy
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/types/state"
 	"github.com/thoas/go-funk"
 )
 

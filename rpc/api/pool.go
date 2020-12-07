@@ -1,10 +1,10 @@
 package api
 
 import (
-	modtypes "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	modtypes "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 	"github.com/spf13/cast"
 )
 

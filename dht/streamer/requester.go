@@ -12,11 +12,11 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/make-os/lobe/dht"
-	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/util/io"
+	"github.com/make-os/kit/dht"
+	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 )
 

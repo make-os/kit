@@ -3,8 +3,8 @@ package types
 import (
 	"github.com/c-bata/go-prompt"
 	"github.com/fatih/structs"
-	"github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/util"
 	"github.com/robertkrimen/otto"
 )
 

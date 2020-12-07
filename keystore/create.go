@@ -10,11 +10,11 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/keystore/types"
-	"github.com/make-os/lobe/util"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
-	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/keystore/types"
+	"github.com/make-os/kit/util"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
+	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/pkg/errors"
 )
 

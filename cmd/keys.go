@@ -5,10 +5,10 @@ import (
 	"os"
 	path "path/filepath"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/keystore"
-	"github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/keystore"
+	"github.com/make-os/kit/keystore/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

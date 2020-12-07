@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gohugoio/hugo/parser/pageparser"
-	"github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"

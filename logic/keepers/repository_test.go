@@ -3,12 +3,12 @@ package keepers
 import (
 	"os"
 
-	state2 "github.com/make-os/lobe/types/state"
+	state2 "github.com/make-os/kit/types/state"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"

@@ -1,9 +1,9 @@
 package api
 
 import (
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 )
 
 // Manager provides RPC service management functionality.

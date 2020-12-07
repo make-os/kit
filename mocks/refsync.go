@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/lobe/remote/refsync/types"
-	txns "github.com/make-os/lobe/types/txns"
+	types "github.com/make-os/kit/remote/refsync/types"
+	txns "github.com/make-os/kit/types/txns"
 	reflect "reflect"
 )
 

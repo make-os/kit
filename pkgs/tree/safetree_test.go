@@ -3,15 +3,15 @@ package tree_test
 import (
 	"os"
 
-	. "github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
-	storagetypes "github.com/make-os/lobe/storage/types"
+	. "github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/storage"
+	storagetypes "github.com/make-os/kit/storage/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 )
 
 var _ = Describe("TMDBAdapter", func() {

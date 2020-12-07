@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/pkgs/cache"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/pkgs/cache"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 )
 
 // containerItem represents the a container item.

@@ -1,10 +1,10 @@
 package logic
 
 import (
-	"github.com/make-os/lobe/dht"
-	"github.com/make-os/lobe/logic/contracts"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
+	"github.com/make-os/kit/dht"
+	"github.com/make-os/kit/logic/contracts"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/core"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"

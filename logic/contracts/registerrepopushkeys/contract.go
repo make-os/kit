@@ -1,16 +1,16 @@
 package registerrepopushkeys
 
 import (
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/logic/contracts/common"
-	"github.com/make-os/lobe/logic/proposals"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
-	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/logic/contracts/common"
+	"github.com/make-os/kit/logic/proposals"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
+	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/pkg/errors"
 )
 

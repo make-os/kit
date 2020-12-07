@@ -3,14 +3,14 @@ package config
 import (
 	golog "log"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/util"
 
 	"github.com/tendermint/tendermint/privval"
 
 	tmcfg "github.com/tendermint/tendermint/config"
 
-	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/kit/pkgs/logger"
 	"github.com/olebedev/emitter"
 	"github.com/tendermint/tendermint/p2p"
 )

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/storage/common"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/crypto"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/storage/common"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
 )
 

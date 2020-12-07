@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/crypto"
-	mocks2 "github.com/make-os/lobe/mocks/rpc"
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/types/api"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	mocks2 "github.com/make-os/kit/mocks/rpc"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/types/api"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

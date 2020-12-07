@@ -1,4 +1,4 @@
-module github.com/make-os/lobe
+module github.com/make-os/kit
 
 go 1.13
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcutil/bech32"
-	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/kit/types/constants"
 )
 
 // Address represents an identifier for a resource

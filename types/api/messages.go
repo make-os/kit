@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/rpc"
-	tickettypes "github.com/make-os/lobe/ticket/types"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/rpc"
+	tickettypes "github.com/make-os/kit/ticket/types"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )
 

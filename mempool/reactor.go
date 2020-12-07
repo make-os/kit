@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/make-os/lobe/config"
-	memtypes "github.com/make-os/lobe/mempool/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/kit/config"
+	memtypes "github.com/make-os/kit/mempool/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/txns"
 	"github.com/olebedev/emitter"
 
-	"github.com/make-os/lobe/pkgs/cache"
-	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/kit/pkgs/cache"
+	"github.com/make-os/kit/pkgs/logger"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"

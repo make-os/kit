@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/mempool"
 	tmtypes "github.com/tendermint/tendermint/types"

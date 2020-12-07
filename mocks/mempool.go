@@ -6,9 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/lobe/types"
-	core "github.com/make-os/lobe/types/core"
-	util "github.com/make-os/lobe/util"
+	types "github.com/make-os/kit/types"
+	core "github.com/make-os/kit/types/core"
+	util "github.com/make-os/kit/util"
 	types0 "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types1 "github.com/tendermint/tendermint/types"

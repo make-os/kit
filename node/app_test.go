@@ -5,35 +5,35 @@ import (
 	"os"
 	"testing"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/logic/contracts/mergerequest"
-	"github.com/make-os/lobe/params"
-	pushtypes "github.com/make-os/lobe/remote/push/types"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	tickettypes "github.com/make-os/lobe/ticket/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/logic/contracts/mergerequest"
+	"github.com/make-os/kit/params"
+	pushtypes "github.com/make-os/kit/remote/push/types"
+	storagetypes "github.com/make-os/kit/storage/types"
+	tickettypes "github.com/make-os/kit/ticket/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/tendermint/tendermint/privval"
 
-	"github.com/make-os/lobe/logic/keepers"
-	"github.com/make-os/lobe/types"
+	"github.com/make-os/kit/logic/keepers"
+	"github.com/make-os/kit/types"
 
 	"github.com/golang/mock/gomock"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
-	"github.com/make-os/lobe/ticket"
+	"github.com/make-os/kit/ticket"
 
-	l "github.com/make-os/lobe/logic"
+	l "github.com/make-os/kit/logic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 )
 
 func TestNode(t *testing.T) {

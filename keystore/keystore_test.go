@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

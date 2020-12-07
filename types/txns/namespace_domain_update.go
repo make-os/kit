@@ -1,8 +1,8 @@
 package txns
 
 import (
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
 	"github.com/vmihailenco/msgpack"
 )
 

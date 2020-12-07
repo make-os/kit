@@ -9,13 +9,13 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	cid2 "github.com/ipfs/go-cid"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/make-os/lobe/config"
-	dht2 "github.com/make-os/lobe/dht"
-	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	dht2 "github.com/make-os/kit/dht"
+	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 )
 
 const (

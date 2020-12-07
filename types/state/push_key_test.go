@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/kit/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

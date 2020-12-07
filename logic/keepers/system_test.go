@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/config"
-	storagemocks "github.com/make-os/lobe/storage/mocks"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/config"
+	storagemocks "github.com/make-os/kit/storage/mocks"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/types/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

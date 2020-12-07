@@ -1,9 +1,9 @@
 package keepers
 
 import (
-	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
 )
 

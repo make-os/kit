@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 )
 
 type Watcher interface {

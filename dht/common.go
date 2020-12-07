@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/ipfs/go-cid"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/multiformats/go-multihash"
 )
 

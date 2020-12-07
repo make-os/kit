@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 )

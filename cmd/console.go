@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/make-os/lobe/console"
-	"github.com/make-os/lobe/node"
+	"github.com/make-os/kit/console"
+	"github.com/make-os/kit/node"
 	"github.com/spf13/cobra"
 )
 

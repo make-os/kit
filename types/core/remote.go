@@ -3,14 +3,14 @@ package core
 import (
 	"context"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/logger"
-	"github.com/make-os/lobe/remote/fetcher"
-	pushtypes "github.com/make-os/lobe/remote/push/types"
-	remotetypes "github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/pkgs/logger"
+	"github.com/make-os/kit/remote/fetcher"
+	pushtypes "github.com/make-os/kit/remote/push/types"
+	remotetypes "github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/rpc"
 )
 
 // PushKeyGetter represents a function used for fetching a push key

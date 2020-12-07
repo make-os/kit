@@ -1,7 +1,7 @@
 package plumbing
 
 import (
-	"github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/util/colorfmt"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
 

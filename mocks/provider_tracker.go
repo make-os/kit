@@ -7,7 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	types "github.com/make-os/lobe/dht/types"
+	types "github.com/make-os/kit/dht/types"
 	reflect "reflect"
 	time "time"
 )

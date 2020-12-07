@@ -3,15 +3,15 @@ package storage_test
 import (
 	"os"
 
-	"github.com/make-os/lobe/storage/common"
-	"github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/storage/common"
+	"github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/testutil"
 
-	"github.com/make-os/lobe/storage"
+	"github.com/make-os/kit/storage"
 
 	"github.com/dgraph-io/badger/v2"
 
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

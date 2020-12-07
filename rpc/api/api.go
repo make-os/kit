@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc"
 )
 
 // APIs returns all API handlers

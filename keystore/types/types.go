@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/make-os/lobe/crypto"
+	"github.com/make-os/kit/crypto"
 )
 
 type KeyType int

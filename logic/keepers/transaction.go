@@ -1,11 +1,11 @@
 package keepers
 
 import (
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/storage/common"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/txns"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/storage/common"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/txns"
 	"github.com/pkg/errors"
 )
 

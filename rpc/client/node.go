@@ -1,9 +1,9 @@
 package client
 
 import (
-	"github.com/make-os/lobe/types/api"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types/api"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
 	"github.com/spf13/cast"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )

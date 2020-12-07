@@ -1,8 +1,8 @@
 package state
 
 import (
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
 	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
 )

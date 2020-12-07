@@ -3,13 +3,13 @@ package unbondticket
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 )
 
 // Contract implements core.SystemContract. It is a system contract to unbond a ticket.

@@ -3,8 +3,8 @@ package api
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/types/api"
+	"github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/types/api"
 )
 
 // NextNonceGetter describes a function for getting the next nonce of an account.

@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/util"
 )
 
 // Ticket represents a validator ticket

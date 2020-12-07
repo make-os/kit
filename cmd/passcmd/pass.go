@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/passcmd/agent"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/keystore"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/passcmd/agent"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/keystore"
+	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 )
 
@@ -118,7 +118,7 @@ func PassCmd(args *PassArgs) (err error) {
 		}
 
 		if !args.AgentStatusChecker(args.Port) {
-			cmd := args.CommandCreator(config.ExecName, "pass", "--start-agent", "--port", args.Port)
+			cmd := args.CommandCreator(config.AppName, "pass", "--start-agent", "--port", args.Port)
 			cmd.SetStdout(args.Stdout)
 			cmd.SetStderr(args.Stderr)
 			if err := cmd.Start(); err != nil {

@@ -1,9 +1,9 @@
 package api
 
 import (
-	modulestypes "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types/constants"
+	modulestypes "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/types/constants"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )

@@ -1,10 +1,10 @@
 package txns
 
 import (
-	pptyp "github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/crypto"
-	"github.com/make-os/lobe/util/identifier"
+	pptyp "github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/vmihailenco/msgpack"
 )
 

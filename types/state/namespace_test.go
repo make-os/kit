@@ -1,7 +1,7 @@
 package state_test
 
 import (
-	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/types/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

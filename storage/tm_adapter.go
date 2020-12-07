@@ -4,8 +4,8 @@ import (
 	"bytes"
 
 	"github.com/dgraph-io/badger/v2"
-	"github.com/make-os/lobe/storage/common"
-	"github.com/make-os/lobe/storage/types"
+	"github.com/make-os/kit/storage/common"
+	"github.com/make-os/kit/storage/types"
 	tmdb "github.com/tendermint/tm-db"
 )
 

@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/data"
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/data"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )

@@ -11,12 +11,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/remote/types"
-	rpctypes "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/api"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/types"
+	rpctypes "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cast"
 	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
@@ -115,8 +115,8 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 		rcfg.Raw.Section("commit").SetOption("amend", cast.ToString(*args.AmendCommit))
 	}
 
-	// Set lobe as `gpg.program`
-	rcfg.Raw.Section("gpg").SetOption("program", config.ExecName)
+	// Set kit as `gpg.program`
+	rcfg.Raw.Section("gpg").SetOption("program", config.AppName)
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
@@ -136,7 +136,7 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Add hooks if allowed
 	dotGitPath := filepath.Join(repo.GetPath(), ".git")
 	if !args.NoHook {
-		if err = addHooks(config.ExecName, dotGitPath); err != nil {
+		if err = addHooks(config.AppName, dotGitPath); err != nil {
 			return err
 		}
 	}
@@ -157,9 +157,9 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 // addHook adds hooks to git repo at the given path.
 // If not already added the hook command already exist, it will not be re-added.
 // If the hook file does not exist, create it and make it an executable on non-windows system.
-func addHooks(appExecName string, path string) error {
+func addHooks(appAppName string, path string) error {
 	for _, hook := range []string{"pre-push"} {
-		cmd := fmt.Sprintf("%s repo hook $1", config.ExecName)
+		cmd := fmt.Sprintf("%s repo hook $1", config.AppName)
 
 		os.Mkdir(filepath.Join(path, "hooks"), 0700)
 		prePushFile := filepath.Join(path, "hooks", hook)
@@ -192,7 +192,7 @@ func addHooks(appExecName string, path string) error {
 			if line := scanner.Text(); line != "" && line[:1] == "#" {
 				continue
 			}
-			if strings.Contains(scanner.Text(), appExecName+" repo hook") {
+			if strings.Contains(scanner.Text(), appAppName+" repo hook") {
 				goto end
 			}
 		}

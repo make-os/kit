@@ -3,14 +3,14 @@ package core
 import (
 	"encoding/json"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/tree"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	tickettypes "github.com/make-os/lobe/ticket/types"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/tree"
+	storagetypes "github.com/make-os/kit/storage/types"
+	tickettypes "github.com/make-os/kit/ticket/types"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 

@@ -3,12 +3,12 @@ package pool
 import (
 	"time"
 
-	"github.com/make-os/lobe/crypto"
-	types2 "github.com/make-os/lobe/mempool/types"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/crypto"
+	types2 "github.com/make-os/kit/mempool/types"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/olebedev/emitter"
 
 	. "github.com/onsi/ginkgo"

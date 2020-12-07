@@ -1,6 +1,6 @@
 package state
 
-import "github.com/make-os/lobe/util"
+import "github.com/make-os/kit/util"
 
 // BlockInfo describes information about a block
 type BlockInfo struct {

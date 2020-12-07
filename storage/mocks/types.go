@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/make-os/lobe/storage/common"
-	types "github.com/make-os/lobe/storage/types"
+	common "github.com/make-os/kit/storage/common"
+	types "github.com/make-os/kit/storage/types"
 	reflect "reflect"
 )
 

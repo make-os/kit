@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/lobe/remote/push/types"
-	util "github.com/make-os/lobe/util"
+	types "github.com/make-os/kit/remote/push/types"
+	util "github.com/make-os/kit/util"
 	pktline "gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	packp "gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 	io "io"

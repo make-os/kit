@@ -5,16 +5,16 @@ import (
 	"os"
 	"testing"
 
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	l "github.com/make-os/lobe/logic"
+	l "github.com/make-os/kit/logic"
 )
 
 func TestLogic(t *testing.T) {

@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/pkgs/cache"
-	"github.com/make-os/lobe/remote/push/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/pkgs/cache"
+	"github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 )

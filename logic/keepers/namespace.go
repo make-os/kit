@@ -3,10 +3,10 @@ package keepers
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/pkgs/tree"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/pkgs/tree"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
 	"github.com/pkg/errors"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 

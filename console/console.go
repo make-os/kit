@@ -10,16 +10,16 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/make-os/lobe/modules/types"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/modules/types"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/thoas/go-funk"
 
 	"github.com/pkg/errors"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 )
 
 // Console defines functionalities for create and using

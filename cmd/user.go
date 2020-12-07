@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/make-os/lobe/cmd/common"
-	usercmd "github.com/make-os/lobe/cmd/usercmd"
-	"github.com/make-os/lobe/util/api"
+	"github.com/make-os/kit/cmd/common"
+	usercmd "github.com/make-os/kit/cmd/usercmd"
+	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
 )
 

@@ -3,8 +3,8 @@ package console
 import (
 	"fmt"
 
-	"github.com/make-os/lobe/pkgs/logger"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
+	"github.com/make-os/kit/pkgs/logger"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 )

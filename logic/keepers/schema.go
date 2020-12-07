@@ -1,8 +1,8 @@
 package keepers
 
 import (
-	"github.com/make-os/lobe/storage/common"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/storage/common"
+	"github.com/make-os/kit/util"
 )
 
 const (

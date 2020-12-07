@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/lobe/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/olebedev/emitter"
 )
 

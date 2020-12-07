@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/make-os/lobe/params"
-	pushtypes "github.com/make-os/lobe/remote/push/types"
+	"github.com/make-os/kit/params"
+	pushtypes "github.com/make-os/kit/remote/push/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 )

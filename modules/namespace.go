@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/node/services"
-	types2 "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/node/services"
+	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
 	"github.com/robertkrimen/otto"
 )
 

@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 

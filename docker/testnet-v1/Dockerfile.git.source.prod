@@ -1,4 +1,4 @@
-# Description: Build a lobe image from source
+# Description: Build a kit image from source
 FROM golang:1.15-buster
 
 # Expose ports
@@ -21,12 +21,12 @@ ENV rpcPass $rpcPass
 RUN apt-get update && apt-get install git
 
 # Clone source repository
-RUN git clone https://gitlab.com/makeos/lobe
+RUN git clone https://gitlab.com/makeos/kit
 
 # Build and install
-RUN cd lobe && git checkout ${branch} && make install && mv /go/bin/lobe /go/bin/lob
+RUN cd kit && git checkout ${branch} && make install && mv /go/bin/kit /go/bin/kit
 
 # Start the node.
 # Note: Initiator must have initialized the node and pass the home directory as a volume target.
-RUN echo "lob start --rpc.on --rpc.user=$rpcUser --rpc.password=$rpcPass" > /run_lobe.sh
-ENTRYPOINT ["/bin/bash", "/run_lobe.sh"]
+RUN echo "kit start --rpc.on --rpc.user=$rpcUser --rpc.password=$rpcPass" > /run_kit.sh
+ENTRYPOINT ["/bin/bash", "/run_kit.sh"]

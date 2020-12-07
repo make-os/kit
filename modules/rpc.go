@@ -5,15 +5,15 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/rpc/client"
-	types2 "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/types/constants"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/rpc/client"
+	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/types/constants"
 	"github.com/stretchr/objx"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 	"github.com/robertkrimen/otto"
 )
 

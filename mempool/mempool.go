@@ -5,20 +5,20 @@ import (
 	"sync"
 	"time"
 
-	types2 "github.com/make-os/lobe/mempool/types"
-	"github.com/make-os/lobe/params"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/validation"
+	types2 "github.com/make-os/kit/mempool/types"
+	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/validation"
 
-	"github.com/make-os/lobe/config"
+	"github.com/make-os/kit/config"
 
-	"github.com/make-os/lobe/types"
+	"github.com/make-os/kit/types"
 
-	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/kit/pkgs/logger"
 
-	"github.com/make-os/lobe/mempool/pool"
+	"github.com/make-os/kit/mempool/pool"
 	abci "github.com/tendermint/tendermint/abci/types"
 	auto "github.com/tendermint/tendermint/libs/autofile"
 	"github.com/tendermint/tendermint/mempool"

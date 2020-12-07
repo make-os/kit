@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/lobe/remote/push/types"
+	types "github.com/make-os/kit/remote/push/types"
 	io "io"
 	reflect "reflect"
 )

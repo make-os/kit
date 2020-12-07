@@ -4,9 +4,9 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/make-os/lobe/rpc"
-	"github.com/make-os/lobe/types/api"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/rpc"
+	"github.com/make-os/kit/types/api"
+	"github.com/make-os/kit/util"
 )
 
 // PushKey provides access to the pushkey-related RPC methods

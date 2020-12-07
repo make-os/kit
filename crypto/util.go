@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/make-os/lobe/types/constants"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/tendermint/tendermint/libs/bech32"
 )
 

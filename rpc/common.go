@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 )
 
 // Params represent JSON API parameters

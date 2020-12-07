@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/signcmd"
-	"github.com/make-os/lobe/remote/server"
-	"github.com/make-os/lobe/util/api"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/signcmd"
+	"github.com/make-os/kit/remote/server"
+	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/make-os/lobe/storage"
-	"github.com/make-os/lobe/storage/common"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
+	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/storage/common"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
 
-	"github.com/make-os/lobe/pkgs/tree"
+	"github.com/make-os/kit/pkgs/tree"
 	"github.com/pkg/errors"
 )
 

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/pkgs/cache"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/pkgs/cache"
+	"github.com/make-os/kit/util/crypto"
 )
 
 var (

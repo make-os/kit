@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/dht/providertracker"
-	"github.com/make-os/lobe/dht/types"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/dht/providertracker"
+	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

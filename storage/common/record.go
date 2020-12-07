@@ -3,7 +3,7 @@ package common
 import (
 	"bytes"
 
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/util"
 )
 
 const (

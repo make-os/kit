@@ -3,11 +3,11 @@ package plumbing_test
 import (
 	"os"
 
-	"github.com/make-os/lobe/config"
-	plumbing2 "github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/passcmd"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/mocks"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/passcmd"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

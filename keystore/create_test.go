@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/keystore/types"
-	crypto2 "github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/keystore/types"
+	crypto2 "github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

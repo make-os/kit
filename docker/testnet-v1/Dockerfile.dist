@@ -1,4 +1,4 @@
-# Description: Build a lobe image from pre-built executable
+# Description: Build a kit image from pre-built executable
 # copied from ./dist directory.
 FROM golang:1.15-buster
 
@@ -11,17 +11,17 @@ EXPOSE 9004
 # Set working directory to home
 WORKDIR /home
 
-# Get Lobe version from build command
+# Get Kit version from build command
 ARG version
 ENV version $version
 
-COPY dist/lobe_${version}_Linux_x86_64.tar.gz .
+COPY dist/kit_${version}_Linux_x86_64.tar.gz .
 
-# Download Lobe binary and its dependencies
+# Download Kit binary and its dependencies
 RUN apt-get update && apt-get install git
-RUN tar -xvf lobe_${version}_Linux_x86_64.tar.gz
-RUN mv ./lob /usr/bin/lob
+RUN tar -xvf kit_${version}_Linux_x86_64.tar.gz
+RUN mv ./kit /usr/bin/kit
 
 # Start the node (in dev mode).
 # Note: Initiator must have initialized the node and pass the home directory as a volume target.
-ENTRYPOINT ["lob", "start", "--dev", "--rpc.on"]
+ENTRYPOINT ["kit", "start", "--dev", "--rpc.on"]

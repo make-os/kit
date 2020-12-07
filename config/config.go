@@ -8,8 +8,8 @@ import (
 	path "path/filepath"
 	"strings"
 
-	"github.com/make-os/lobe/data"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/data"
+	"github.com/make-os/kit/util"
 	"github.com/mitchellh/go-homedir"
 	"github.com/olebedev/emitter"
 	"github.com/pkg/errors"
@@ -17,16 +17,13 @@ import (
 
 	"github.com/tendermint/tendermint/config"
 
-	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/kit/pkgs/logger"
 	"github.com/spf13/viper"
 )
 
 var (
 	// AppName is the name of the application
-	AppName = "lobe"
-
-	// ExecName is the short name for the executable
-	ExecName = "lob"
+	AppName = "kit"
 
 	// DefaultDataDir is the path to the data directory
 	DefaultDataDir = os.ExpandEnv("$HOME/." + AppName)
@@ -127,7 +124,7 @@ func IsTendermintInitialized(tmcfg *config.Config) bool {
 }
 
 // ConfigureVM sets up the application command structure, tendermint
-// and lobe configuration. This is where all configuration and
+// and kit configuration. This is where all configuration and
 // settings are prepared
 func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
 	NoColorFormatting = viper.GetBool("no-colors")
@@ -153,7 +150,6 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *uti
 	// In development mode, use the development data directory.
 	if devMode {
 		cfg.Node.Mode = ModeDev
-		ExecName = AppName
 	}
 
 	// Create the data directory and other sub directories
@@ -185,7 +181,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *uti
 	// Ensure tendermint files have been initialized in the network directory
 	if !initializing && !IsTendermintInitialized(tmcfg) {
 		log.Fatalf("data directory has not been initialized (Run `%s "+
-			"init` to initialize this instance)", ExecName)
+			"init` to initialize this instance)", AppName)
 	}
 
 	// Create the config file if it doesn't exist
@@ -231,7 +227,7 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *uti
 		tmcfg.P2P.AllowDuplicateIP = true
 	}
 
-	// If no logger is wanted, set lobe and tendermint log level to `error`
+	// If no logger is wanted, set kit and tendermint log level to `error`
 	noLog := viper.GetBool("no-log")
 	if noLog {
 		tmcfg.LogLevel = fmt.Sprintf("*:error")

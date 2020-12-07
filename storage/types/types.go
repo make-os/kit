@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/make-os/lobe/storage/common"
+	"github.com/make-os/kit/storage/common"
 )
 
 // Engine provides an interface that describes

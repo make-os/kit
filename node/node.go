@@ -6,32 +6,32 @@ import (
 	"os"
 	"sync"
 
-	dhtserver "github.com/make-os/lobe/dht/server"
-	"github.com/make-os/lobe/dht/types"
-	types2 "github.com/make-os/lobe/modules/types"
-	"github.com/make-os/lobe/remote/server"
-	rpcApi "github.com/make-os/lobe/rpc/api"
-	storagetypes "github.com/make-os/lobe/storage/types"
-	tickettypes "github.com/make-os/lobe/ticket/types"
-	"github.com/make-os/lobe/types/core"
+	dhtserver "github.com/make-os/kit/dht/server"
+	"github.com/make-os/kit/dht/types"
+	types2 "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/remote/server"
+	rpcApi "github.com/make-os/kit/rpc/api"
+	storagetypes "github.com/make-os/kit/storage/types"
+	tickettypes "github.com/make-os/kit/ticket/types"
+	"github.com/make-os/kit/types/core"
 
-	"github.com/make-os/lobe/modules"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/modules"
+	"github.com/make-os/kit/util"
 	"github.com/thoas/go-funk"
 
-	"github.com/make-os/lobe/extensions"
-	"github.com/make-os/lobe/keystore"
+	"github.com/make-os/kit/extensions"
+	"github.com/make-os/kit/keystore"
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/make-os/lobe/ticket"
+	"github.com/make-os/kit/ticket"
 
-	"github.com/make-os/lobe/mempool"
+	"github.com/make-os/kit/mempool"
 
-	"github.com/make-os/lobe/logic"
+	"github.com/make-os/kit/logic"
 
-	"github.com/make-os/lobe/node/services"
+	"github.com/make-os/kit/node/services"
 
 	"github.com/pkg/errors"
 
@@ -41,10 +41,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"github.com/make-os/lobe/storage"
+	"github.com/make-os/kit/storage"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/pkgs/logger"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/pkgs/logger"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"

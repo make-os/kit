@@ -5,14 +5,14 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/make-os/lobe/cmd/common"
-	"github.com/make-os/lobe/cmd/signcmd"
-	"github.com/make-os/lobe/config"
-	plumbing2 "github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/server"
-	"github.com/make-os/lobe/remote/types"
-	types2 "github.com/make-os/lobe/rpc/types"
-	"github.com/make-os/lobe/util/api"
+	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/signcmd"
+	"github.com/make-os/kit/config"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/server"
+	"github.com/make-os/kit/remote/types"
+	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/util/api"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 

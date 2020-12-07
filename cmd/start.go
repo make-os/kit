@@ -5,8 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/node"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/node"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

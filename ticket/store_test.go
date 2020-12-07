@@ -3,12 +3,12 @@ package ticket
 import (
 	"os"
 
-	storagetypes "github.com/make-os/lobe/storage/types"
-	tickettypes "github.com/make-os/lobe/ticket/types"
+	storagetypes "github.com/make-os/kit/storage/types"
+	tickettypes "github.com/make-os/kit/ticket/types"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
-	"github.com/make-os/lobe/util"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

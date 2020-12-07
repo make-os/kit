@@ -6,10 +6,10 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/lobe/remote/push/types"
-	types0 "github.com/make-os/lobe/remote/types"
-	util "github.com/make-os/lobe/util"
-	identifier "github.com/make-os/lobe/util/identifier"
+	types "github.com/make-os/kit/remote/push/types"
+	types0 "github.com/make-os/kit/remote/types"
+	util "github.com/make-os/kit/util"
+	identifier "github.com/make-os/kit/util/identifier"
 	msgpack "github.com/vmihailenco/msgpack"
 	reflect "reflect"
 )

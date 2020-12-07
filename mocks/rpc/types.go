@@ -6,10 +6,10 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	rpc "github.com/make-os/lobe/rpc"
-	types "github.com/make-os/lobe/rpc/types"
-	api "github.com/make-os/lobe/types/api"
-	util "github.com/make-os/lobe/util"
+	rpc "github.com/make-os/kit/rpc"
+	types "github.com/make-os/kit/rpc/types"
+	api "github.com/make-os/kit/types/api"
+	util "github.com/make-os/kit/util"
 	reflect "reflect"
 )
 

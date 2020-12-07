@@ -1,6 +1,6 @@
 package types
 
-import "github.com/make-os/lobe/util"
+import "github.com/make-os/kit/util"
 
 type (
 	// ColChangeType describes a change to a collection item

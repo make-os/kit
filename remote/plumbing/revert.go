@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/make-os/lobe/remote/types"
+	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 

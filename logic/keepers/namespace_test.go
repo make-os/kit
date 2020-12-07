@@ -1,9 +1,9 @@
 package keepers
 
 import (
-	"github.com/make-os/lobe/pkgs/tree"
-	state2 "github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/util/crypto"
+	"github.com/make-os/kit/pkgs/tree"
+	state2 "github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"

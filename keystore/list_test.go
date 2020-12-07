@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/keystore/types"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/keystore/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

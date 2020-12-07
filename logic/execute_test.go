@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"os"
 
-	storagetypes "github.com/make-os/lobe/storage/types"
-	"github.com/make-os/lobe/types/core"
-	"github.com/make-os/lobe/types/state"
-	"github.com/make-os/lobe/types/txns"
-	"github.com/make-os/lobe/validation"
+	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/validation"
 
-	"github.com/make-os/lobe/types"
+	"github.com/make-os/kit/types"
 
-	"github.com/make-os/lobe/config"
-	"github.com/make-os/lobe/testutil"
+	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

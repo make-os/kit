@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/make-os/lobe/pkgs/cache"
+	"github.com/make-os/kit/pkgs/cache"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )

@@ -3,9 +3,9 @@ package validation
 import (
 	"time"
 
-	"github.com/make-os/lobe/crypto"
-	"github.com/make-os/lobe/util"
-	"github.com/make-os/lobe/util/identifier"
+	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
 )
 

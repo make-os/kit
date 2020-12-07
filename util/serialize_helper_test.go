@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/lobe/util/mocks"
+	"github.com/make-os/kit/util/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vmihailenco/msgpack"

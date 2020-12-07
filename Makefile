@@ -21,11 +21,11 @@ release-tagged:
 
 # Install from source
 install:
-	cd cmd/lobe && go install
+	cd cmd/kit && go install
 
 getbin:
-	curl -L https://storage.googleapis.com/lobe-bin/lobe_$(v)_Linux_x86_64.tar.gz | tar -xz
-	mv ./lob /usr/bin/lob
+	curl -L https://storage.googleapis.com/kit-bin/kit_$(v)_Linux_x86_64.tar.gz | tar -xz
+	mv ./lob /usr/bin/kit
 
 # Initialize node for testnet-v1
 testnet-v1-init:
@@ -33,39 +33,39 @@ testnet-v1-init:
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
 join: testnet-v1-init
-	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker build -t makeos/kit -f docker/testnet-v1/Dockerfile --build-arg version=$(v) .
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/kit
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
 join-dist: testnet-v1-init
-	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.dist --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker build -t makeos/kit -f docker/testnet-v1/Dockerfile.dist --build-arg version=$(v) .
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/kit
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a binary from local source and connects to testnet-v1
 join-src: testnet-v1-init
-	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.source --build-arg version=$(v) .
-	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker build -t makeos/kit -f docker/testnet-v1/Dockerfile.source --build-arg version=$(v) .
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/kit
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a git a binary from the official git repository and connects to testnet-v1.
 join-gitsrc: testnet-v1-init
-	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.git.source --build-arg branch=$(branch) .
-	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker build -t makeos/kit -f docker/testnet-v1/Dockerfile.git.source --build-arg branch=$(branch) .
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/kit
 	docker logs -f makeos --tail=1000
 
 # Build and run a docker container that builds a git a binary from the official git repository and connects to testnet-v1 in production mode.
 join-gitsrc-prod: testnet-v1-init
-	docker build -t makeos/lobe -f docker/testnet-v1/Dockerfile.git.source.prod \
+	docker build -t makeos/kit -f docker/testnet-v1/Dockerfile.git.source.prod \
 		--build-arg branch=$(branch) \
 		--build-arg rpcUser=$(rpcUser) \
 		--build-arg rpcPass=$(rpcPass) .
-	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/lobe
+	docker start makeos || docker run --name=makeos -v=$(volume) -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9003:9003 -d makeos/kit
 	docker logs -f makeos --tail=1000
 
 genmocks:
-	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/lobe/remote/types LiteGit,LocalRepo,Commit
+	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/kit/remote/types LiteGit,LocalRepo,Commit
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks
 	mockgen -source=storage/types/types.go -destination=storage/mocks/types.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks

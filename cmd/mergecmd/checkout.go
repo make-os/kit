@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/make-os/lobe/remote/plumbing"
-	"github.com/make-os/lobe/remote/types"
-	"github.com/make-os/lobe/util"
-	fmt2 "github.com/make-os/lobe/util/colorfmt"
-	io2 "github.com/make-os/lobe/util/io"
+	"github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/util"
+	fmt2 "github.com/make-os/kit/util/colorfmt"
+	io2 "github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 )
 
