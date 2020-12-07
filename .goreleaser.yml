@@ -29,7 +29,7 @@ brews:
       email: contact@makeos.org
     folder: Formula
     homepage: "https://makeos.org/"
-    description: "A client for the MakeOS decentralized collaboration network"
+    description: "A client for the MakeOS decentralized code collaboration network"
     dependencies:
       - name: git
     test: |
