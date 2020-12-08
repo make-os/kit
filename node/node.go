@@ -83,21 +83,19 @@ func NewNode(cfg *config.AppConfig) *Node {
 	}
 }
 
-// OpenDB opens the database. In dev mode, create a
-// namespace and open database file prefixed with
-// the node ID as namespace
+// OpenDB opens the app and state databases.
 func (n *Node) OpenDB() error {
 
 	if n.db != nil {
 		return fmt.Errorf("db already open")
 	}
 
-	db, err := storage.NewBadger("")
+	db, err := storage.NewBadger(n.cfg.GetAppDBDir())
 	if err != nil {
 		return err
 	}
 
-	stateTreeDB, err := storage.NewBadgerTMDB("")
+	stateTreeDB, err := storage.NewBadgerTMDB(n.cfg.GetStateTreeDBDir())
 	if err != nil {
 		return err
 	}
