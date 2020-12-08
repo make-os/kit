@@ -2,6 +2,8 @@ project_name: kit
 builds:
   - binary: kit
     main: ./cmd/kit/main.go
+    flags:
+      - -tags=badgerdb
     goos:
       - linux
       - darwin
@@ -34,9 +36,6 @@ brews:
       - name: git
     test: |
       system "#{bin}/kit --version"
-
-
-
 checksum:
   name_template: "checksums.txt"
 snapshot:
