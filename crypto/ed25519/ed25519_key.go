@@ -1,5 +1,5 @@
 // Package crypto provides key and address creation functions.
-package crypto
+package ed25519
 
 import (
 	"crypto/rand"
@@ -10,9 +10,9 @@ import (
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/vrf"
 	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util/identifier"
-	"github.com/tendermint/tendermint/libs/bech32"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -490,7 +490,7 @@ func PrivKeyFromBase58(pk string) (*PrivKey, error) {
 }
 
 // PrivKeyFromBytes returns a PrivKey instance from a 64 bytes private key
-func PrivKeyFromBytes(bz [64]byte) (*PrivKey, error) {
+func PrivKeyFromBytes(bz []byte) (*PrivKey, error) {
 	privKey, err := crypto.UnmarshalEd25519PrivateKey(bz[:])
 	if err != nil {
 		return nil, err
@@ -502,38 +502,34 @@ func PrivKeyFromBytes(bz [64]byte) (*PrivKey, error) {
 }
 
 // PrivKeyFromTMPrivateKey encodes a tendermint private key to PrivKey
-func PrivKeyFromTMPrivateKey(tmSk ed25519.PrivKeyEd25519) (*PrivKey, error) {
-	return PrivKeyFromBytes(tmSk)
+func PrivKeyFromTMPrivateKey(tmSk ed25519.PrivKey) (*PrivKey, error) {
+	return PrivKeyFromBytes(tmSk.Bytes())
 }
 
 // ConvertBase58PubKeyToTMPubKey converts base58 public key to tendermint's ed25519.PubKeyEd25519
-func ConvertBase58PubKeyToTMPubKey(b58PubKey string) (ed25519.PubKeyEd25519, error) {
-	var res = [ed25519.PubKeyEd25519Size]byte{}
+func ConvertBase58PubKeyToTMPubKey(b58PubKey string) (ed25519.PubKey, error) {
 	pubKey, err := PubKeyFromBase58(b58PubKey)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
-	rawPubKey, _ := pubKey.Bytes()
-	copy(res[:], rawPubKey)
-	return res, nil
+	bz, _ := pubKey.Bytes()
+	return (bz), nil
 }
 
 // ConvertBase58PrivKeyToTMPrivKey converts base58 private key to tendermint's ed25519.PrivKeyEd25519
-func ConvertBase58PrivKeyToTMPrivKey(b58PrivKey string) (ed25519.PrivKeyEd25519, error) {
-	var res ed25519.PrivKeyEd25519
+func ConvertBase58PrivKeyToTMPrivKey(b58PrivKey string) (ed25519.PrivKey, error) {
 	privKey, err := PrivKeyFromBase58(b58PrivKey)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
-	rawPubKey, _ := privKey.Bytes()
-	copy(res[:], rawPubKey)
-	return res, nil
+	bz, _ := privKey.Bytes()
+	return bz, nil
 }
 
 // GenerateWrappedPV generate a wrapped tendermint private validator key
-func GenerateWrappedPV(secret []byte) *WrappedPV {
+func GenerateWrappedPV(secret []byte) *FilePV {
 	privKey := ed25519.GenPrivKeyFromSecret(secret)
-	wpv := WrappedPV{FilePV: &privval.FilePV{
+	wpv := FilePV{FilePV: &privval.FilePV{
 		Key: privval.FilePVKey{
 			PubKey:  privKey.PubKey(),
 			PrivKey: privKey,

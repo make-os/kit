@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore"
 	kstypes "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/modules/types"
@@ -182,7 +182,7 @@ func (m *UserModule) GetKeys() []string {
 //
 //  - address: The address corresponding the the local key
 //  - [passphrase]: The passphrase of the local key
-func (m *UserModule) getKey(address string, passphrase string) *crypto.Key {
+func (m *UserModule) getKey(address string, passphrase string) *ed25519.Key {
 
 	if address == "" {
 		panic(util.ReqErr(400, StatusCodeAddressRequire, "address", "address is required"))
@@ -441,7 +441,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 			Commission: tx.Commission.Float(),
 			Nonce:      tx.Nonce,
 			Fee:        cast.ToFloat64(tx.Fee.String()),
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -493,7 +493,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
 			Fee:        cast.ToFloat64(tx.Fee.String()),
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)

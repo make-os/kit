@@ -10,9 +10,9 @@ import (
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 	"github.com/spf13/cast"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmEd25519 "github.com/tendermint/tendermint/crypto/ed25519"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 
 	"github.com/make-os/kit/util"
 
@@ -192,14 +192,12 @@ func (m *NodeModule) GetValidators(height string) (res []util.Map) {
 	}
 
 	var vList []util.Map
-	for pubKey, valInfo := range validators {
-		var pub32 ed25519.PubKeyEd25519
-		copy(pub32[:], pubKey.Bytes())
-		pubKey := crypto.MustPubKeyFromBytes(pubKey.Bytes())
+	for valPubKey, valInfo := range validators {
+		pubKey := ed25519.MustPubKeyFromBytes(valPubKey.Bytes())
 		vList = append(vList, map[string]interface{}{
 			"pubkey":   pubKey.Base58(),
 			"address":  pubKey.Addr(),
-			"tmAddr":   pub32.Address().String(),
+			"tmAddr":   tmEd25519.PubKey(valPubKey.Bytes()).Address().String(),
 			"ticketId": valInfo.TicketID.String(),
 		})
 	}

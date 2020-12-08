@@ -1,7 +1,7 @@
 package updatedelpushkey
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/common"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -66,7 +66,7 @@ func (c *Contract) Exec() error {
 debit_fee:
 
 	// Deduct network fee + proposal fee from sender
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	common.DebitAccount(c, spk, c.tx.Fee.Decimal(), c.chainHeight)
 
 	return nil

@@ -1,7 +1,7 @@
 package depositproposalfee
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/common"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -35,7 +35,7 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 
 // Exec executes the contract
 func (c *Contract) Exec() error {
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the repo and proposal
 	repoKeeper := c.RepoKeeper()

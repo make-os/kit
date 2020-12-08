@@ -3,7 +3,7 @@ package unbondticket
 import (
 	"fmt"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -39,7 +39,7 @@ func (c *Contract) Exec() error {
 
 	// Get sender account
 	acctKeeper := c.AccountKeeper()
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	senderAcct := acctKeeper.Get(spk.Addr(), c.chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 

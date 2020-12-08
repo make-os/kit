@@ -1,7 +1,7 @@
 package txns
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
@@ -15,8 +15,8 @@ type TxTicketPurchase struct {
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Delegate  crypto.PublicKey `json:"delegate" msgpack:"delegate" mapstructure:"delegate"`
-	BLSPubKey util.Bytes       `json:"blsPubKey" msgpack:"blsPubKey" mapstructure:"blsPubKey"`
+	Delegate  ed25519.PublicKey `json:"delegate" msgpack:"delegate" mapstructure:"delegate"`
+	BLSPubKey util.Bytes        `json:"blsPubKey" msgpack:"blsPubKey" mapstructure:"blsPubKey"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
@@ -25,7 +25,7 @@ func NewBareTxTicketPurchase(ticketType types.TxCode) *TxTicketPurchase {
 		TxType:    &TxType{Type: ticketType},
 		TxCommon:  NewBareTxCommon(),
 		TxValue:   &TxValue{Value: "0"},
-		Delegate:  crypto.EmptyPublicKey,
+		Delegate:  ed25519.EmptyPublicKey,
 		BLSPubKey: []byte{},
 	}
 }
@@ -34,7 +34,7 @@ func NewBareTxTicketPurchase(ticketType types.TxCode) *TxTicketPurchase {
 func NewTicketPurchaseTx(
 	ticketType types.TxCode,
 	nonce uint64,
-	senderKey *crypto.Key,
+	senderKey *ed25519.Key,
 	value util.String,
 	fee util.String,
 	timestamp int64) (baseTx types.BaseTx) {
@@ -141,11 +141,11 @@ func (tx *TxTicketPurchase) FromMap(data map[string]interface{}) error {
 	o := objx.New(data)
 
 	if delVal := o.Get("delegate"); !delVal.IsNil() && delVal.IsStr() {
-		pubKey, err := crypto.PubKeyFromBase58(delVal.Str())
+		pubKey, err := ed25519.PubKeyFromBase58(delVal.Str())
 		if err != nil {
 			return util.FieldError("delegate", "unable to decode from base58")
 		}
-		o.Set("delegate", crypto.BytesToPublicKey(pubKey.MustBytes()))
+		o.Set("delegate", ed25519.BytesToPublicKey(pubKey.MustBytes()))
 	}
 
 	if blsPKVal := o.Get("blsPubKey"); !blsPKVal.IsNil() && blsPKVal.IsStr() {

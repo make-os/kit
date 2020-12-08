@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/storage"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 
@@ -61,13 +62,13 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 }
 
 // GetDB test databases
-func GetDB() (appDB *storage.Badger, stateTreeDB *storage.Badger) {
-	appDB = storage.NewBadger()
-	if err := appDB.Init(""); err != nil {
+func GetDB() (appDB *storage.BadgerStore, stateTreeDB tmdb.DB) {
+	appDB, err := storage.NewBadger("")
+	if err != nil {
 		panic(err)
 	}
-	stateTreeDB = storage.NewBadger()
-	if err := stateTreeDB.Init(""); err != nil {
+	stateTreeDB, err = storage.NewBadgerTMDB("")
+	if err != nil {
 		panic(err)
 	}
 	return appDB, stateTreeDB

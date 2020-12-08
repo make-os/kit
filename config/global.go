@@ -3,7 +3,7 @@ package config
 import (
 	golog "log"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 
 	"github.com/tendermint/tendermint/privval"
@@ -21,7 +21,7 @@ type Globals struct {
 	Bus       *emitter.Emitter
 	NodeKey   *p2p.NodeKey
 	TMConfig  *tmcfg.Config
-	PrivVal   *crypto.WrappedPV
+	PrivVal   *ed25519.FilePV
 	Interrupt *util.Interrupt
 }
 
@@ -45,7 +45,7 @@ func (c *AppConfig) LoadKeys(nodeKeyFile, privValKeyFile, privValStateFile strin
 
 	// Set references for node key and priv val
 	c.g.NodeKey = nodeKey
-	c.g.PrivVal = &crypto.WrappedPV{FilePV: pv}
+	c.g.PrivVal = &ed25519.FilePV{FilePV: pv}
 
 	return nodeKey
 }

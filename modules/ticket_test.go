@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	crypto2 "github.com/make-os/kit/crypto"
+	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/ticket/types"

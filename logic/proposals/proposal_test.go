@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	logic2 "github.com/make-os/kit/logic"
 	"github.com/make-os/kit/logic/proposals"
 	"github.com/make-os/kit/mocks"
@@ -17,15 +17,17 @@ import (
 	"github.com/make-os/kit/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 var _ = Describe("ProposalHandler", func() {
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *logic2.Logic
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 	var repo *state.Repository
 
 	BeforeEach(func() {

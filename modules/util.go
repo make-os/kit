@@ -10,7 +10,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/constants"
@@ -167,7 +167,7 @@ func (m *ConsoleUtilModule) GenKey(seed ...int64) util.Map {
 		s = &seed[0]
 	}
 
-	key, err := crypto.NewKey(s)
+	key, err := ed25519.NewKey(s)
 	if err != nil {
 		panic(err)
 	}

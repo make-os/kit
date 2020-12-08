@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	mocks2 "github.com/make-os/kit/mocks/rpc"
 	"github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/types/api"
@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("ClientUtils", func() {
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 	var rpcClient *mocks2.MockClient
 	var rpcUserClient *mocks2.MockUser
 	var rpcPkClient *mocks2.MockPushKey

@@ -1,4 +1,4 @@
-package crypto
+package ed25519
 
 import (
 	"bytes"
@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
-	"github.com/tendermint/tendermint/libs/bech32"
 )
 
 // PublicKey represents a 32-byte ED25519 public key

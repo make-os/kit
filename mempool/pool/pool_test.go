@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/state"
@@ -39,7 +39,7 @@ var _ = Describe("pool", func() {
 	Describe(".Put", func() {
 		It("should return err = 'capacity reached' when pool capacity is reached", func() {
 			tp := New(0, nil, nil)
-			sender := crypto.NewKeyFromIntSeed(1)
+			sender := ed25519.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			_, err := tp.Put(tx)
 			Expect(err).ToNot(BeNil())
@@ -51,7 +51,7 @@ var _ = Describe("pool", func() {
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
 			tp := New(10, mockKeepers, emitter.New(10))
-			sender := crypto.NewKeyFromIntSeed(1)
+			sender := ed25519.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			_, err := tp.Put(tx)
 			Expect(err).To(BeNil())
@@ -64,7 +64,7 @@ var _ = Describe("pool", func() {
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
 			tp := New(1, mockKeepers, emitter.New(10))
-			sender := crypto.NewKeyFromIntSeed(1)
+			sender := ed25519.NewKeyFromIntSeed(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0", time.Now().Unix())
 			_, err := tp.Put(tx)
 			Expect(err).To(BeNil())
@@ -96,7 +96,7 @@ var _ = Describe("pool", func() {
 	Describe(".Has", func() {
 
 		var tp *Pool
-		var sender = crypto.NewKeyFromIntSeed(1)
+		var sender = ed25519.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
 			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
@@ -119,7 +119,7 @@ var _ = Describe("pool", func() {
 	Describe(".Size", func() {
 
 		var tp *Pool
-		var sender = crypto.NewKeyFromIntSeed(1)
+		var sender = ed25519.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
 			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
@@ -140,8 +140,8 @@ var _ = Describe("pool", func() {
 
 		var tx, tx2 types.BaseTx
 		var tp *Pool
-		var sender = crypto.NewKeyFromIntSeed(1)
-		var sender2 = crypto.NewKeyFromIntSeed(2)
+		var sender = ed25519.NewKeyFromIntSeed(1)
+		var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
 			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
@@ -188,9 +188,9 @@ var _ = Describe("pool", func() {
 
 		var tp *Pool
 		var tx, tx2, tx3 types.BaseTx
-		var sender = crypto.NewKeyFromIntSeed(1)
-		var sender2 = crypto.NewKeyFromIntSeed(2)
-		var sender3 = crypto.NewKeyFromIntSeed(3)
+		var sender = ed25519.NewKeyFromIntSeed(1)
+		var sender2 = ed25519.NewKeyFromIntSeed(2)
+		var sender3 = ed25519.NewKeyFromIntSeed(3)
 
 		BeforeEach(func() {
 			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
@@ -219,8 +219,8 @@ var _ = Describe("pool", func() {
 
 		var tp *Pool
 		var tx, tx2 types.BaseTx
-		var sender = crypto.NewKeyFromIntSeed(1)
-		var sender2 = crypto.NewKeyFromIntSeed(2)
+		var sender = ed25519.NewKeyFromIntSeed(1)
+		var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
 			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()

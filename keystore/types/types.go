@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 )
 
 type KeyType int
@@ -23,7 +23,7 @@ var KeyTypeChar = map[KeyType]string{
 // StoredKey represents a locally persisted key
 type StoredKey interface {
 	GetMeta() StoredKeyMeta
-	GetKey() *crypto.Key
+	GetKey() *ed25519.Key
 	GetPayload() *KeyPayload
 	Unlock(passphrase string) error
 	GetFilename() string
@@ -75,8 +75,8 @@ type Keystore interface {
 	GetByIndex(i int) (StoredKey, error)
 	GetByIndexOrAddress(idxOrAddr string) (StoredKey, error)
 	GetByAddress(addr string) (StoredKey, error)
-	CreateKey(key *crypto.Key, keyType KeyType, passphrase string) error
-	CreateCmd(keyType KeyType, seed int64, passphrase string, nopass bool) (*crypto.Key, error)
+	CreateKey(key *ed25519.Key, keyType KeyType, passphrase string) error
+	CreateCmd(keyType KeyType, seed int64, passphrase string, nopass bool) (*ed25519.Key, error)
 	List() (accounts []StoredKey, err error)
 	ListCmd(out io.Writer) error
 }

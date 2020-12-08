@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/push/types"
@@ -82,7 +82,7 @@ var _ = Describe("Reactor", func() {
 				ProposerPubKey: svr.validatorKey.PubKey().MustBytes32(),
 			}}
 			tickets := tickettypes.SelectedTickets{ticket}
-			svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
+			svr.endorsementCreator = func(validatorKey *ed25519.Key, note types.PushNote) (*types.PushEndorsement, error) {
 				return nil, fmt.Errorf("error")
 			}
 			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
@@ -104,7 +104,7 @@ var _ = Describe("Reactor", func() {
 				}}
 				tickets := tickettypes.SelectedTickets{ticket}
 
-				svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
+				svr.endorsementCreator = func(validatorKey *ed25519.Key, note types.PushNote) (*types.PushEndorsement, error) {
 					return end, nil
 				}
 

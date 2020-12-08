@@ -795,6 +795,8 @@ github.com/make-os/btcutil v1.0.2-fork/go.mod h1:VR/BWZaDjtsT9e4C0UFbaPe2jIKlWF2
 github.com/make-os/btcutil v1.0.2/go.mod h1:j9HUFwoQRsZL3V4n+qG+CUnEGHOarIxfC3Le2Yhbcts=
 github.com/make-os/tendermint v0.34.0-rc4.0.20201207155555-c88ef610fc8f h1:LNKQ/tUe7BapYZ6K23o+10Ae+V4k0AGccAGNy7OOwj0=
 github.com/make-os/tendermint v0.34.0-rc4.0.20201207155555-c88ef610fc8f/go.mod h1:2wtxGBf+j7zV3fYlXAj5gMxFW8gp+Qh0sRXyEdQ7wSk=
+github.com/make-os/tendermint v0.34.0-rc4.0.20201207191223-e101ff2d82fe h1:Ny1rsV3XAcmc4jdr47EOxzFdKo8h3Q6DONYrTNMT44M=
+github.com/make-os/tendermint v0.34.0-rc4.0.20201207191223-e101ff2d82fe/go.mod h1:2wtxGBf+j7zV3fYlXAj5gMxFW8gp+Qh0sRXyEdQ7wSk=
 github.com/make-os/tendermint v0.34.0 h1:paNCG+vBw1cSFVfBirf2VfUtgKMyWUzQgvjyAp6k1KU=
 github.com/make-os/tendermint v0.34.0/go.mod h1:Aj3PIipBFSNO21r+Lq3TtzQ+uKESxkbA3yo/INM4QwQ=
 github.com/markbates/inflect v1.0.0/go.mod h1:oTeZL2KHA7CUX6X+fovmK9OvIOFuqu0TwdQrZjLTh88=
@@ -1177,9 +1179,11 @@ github.com/tendermint/btcd v0.1.1/go.mod h1:DC6/m53jtQzr/NFmMNEu0rxf18/ktVoVtMrn
 github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15/go.mod h1:z4YtwM70uOnk8h0pjJYlj3zdYwi9l03By6iAIF5j/Pk=
 github.com/tendermint/go-amino v0.14.1 h1:o2WudxNfdLNBwMyl2dqOJxiro5rfrEaU0Ugs6offJMk=
 github.com/tendermint/go-amino v0.14.1/go.mod h1:i/UKE5Uocn+argJJBb12qTZsCDBcAYMbR92AaJVmKso=
+github.com/tendermint/go-amino v0.15.1 h1:D2uk35eT4iTsvJd9jWIetzthE5C0/k2QmMFkCN+4JgQ=
 github.com/tendermint/go-amino v0.15.1/go.mod h1:TQU0M1i/ImAo+tYpZi73AU3V/dKeCoMC9Sphe2ZwGME=
 github.com/tendermint/iavl v0.12.4 h1:hd1woxUGISKkfUWBA4mmmTwOua6PQZTJM/F0FDrmMV8=
 github.com/tendermint/iavl v0.12.4/go.mod h1:8LHakzt8/0G3/I8FUU0ReNx98S/EP6eyPJkAUvEXT/o=
+github.com/tendermint/iavl v0.14.1 h1:jz7YOvGiPwmcqqVMcSMjxCu4WXtQYGhKdKrWTTJ5EKs=
 github.com/tendermint/iavl v0.14.1/go.mod h1:QmfViflFiXzxKLQE4tAUuWQHq+RSuQFxablW5oJZ6sE=
 github.com/tendermint/tm-db v0.1.1/go.mod h1:0cPKWu2Mou3IlxecH+MEUSYc1Ch537alLe6CpFrKzgw=
 github.com/tendermint/tm-db v0.2.0 h1:rJxgdqn6fIiVJZy4zLpY1qVlyD0TU6vhkT4kEf71TQQ=

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
@@ -57,11 +57,11 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 type TxCommon struct {
 	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
 	*types.Meta    `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce          uint64           `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
-	Fee            util.String      `json:"fee" msgpack:"fee" mapstructure:"fee"`
-	Sig            util.Bytes       `json:"sig" msgpack:"sig" mapstructure:"sig"`
-	Timestamp      int64            `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
-	SenderPubKey   crypto.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	Nonce          uint64            `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee            util.String       `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig            util.Bytes        `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp      int64             `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey   ed25519.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
 }
 
 func (tx *TxCommon) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -89,7 +89,7 @@ func NewBareTxCommon() *TxCommon {
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,
-		SenderPubKey: crypto.EmptyPublicKey,
+		SenderPubKey: ed25519.EmptyPublicKey,
 	}
 }
 
@@ -139,19 +139,19 @@ func (tx *TxCommon) SetTimestamp(t int64) {
 }
 
 // GetSenderPubKey returns the transaction sender public key
-func (tx *TxCommon) GetSenderPubKey() crypto.PublicKey {
+func (tx *TxCommon) GetSenderPubKey() ed25519.PublicKey {
 	return tx.SenderPubKey
 }
 
 // SetSenderPubKey set the transaction sender public key
 func (tx *TxCommon) SetSenderPubKey(pk []byte) {
-	tx.SenderPubKey = crypto.BytesToPublicKey(pk)
+	tx.SenderPubKey = ed25519.BytesToPublicKey(pk)
 }
 
 // GetFrom returns the address of the transaction sender
 // Panics if sender's public key is invalid
 func (tx *TxCommon) GetFrom() identifier.Address {
-	pk, err := crypto.PubKeyFromBytes(tx.SenderPubKey.Bytes())
+	pk, err := ed25519.PubKeyFromBytes(tx.SenderPubKey.Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -161,7 +161,7 @@ func (tx *TxCommon) GetFrom() identifier.Address {
 // SignTransaction signs a transaction.
 // Expects private key in base58Check encoding.
 func SignTransaction(tx types.BaseTx, privKey string) ([]byte, error) {
-	pKey, err := crypto.PrivKeyFromBase58(privKey)
+	pKey, err := ed25519.PrivKeyFromBase58(privKey)
 	if err != nil {
 		return nil, err
 	}

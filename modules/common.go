@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -38,7 +38,7 @@ var se = util.ReqErr
 // If more than 1 option = [0] is expected to be the key and [1] the payload only instruction.
 // Panics if types are not expected.
 // Panics if key is not a valid private key.
-func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool) {
+func parseOptions(options ...interface{}) (pk *ed25519.PrivKey, payloadOnly bool) {
 
 	var key string
 	if len(options) == 1 {
@@ -67,7 +67,7 @@ func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool)
 
 	if key != "" {
 		var err error
-		if pk, err = crypto.PrivKeyFromBase58(key); err != nil {
+		if pk, err = ed25519.PrivKeyFromBase58(key); err != nil {
 			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
 		}
 	}
@@ -85,13 +85,13 @@ func parseOptions(options ...interface{}) (pk *crypto.PrivKey, payloadOnly bool)
 //
 //  - options[0]: <string|bool> 	- key or payloadOnly request
 //  - options[1]: [<bool>] 		- payload request
-func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, options ...interface{}) (bool, *crypto.PrivKey) {
+func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, options ...interface{}) (bool, *ed25519.PrivKey) {
 
 	key, payloadOnly := parseOptions(options...)
 
 	// Set sender public key if unset and key was provided
 	if tx.GetSenderPubKey().IsEmpty() && key != nil {
-		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(key).PubKey().MustBytes())
+		tx.SetSenderPubKey(ed25519.NewKeyFromPrivKey(key).PubKey().MustBytes())
 	}
 
 	// Set timestamp if not already set
@@ -206,10 +206,10 @@ func Normalize(res interface{}, ignoreFields ...string) interface{} {
 			m[k] = o.HexStr()
 		case util.Bytes64:
 			m[k] = o.HexStr()
-		case crypto.PublicKey:
-			m[k] = crypto.MustPubKeyFromBytes(o[:]).Base58()
-		case crypto.PushKey:
-			m[k] = crypto.BytesToPushKeyID(o[:])
+		case ed25519.PublicKey:
+			m[k] = ed25519.MustPubKeyFromBytes(o[:]).Base58()
+		case ed25519.PushKey:
+			m[k] = ed25519.BytesToPushKeyID(o[:])
 
 		// custom wrapped map[string]struct
 		// custom wrapped map[string]string

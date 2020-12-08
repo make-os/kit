@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	rr "github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/remote/types"
 	state2 "github.com/make-os/kit/types/state"
@@ -35,13 +35,13 @@ var _ = Describe("Repo", func() {
 	var cfg *config.AppConfig
 	var path, repoName string
 	var r types.LocalRepo
-	var key *crypto.Key
+	var key *ed25519.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
-		key = crypto.NewKeyFromIntSeed(1)
+		key = ed25519.NewKeyFromIntSeed(1)
 	})
 
 	BeforeEach(func() {

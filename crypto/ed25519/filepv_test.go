@@ -1,11 +1,11 @@
-package crypto
+package ed25519
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("WrappedPV", func() {
+var _ = Describe("FilePV", func() {
 	Describe(".GetKey", func() {
 		It("should return expected key and no error", func() {
 			wpv := GenerateWrappedPV([]byte("abc"))

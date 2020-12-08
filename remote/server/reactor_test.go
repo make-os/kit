@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
@@ -51,7 +51,7 @@ var _ = Describe("Reactor", func() {
 	var mockTxKeeper *mocks.MockTxKeeper
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 	var testRepo remotetypes.LocalRepo
 	var refname = "refs/heads/master"
 
@@ -1037,7 +1037,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 				svr.registerNoteEndorsement(pushNote.ID().String(), end2)
 
-				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).DoAndReturn(func(tx types2.BaseTx) error {
+				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).DoAndReturn(func(tx types2.BaseTx) (bool, error) {
 					// NoteID and SigBLS fields must be unset
 					Expect(tx.(*txns.TxPush).Endorsements).To(HaveLen(2))
 					Expect(tx.(*txns.TxPush).Endorsements[0].NoteID).To(BeNil())
@@ -1048,7 +1048,7 @@ var _ = Describe("Reactor", func() {
 					// 0-index reference must be non-nil. Greater than 0-index must be nil
 					Expect(tx.(*txns.TxPush).Endorsements[0].References).ToNot(BeNil())
 					Expect(tx.(*txns.TxPush).Endorsements[1].References).To(BeNil())
-					return nil
+					return false, nil
 				})
 				err = svr.createPushTx(pushNote.ID().String())
 

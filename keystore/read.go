@@ -6,7 +6,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	types2 "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
@@ -35,7 +35,7 @@ type StoredKey struct {
 	Data []byte
 
 	// privKey is the actual ed25519 key
-	privKey *crypto.Key
+	privKey *ed25519.Key
 
 	// key is the actual key content stored on disk
 	key *types2.KeyPayload
@@ -89,7 +89,7 @@ func (sk *StoredKey) GetPushKeyAddress() string {
 
 // GetKey returns the underlying Ed25519 key.
 // Unlock() must be called first.
-func (sk *StoredKey) GetKey() *crypto.Key {
+func (sk *StoredKey) GetKey() *ed25519.Key {
 	return sk.privKey
 }
 
@@ -137,11 +137,11 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	sk.key = &key
 
 	// Convert the secret key to PrivKey object
-	privKey, err := crypto.PrivKeyFromBase58(key.SecretKey)
+	privKey, err := ed25519.PrivKeyFromBase58(key.SecretKey)
 	if err != nil {
 		return err
 	}
-	sk.privKey = crypto.NewKeyFromPrivKey(privKey)
+	sk.privKey = ed25519.NewKeyFromPrivKey(privKey)
 
 	return nil
 }
@@ -184,7 +184,7 @@ func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (types2.StoredKey, err
 	if idxOrAddr == "" {
 		return nil, fmt.Errorf("index or address of key is required")
 	}
-	if crypto.IsValidUserAddr(idxOrAddr) == nil || crypto.IsValidPushAddr(idxOrAddr) == nil {
+	if ed25519.IsValidUserAddr(idxOrAddr) == nil || ed25519.IsValidPushAddr(idxOrAddr) == nil {
 		return ks.GetByAddress(idxOrAddr)
 	}
 	if govalidator.IsNumeric(idxOrAddr) {

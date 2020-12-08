@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push/types"
@@ -27,7 +27,7 @@ import (
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var privKey *crypto.Key
+	var privKey *ed25519.Key
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockTickMgr *mocks.MockTicketManager
@@ -43,7 +43,7 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		privKey = crypto.NewKeyFromIntSeed(1)
+		privKey = ed25519.NewKeyFromIntSeed(1)
 
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
@@ -62,7 +62,7 @@ var _ = Describe("Validation", func() {
 	})
 
 	Describe(".CheckPushNoteSanity", func() {
-		key := crypto.NewKeyFromIntSeed(1)
+		key := ed25519.NewKeyFromIntSeed(1)
 		nodePubKey := key.PubKey().MustBytes32()
 		okNote := &types.Note{RepoName: "repo", PushKeyID: util.RandBytes(20),
 			Timestamp: time.Now().Unix(), CreatorPubKey: key.PubKey().MustBytes32()}
@@ -354,7 +354,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &types.Note{RepoName: "repo1", PushKeyID: util.RandBytes(20)}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -375,7 +375,7 @@ var _ = Describe("Validation", func() {
 
 				pushKey := state.BarePushKey()
 				pushKey.Address = "address2"
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -396,7 +396,7 @@ var _ = Describe("Validation", func() {
 
 				pushKey := state.BarePushKey()
 				pushKey.Address = "address1"
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
 
@@ -416,7 +416,7 @@ var _ = Describe("Validation", func() {
 
 				pushKey := state.BarePushKey()
 				pushKey.Address = "address1"
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -444,7 +444,7 @@ var _ = Describe("Validation", func() {
 				pushKey := state.BarePushKey()
 				pushKey.Address = "address1"
 				pushKey.PubKey = privKey.PubKey().ToPublicKey()
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -473,7 +473,7 @@ var _ = Describe("Validation", func() {
 
 				pushKey := state.BarePushKey()
 				pushKey.Address = "address1"
-				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -584,7 +584,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return no error when endorsement is valid", func() {
-			key := crypto.NewKeyFromIntSeed(1)
+			key := ed25519.NewKeyFromIntSeed(1)
 			end := &types.PushEndorsement{
 				NoteID:         []byte("id"),
 				EndorserPubKey: key.PubKey().MustBytes32(),
@@ -614,7 +614,7 @@ var _ = Describe("Validation", func() {
 
 		When("sender is not a host", func() {
 			BeforeEach(func() {
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
 				end := &types.PushEndorsement{NoteID: []byte("id"), EndorserPubKey: key.PubKey().MustBytes32()}
 				err = validation.CheckEndorsementConsistency(end, mockLogic, false, -1)
@@ -628,7 +628,7 @@ var _ = Describe("Validation", func() {
 
 		When("unable to decode host's BLS public key", func() {
 			BeforeEach(func() {
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				ticket := &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: util.RandBytes(128)}
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{{Ticket: ticket}}, nil)
 				end := &types.PushEndorsement{NoteID: []byte("id"), EndorserPubKey: key.PubKey().MustBytes32()}
@@ -643,8 +643,8 @@ var _ = Describe("Validation", func() {
 
 		When("unable to verify BLS signature", func() {
 			BeforeEach(func() {
-				key := crypto.NewKeyFromIntSeed(1)
-				key2 := crypto.NewKeyFromIntSeed(2)
+				key := ed25519.NewKeyFromIntSeed(1)
+				key2 := ed25519.NewKeyFromIntSeed(2)
 				ticket := &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: key2.PrivKey().BLSKey().Public().Bytes()}
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{{Ticket: ticket}}, nil)
 				end := &types.PushEndorsement{NoteID: []byte("id"), EndorserPubKey: key.PubKey().MustBytes32(), SigBLS: util.RandBytes(64)}
@@ -659,8 +659,8 @@ var _ = Describe("Validation", func() {
 
 		When("noBLSSigCheck is true", func() {
 			BeforeEach(func() {
-				key := crypto.NewKeyFromIntSeed(1)
-				key2 := crypto.NewKeyFromIntSeed(2)
+				key := ed25519.NewKeyFromIntSeed(1)
+				key2 := ed25519.NewKeyFromIntSeed(2)
 				ticket := &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: key2.PrivKey().BLSKey().Public().Bytes()}
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{{Ticket: ticket}}, nil)
 				end := &types.PushEndorsement{NoteID: []byte("id"), EndorserPubKey: key.PubKey().MustBytes32()}

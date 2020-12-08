@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/types"
@@ -21,7 +21,7 @@ import (
 var _ = Describe("TxDetail", func() {
 	var err error
 	var cfg *config.AppConfig
-	var privKey, privKey2 *crypto.Key
+	var privKey, privKey2 *ed25519.Key
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockRepoKeeper *mocks.MockRepoKeeper
@@ -35,8 +35,8 @@ var _ = Describe("TxDetail", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		privKey = crypto.NewKeyFromIntSeed(1)
-		privKey2 = crypto.NewKeyFromIntSeed(2)
+		privKey = ed25519.NewKeyFromIntSeed(1)
+		privKey2 = ed25519.NewKeyFromIntSeed(2)
 
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
@@ -341,7 +341,7 @@ var _ = Describe("TxDetail", func() {
 
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
-			pk.PubKey = crypto.BytesToPublicKey([]byte("bad key"))
+			pk.PubKey = ed25519.BytesToPublicKey([]byte("bad key"))
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
 			acct := state.BareAccount()

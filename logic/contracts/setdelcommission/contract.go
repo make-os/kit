@@ -1,7 +1,7 @@
 package setdelcommission
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
@@ -35,7 +35,7 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 // Exec executes the contract
 func (c *Contract) Exec() error {
 
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	acctKeeper := c.AccountKeeper()
 
 	// Get sender accounts

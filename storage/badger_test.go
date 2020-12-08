@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/make-os/kit/storage/common"
 	"github.com/make-os/kit/storage/types"
@@ -16,7 +17,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Badger", func() {
+func TestStorage(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Storage Suite")
+}
+
+var _ = Describe("BadgerStore", func() {
 	var c types.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -24,7 +30,8 @@ var _ = Describe("Badger", func() {
 	BeforeEach(func() {
 		Expect(err).To(BeNil())
 		cfg, _ = testutil.SetTestCfg()
-		c = storage.NewBadger()
+		c, err = storage.NewBadger("")
+		Expect(err).To(BeNil())
 	})
 
 	AfterEach(func() {
@@ -33,30 +40,16 @@ var _ = Describe("Badger", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".Init", func() {
-		It("should return no error", func() {
-			Expect(c.Init(cfg.GetAppDBDir())).To(BeNil())
-		})
-
-		It("should return no error when no directory is set", func() {
-			Expect(c.Init("")).To(BeNil())
-		})
-	})
-
 	Describe("Test basic operations", func() {
-		BeforeEach(func() {
-			Expect(c.Init(cfg.GetAppDBDir())).To(BeNil())
-		})
-
 		Describe(".Put", func() {
 			var beforeTx *badger.Txn
 
 			BeforeEach(func() {
-				beforeTx = c.(*storage.Badger).WrappedTx.GetTx()
+				beforeTx = c.(*storage.BadgerStore).Tx.GetTx()
 			})
 
 			AfterEach(func() {
-				curTx := c.(*storage.Badger).WrappedTx.GetTx()
+				curTx := c.(*storage.BadgerStore).Tx.GetTx()
 				Expect(curTx).ToNot(Equal(beforeTx))
 			})
 
@@ -66,7 +59,7 @@ var _ = Describe("Badger", func() {
 				expected := make([]byte, len(value))
 				err := c.Put(common.NewRecord(key, value))
 				Expect(err).To(BeNil())
-				c.(*storage.Badger).GetDB().View(func(txn *badger.Txn) error {
+				c.(*storage.BadgerStore).GetDB().View(func(txn *badger.Txn) error {
 					item, err := txn.Get(key)
 					Expect(err).To(BeNil())
 					Expect(item.ValueSize()).To(Equal(int64(len(value))))
@@ -84,14 +77,14 @@ var _ = Describe("Badger", func() {
 			var beforeTx *badger.Txn
 
 			BeforeEach(func() {
-				beforeTx = c.(*storage.Badger).WrappedTx.GetTx()
+				beforeTx = c.(*storage.BadgerStore).Tx.GetTx()
 				kv = common.NewFromKeyValue(key, value)
 				err := c.Put(common.NewRecord(key, value))
 				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
-				curTx := c.(*storage.Badger).WrappedTx.GetTx()
+				curTx := c.(*storage.BadgerStore).Tx.GetTx()
 				Expect(curTx).ToNot(Equal(beforeTx))
 			})
 
@@ -108,14 +101,14 @@ var _ = Describe("Badger", func() {
 			var beforeTx *badger.Txn
 
 			BeforeEach(func() {
-				beforeTx = c.(*storage.Badger).WrappedTx.GetTx()
+				beforeTx = c.(*storage.BadgerStore).Tx.GetTx()
 				err := c.Put(common.NewRecord(key, value))
 				Expect(err).To(BeNil())
 				Expect(c.Del(key)).To(BeNil())
 			})
 
 			AfterEach(func() {
-				curTx := c.(*storage.Badger).WrappedTx.GetTx()
+				curTx := c.(*storage.BadgerStore).Tx.GetTx()
 				Expect(curTx).ToNot(Equal(beforeTx))
 			})
 
@@ -132,13 +125,13 @@ var _ = Describe("Badger", func() {
 			var beforeTx *badger.Txn
 
 			BeforeEach(func() {
-				beforeTx = c.(*storage.Badger).WrappedTx.GetTx()
+				beforeTx = c.(*storage.BadgerStore).Tx.GetTx()
 				Expect(c.Put(k1)).To(BeNil())
 				Expect(c.Put(k2)).To(BeNil())
 			})
 
 			AfterEach(func() {
-				curTx := c.(*storage.Badger).WrappedTx.GetTx()
+				curTx := c.(*storage.BadgerStore).Tx.GetTx()
 				Expect(curTx).ToNot(Equal(beforeTx))
 			})
 

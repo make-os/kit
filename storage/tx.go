@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// WrappedTx implements types.Tx
-type WrappedTx struct {
+// Tx implements types.Tx
+type Tx struct {
 	sync.RWMutex
 
 	// db is the badger database
@@ -28,13 +28,13 @@ type WrappedTx struct {
 	renew bool
 }
 
-// NewTx returns an instance of WrappedTx
-func NewTx(db *badger.DB, finish, renew bool) *WrappedTx {
-	return &WrappedTx{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
+// NewTx returns an instance of Tx
+func NewTx(db *badger.DB, finish, renew bool) *Tx {
+	return &Tx{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
 }
 
 // GetTx get the underlying transaction
-func (t *WrappedTx) GetTx() *badger.Txn {
+func (t *Tx) GetTx() *badger.Txn {
 	t.Lock()
 	defer t.Unlock()
 	return t.tx
@@ -45,20 +45,20 @@ func (t *WrappedTx) GetTx() *badger.Txn {
 // each successful operation.
 // renew: reinitialize the transaction after each operation. Requires
 // autoFinish to be enabled.
-func (t *WrappedTx) NewTx(autoFinish, renew bool) types.Tx {
+func (t *Tx) NewTx(autoFinish, renew bool) types.Tx {
 	return NewTx(t.db, autoFinish, renew)
 }
 
 // CanFinish checks whether transaction is automatically committed
 // after every successful operation.
-func (t *WrappedTx) CanFinish() bool {
+func (t *Tx) CanFinish() bool {
 	t.RLock()
 	defer t.RUnlock()
 	return t.finish
 }
 
 // commit commits the transaction if auto commit is enabled
-func (t *WrappedTx) commit() error {
+func (t *Tx) commit() error {
 	defer t.renewTx()
 
 	t.RLock()
@@ -73,14 +73,14 @@ func (t *WrappedTx) commit() error {
 }
 
 // Commit commits the transaction
-func (t *WrappedTx) Commit() error {
+func (t *Tx) Commit() error {
 	t.Lock()
 	defer t.Unlock()
 	return t.tx.Commit()
 }
 
 // renewTx renews the transaction only if auto renew and auto finish are enabled
-func (t *WrappedTx) renewTx() {
+func (t *Tx) renewTx() {
 	t.Lock()
 	defer t.Unlock()
 	if t.finish && t.renew {
@@ -89,7 +89,7 @@ func (t *WrappedTx) renewTx() {
 }
 
 // Discard discards the transaction
-func (t *WrappedTx) Discard() {
+func (t *Tx) Discard() {
 	t.Lock()
 	defer t.Unlock()
 	t.tx.Discard()
@@ -97,7 +97,7 @@ func (t *WrappedTx) Discard() {
 
 // Put adds a record to the database.
 // It will discard the transaction if an error occurred.
-func (t *WrappedTx) Put(record *common.Record) error {
+func (t *Tx) Put(record *common.Record) error {
 	t.renewTx()
 	t.Lock()
 	err := t.tx.Set(record.GetKey(), record.Value)
@@ -111,7 +111,7 @@ func (t *WrappedTx) Put(record *common.Record) error {
 }
 
 // Get a record by key
-func (t *WrappedTx) Get(key []byte) (*common.Record, error) {
+func (t *Tx) Get(key []byte) (*common.Record, error) {
 	t.renewTx()
 	t.Lock()
 	defer t.Unlock()
@@ -133,14 +133,14 @@ func (t *WrappedTx) Get(key []byte) (*common.Record, error) {
 }
 
 // RenewTx forcefully renews the underlying transaction.
-func (t *WrappedTx) RenewTx() {
+func (t *Tx) RenewTx() {
 	t.Lock()
 	defer t.Unlock()
 	t.tx = t.db.NewTransaction(true)
 }
 
 // Del deletes a record by key
-func (t *WrappedTx) Del(key []byte) error {
+func (t *Tx) Del(key []byte) error {
 	t.renewTx()
 	defer t.commit()
 
@@ -161,7 +161,7 @@ func (t *WrappedTx) Del(key []byte) error {
 //
 // If first is set to true, it begins from the first record, otherwise,
 // it will begin from the last record
-func (t *WrappedTx) Iterate(prefix []byte, first bool, iterFunc func(rec *common.Record) bool) {
+func (t *Tx) Iterate(prefix []byte, first bool, iterFunc func(rec *common.Record) bool) {
 	t.renewTx()
 	opts := badger.DefaultIteratorOptions
 	opts.Reverse = !first
@@ -188,13 +188,13 @@ func (t *WrappedTx) Iterate(prefix []byte, first bool, iterFunc func(rec *common
 }
 
 // RawIterator returns badger's Iterator
-func (t *WrappedTx) RawIterator(opts interface{}) interface{} {
+func (t *Tx) RawIterator(opts interface{}) interface{} {
 	t.Lock()
 	defer t.Unlock()
 	return t.tx.NewIterator(opts.(badger.IteratorOptions))
 }
 
 // NewBatch returns a batch writer
-func (t *WrappedTx) NewBatch() interface{} {
+func (t *Tx) NewBatch() interface{} {
 	return t.db.NewWriteBatch()
 }

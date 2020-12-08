@@ -1,13 +1,10 @@
 package logic
 
 import (
-	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/logic/contracts"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
-	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/state"
 )
 
 // ExecTx executes a transaction.
@@ -35,9 +32,6 @@ func (l *Logic) ExecTx(args *core.ExecArgs) abcitypes.ResponseDeliverTx {
 
 		// Initialize the contract and execute the transaction
 		if err := contract.Init(l, args.Tx, args.ChainHeight).Exec(); err != nil {
-			if errors.Cause(err).Error() == dht.ErrObjNotFound.Error() {
-				errCode = state.ErrCodeReExecBlock
-			}
 			return abcitypes.ResponseDeliverTx{Code: errCode, Log: "failed to execute tx: " + err.Error()}
 		}
 

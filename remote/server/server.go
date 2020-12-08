@@ -12,7 +12,7 @@ import (
 
 	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	dhttypes "github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/params"
@@ -76,7 +76,7 @@ type Server struct {
 	pushPool                   pushtypes.PushPool                      // The transaction pool for push transactions
 	mempool                    core.Mempool                            // The general transaction pool for block-bound transaction
 	logic                      core.Logic                              // logic is the application logic provider
-	validatorKey               *crypto.Key                             // the node's private validator key for signing transactions
+	validatorKey               *ed25519.Key                            // the node's private validator key for signing transactions
 	pushKeyGetter              core.PushKeyGetter                      // finds and returns PGP public key
 	dht                        dhttypes.DHT                            // The dht service
 	objfetcher                 fetcher.ObjectFetcher                   // The object fetcher service
@@ -215,10 +215,10 @@ func (sv *Server) GetFetcher() fetcher.ObjectFetcher {
 }
 
 // getPushKey returns a pusher key by its ID
-func (sv *Server) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
+func (sv *Server) getPushKey(pushKeyID string) (ed25519.PublicKey, error) {
 	pk := sv.logic.PushKeyKeeper().Get(pushKeyID)
 	if pk.IsNil() {
-		return crypto.EmptyPublicKey, fmt.Errorf("push key does not exist")
+		return ed25519.EmptyPublicKey, fmt.Errorf("push key does not exist")
 	}
 	return pk.PubKey, nil
 }
@@ -339,7 +339,7 @@ func (sv *Server) GetRepo(name string) (remotetypes.LocalRepo, error) {
 }
 
 // GetPrivateValidatorKey implements RepositoryManager
-func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
+func (sv *Server) GetPrivateValidatorKey() *ed25519.Key {
 	return sv.validatorKey
 }
 

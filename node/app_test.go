@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/params"
 	pushtypes "github.com/make-os/kit/remote/push/types"
@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/tendermint/tendermint/privval"
+	db "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/logic/keepers"
 	"github.com/make-os/kit/types"
@@ -23,7 +24,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	tmEd25519 "github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/make-os/kit/ticket"
 
@@ -42,7 +43,7 @@ func TestNode(t *testing.T) {
 }
 
 func genFilePV(bz []byte) *privval.FilePV {
-	privKey := ed25519.GenPrivKeyFromSecret(bz)
+	privKey := tmEd25519.GenPrivKeyFromSecret(bz)
 	return &privval.FilePV{
 		Key: privval.FilePVKey{
 			Address: privKey.PubKey().Address(),
@@ -53,14 +54,15 @@ func genFilePV(bz []byte) *privval.FilePV {
 }
 
 var _ = Describe("App", func() {
-	var c, stateTreeDB storagetypes.Engine
+	var c storagetypes.Engine
+	var stateTreeDB db.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *l.Logic
 	var app *App
 	var ticketmgr *ticket.Manager
 	var ctrl *gomock.Controller
-	var sender = crypto.NewKeyFromIntSeed(1)
+	var sender = ed25519.NewKeyFromIntSeed(1)
 	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
@@ -179,8 +181,8 @@ var _ = Describe("App", func() {
 		})
 
 		When("when no validator currently exists and two tickets are randomly selected", func() {
-			var key = crypto.NewKeyFromIntSeed(1)
-			var key2 = crypto.NewKeyFromIntSeed(1)
+			var key = ed25519.NewKeyFromIntSeed(1)
+			var key2 = ed25519.NewKeyFromIntSeed(1)
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
@@ -204,8 +206,8 @@ var _ = Describe("App", func() {
 		})
 
 		When("when one validator currently exists and another different validator is selected", func() {
-			var existingValKey = crypto.NewKeyFromIntSeed(1)
-			var keyOfNewTicket = crypto.NewKeyFromIntSeed(2)
+			var existingValKey = ed25519.NewKeyFromIntSeed(1)
+			var keyOfNewTicket = ed25519.NewKeyFromIntSeed(2)
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
@@ -231,7 +233,7 @@ var _ = Describe("App", func() {
 				Expect(resp.ValidatorUpdates).To(HaveLen(2))
 				Expect(resp.ValidatorUpdates[1].Power).To(Equal(int64(0)))
 				pubKeyBz, _ := existingValKey.PubKey().Bytes()
-				Expect(resp.ValidatorUpdates[1].PubKey.GetData()).To(Equal(pubKeyBz))
+				Expect(resp.ValidatorUpdates[1].PubKey.GetEd25519()).To(Equal(pubKeyBz))
 			})
 
 			It("should add new validator and set power to 1", func() {
@@ -241,12 +243,12 @@ var _ = Describe("App", func() {
 				Expect(resp.ValidatorUpdates).To(HaveLen(2))
 				Expect(resp.ValidatorUpdates[0].Power).To(Equal(int64(1)))
 				pubKeyBz, _ := keyOfNewTicket.PubKey().Bytes()
-				Expect(resp.ValidatorUpdates[0].PubKey.GetData()).To(Equal(pubKeyBz))
+				Expect(resp.ValidatorUpdates[0].PubKey.GetEd25519()).To(Equal(pubKeyBz))
 			})
 		})
 
 		When("when error occurred when fetching current validators", func() {
-			var key = crypto.NewKeyFromIntSeed(1)
+			var key = ed25519.NewKeyFromIntSeed(1)
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
@@ -368,7 +370,7 @@ var _ = Describe("App", func() {
 	Describe(".BeginBlock", func() {
 		When("current block proposer is the same as the private validator", func() {
 			BeforeEach(func() {
-				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
+				pv := ed25519.FilePV{FilePV: genFilePV([]byte("xyz"))}
 				cfg.G().PrivVal = &pv
 
 				req := abcitypes.RequestBeginBlock{}

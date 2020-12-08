@@ -1,14 +1,14 @@
 package txns
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Common", func() {
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 
 	Describe("TxCommon.FromMap", func() {
 		It("case 1", func() {

@@ -2,7 +2,7 @@ package state
 
 import (
 	"github.com/imdario/mergo"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/util"
 	"github.com/mitchellh/mapstructure"
@@ -50,7 +50,7 @@ type Reference struct {
 	util.CodecUtil `json:"-" mapstructure:"-" msgpack:"-"`
 
 	// Creator is the raw push key ID of the reference creator
-	Creator crypto.PushKey `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+	Creator ed25519.PushKey `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
 
 	// Nonce is the current count of commits on the reference.
 	// It is used to enforce order of operation to the reference.

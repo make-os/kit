@@ -11,7 +11,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/shopspring/decimal"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/params"
@@ -62,7 +62,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		// Since this is a delegated ticket, we need to get the proposer's
 		// commission rate from their account, write it to the ticket so that it
 		// is locked and immutable by a future commission rate update.
-		pk := crypto.MustPubKeyFromBytes(ticket.ProposerPubKey.Bytes())
+		pk := ed25519.MustPubKeyFromBytes(ticket.ProposerPubKey.Bytes())
 		proposerAcct := m.logic.AccountKeeper().Get(pk.Addr())
 		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
@@ -199,7 +199,7 @@ func (m *Manager) GetUnExpiredTickets(pubKey util.Bytes32, maturityHeight uint64
 		maturityHeight = uint64(bi.Height)
 	}
 
-	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
+	pk, err := ed25519.PubKeyFromBytes(pubKey.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func (m *Manager) ValueOfTickets(
 		maturityHeight = uint64(bi.Height)
 	}
 
-	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
+	pk, err := ed25519.PubKeyFromBytes(pubKey.Bytes())
 	if err != nil {
 		return 0, err
 	}

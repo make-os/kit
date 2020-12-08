@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,10 +32,10 @@ var _ = Describe("List", func() {
 		When("two keys are created. one is KeyTypeUser and the other is KeyTypePush", func() {
 			BeforeEach(func() {
 				ks = New(keyDir)
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
-				key2 := crypto.NewKeyFromIntSeed(2)
+				key2 := ed25519.NewKeyFromIntSeed(2)
 				err = ks.CreateKey(key2, types.KeyTypePush, "")
 				Expect(err).To(BeNil())
 			})

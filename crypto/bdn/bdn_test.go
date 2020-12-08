@@ -3,6 +3,7 @@ package bdn
 import (
 	"bytes"
 	"io"
+	"testing"
 
 	. "github.com/onsi/ginkgo"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -13,6 +14,11 @@ import (
 
 	"github.com/make-os/kit/util"
 )
+
+func TestBDN(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "BDN Suite")
+}
 
 func readerFromBytes(bz []byte) *resetableReader {
 	return &resetableReader{

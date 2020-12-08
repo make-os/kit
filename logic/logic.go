@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/kit/logic/keepers"
 	"github.com/make-os/kit/logic/proposals"
 	"github.com/make-os/kit/pkgs/tree"
-	"github.com/make-os/kit/storage"
 	storagetypes "github.com/make-os/kit/storage/types"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/core"
@@ -19,6 +18,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 // Logic is the central point for defining and accessing
@@ -79,9 +79,9 @@ type Logic struct {
 
 // New creates an instance of Logic
 // PANICS: If unable to load state tree
-func New(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.AppConfig) *Logic {
+func New(db storagetypes.Engine, stateTreeDB tmdb.DB, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
-	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
+	l := newLogicWithTx(dbTx, stateTreeDB, cfg)
 	l._db = db
 
 	// Initialize keepers that do not perform atomic operations with a shared transaction.
@@ -93,8 +93,8 @@ func New(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.Ap
 
 // NewAtomic creates an instance of Logic that supports atomic database
 // operations across all keepers and logic providers.
-func NewAtomic(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *config.AppConfig) *Logic {
-	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
+func NewAtomic(db storagetypes.Engine, stateTreeDB tmdb.DB, cfg *config.AppConfig) *Logic {
+	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB, cfg)
 	l._db = db
 
 	// Initialize keepers that do not perform atomic operations with a shared transaction.
@@ -107,11 +107,10 @@ func NewAtomic(db storagetypes.Engine, stateTreeDB storagetypes.Engine, cfg *con
 
 // newLogicWithTx creates a Logic instance using an externally provided DB transaction.
 // All keepers will use the transactions allowing for atomic state operations across them.
-func newLogicWithTx(dbTx, stateTreeDBTx storagetypes.Tx, cfg *config.AppConfig) *Logic {
+func newLogicWithTx(dbTx storagetypes.Tx, stateTreeDBTx tmdb.DB, cfg *config.AppConfig) *Logic {
 
 	// Load the state tree
-	dbAdapter := storage.NewTMDBAdapter(stateTreeDBTx)
-	safeTree := tree.NewSafeTree(dbAdapter, 5000)
+	safeTree, _ := tree.NewSafeTree(stateTreeDBTx, 5000)
 	if _, err := safeTree.Load(); err != nil {
 		panic(errors.Wrap(err, "failed to load state tree"))
 	}

@@ -14,7 +14,9 @@ var _ = Describe("NamespaceKeeper", func() {
 	var nsKp *NamespaceKeeper
 
 	BeforeEach(func() {
-		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		var err error
+		state, err = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		Expect(err).To(BeNil())
 		nsKp = NewNamespaceKeeper(state)
 	})
 

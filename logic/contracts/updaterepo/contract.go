@@ -1,7 +1,7 @@
 package updaterepo
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/common"
 	"github.com/make-os/kit/logic/proposals"
 	"github.com/make-os/kit/types"
@@ -46,7 +46,7 @@ func (c *Contract) Exec() error {
 	repo := repoKeeper.Get(c.tx.RepoName)
 
 	// Create a proposal
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpdate
 	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)

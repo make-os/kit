@@ -19,13 +19,14 @@ var _ = Describe("RepoKeeper", func() {
 	var rk *RepoKeeper
 	var err error
 	var cfg *config.AppConfig
-	var appDB *storage.Badger
+	var appDB *storage.BadgerStore
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		appDB, _ = testutil.GetDB()
-		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		state, err = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		Expect(err).To(BeNil())
 		rk = NewRepoKeeper(state, appDB)
 	})
 

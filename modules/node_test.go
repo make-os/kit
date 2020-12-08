@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/types/constants"
@@ -112,7 +112,7 @@ var _ = Describe("NodeModule", func() {
 		})
 
 		It("should return a list of validators on success", func() {
-			key := crypto.NewKeyFromIntSeed(1)
+			key := ed25519.NewKeyFromIntSeed(1)
 			ticketID := util.StrToHexBytes("ticket_id")
 			vals := core.BlockValidators{
 				key.PubKey().MustBytes32(): &core.Validator{PubKey: key.PubKey().MustBytes32(), TicketID: ticketID},

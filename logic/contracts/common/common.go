@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
@@ -16,7 +16,7 @@ const (
 
 // DebitAccount debits an account of a specific amount.
 // It increments the account's nonce and persist the updates.
-func DebitAccount(keepers core.Keepers, targetAcct *crypto.PubKey, amount decimal.Decimal, chainHeight uint64) {
+func DebitAccount(keepers core.Keepers, targetAcct *ed25519.PubKey, amount decimal.Decimal, chainHeight uint64) {
 
 	// Get the sender account and balance
 	acctKeeper := keepers.AccountKeeper()

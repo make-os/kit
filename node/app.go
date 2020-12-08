@@ -20,7 +20,6 @@ import (
 	"github.com/make-os/kit/validation"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmstate "github.com/tendermint/tendermint/state"
 )
 
 type ticketInfo struct {
@@ -136,11 +135,6 @@ func (a *App) Info(abcitypes.RequestInfo) abcitypes.ResponseInfo {
 		LastBlockHeight:  lastBlockHeight,
 		LastBlockAppHash: lastBlockAppHash,
 	}
-}
-
-// SetOption set non-consensus critical application specific options.
-func (a *App) SetOption(abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
-	return abcitypes.ResponseSetOption{}
 }
 
 // CheckTx a proposed transaction for admission into the mempool.
@@ -288,14 +282,6 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 		ValidateTx:  validation.ValidateTx,
 	})
 
-	// If the transaction returns an ErrCodeReExecBlock code, discard current
-	// uncommitted state updates and return immediately because the current
-	// block will be re-applied
-	if resp.Code == tmstate.ErrCodeReExecBlock {
-		a.logic.Discard()
-		return resp
-	}
-
 	// Perform post-execution checks
 	return *a.postExecChecks(tx, &resp)
 }
@@ -328,15 +314,10 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	var newValidators []*core.Validator           // for validator keeper
 	var vIndex = map[string]struct{}{}
 	for _, st := range selected {
-		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
-			PubKey: abcitypes.PubKey{Type: "ed25519", Data: st.Ticket.ProposerPubKey.Bytes()},
-			Power:  1,
-		})
-		newValidators = append(newValidators, &core.Validator{
-			PubKey:   st.Ticket.ProposerPubKey,
-			TicketID: st.Ticket.Hash,
-		})
-		vIndex[st.Ticket.ProposerPubKey.HexStr()] = struct{}{}
+		pubKey := st.Ticket.ProposerPubKey
+		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 1))
+		newValidators = append(newValidators, &core.Validator{PubKey: pubKey, TicketID: st.Ticket.Hash})
+		vIndex[pubKey.HexStr()] = struct{}{}
 	}
 
 	// Get current validators
@@ -351,10 +332,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		if _, ok := vIndex[pubKey.HexStr()]; ok {
 			continue
 		}
-		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
-			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pubKey.Bytes()},
-			Power:  0,
-		})
+		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 0))
 	}
 
 	// Set the new validators
@@ -431,7 +409,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	a.expireHostTickets()
 
 	// Create new repositories
-	a.createGitRepositories()
+	_ = a.createGitRepositories()
 
 	// Mark all merge proposals as closed.
 	a.markMergeProposalAsClosed()
@@ -523,7 +501,7 @@ func (a *App) markMergeProposalAsClosed() {
 // expireHostTickets sets the expiry height of unbonded host tickets
 func (a *App) expireHostTickets() {
 	for _, ticketHash := range a.unbondHostReqs {
-		a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
+		_ = a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
 	}
 }
 
@@ -561,4 +539,20 @@ func (a *App) indexTickets() {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
+}
+
+func (a *App) ListSnapshots(snapshots abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {
+	panic("implement me")
+}
+
+func (a *App) OfferSnapshot(snapshot abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
+	panic("implement me")
+}
+
+func (a *App) LoadSnapshotChunk(chunk abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
+	panic("implement me")
+}
+
+func (a *App) ApplySnapshotChunk(chunk abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
+	panic("implement me")
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/rpc/types"
 	api2 "github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/util/api"
@@ -70,12 +70,12 @@ type RegisterArgs struct {
 // RegisterCmd creates a transaction to register a public key as a push key
 func RegisterCmd(cfg *config.AppConfig, args *RegisterArgs) error {
 
-	var pubKeyToReg crypto.PublicKey
+	var pubKeyToReg ed25519.PublicKey
 
 	// Check if target to register is a valid public key.
 	// If not, we assume it is an ID of a local account and attempt to unlock it.
-	if crypto.IsValidPubKey(args.Target) == nil {
-		pk, _ := crypto.PubKeyFromBase58(args.Target)
+	if ed25519.IsValidPubKey(args.Target) == nil {
+		pk, _ := ed25519.PubKeyFromBase58(args.Target)
 		pubKeyToReg = pk.ToPublicKey()
 	} else {
 		key, err := args.KeyUnlocker(cfg, &common.UnlockKeyArgs{

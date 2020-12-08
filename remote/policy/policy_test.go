@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/remote/policy"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
@@ -23,12 +23,12 @@ var _ = Describe("Auth", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var key *crypto.Key
+	var key *ed25519.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		key = crypto.NewKeyFromIntSeed(1)
+		key = ed25519.NewKeyFromIntSeed(1)
 		ctrl = gomock.NewController(GinkgoT())
 	})
 

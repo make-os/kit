@@ -14,6 +14,7 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/core"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/util"
@@ -58,7 +59,7 @@ type Node struct {
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
 	db             storagetypes.Engine
-	stateTreeDB    storagetypes.Engine
+	stateTreeDB    tmdb.DB
 	tm             *nm.Node
 	service        services.Service
 	logic          core.AtomicLogic
@@ -91,13 +92,13 @@ func (n *Node) OpenDB() error {
 		return fmt.Errorf("db already open")
 	}
 
-	db := storage.NewBadger()
-	if err := db.Init(n.cfg.GetAppDBDir()); err != nil {
+	db, err := storage.NewBadger("")
+	if err != nil {
 		return err
 	}
 
-	stateTreeDB := storage.NewBadger()
-	if err := stateTreeDB.Init(n.cfg.GetStateTreeDBDir()); err != nil {
+	stateTreeDB, err := storage.NewBadgerTMDB("")
+	if err != nil {
 		return err
 	}
 

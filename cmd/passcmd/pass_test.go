@@ -56,7 +56,8 @@ var _ = Describe("Pass", func() {
 			It("should fail when cache duration is bad", func() {
 				args := &passcmd.PassArgs{CacheDuration: "1z"}
 				err := passcmd.PassCmd(args)
-				Expect(err).To(MatchError("bad duration: time: unknown unit z in duration 1z"))
+				Expect(err).To(Not(BeNil()))
+				Expect(err.Error()).To(Equal("bad duration: time: unknown unit \"z\" in duration \"1z\""))
 			})
 
 			It("should attempt to start agent process if not already started but return error when unable to start the agent", func() {

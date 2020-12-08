@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	logic2 "github.com/make-os/kit/logic"
 	"github.com/make-os/kit/logic/contracts/gitpush"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
@@ -23,6 +23,7 @@ import (
 	crypto2 "github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 func TestGitPush(t *testing.T) {
@@ -31,14 +32,15 @@ func TestGitPush(t *testing.T) {
 }
 
 var _ = Describe("Contract", func() {
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *logic2.Logic
 	var ctrl *gomock.Controller
-	var sender = crypto.NewKeyFromIntSeed(1)
-	var pushKeyID = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID"))
-	var pushKeyID2 = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID2"))
+	var sender = ed25519.NewKeyFromIntSeed(1)
+	var pushKeyID = ed25519.CreatePushKeyID(ed25519.StrToPublicKey("pushKeyID"))
+	var pushKeyID2 = ed25519.CreatePushKeyID(ed25519.StrToPublicKey("pushKeyID2"))
 	var rawPkID []byte
 
 	BeforeEach(func() {
@@ -77,7 +79,7 @@ var _ = Describe("Contract", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
-			logic.PushKeyKeeper().Update(pushKeyID, &state.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: sender.Addr()})
+			logic.PushKeyKeeper().Update(pushKeyID, &state.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: sender.Addr()})
 			logic.RepoKeeper().Update(repo, &state.Repository{
 				Config: state.DefaultRepoConfig,
 				References: map[string]*state.Reference{
@@ -96,7 +98,7 @@ var _ = Describe("Contract", func() {
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
-				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(crypto.PushKey(rawPkID)))
+				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(ed25519.PushKey(rawPkID)))
 			})
 		})
 
@@ -124,7 +126,7 @@ var _ = Describe("Contract", func() {
 				rep := logic.RepoKeeper().Get(repo)
 				Expect(rep.References.Get("refs/heads/master").Creator).ToNot(Equal(rawPkID))
 				actual := crypto2.MustDecodePushKeyID(pushKeyID)
-				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(crypto.PushKey(actual)))
+				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(ed25519.PushKey(actual)))
 			})
 		})
 
@@ -177,7 +179,7 @@ var _ = Describe("Contract", func() {
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
-				Expect(rep.References.Get(ref).Creator).To(Equal(crypto.PushKey(rawPkID)))
+				Expect(rep.References.Get(ref).Creator).To(Equal(ed25519.PushKey(rawPkID)))
 				Expect(rep.References[ref].Data.Closed).To(BeTrue())
 				Expect(rep.References[ref].Data.Labels).To(Equal(labels))
 				Expect(rep.References[ref].Data.Assignees).To(Equal(assignees))
@@ -195,7 +197,7 @@ var _ = Describe("Contract", func() {
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
-				Expect(rep.References.Get(issueRef1).Creator).To(Equal(crypto.PushKey(creator)))
+				Expect(rep.References.Get(issueRef1).Creator).To(Equal(ed25519.PushKey(creator)))
 				Expect(rep.References[issueRef1].Data.Closed).To(BeTrue())
 				Expect(rep.References[issueRef1].Data.Labels).To(Equal(issue1RefData.Labels))
 				Expect(rep.References[issueRef1].Data.Assignees).To(Equal(issue1RefData.Assignees))

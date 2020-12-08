@@ -8,8 +8,8 @@ import (
 	"encoding/hex"
 	"io"
 
+	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
-	"github.com/tendermint/tendermint/libs/bech32"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/ripemd160"
 )

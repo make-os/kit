@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
 	types2 "github.com/make-os/kit/rpc/types"
@@ -169,7 +169,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 			Value:      cast.ToFloat64(tx.Value.String()),
 			Fee:        cast.ToFloat64(tx.Fee.String()),
 			Delegate:   tx.Delegate,
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -229,7 +229,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 			Fee:        cast.ToFloat64(tx.Fee.String()),
 			Delegate:   tx.Delegate,
 			BLSPubKey:  tx.BLSPubKey,
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -277,7 +277,7 @@ func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, quer
 		return util.StructSliceToMap(resp)
 	}
 
-	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
+	pk, err := ed25519.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "proposerPubKey", err.Error()))
 	}
@@ -325,7 +325,7 @@ func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts
 		return util.StructSliceToMap(resp)
 	}
 
-	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
+	pk, err := ed25519.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
@@ -418,7 +418,7 @@ func (m *TicketModule) GetStats(proPubKey ...string) (result util.Map) {
 	}
 
 	// At this point, we need to get stats for the given proposer public key.
-	pk, err := crypto.PubKeyFromBase58(proPubKey[0])
+	pk, err := ed25519.PubKeyFromBase58(proPubKey[0])
 	if err != nil {
 		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}

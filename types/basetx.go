@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/vmihailenco/msgpack"
@@ -24,7 +24,7 @@ type BaseTx interface {
 	SetSignature(s []byte)
 
 	// GetSenderPubKey returns the transaction sender public key
-	GetSenderPubKey() crypto.PublicKey
+	GetSenderPubKey() ed25519.PublicKey
 
 	// SetSenderPubKey sets the transaction sender public key
 	SetSenderPubKey(pk []byte)

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
@@ -96,7 +96,7 @@ func (pt *Note) GetPusherAccountNonce() uint64 {
 
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed with 0x
 func (pt *Note) GetPusherKeyIDString() string {
-	return crypto.BytesToPushKeyID(pt.PushKeyID)
+	return ed25519.BytesToPushKeyID(pt.PushKeyID)
 }
 
 // GetTimestamp returns the timestamp

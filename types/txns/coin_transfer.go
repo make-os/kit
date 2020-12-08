@@ -1,7 +1,7 @@
 package txns
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
@@ -32,7 +32,7 @@ func NewBareTxCoinTransfer() *TxCoinTransfer {
 func NewCoinTransferTx(
 	nonce uint64,
 	to identifier.Address,
-	senderKey *crypto.Key,
+	senderKey *ed25519.Key,
 	value util.String,
 	fee util.String,
 	timestamp int64) (baseTx types.BaseTx) {

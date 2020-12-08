@@ -39,31 +39,17 @@ func (m *MockMempool) EXPECT() *MockMempoolMockRecorder {
 }
 
 // CheckTx mocks base method
-func (m *MockMempool) CheckTx(tx types1.Tx, callback func(*types0.Response)) error {
+func (m *MockMempool) CheckTx(tx types1.Tx, callback func(*types0.Response), txInfo mempool.TxInfo) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckTx", tx, callback)
+	ret := m.ctrl.Call(m, "CheckTx", tx, callback, txInfo)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CheckTx indicates an expected call of CheckTx
-func (mr *MockMempoolMockRecorder) CheckTx(tx, callback interface{}) *gomock.Call {
+func (mr *MockMempoolMockRecorder) CheckTx(tx, callback, txInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTx", reflect.TypeOf((*MockMempool)(nil).CheckTx), tx, callback)
-}
-
-// CheckTxWithInfo mocks base method
-func (m *MockMempool) CheckTxWithInfo(tx types1.Tx, callback func(*types0.Response), txInfo mempool.TxInfo) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckTxWithInfo", tx, callback, txInfo)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckTxWithInfo indicates an expected call of CheckTxWithInfo
-func (mr *MockMempoolMockRecorder) CheckTxWithInfo(tx, callback, txInfo interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTxWithInfo", reflect.TypeOf((*MockMempool)(nil).CheckTxWithInfo), tx, callback, txInfo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTx", reflect.TypeOf((*MockMempool)(nil).CheckTx), tx, callback, txInfo)
 }
 
 // ReapMaxBytesMaxGas mocks base method
@@ -213,9 +199,11 @@ func (mr *MockMempoolMockRecorder) TxsBytes() *gomock.Call {
 }
 
 // InitWAL mocks base method
-func (m *MockMempool) InitWAL() {
+func (m *MockMempool) InitWAL() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitWAL")
+	ret := m.ctrl.Call(m, "InitWAL")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InitWAL indicates an expected call of InitWAL

@@ -165,17 +165,31 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Remotes["r2"].URLs).To(ContainElement("remote3.com"))
 		})
 
-		It("should set default remote if no user-defined remote", func() {
-			args := &ConfigArgs{Remotes: []Remote{}}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Remotes).To(HaveLen(1))
-			Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
-			Expect(repoCfg.Remotes["origin"].URLs).To(ContainElement(fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, "repo1")))
+		When("no user defined remote", func() {
+			It("should set default remote", func() {
+				config.DefaultRemoteServerAddress = "127.0.0.1:9000"
+				args := &ConfigArgs{Remotes: []Remote{}}
+				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+				err = ConfigCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+				Expect(repoCfg.Remotes).To(HaveLen(1))
+				Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
+				Expect(repoCfg.Remotes["origin"].URLs).To(ContainElement(fmt.Sprintf("http://%s/r/%s", config.DefaultRemoteServerAddress, "repo1")))
+			})
+
+			It("should set default remote host to localhost if it is missing", func() {
+				config.DefaultRemoteServerAddress = ":9000"
+				args := &ConfigArgs{Remotes: []Remote{}}
+				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+				err = ConfigCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+				Expect(repoCfg.Remotes).To(HaveLen(1))
+				Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
+				Expect(repoCfg.Remotes["origin"].URLs).To(ContainElement(fmt.Sprintf("http://127.0.0.1:9000/r/%s", "repo1")))
+			})
 		})
 
-		It("should add pre-push hook and askpass hook files", func() {
+		It("should add pre-push hook file", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
 			err = ConfigCmd(cfg, mockRepo, args)

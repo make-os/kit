@@ -13,10 +13,12 @@ import (
 
 var _ = Describe("Account", func() {
 	var state *tree.SafeTree
+	var err error
 	var ak *AccountKeeper
 
 	BeforeEach(func() {
-		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		state, err = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		Expect(err).To(BeNil())
 		ak = NewAccountKeeper(state)
 	})
 

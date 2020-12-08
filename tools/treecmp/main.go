@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cosmos/iavl"
 	"github.com/fatih/color"
 	"github.com/google/go-cmp/cmp"
 	"github.com/k0kubun/pp"
@@ -15,15 +16,15 @@ import (
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/make-os/kit/util/crypto"
-	"github.com/tendermint/iavl"
+	tmdb "github.com/tendermint/tm-db"
 )
 
-func getAdapter(stateDBPath string) *storage.TMDBAdapter {
-	stateTreeDB := storage.NewBadger()
-	if err := stateTreeDB.Init(stateDBPath); err != nil {
+func getAdapter(stateDBPath string) tmdb.DB {
+	stateTreeDB, err := storage.NewBadgerTMDB("")
+	if err != nil {
 		panic(err)
 	}
-	return storage.NewTMDBAdapter(stateTreeDB)
+	return stateTreeDB
 }
 
 type Diffs struct {
@@ -63,7 +64,10 @@ func findAndPrintDiffKeys(version int64, paths ...string) []Diffs {
 	// Load trees
 	for _, p := range paths {
 		adapter := getAdapter(p)
-		tree := iavl.NewMutableTree(adapter, 5000)
+		tree, err := iavl.NewMutableTree(adapter, 5000)
+		if err != nil {
+			panic(err)
+		}
 		tree.Load()
 		tree.LoadVersion(version)
 		trees = append(trees, &TreePath{tree: tree, path: p})

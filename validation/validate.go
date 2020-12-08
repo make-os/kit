@@ -8,7 +8,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 )
 
 var feI = util.FieldErrorWithIndex
@@ -126,7 +126,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 //
 // CONTRACT: Sender public key must be validated by the caller.
 func checkSignature(tx types.BaseTx, index int) (errs []error) {
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {
 		errs = append(errs, feI(index, "sig", err.Error()))

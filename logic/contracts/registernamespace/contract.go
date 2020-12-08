@@ -1,7 +1,7 @@
 package registernamespace
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -36,7 +36,7 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 
 // Exec executes the contract
 func (c *Contract) Exec() error {
-	spk := crypto.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk := ed25519.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the current namespace object and re-populate it
 	ns := c.NamespaceKeeper().Get(c.tx.Name)

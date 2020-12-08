@@ -9,10 +9,11 @@ import (
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	l "github.com/make-os/kit/logic"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
@@ -31,13 +32,14 @@ func TestTicket(t *testing.T) {
 
 var _ = Describe("Manager", func() {
 	var err error
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var cfg *config.AppConfig
 	var mgr *Manager
 	var logic *l.Logic
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
-	var key2 = crypto.NewKeyFromIntSeed(2)
+	var key = ed25519.NewKeyFromIntSeed(1)
+	var key2 = ed25519.NewKeyFromIntSeed(2)
 	var mockSysKeeper *mocks.MockSystemKeeper
 	var mockLogic *mocks.MockLogic
 
@@ -62,7 +64,7 @@ var _ = Describe("Manager", func() {
 
 	Describe(".GetByProposer", func() {
 		When("ticket of matching type exist", func() {
-			ticket := &tickettypes.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
+			ticket := &tickettypes.Ticket{ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
@@ -71,7 +73,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1 ticket", func() {
-				tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, crypto.StrToPublicKey("pub_key").ToBytes32())
+				tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, ed25519.StrToPublicKey("pub_key").ToBytes32())
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0]).To(Equal(ticket))
@@ -79,7 +81,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("matching unable to find ticket with matching type", func() {
-			ticket := &tickettypes.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
+			ticket := &tickettypes.Ticket{ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(), Type: txns.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
@@ -88,7 +90,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 0 ticket", func() {
-				tickets, err := mgr.GetByProposer(1000, crypto.StrToPublicKey("pub_key").ToBytes32())
+				tickets, err := mgr.GetByProposer(1000, ed25519.StrToPublicKey("pub_key").ToBytes32())
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(0))
 			})
@@ -96,28 +98,28 @@ var _ = Describe("Manager", func() {
 
 		When("with query options", func() {
 			ticket := &tickettypes.Ticket{
-				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       50,
 				ExpireBy:       1000,
 			}
 			ticketB := &tickettypes.Ticket{
-				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       101,
 				ExpireBy:       1000,
 			}
 			ticketC := &tickettypes.Ticket{
-				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       50,
 				ExpireBy:       1000,
 			}
 			ticketD := &tickettypes.Ticket{
-				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.HexBytes(util.RandBytes(32)),
 				Type:           txns.TxTypeValidatorTicket,
 				MatureBy:       101,
@@ -133,7 +135,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				Specify("that only immature tickets are returned", func() {
-					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, crypto.StrToPublicKey("pub_key").ToBytes32(), tickettypes.QueryOptions{
+					tickets, err := mgr.GetByProposer(txns.TxTypeValidatorTicket, ed25519.StrToPublicKey("pub_key").ToBytes32(), tickettypes.QueryOptions{
 						Immature: true,
 					})
 					Expect(err).To(BeNil())
@@ -268,8 +270,8 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".CountActiveValidatorTickets", func() {
-		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 200}
-		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 150}
+		ticket := &tickettypes.Ticket{Hash: util.StrToHexBytes("h1"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 200}
+		ticket2 := &tickettypes.Ticket{Hash: util.StrToHexBytes("h2"), Type: txns.TxTypeValidatorTicket, ProposerPubKey: ed25519.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, ExpireBy: 150}
 
 		When("only one live ticket exist", func() {
 			BeforeEach(func() {
@@ -356,14 +358,14 @@ var _ = Describe("Manager", func() {
 		When("tx.Delegate is set  - delegated ticket", func() {
 			var tickets []*tickettypes.Ticket
 			var tx types.BaseTx
-			var proposer = crypto.NewKeyFromIntSeed(2)
-			var delegator = crypto.NewKeyFromIntSeed(3)
+			var proposer = ed25519.NewKeyFromIntSeed(2)
+			var delegator = ed25519.NewKeyFromIntSeed(3)
 
 			BeforeEach(func() {
 				txn := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				txn.Value = "35"
-				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
+				txn.SenderPubKey = ed25519.BytesToPublicKey(delegator.PubKey().MustBytes())
+				txn.Delegate = ed25519.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -387,8 +389,8 @@ var _ = Describe("Manager", func() {
 		When("tx.Delegate is set and the proposer's commission rate is 50", func() {
 			var tickets []*tickettypes.Ticket
 			var tx types.BaseTx
-			var proposer = crypto.NewKeyFromIntSeed(2)
-			var delegator = crypto.NewKeyFromIntSeed(3)
+			var proposer = ed25519.NewKeyFromIntSeed(2)
+			var delegator = ed25519.NewKeyFromIntSeed(3)
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(proposer.Addr(), &state.Account{
@@ -401,8 +403,8 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				txn.Value = "35"
-				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
+				txn.SenderPubKey = ed25519.BytesToPublicKey(delegator.PubKey().MustBytes())
+				txn.Delegate = ed25519.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -423,7 +425,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				txn.Value = "35"
-				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
+				txn.SenderPubKey = ed25519.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -450,7 +452,7 @@ var _ = Describe("Manager", func() {
 				params.MaxTicketActiveDur = 40
 				txn := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				txn.Value = "35"
-				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
+				txn.SenderPubKey = ed25519.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())

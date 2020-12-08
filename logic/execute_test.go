@@ -9,6 +9,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/validation"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/types"
 
@@ -40,7 +41,8 @@ func (t testSystemContract) Exec() error {
 }
 
 var _ = Describe("Transaction", func() {
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *Logic

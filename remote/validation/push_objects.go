@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/make-os/kit/crypto"
 	"github.com/make-os/kit/crypto/bdn"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	pptyp "github.com/make-os/kit/remote/push/types"
@@ -164,7 +164,7 @@ func GetTxDetailsFromNote(note pptyp.PushNote, targetRefs ...string) (details []
 			Fee:             ref.Fee,
 			Value:           ref.Value,
 			Nonce:           note.GetPusherAccountNonce(),
-			PushKeyID:       crypto.BytesToPushKeyID(note.GetPusherKeyID()),
+			PushKeyID:       ed25519.BytesToPushKeyID(note.GetPusherKeyID()),
 			Signature:       base58.Encode(ref.PushSig),
 			MergeProposalID: ref.MergeProposalID,
 			Head:            ref.NewHash,
@@ -252,7 +252,7 @@ func CheckPushNoteSanity(note pptyp.PushNote) error {
 		return util.FieldError("nodePubKey", "push node public key is required")
 	}
 
-	pk, err := crypto.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
+	pk, err := ed25519.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
 	if err != nil {
 		return util.FieldError("nodePubKey", "push node public key is not valid")
 	}
@@ -296,7 +296,7 @@ func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 	}
 
 	// Get push key of the pusher
-	pushKey := logic.PushKeyKeeper().Get(crypto.BytesToPushKeyID(note.GetPusherKeyID()))
+	pushKey := logic.PushKeyKeeper().Get(ed25519.BytesToPushKeyID(note.GetPusherKeyID()))
 	if pushKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", note.GetPusherKeyID())
 		return util.FieldError("pusherKeyId", msg)
@@ -325,7 +325,7 @@ func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 
 		// Verify signature
 		txDetail := GetTxDetailsFromNote(note, ref.Name)[0]
-		pushPubKey := crypto.MustPubKeyFromBytes(pushKey.PubKey.Bytes())
+		pushPubKey := ed25519.MustPubKeyFromBytes(pushKey.PubKey.Bytes())
 		if ok, err := pushPubKey.Verify(txDetail.BytesNoSig(), ref.PushSig); err != nil || !ok {
 			msg := fmt.Sprintf("reference (%s) signature is not valid", ref.Name)
 			return fe(i, "references", msg)

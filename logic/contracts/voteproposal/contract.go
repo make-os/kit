@@ -1,7 +1,7 @@
 package voteproposal
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/common"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -40,7 +40,7 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 func (c *Contract) Exec() error {
 
 	var err error
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the repo
 	repoKeeper := c.RepoKeeper()
@@ -128,7 +128,7 @@ func (c *Contract) Exec() error {
 			// determine if ticket proposer has voted in this same proposal.
 			// If yes, deduct the vote and apply to the delegator's choice vote option
 			if ticket.Delegator == spk.Addr().String() {
-				proposerAddr := crypto.MustPubKeyFromBytes(proposerPK.Bytes()).Addr().String()
+				proposerAddr := ed25519.MustPubKeyFromBytes(proposerPK.Bytes()).Addr().String()
 				vote, voted, err := repoKeeper.GetProposalVote(c.tx.RepoName, c.tx.ProposalID, proposerAddr)
 				if err != nil {
 					return errors.Wrap(err, "failed to check ticket's proposer vote status")

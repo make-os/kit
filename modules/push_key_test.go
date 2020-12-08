@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	crypto2 "github.com/make-os/kit/crypto"
+	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	mocksrpc "github.com/make-os/kit/mocks/rpc"
 	"github.com/make-os/kit/modules"

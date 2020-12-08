@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/data"
 	"github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/types/constants"
@@ -69,9 +69,9 @@ func (m *DevModule) GetDevUserAccountKey() string {
 // GetDevUserAddress returns the development account address
 func (m *DevModule) GetDevUserAddress() string {
 	key := m.GetDevUserAccountKey()
-	pk, err := crypto.PrivKeyFromBase58(key)
+	pk, err := ed25519.PrivKeyFromBase58(key)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode dev account key"))
 	}
-	return crypto.NewKeyFromPrivKey(pk).Addr().String()
+	return ed25519.NewKeyFromPrivKey(pk).Addr().String()
 }

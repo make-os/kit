@@ -32,7 +32,8 @@ var _ = Describe("Tracklist", func() {
 		Expect(err).To(BeNil())
 		appDB, _ = testutil.GetDB()
 		dbTx := appDB.NewTx(true, true)
-		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		state, err = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		Expect(err).To(BeNil())
 		keeper = NewRepoSyncInfoKeeper(dbTx, state)
 	})
 

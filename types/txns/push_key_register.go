@@ -1,7 +1,7 @@
 package txns
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/stretchr/objx"
@@ -12,9 +12,9 @@ import (
 type TxRegisterPushKey struct {
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	PublicKey crypto.PublicKey `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
-	Scopes    []string         `json:"scopes" msgpack:"scopes" mapstructure:"scopes"`
-	FeeCap    util.String      `json:"feeCap" msgpack:"feeCap" mapstructure:"feeCap"`
+	PublicKey ed25519.PublicKey `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
+	Scopes    []string          `json:"scopes" msgpack:"scopes" mapstructure:"scopes"`
+	FeeCap    util.String       `json:"feeCap" msgpack:"feeCap" mapstructure:"feeCap"`
 }
 
 // NewBareTxRegisterPushKey returns an instance of TxRegisterPushKey with zero values
@@ -112,11 +112,11 @@ func (tx *TxRegisterPushKey) FromMap(data map[string]interface{}) error {
 
 	// PublicKey: expects string type, base58 encoded
 	if pubKeyVal := o.Get("pubKey"); !pubKeyVal.IsNil() && pubKeyVal.IsStr() {
-		pubKey, err := crypto.PubKeyFromBase58(pubKeyVal.Str())
+		pubKey, err := ed25519.PubKeyFromBase58(pubKeyVal.Str())
 		if err != nil {
 			return fe("pubKey", "unable to decode from base58")
 		}
-		o.Set("pubKey", crypto.BytesToPublicKey(pubKey.MustBytes()))
+		o.Set("pubKey", ed25519.BytesToPublicKey(pubKey.MustBytes()))
 	}
 
 	err = util.CallOnNilErr(err, func() error { return util.DecodeMap(data, &tx) })

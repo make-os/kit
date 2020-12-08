@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/vmihailenco/msgpack"
@@ -19,7 +19,7 @@ func BarePushKey() *PushKey {
 // PushKey represents a push key
 type PushKey struct {
 	util.CodecUtil `json:"-" msgpack:"-"`
-	PubKey         crypto.PublicKey   `json:"pubKey,omitempty" mapstructure:"pubKey,omitempty" msgpack:"pubKey,omitempty"`
+	PubKey         ed25519.PublicKey  `json:"pubKey,omitempty" mapstructure:"pubKey,omitempty" msgpack:"pubKey,omitempty"`
 	Address        identifier.Address `json:"address,omitempty" mapstructure:"address,omitempty" msgpack:"address,omitempty"`
 	Scopes         []string           `json:"scopes,omitempty" mapstructure:"scopes,omitempty" msgpack:"scopes,omitempty"`
 	FeeCap         util.String        `json:"feeCap,omitempty" mapstructure:"feeCap,omitempty" msgpack:"feeCap,omitempty"`

@@ -1,22 +1,22 @@
-package crypto
+package ed25519
 
 import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/bech32"
 )
 
 var _ = Describe("Key", func() {
 
 	Describe(".PrivKeyFromBytes", func() {
 		It("should convert bytes to PrivKey successfully", func() {
-			b64 := [64]byte{
+			b64 := []byte{
 				0x2b, 0xb8, 0x0d, 0x53, 0x7b, 0x1d, 0xa3, 0xe3, 0x8b, 0xd3, 0x03, 0x61, 0xaa, 0x85, 0x56, 0x86,
 				0xbd, 0xe0, 0xea, 0xcd, 0x71, 0x62, 0xfe, 0xf6, 0xa2, 0x5f, 0xe9, 0x7b, 0xf5, 0x27, 0xa2, 0x5b,
 				0x5d, 0x03, 0x6a, 0x85, 0x8c, 0xe8, 0x9f, 0x84, 0x44, 0x91, 0x76, 0x2e, 0xb8, 0x9e, 0x2b, 0xfb,
@@ -137,6 +137,7 @@ var _ = Describe("Key", func() {
 		It("should return []byte{111, 21, 129, 112, 155, 183, 177, 239, 3, 13, 33, 13, 177, 142, 59, 11, 161, 199, 118, 251, 166, 93, 140, 218, 173, 5, 65, 81, 66, 209, 137, 248}", func() {
 			seed := int64(1)
 			a, err := NewKey(&seed)
+			Expect(err).To(BeNil())
 			bs, err := a.PubKey().Bytes()
 			Expect(err).To(BeNil())
 			expected := []byte{111, 21, 129, 112, 155, 183, 177, 239, 3, 13, 33, 13, 177, 142, 59, 11, 161, 199, 118, 251, 166, 93, 140, 218, 173, 5, 65, 81, 66, 209, 137, 248}
@@ -168,6 +169,7 @@ var _ = Describe("Key", func() {
 			251, 166, 93, 140, 218, 173, 5, 65, 81, 66, 209, 137, 248}`, func() {
 			seed := int64(1)
 			a, err := NewKey(&seed)
+			Expect(err).To(BeNil())
 			bs, err := a.PrivKey().Bytes()
 			Expect(err).To(BeNil())
 			expected := []byte{82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29,

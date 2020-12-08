@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -48,6 +49,11 @@ type Mempool struct {
 	metrics *mempool.Metrics
 }
 
+// InitWAL implements mempool.Mempool
+func (mp *Mempool) InitWAL() error {
+	return nil
+}
+
 // NewMempool creates an instance of Mempool
 func NewMempool(cfg *config.AppConfig, logic core.Logic) *Mempool {
 	return &Mempool{
@@ -68,8 +74,8 @@ func (mp *Mempool) SetProxyApp(proxyApp proxy.AppConnMempool) {
 
 // CheckTx executes a new transaction against the application to determine
 // its validity and whether it should be added to the mempool.
-func (mp *Mempool) CheckTx(tx tmtypes.Tx, callback func(*abci.Response)) error {
-	return mp.CheckTxWithInfo(tx, callback, mempool.TxInfo{SenderID: mempool.UnknownPeerID})
+func (mp *Mempool) CheckTx(tx tmtypes.Tx, callback func(*abci.Response), txInfo mempool.TxInfo) error {
+	panic("not implemented")
 }
 
 // Add attempts to add a transaction to the pool
@@ -99,10 +105,12 @@ func (mp *Mempool) Add(tx types.BaseTx) (bool, error) {
 	}
 
 	if addedToPool {
-		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash(),
+		mp.log.Info("Added a new transaction to the pool",
+			"Hash", tx.GetHash(),
 			"PoolSize", mp.Size())
 	} else {
-		mp.log.Info("Added a new transaction to the cache", "Hash", tx.GetHash(),
+		mp.log.Info("Added a new transaction to the cache",
+			"Hash", tx.GetHash(),
 			"CacheSize", mp.CacheSize())
 	}
 
@@ -132,14 +140,6 @@ func (mp *Mempool) checkCapacity(tx types.BaseTx) error {
 	}
 
 	return nil
-}
-
-// CheckTxWithInfo performs the same operation as CheckTx, but with extra
-// meta data about the tx.
-// Currently this metadata is the peer who sent it, used to prevent the tx
-// from being gossiped back to them.
-func (mp *Mempool) CheckTxWithInfo(tx tmtypes.Tx, callback func(*abci.Response), txInfo mempool.TxInfo) error {
-	panic("not implemented")
 }
 
 // onTxCheckFinished returns a callback function that is called
@@ -314,9 +314,6 @@ func (mp *Mempool) TxsBytes() int64 {
 
 func (mp *Mempool) globalCb(req *abci.Request, res *abci.Response) {}
 
-// InitWAL creates a directory for the WAL file and opens a file itself.
-func (mp *Mempool) InitWAL() {}
-
 // CloseWAL closes and discards the underlying WAL file.
 // Any further writes will not be relayed to disk.
 func (mp *Mempool) CloseWAL() {}
@@ -324,5 +321,5 @@ func (mp *Mempool) CloseWAL() {}
 // FlushAppConn flushes the mempool connection to ensure async reqResCb calls are
 // done. E.g. from CheckTx.
 func (mp *Mempool) FlushAppConn() error {
-	return mp.proxyAppConn.FlushSync()
+	return mp.proxyAppConn.FlushSync(context.Background())
 }

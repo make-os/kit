@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/fetcher"
@@ -14,7 +14,7 @@ import (
 )
 
 // PushKeyGetter represents a function used for fetching a push key
-type PushKeyGetter func(pushKeyID string) (crypto.PublicKey, error)
+type PushKeyGetter func(pushKeyID string) (ed25519.PublicKey, error)
 
 // PoolGetter returns various pools
 type PoolGetter interface {
@@ -50,7 +50,7 @@ type RemoteServer interface {
 	GetRepo(name string) (remotetypes.LocalRepo, error)
 
 	// GetPrivateValidatorKey returns the node's private key
-	GetPrivateValidatorKey() *crypto.Key
+	GetPrivateValidatorKey() *ed25519.Key
 
 	// Start starts the server
 	Start() error

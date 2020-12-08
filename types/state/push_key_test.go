@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -11,14 +11,14 @@ var _ = Describe("PushKey", func() {
 
 	Describe(".Bytes", func() {
 		It("should return byte slice", func() {
-			pushPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc")}
+			pushPubKey = &PushKey{PubKey: ed25519.StrToPublicKey("abc")}
 			Expect(pushPubKey.Bytes()).ToNot(BeEmpty())
 		})
 	})
 
 	Describe(".NewPushKeyFromBytes", func() {
 		It("should deserialize successfully", func() {
-			pushPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc"), Address: "abc"}
+			pushPubKey = &PushKey{PubKey: ed25519.StrToPublicKey("abc"), Address: "abc"}
 			bz := pushPubKey.Bytes()
 			obj, err := NewPushKeyFromBytes(bz)
 			Expect(err).To(BeNil())

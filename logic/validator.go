@@ -17,7 +17,7 @@ func (v *Validator) Index(height int64, valUpdates []abcitypes.ValidatorUpdate) 
 	var validators []*core.Validator
 	for _, validator := range valUpdates {
 		validators = append(validators, &core.Validator{
-			PubKey: util.BytesToBytes32(validator.PubKey.Data),
+			PubKey: util.BytesToBytes32(validator.PubKey.GetEd25519()),
 		})
 	}
 	return v.logic.ValidatorKeeper().Index(height, validators)

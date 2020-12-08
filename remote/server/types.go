@@ -3,13 +3,13 @@ package server
 import (
 	"net"
 
-	"github.com/tendermint/tendermint/libs/common"
+	tmservice "github.com/tendermint/tendermint/libs/service"
 	"github.com/tendermint/tendermint/p2p"
 )
 
 // Peer is an interface representing a peer connected on a reactor.
 type Peer interface {
-	common.Service
+	tmservice.Service
 	FlushStop()
 
 	ID() p2p.ID           // peer's cryptographic ID

@@ -3,7 +3,7 @@ package validation
 import (
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
@@ -13,11 +13,11 @@ var validAddrRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
 		switch v := val.(type) {
 		case util.String:
-			if _err := crypto.IsValidUserAddr(v.String()); _err != nil {
+			if _err := ed25519.IsValidUserAddr(v.String()); _err != nil {
 				return err
 			}
 		case string:
-			if _err := crypto.IsValidUserAddr(v); _err != nil {
+			if _err := ed25519.IsValidUserAddr(v); _err != nil {
 				return err
 			}
 		default:
@@ -29,11 +29,11 @@ var validAddrRule = func(err error) func(interface{}) error {
 
 var validPubKeyRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
-		pk := val.(crypto.PublicKey)
-		if pk.Equal(crypto.EmptyPublicKey) {
+		pk := val.(ed25519.PublicKey)
+		if pk.Equal(ed25519.EmptyPublicKey) {
 			return err
 		}
-		if _, _err := crypto.PubKeyFromBytes(pk.Bytes()); _err != nil {
+		if _, _err := ed25519.PubKeyFromBytes(pk.Bytes()); _err != nil {
 			return err
 		}
 		return nil
@@ -47,8 +47,8 @@ var isEmptyByte32 = func(err error) func(interface{}) error {
 			if o.Equal(util.EmptyBytes32) {
 				return err
 			}
-		case crypto.PublicKey:
-			if o.Equal(crypto.EmptyPublicKey) {
+		case ed25519.PublicKey:
+			if o.Equal(ed25519.EmptyPublicKey) {
 				return err
 			}
 		}

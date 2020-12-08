@@ -13,7 +13,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/olebedev/emitter"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/libs/common"
+	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/tendermint/tendermint/config"
 
@@ -120,7 +120,7 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 
 // IsTendermintInitialized checks if node is initialized
 func IsTendermintInitialized(tmcfg *config.Config) bool {
-	return common.FileExists(tmcfg.PrivValidatorKeyFile())
+	return tmos.FileExists(tmcfg.PrivValidatorKeyFile())
 }
 
 // ConfigureVM sets up the application command structure, tendermint

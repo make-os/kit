@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/rpc"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/state"
@@ -81,7 +81,7 @@ type BodyCreateRepo struct {
 	Value      float64
 	Fee        float64
 	Config     map[string]interface{}
-	SigningKey *crypto.Key
+	SigningKey *ed25519.Key
 }
 
 // ResultRepository is the result for a request to get a repository
@@ -102,17 +102,17 @@ type BodyRepoVote struct {
 	Vote       int
 	Fee        float64
 	Nonce      uint64
-	SigningKey *crypto.Key
+	SigningKey *ed25519.Key
 }
 
 // BodyRegisterPushKey contains arguments for registering a push key
 type BodyRegisterPushKey struct {
 	Nonce      uint64
 	Fee        float64
-	PublicKey  crypto.PublicKey
+	PublicKey  ed25519.PublicKey
 	Scopes     []string
 	FeeCap     float64
-	SigningKey *crypto.Key
+	SigningKey *ed25519.Key
 }
 
 // ResultRegisterPushKey is the result for a request to register a push key
@@ -134,7 +134,7 @@ type BodyAddRepoContribs struct {
 	Namespace     string
 	NamespaceOnly string
 	Policies      []*state.ContributorPolicy
-	SigningKey    *crypto.Key
+	SigningKey    *ed25519.Key
 }
 
 // ResultGetMethod is the response for RPC server methods
@@ -148,7 +148,7 @@ type BodySendCoin struct {
 	Value      float64
 	Fee        float64
 	To         identifier.Address
-	SigningKey *crypto.Key
+	SigningKey *ed25519.Key
 }
 
 // BodySetCommission contains arguments for updating a validators commission value
@@ -156,7 +156,7 @@ type BodySetCommission struct {
 	Nonce      uint64
 	Fee        float64
 	Commission float64
-	SigningKey *crypto.Key
+	SigningKey *ed25519.Key
 }
 
 // BodyBuyTicket contains arguments for purchasing a ticket
@@ -164,8 +164,8 @@ type BodyBuyTicket struct {
 	Nonce      uint64
 	Fee        float64
 	Value      float64
-	SigningKey *crypto.Key
-	Delegate   crypto.PublicKey
+	SigningKey *ed25519.Key
+	Delegate   ed25519.PublicKey
 	BLSPubKey  util.Bytes
 }
 

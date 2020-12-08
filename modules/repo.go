@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
 	types2 "github.com/make-os/kit/rpc/types"
@@ -118,7 +118,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 			Value:      cast.ToFloat64(tx.Value.String()),
 			Fee:        cast.ToFloat64(tx.Fee.String()),
 			Config:     tx.Config,
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -210,7 +210,7 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 			Vote:       tx.Vote,
 			Nonce:      tx.Nonce,
 			Fee:        cast.ToFloat64(tx.Fee.String()),
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -405,7 +405,7 @@ func (m *RepoModule) AddContributor(params map[string]interface{}, options ...in
 			Policies:      tx.Policies,
 			Value:         cast.ToFloat64(tx.Value.String()),
 			Fee:           cast.ToFloat64(tx.Fee.String()),
-			SigningKey:    crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey:    ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)

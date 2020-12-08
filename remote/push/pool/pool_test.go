@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/push/types"
-	crypto2 "github.com/make-os/kit/util/crypto"
+	cryptutil "github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -25,8 +25,8 @@ var _ = Describe("PushPool", func() {
 	var note2 *types.Note
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var pushKeyID = crypto.NewKeyFromIntSeed(1).PushAddr().String()
-	var pushKeyID2 = crypto.NewKeyFromIntSeed(2).PushAddr().String()
+	var pushKeyID = ed25519.NewKeyFromIntSeed(1).PushAddr().String()
+	var pushKeyID2 = ed25519.NewKeyFromIntSeed(2).PushAddr().String()
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -42,7 +42,7 @@ var _ = Describe("PushPool", func() {
 		note = &types.Note{
 			RepoName:        "repo",
 			RemoteNodeSig:   []byte("sig"),
-			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+			PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
@@ -51,7 +51,7 @@ var _ = Describe("PushPool", func() {
 		note2 = &types.Note{
 			RepoName:        "repo2",
 			RemoteNodeSig:   []byte("sig_2"),
-			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID2),
+			PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID2),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
@@ -90,7 +90,7 @@ var _ = Describe("PushPool", func() {
 			baseNote = &types.Note{
 				RepoName:      "repo",
 				RemoteNodeSig: []byte("sig"),
-				PushKeyID:     crypto2.MustDecodePushKeyID(pushKeyID),
+				PushKeyID:     cryptutil.MustDecodePushKeyID(pushKeyID),
 				Timestamp:     100000000,
 			}
 		})
@@ -249,7 +249,7 @@ var _ = Describe("PushPool", func() {
 				txY = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -260,7 +260,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -271,7 +271,7 @@ var _ = Describe("PushPool", func() {
 				txX = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -308,7 +308,7 @@ var _ = Describe("PushPool", func() {
 				txY = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -319,7 +319,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -330,7 +330,7 @@ var _ = Describe("PushPool", func() {
 				txX = &types.Note{
 					RepoName:        "repo",
 					RemoteNodeSig:   []byte("sig"),
-					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       cryptutil.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -528,7 +528,7 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
-	var pushKeyID = crypto.BytesToPushKeyID([]byte("pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"))
+	var pushKeyID = ed25519.BytesToPushKeyID([]byte("pk1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"))
 
 	Describe(".add", func() {
 		var idx repoNotesIndex
@@ -580,7 +580,7 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *types.Note
 			BeforeEach(func() {
-				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: cryptutil.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -595,8 +595,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *types.Note
 			BeforeEach(func() {
-				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
-				txB = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
+				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: cryptutil.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txB = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: cryptutil.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

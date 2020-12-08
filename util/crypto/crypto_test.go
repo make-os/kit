@@ -3,11 +3,11 @@ package crypto
 import (
 	"encoding/hex"
 
+	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tendermint/tendermint/libs/bech32"
 )
 
 var _ = Describe("Crypto", func() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
 	types2 "github.com/make-os/kit/rpc/types"
@@ -97,7 +97,7 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		vm.Set(f.Name, f.Value)
+		_ = vm.Set(f.Name, f.Value)
 		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
@@ -142,7 +142,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 			FeeCap:     cast.ToFloat64(tx.FeeCap.String()),
 			Nonce:      tx.Nonce,
 			Fee:        cast.ToFloat64(tx.Fee.String()),
-			SigningKey: crypto.NewKeyFromPrivKey(signingKey),
+			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {
 			panic(err)
@@ -155,7 +155,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	pk := crypto.MustPubKeyFromBytes(tx.PublicKey.Bytes())
+	pk := ed25519.MustPubKeyFromBytes(tx.PublicKey.Bytes())
 
 	return map[string]interface{}{
 		"hash":    hash,

@@ -3,7 +3,7 @@ package transfercoin
 import (
 	"fmt"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
@@ -87,7 +87,7 @@ func (c *Contract) Exec() error {
 	}
 
 	// Get the sender's account and balance
-	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()
 	senderAcct := acctKeeper.Get(sender)
 	senderBal := senderAcct.Balance.Decimal()
@@ -127,7 +127,7 @@ func (c *Contract) Exec() error {
 
 // DryExec checks whether the given sender can execute the transaction.
 //
-// sender can be an address, identifier.Address or *crypto.PubKey
+// sender can be an address, identifier.Address or *ed25519.PubKey
 //
 // allowNonceGap allows nonce to have a number greater than the current account
 // by more than 1.
@@ -135,7 +135,7 @@ func (c *Contract) DryExec(sender interface{}, allowNonceGap bool) error {
 
 	senderAddr := ""
 	switch o := sender.(type) {
-	case *crypto.PubKey:
+	case *ed25519.PubKey:
 		senderAddr = o.Addr().String()
 	case string:
 		senderAddr = o

@@ -3,7 +3,7 @@ package pool
 import (
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	types2 "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types"
@@ -21,8 +21,8 @@ func zeroNonceGetter(_ string) (uint64, error) {
 
 var _ = Describe("Container", func() {
 
-	var sender = crypto.NewKeyFromIntSeed(1)
-	var sender2 = crypto.NewKeyFromIntSeed(2)
+	var sender = ed25519.NewKeyFromIntSeed(1)
+	var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 	Describe(".Add", func() {
 		It("should return ErrContainerFull when capacity is reached", func() {
@@ -269,7 +269,7 @@ var _ = Describe("Container", func() {
 
 			When("container has 2 transactions from a sender and one from a different sender", func() {
 				It("after sorting, the first transaction must be the one with the highest fee rate", func() {
-					sender2 := crypto.NewKeyFromIntSeed(2)
+					sender2 := ed25519.NewKeyFromIntSeed(2)
 					q := NewContainer(3, emitter.New(1), zeroNonceGetter)
 					tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 					tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
@@ -319,7 +319,7 @@ var _ = Describe("Container", func() {
 
 		When("container has 2 transactions from a sender (A) and one from a different sender (B)", func() {
 			It("after sorting, the last transaction must be sender (A) transaction with the highest nonce", func() {
-				sender2 := crypto.NewKeyFromIntSeed(2)
+				sender2 := ed25519.NewKeyFromIntSeed(2)
 				q := NewContainer(3, emitter.New(1), zeroNonceGetter)
 				tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 				tx2 := txns.NewCoinTransferTx(2, "something", sender, "0", "1", time.Now().Unix())
@@ -337,8 +337,8 @@ var _ = Describe("Container", func() {
 	})
 
 	Describe(".Sort", func() {
-		var sender = crypto.NewKeyFromIntSeed(1)
-		// var sender2 = crypto.NewKeyFromIntSeed(2)
+		var sender = ed25519.NewKeyFromIntSeed(1)
+		// var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 		It("with 2 transactions by same sender; sort by nonce in ascending order", func() {
 			q := NewContainer(2, emitter.New(1), zeroNonceGetter)

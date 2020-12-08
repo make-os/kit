@@ -5,7 +5,7 @@ go 1.13
 replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
 	github.com/imdario/mergo => github.com/ncodes/mergo v0.3.10-0.20200627182710-b10b58df675a
-	github.com/tendermint/tendermint => github.com/make-os/tendermint v0.34.0-rc4.0.20201207155555-c88ef610fc8f
+	github.com/tendermint/tendermint => github.com/make-os/tendermint v0.34.0-rc4.0.20201207191223-e101ff2d82fe
 )
 
 require (
@@ -91,7 +91,7 @@ require (
 	github.com/stumble/gorocksdb v0.0.3 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/tendermint/go-amino v0.15.1
-	github.com/tendermint/iavl v0.14.1
+	github.com/cosmos/iavl v0.15.0
 	github.com/tendermint/tendermint v0.34.0
 	github.com/tendermint/tm-db v0.6.3
 	github.com/thoas/go-funk v0.4.0

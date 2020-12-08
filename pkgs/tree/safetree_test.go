@@ -4,8 +4,8 @@ import (
 	"os"
 
 	. "github.com/make-os/kit/pkgs/tree"
-	"github.com/make-os/kit/storage"
 	storagetypes "github.com/make-os/kit/storage/types"
+	tmdb "github.com/tendermint/tm-db"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,6 +16,7 @@ import (
 
 var _ = Describe("TMDBAdapter", func() {
 	var appDB storagetypes.Engine
+	var stateDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var tree *SafeTree
@@ -23,9 +24,9 @@ var _ = Describe("TMDBAdapter", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		appDB, _ = testutil.GetDB()
-		dbAdapter := storage.NewTMDBAdapter(appDB.NewTx(true, true))
-		tree = NewSafeTree(dbAdapter, 128)
+		appDB, stateDB = testutil.GetDB()
+		tree, err = NewSafeTree(stateDB, 128)
+		Expect(err).To(BeNil())
 	})
 
 	AfterEach(func() {
@@ -158,8 +159,7 @@ var _ = Describe("TMDBAdapter", func() {
 			tree.Set(key, []byte("val"))
 			_, _, err := tree.SaveVersion()
 			Expect(err).To(BeNil())
-			dbAdapter := storage.NewTMDBAdapter(appDB.NewTx(true, true))
-			tree2 = NewSafeTree(dbAdapter, 128)
+			tree2, _ = NewSafeTree(stateDB, 128)
 			v, err := tree2.Load()
 			Expect(err).To(BeNil())
 			Expect(v).To(Equal(int64(1)))
@@ -174,42 +174,30 @@ var _ = Describe("TMDBAdapter", func() {
 	Describe(".WorkingHash", func() {
 		key := []byte("key")
 
-		When("tree is empty", func() {
-			Specify("that working hash is nil", func() {
-				Expect(tree.WorkingHash()).To(BeNil())
-			})
-		})
-
-		When("tree is not empty", func() {
-			Specify("that working hash is set", func() {
-				tree.Set(key, []byte("val"))
-				Expect(tree.WorkingHash()).To(Equal([]byte{5, 241, 3, 251, 99, 88, 110, 192, 2, 212,
-					220, 131, 84, 36, 184, 146, 190, 95, 138, 242, 34, 146, 55, 31, 167, 242, 236,
-					106, 173, 126, 173, 224}))
-			})
+		Specify("that working hash is updated after each set", func() {
+			tree.Set(key, []byte("val"))
+			wh := tree.WorkingHash()
+			tree.Set(key, []byte("val2"))
+			wh2 := tree.WorkingHash()
+			Expect(wh).To(Not(BeEmpty()))
+			Expect(wh2).To(Not(BeEmpty()))
+			Expect(wh).To(Not(Equal(wh2)))
 		})
 	})
 
 	Describe(".Hash", func() {
 		key := []byte("key")
-
-		When("tree has no saved version", func() {
-			Specify("that hash is nil", func() {
-				Expect(tree.WorkingHash()).To(BeNil())
-				Expect(tree.Version()).To(Equal(int64(0)))
-				Expect(tree.Hash()).To(BeNil())
-			})
-		})
-
 		When("has a saved version", func() {
-			Specify("that working hash is set", func() {
+			Specify("that working hash changed and version is incremented after save", func() {
+				wh := tree.Hash()
 				tree.Set(key, []byte("val"))
 				_, _, err := tree.SaveVersion()
 				Expect(err).To(BeNil())
-				Expect(tree.Hash()).To(Equal([]byte{5, 241, 3, 251, 99, 88, 110, 192, 2, 212, 220,
-					131, 84, 36, 184, 146, 190, 95, 138, 242, 34, 146, 55, 31, 167, 242, 236, 106,
-					173, 126, 173, 224}))
-				Expect(tree.Hash()).To(Equal(tree.WorkingHash()))
+				Expect(tree.Version()).To(Equal(int64(1)))
+				wh2 := tree.Hash()
+				Expect(wh).To(Not(BeEmpty()))
+				Expect(wh2).To(Not(BeEmpty()))
+				Expect(wh).To(Not(Equal(wh2)))
 			})
 		})
 	})

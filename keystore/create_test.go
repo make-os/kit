@@ -7,7 +7,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
@@ -34,7 +34,7 @@ var _ = Describe("Create", func() {
 		When("passphrase is not provided", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 			})
@@ -54,7 +54,7 @@ var _ = Describe("Create", func() {
 		When("key already exist", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				err = ks.CreateKey(key, types.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 				err = ks.CreateKey(key, types.KeyTypeUser, "")
@@ -71,7 +71,7 @@ var _ = Describe("Create", func() {
 
 			BeforeEach(func() {
 				ks := New(keyDir)
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				err = ks.CreateKey(key, types.KeyTypeUser, pass)
 				Expect(err).To(BeNil())
 			})

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/make-os/kit/crypto"
 	"github.com/make-os/kit/crypto/bdn"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/validation"
@@ -49,7 +49,7 @@ check:
 		goto check
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		tx.Value,
 		tx.Fee,
@@ -89,7 +89,7 @@ func CheckTxTicketPurchaseConsistency(
 		}
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		tx.Value,
 		tx.Fee,
@@ -138,7 +138,7 @@ func CheckTxUnbondTicketConsistency(
 		return feI(index, "hash", "ticket has already expired")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.DrySend(pubKey,
 		"0",
 		tx.Fee,
@@ -159,7 +159,7 @@ func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.L
 		return feI(index, "name", "name is not available. choose another")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		tx.Value,
 		tx.Fee,
@@ -174,7 +174,7 @@ func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.L
 
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
 func CheckTxSetDelegateCommissionConsistency(tx *txns.TxSetDelegateCommission, index int, logic core.Logic) error {
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		"0",
 		tx.Fee,
@@ -193,13 +193,13 @@ func CheckTxRegisterPushKeyConsistency(
 	logic core.Logic) error {
 
 	// Check whether there is a matching push key already existing
-	pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
+	pushKeyID := ed25519.CreatePushKeyID(tx.PublicKey)
 	pushKey := logic.PushKeyKeeper().Get(pushKeyID)
 	if !pushKey.IsNil() {
 		return feI(index, "pubKey", "push key already registered")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey, "0",
 		tx.Fee,
 		tx.GetNonce(),
@@ -235,7 +235,7 @@ func CheckTxUpDelPushKeyConsistency(
 		}
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey, "0",
 		tx.Fee,
 		tx.GetNonce(),
@@ -346,7 +346,7 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 	// If transfer recipient is a repo name
 	if tx.To != "" &&
 		identifier.IsValidResourceName(tx.To) == nil &&
-		crypto.IsValidUserAddr(tx.To) != nil {
+		ed25519.IsValidUserAddr(tx.To) != nil {
 		if logic.RepoKeeper().Get(tx.To).IsNil() {
 			return feI(index, "to", "repo does not exist")
 		}
@@ -359,7 +359,7 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 		}
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.DrySend(pubKey,
 		tx.Value,
 		tx.Fee,
@@ -376,7 +376,7 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 // checks on TxNamespaceDomainUpdate
 func CheckTxNamespaceDomainUpdateConsistency(tx *txns.TxNamespaceDomainUpdate, index int, logic core.Logic) error {
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 
 	// Ensure the sender of the transaction is the owner of the namespace
 	ns := logic.NamespaceKeeper().Get(tx.Name)
@@ -445,7 +445,7 @@ func CheckProposalCommonConsistency(
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		prop.Value,
 		txCommon.Fee,
@@ -536,7 +536,7 @@ func CheckTxVoteConsistency(
 		return feI(index, "id", "vote already cast on the target proposal")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.DrySend(pubKey, "0",
 		tx.Fee,
 		tx.GetNonce(),
@@ -586,7 +586,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 		return feI(index, "id", "proposal fee deposit period has closed")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.DrySend(pubKey, "0",
 		tx.Fee,
 		tx.GetNonce(),

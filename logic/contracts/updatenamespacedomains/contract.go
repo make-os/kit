@@ -1,7 +1,7 @@
 package updatenamespacedomains
 
 import (
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
@@ -34,7 +34,7 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 
 // Exec executes the contract
 func (c *Contract) Exec() error {
-	spk := crypto.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk := ed25519.MustPubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 
 	// Get the current namespace object and update.
 	// Remove existing domain if it is referenced in the update and has not target.

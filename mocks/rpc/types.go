@@ -124,7 +124,7 @@ func (mr *MockClientMockRecorder) Call(method, params interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Call", reflect.TypeOf((*MockClient)(nil).Call), method, params)
 }
 
-// Chain mocks base method
+// Node mocks base method
 func (m *MockClient) Node() types.Node {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Node")
@@ -132,8 +132,8 @@ func (m *MockClient) Node() types.Node {
 	return ret0
 }
 
-// Chain indicates an expected call of Chain
-func (mr *MockClientMockRecorder) Chain() *gomock.Call {
+// Node indicates an expected call of Node
+func (mr *MockClientMockRecorder) Node() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Node", reflect.TypeOf((*MockClient)(nil).Node))
 }
@@ -250,31 +250,31 @@ func (mr *MockClientMockRecorder) Ticket() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ticket", reflect.TypeOf((*MockClient)(nil).Ticket))
 }
 
-// MockChain is a mock of Node interface
-type MockChain struct {
+// MockNode is a mock of Node interface
+type MockNode struct {
 	ctrl     *gomock.Controller
-	recorder *MockChainMockRecorder
+	recorder *MockNodeMockRecorder
 }
 
-// MockChainMockRecorder is the mock recorder for MockChain
-type MockChainMockRecorder struct {
-	mock *MockChain
+// MockNodeMockRecorder is the mock recorder for MockNode
+type MockNodeMockRecorder struct {
+	mock *MockNode
 }
 
-// NewMockChain creates a new mock instance
-func NewMockChain(ctrl *gomock.Controller) *MockChain {
-	mock := &MockChain{ctrl: ctrl}
-	mock.recorder = &MockChainMockRecorder{mock}
+// NewMockNode creates a new mock instance
+func NewMockNode(ctrl *gomock.Controller) *MockNode {
+	mock := &MockNode{ctrl: ctrl}
+	mock.recorder = &MockNodeMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockChain) EXPECT() *MockChainMockRecorder {
+func (m *MockNode) EXPECT() *MockNodeMockRecorder {
 	return m.recorder
 }
 
 // GetBlock mocks base method
-func (m *MockChain) GetBlock(height uint64) (*api.ResultBlock, error) {
+func (m *MockNode) GetBlock(height uint64) (*api.ResultBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", height)
 	ret0, _ := ret[0].(*api.ResultBlock)
@@ -283,13 +283,13 @@ func (m *MockChain) GetBlock(height uint64) (*api.ResultBlock, error) {
 }
 
 // GetBlock indicates an expected call of GetBlock
-func (mr *MockChainMockRecorder) GetBlock(height interface{}) *gomock.Call {
+func (mr *MockNodeMockRecorder) GetBlock(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockChain)(nil).GetBlock), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockNode)(nil).GetBlock), height)
 }
 
 // GetHeight mocks base method
-func (m *MockChain) GetHeight() (uint64, error) {
+func (m *MockNode) GetHeight() (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeight")
 	ret0, _ := ret[0].(uint64)
@@ -298,13 +298,13 @@ func (m *MockChain) GetHeight() (uint64, error) {
 }
 
 // GetHeight indicates an expected call of GetHeight
-func (mr *MockChainMockRecorder) GetHeight() *gomock.Call {
+func (mr *MockNodeMockRecorder) GetHeight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeight", reflect.TypeOf((*MockChain)(nil).GetHeight))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeight", reflect.TypeOf((*MockNode)(nil).GetHeight))
 }
 
 // GetBlockInfo mocks base method
-func (m *MockChain) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
+func (m *MockNode) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockInfo", height)
 	ret0, _ := ret[0].(*api.ResultBlockInfo)
@@ -313,13 +313,13 @@ func (m *MockChain) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 }
 
 // GetBlockInfo indicates an expected call of GetBlockInfo
-func (mr *MockChainMockRecorder) GetBlockInfo(height interface{}) *gomock.Call {
+func (mr *MockNodeMockRecorder) GetBlockInfo(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockInfo", reflect.TypeOf((*MockChain)(nil).GetBlockInfo), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockInfo", reflect.TypeOf((*MockNode)(nil).GetBlockInfo), height)
 }
 
 // GetValidators mocks base method
-func (m *MockChain) GetValidators(height uint64) ([]*api.ResultValidator, error) {
+func (m *MockNode) GetValidators(height uint64) ([]*api.ResultValidator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidators", height)
 	ret0, _ := ret[0].([]*api.ResultValidator)
@@ -328,9 +328,24 @@ func (m *MockChain) GetValidators(height uint64) ([]*api.ResultValidator, error)
 }
 
 // GetValidators indicates an expected call of GetValidators
-func (mr *MockChainMockRecorder) GetValidators(height interface{}) *gomock.Call {
+func (mr *MockNodeMockRecorder) GetValidators(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidators", reflect.TypeOf((*MockChain)(nil).GetValidators), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidators", reflect.TypeOf((*MockNode)(nil).GetValidators), height)
+}
+
+// IsSyncing mocks base method
+func (m *MockNode) IsSyncing() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSyncing")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSyncing indicates an expected call of IsSyncing
+func (mr *MockNodeMockRecorder) IsSyncing() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSyncing", reflect.TypeOf((*MockNode)(nil).IsSyncing))
 }
 
 // MockDHT is a mock of DHT interface

@@ -1,10 +1,17 @@
-package crypto
+package ed25519
 
 import (
+	"testing"
+
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestED25519(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "ED25519 Suite")
+}
 
 var _ = Describe("PublicKey", func() {
 	Describe(".Bytes", func() {

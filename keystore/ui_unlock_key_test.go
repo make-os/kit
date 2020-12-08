@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	types2 "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/types"
 	. "github.com/onsi/ginkgo"
@@ -46,10 +46,10 @@ var _ = Describe("UnlockKeyUI", func() {
 		})
 
 		When("key has no passphrase (unprotected)", func() {
-			var key *crypto.Key
+			var key *ed25519.Key
 
 			BeforeEach(func() {
-				key = crypto.NewKeyFromIntSeed(1)
+				key = ed25519.NewKeyFromIntSeed(1)
 				err := ks.CreateKey(key, types2.KeyTypeUser, "")
 				Expect(err).To(BeNil())
 			})
@@ -63,10 +63,10 @@ var _ = Describe("UnlockKeyUI", func() {
 		})
 
 		When("key has passphrase", func() {
-			var key *crypto.Key
+			var key *ed25519.Key
 
 			BeforeEach(func() {
-				key = crypto.NewKeyFromIntSeed(1)
+				key = ed25519.NewKeyFromIntSeed(1)
 				err := ks.CreateKey(key, types2.KeyTypeUser, "my_pass")
 				Expect(err).To(BeNil())
 			})

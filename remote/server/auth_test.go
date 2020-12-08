@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/policy"
@@ -37,15 +37,15 @@ var _ = Describe("Auth", func() {
 	var repoName, path string
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var key, key2 *crypto.Key
+	var key, key2 *ed25519.Key
 	var svr *Server
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 
-		key = crypto.NewKeyFromIntSeed(1)
-		key2 = crypto.NewKeyFromIntSeed(2)
+		key = ed25519.NewKeyFromIntSeed(1)
+		key2 = ed25519.NewKeyFromIntSeed(2)
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)

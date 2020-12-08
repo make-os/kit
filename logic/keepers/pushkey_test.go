@@ -3,7 +3,7 @@ package keepers
 import (
 	"os"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	storagetypes "github.com/make-os/kit/storage/types"
 	state2 "github.com/make-os/kit/types/state"
 
@@ -27,7 +27,8 @@ var _ = Describe("PushKeyKeeper", func() {
 		Expect(err).To(BeNil())
 		appDB, _ = testutil.GetDB()
 		dbTx := appDB.NewTx(true, true)
-		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		state, err = tree.NewSafeTree(tmdb.NewMemDB(), 128)
+		Expect(err).To(BeNil())
 		pushKeyKeeper = NewPushKeyKeeper(state, dbTx)
 	})
 
@@ -40,7 +41,7 @@ var _ = Describe("PushKeyKeeper", func() {
 	Describe(".Update", func() {
 		var pushKey *state2.PushKey
 		BeforeEach(func() {
-			pushKey = &state2.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: "addr"}
+			pushKey = &state2.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: "addr"}
 			err = pushKeyKeeper.Update("pk_id", pushKey)
 			Expect(err).To(BeNil())
 		})
@@ -63,7 +64,7 @@ var _ = Describe("PushKeyKeeper", func() {
 		var pushKey, pushKey2 *state2.PushKey
 
 		BeforeEach(func() {
-			pushKey = &state2.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: "addr"}
+			pushKey = &state2.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: "addr"}
 			err = pushKeyKeeper.Update("pk_id", pushKey)
 			Expect(err).To(BeNil())
 			pushKey2 = pushKeyKeeper.Get("pk_id")
@@ -78,7 +79,7 @@ var _ = Describe("PushKeyKeeper", func() {
 		var removed bool
 
 		BeforeEach(func() {
-			pushKey := &state2.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: "addr"}
+			pushKey := &state2.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: "addr"}
 			err = pushKeyKeeper.Update("pk_id", pushKey)
 			Expect(err).To(BeNil())
 			Expect(pushKeyKeeper.Get("pk_id").IsNil()).To(BeFalse())
@@ -93,9 +94,9 @@ var _ = Describe("PushKeyKeeper", func() {
 
 	Describe(".GetByAddress", func() {
 		BeforeEach(func() {
-			err = pushKeyKeeper.Update("pk_id", &state2.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: "addr"})
+			err = pushKeyKeeper.Update("pk_id", &state2.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: "addr"})
 			Expect(err).To(BeNil())
-			err = pushKeyKeeper.Update("pk_id2", &state2.PushKey{PubKey: crypto.StrToPublicKey("pub_key"), Address: "addr"})
+			err = pushKeyKeeper.Update("pk_id2", &state2.PushKey{PubKey: ed25519.StrToPublicKey("pub_key"), Address: "addr"})
 			Expect(err).To(BeNil())
 		})
 

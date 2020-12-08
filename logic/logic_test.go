@@ -8,6 +8,7 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/testutil"
@@ -23,7 +24,8 @@ func TestLogic(t *testing.T) {
 }
 
 var _ = Describe("Logic", func() {
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *l.Logic

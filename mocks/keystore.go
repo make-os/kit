@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	crypto "github.com/make-os/kit/crypto"
+	ed25519 "github.com/make-os/kit/crypto/ed25519"
 	types "github.com/make-os/kit/keystore/types"
 	io "io"
 	reflect "reflect"
@@ -51,10 +51,10 @@ func (mr *MockStoredKeyMockRecorder) GetMeta() *gomock.Call {
 }
 
 // GetKey mocks base method
-func (m *MockStoredKey) GetKey() *crypto.Key {
+func (m *MockStoredKey) GetKey() *ed25519.Key {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKey")
-	ret0, _ := ret[0].(*crypto.Key)
+	ret0, _ := ret[0].(*ed25519.Key)
 	return ret0
 }
 
@@ -382,7 +382,7 @@ func (mr *MockKeystoreMockRecorder) GetByAddress(addr interface{}) *gomock.Call 
 }
 
 // CreateKey mocks base method
-func (m *MockKeystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase string) error {
+func (m *MockKeystore) CreateKey(key *ed25519.Key, keyType types.KeyType, passphrase string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateKey", key, keyType, passphrase)
 	ret0, _ := ret[0].(error)
@@ -396,10 +396,10 @@ func (mr *MockKeystoreMockRecorder) CreateKey(key, keyType, passphrase interface
 }
 
 // CreateCmd mocks base method
-func (m *MockKeystore) CreateCmd(keyType types.KeyType, seed int64, passphrase string, nopass bool) (*crypto.Key, error) {
+func (m *MockKeystore) CreateCmd(keyType types.KeyType, seed int64, passphrase string, nopass bool) (*ed25519.Key, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCmd", keyType, seed, passphrase, nopass)
-	ret0, _ := ret[0].(*crypto.Key)
+	ret0, _ := ret[0].(*ed25519.Key)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

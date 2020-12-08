@@ -12,7 +12,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/olekukonko/tablewriter"
@@ -46,7 +46,7 @@ func (ks *Keystore) List() (accounts []types.StoredKey, err error) {
 		pubKey := parts[1][1:]
 
 		// Decode the public key
-		pk, err := crypto.PubKeyFromBase58(pubKey)
+		pk, err := ed25519.PubKeyFromBase58(pubKey)
 		if err != nil {
 			log.Infof("found an invalid key file: %s", f.Name())
 			continue

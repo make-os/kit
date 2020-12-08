@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/core"
@@ -168,9 +168,9 @@ func GetCommitOrTagSigMsg(obj object.Object) string {
 	encoded := &plumbing.MemoryObject{}
 	switch o := obj.(type) {
 	case *object.Commit:
-		o.EncodeWithoutSignature(encoded)
+		_ = o.EncodeWithoutSignature(encoded)
 	case *object.Tag:
-		o.EncodeWithoutSignature(encoded)
+		_ = o.EncodeWithoutSignature(encoded)
 	}
 	rdr, _ := encoded.Reader()
 	msg, _ := ioutil.ReadAll(rdr)
@@ -178,7 +178,7 @@ func GetCommitOrTagSigMsg(obj object.Object) string {
 }
 
 // verifyCommitSignature verifies commit and tag signatures
-func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*types.TxDetail, error) {
+func VerifyCommitOrTagSignature(obj object.Object, pubKey ed25519.PublicKey) (*types.TxDetail, error) {
 	var sig, hash string
 
 	// Extract the signature for commit or tag object
@@ -211,7 +211,7 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*ty
 	msg, _ := ioutil.ReadAll(rdr)
 
 	// Verify the signature
-	pk := crypto.MustPubKeyFromBytes(pubKey.Bytes())
+	pk := ed25519.MustPubKeyFromBytes(pubKey.Bytes())
 	if ok, err := pk.Verify(msg, pemBlock.Bytes); !ok || err != nil {
 		return nil, fmt.Errorf("object (%s) signature is invalid", hash)
 	}

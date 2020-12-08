@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
@@ -127,7 +127,7 @@ func CheckTxDetailConsistency(txd *types.TxDetail, keepers core.Keepers, index i
 	}
 
 	// Use the key to verify the tx params signature
-	pubKey, _ := crypto.PubKeyFromBytes(pushKey.PubKey.Bytes())
+	pubKey, _ := ed25519.PubKeyFromBytes(pushKey.PubKey.Bytes())
 	if ok, err := pubKey.Verify(txd.BytesNoSig(), txd.MustSignatureAsBytes()); err != nil || !ok {
 		return fe(index, "sig", "signature is not valid")
 	}

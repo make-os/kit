@@ -5,7 +5,7 @@ import (
 
 	tmdb "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/iavl"
+	"github.com/cosmos/iavl"
 )
 
 // SafeTree is a wrapper around Tendermint's IAVL that
@@ -16,11 +16,17 @@ type SafeTree struct {
 }
 
 // NewSafeTree creates an instance of SafeTree
-func NewSafeTree(db tmdb.DB, cacheSize int) *SafeTree {
+func NewSafeTree(db tmdb.DB, cacheSize int) (*SafeTree, error) {
+
+	state, err := iavl.NewMutableTree(db, cacheSize)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SafeTree{
 		RWMutex: &sync.RWMutex{},
-		state:   iavl.NewMutableTree(db, cacheSize),
-	}
+		state:   state,
+	}, nil
 }
 
 // Raw returns the underlying tree

@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
@@ -25,10 +25,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var testPushKeyGetter = func(pubKey *crypto.PubKey, err error) func(pushKeyID string) (crypto.PublicKey, error) {
-	return func(pushKeyID string) (crypto.PublicKey, error) {
+var testPushKeyGetter = func(pubKey *ed25519.PubKey, err error) func(pushKeyID string) (ed25519.PublicKey, error) {
+	return func(pushKeyID string) (ed25519.PublicKey, error) {
 		if pubKey == nil {
-			return crypto.EmptyPublicKey, err
+			return ed25519.EmptyPublicKey, err
 		}
 		return pubKey.ToPublicKey(), err
 	}
@@ -39,8 +39,8 @@ var _ = Describe("Validation", func() {
 	var cfg *config.AppConfig
 	var testRepo types.LocalRepo
 	var path string
-	var pubKey *crypto.PubKey
-	var privKey *crypto.Key
+	var pubKey *ed25519.PubKey
+	var privKey *ed25519.Key
 	var ctrl *gomock.Controller
 	var testTxDetail *types.TxDetail
 	var mockKeepers *mocks.MockKeepers
@@ -51,7 +51,7 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		privKey = crypto.NewKeyFromIntSeed(1)
+		privKey = ed25519.NewKeyFromIntSeed(1)
 		testTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
 		pubKey = privKey.PubKey()
 

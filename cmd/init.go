@@ -13,14 +13,13 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/config/chains"
-	"github.com/make-os/kit/crypto"
+	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
-	tmcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
@@ -30,11 +29,11 @@ import (
 var cdc = amino.NewCodec()
 
 func init() {
-	cdc.RegisterInterface((*tmcrypto.PrivKey)(nil), nil)
-	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoName, nil)
+	// cdc.RegisterInterface((*tmcrypto.PrivKey)(nil), nil)
+	// cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoName, nil)
 }
 
-func genNodeKey(filePath string, pk ed25519.PrivKeyEd25519) (*p2p.NodeKey, error) {
+func genNodeKey(filePath string, pk ed25519.PrivKey) (*p2p.NodeKey, error) {
 	nodeKey := &p2p.NodeKey{
 		PrivKey: pk,
 	}
@@ -85,7 +84,7 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 			if pubKey == "" {
 				continue
 			}
-			pk, err := crypto.ConvertBase58PubKeyToTMPubKey(pubKey)
+			pk, err := crypto2.ConvertBase58PubKeyToTMPubKey(pubKey)
 			if err != nil {
 				golog.Fatalf("Failed to decode genesis validator public key %s", pubKey)
 			}
@@ -128,11 +127,12 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 
 	// Set validator key if provided
 	if validatorKey != "" {
-		vk, err := crypto.ConvertBase58PrivKeyToTMPrivKey(strings.TrimSpace(validatorKey))
+		vk, err := crypto2.ConvertBase58PrivKeyToTMPrivKey(strings.TrimSpace(validatorKey))
 		if err != nil {
 			golog.Fatalf("Failed to decode validator private key: %s", err.Error())
 		}
-		pv := privval.GenFilePV(tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
+		pv, _ := privval.GenFilePV(tmconfig.PrivValidatorKeyFile(),
+			tmconfig.PrivValidatorStateFile(), tmtypes.ABCIPubKeyTypeEd25519)
 		pv.Key.PrivKey = vk
 		pv.Key.Address = vk.PubKey().Address()
 		pv.Key.PubKey = vk.PubKey()

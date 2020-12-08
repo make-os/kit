@@ -12,12 +12,13 @@ import (
 	"github.com/make-os/kit/types/txns"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
+	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/params"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
@@ -27,9 +28,10 @@ import (
 )
 
 var _ = Describe("TxValidator", func() {
-	var key = crypto.NewKeyFromIntSeed(1)
-	var key2 = crypto.NewKeyFromIntSeed(2)
-	var appDB, stateTreeDB storagetypes.Engine
+	var key = ed25519.NewKeyFromIntSeed(1)
+	var key2 = ed25519.NewKeyFromIntSeed(2)
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
@@ -117,7 +119,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxCoinTransfer()
 				tx.Value = "10.2"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				mockLogic.EXPECT().DrySend(key.PubKey(), tx.Value, tx.Fee, tx.Nonce, false, uint64(0)).Return(fmt.Errorf("error"))
 				err = validation.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
 			})
@@ -131,14 +133,14 @@ var _ = Describe("TxValidator", func() {
 
 	Describe(".CheckTxTicketPurchaseConsistency", func() {
 		When("delegate is set", func() {
-			var delegate = crypto.NewKeyFromIntSeed(1)
+			var delegate = ed25519.NewKeyFromIntSeed(1)
 
 			When("unable to get active ticket of delegate", func() {
 				BeforeEach(func() {
 					tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-					tx.Delegate = crypto.BytesToPublicKey(delegate.PubKey().MustBytes())
+					tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+					tx.Delegate = ed25519.BytesToPublicKey(delegate.PubKey().MustBytes())
 
 					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return(nil, fmt.Errorf("error"))
@@ -156,8 +158,8 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-					tx.Delegate = crypto.BytesToPublicKey(delegate.PubKey().MustBytes())
+					tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+					tx.Delegate = ed25519.BytesToPublicKey(delegate.PubKey().MustBytes())
 
 					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return([]*tickettypes.Ticket{}, nil)
@@ -176,7 +178,7 @@ var _ = Describe("TxValidator", func() {
 					params.MinValidatorsTicketPrice = 10
 					tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 					tx.Value = "1"
-					tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					err = validation.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
 				})
 
@@ -191,7 +193,7 @@ var _ = Describe("TxValidator", func() {
 					params.MinValidatorsTicketPrice = 10
 					tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 					tx.Value = "10.5"
-					tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					mockLogic.EXPECT().DrySend(key.PubKey(), tx.Value, tx.Fee, tx.Nonce, false, uint64(0)).Return(fmt.Errorf("error"))
 
 					err = validation.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -240,7 +242,7 @@ var _ = Describe("TxValidator", func() {
 		When("ticket is not delegated", func() {
 			When("sender is not the ticket proposer", func() {
 				BeforeEach(func() {
-					key2 := crypto.NewKeyFromIntSeed(2)
+					key2 := ed25519.NewKeyFromIntSeed(2)
 					tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
 					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
@@ -263,7 +265,7 @@ var _ = Describe("TxValidator", func() {
 		When("ticket is delegated", func() {
 			When("sender is not the delegator", func() {
 				BeforeEach(func() {
-					key2 := crypto.NewKeyFromIntSeed(2)
+					key2 := ed25519.NewKeyFromIntSeed(2)
 					tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
 					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
@@ -422,10 +424,10 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				pushKey := crypto.NewKeyFromIntSeed(1)
-				tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
+				pushKey := ed25519.NewKeyFromIntSeed(1)
+				tx.PublicKey = ed25519.BytesToPublicKey(pushKey.PubKey().MustBytes())
 
-				pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
+				pushKeyID := ed25519.CreatePushKeyID(tx.PublicKey)
 				mockPushKeyKeeper.EXPECT().Get(pushKeyID).Return(&state.PushKey{PubKey: pushKey.PubKey().ToPublicKey()})
 
 				err = validation.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
@@ -442,10 +444,10 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				pushKey := crypto.NewKeyFromIntSeed(1)
-				tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
+				pushKey := ed25519.NewKeyFromIntSeed(1)
+				tx.PublicKey = ed25519.BytesToPublicKey(pushKey.PubKey().MustBytes())
 
-				pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
+				pushKeyID := ed25519.CreatePushKeyID(tx.PublicKey)
 				mockPushKeyKeeper.EXPECT().Get(pushKeyID).Return(&state.PushKey{})
 
 				mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce, false, uint64(0)).Return(fmt.Errorf("error"))
@@ -480,7 +482,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
 				tx.ID = "pk1_abc"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				pushKey := state.BarePushKey()
 				pushKey.Address = "addr1"
@@ -499,7 +501,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
 				tx.ID = "pk1_abc"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{1}
 
 				pushKey := state.BarePushKey()
@@ -520,7 +522,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
 				tx.ID = "pk1_abc"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{0}
 
 				pushKey := state.BarePushKey()
@@ -542,7 +544,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxUpDelPushKey()
 				tx.ID = "pk1_abc"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{0}
 
 				pushKey := state.BarePushKey()
@@ -640,7 +642,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareTxNamespaceRegister()
 				tx.Value = "10.2"
 				tx.Name = "name1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				bi := &state.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -664,7 +666,7 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceDomainUpdate()
 				tx.Name = name
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(state.BareNamespace())
 
@@ -682,9 +684,9 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceDomainUpdate()
 				tx.Name = name
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
-				key2 := crypto.NewKeyFromIntSeed(2)
+				key2 := ed25519.NewKeyFromIntSeed(2)
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{
 					GraceEndAt: 10,
 					Owner:      key2.Addr().String(),
@@ -704,7 +706,7 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := txns.NewBareTxNamespaceDomainUpdate()
 				tx.Name = name
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{
 					GraceEndAt: 9,
@@ -946,7 +948,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validation.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -963,7 +965,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal_xyz"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{})
@@ -982,7 +984,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{Outcome: 1})
@@ -1000,7 +1002,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1023,7 +1025,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1047,7 +1049,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1073,7 +1075,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1098,7 +1100,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1123,7 +1125,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1148,7 +1150,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := txns.NewBareRepoProposalVote()
 					tx.RepoName = "repo1"
-					tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					tx.ProposalID = "proposal1"
 					tx.Vote = state.ProposalVoteNoWithVeto
 
@@ -1177,7 +1179,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validation.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1194,7 +1196,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.ID = "proposal_xyz"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{})
@@ -1213,7 +1215,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.ID = "proposal1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{Outcome: 1})
@@ -1231,7 +1233,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1254,7 +1256,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1278,7 +1280,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1302,7 +1304,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ID = "proposal1"
 
 				repo := state.BareRepository()
@@ -1331,7 +1333,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &txns.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
@@ -1348,7 +1350,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &txns.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.ID = "1"
 				repo := state.BareRepository()
 				repo.Proposals[txProposal.ID] = &state.RepoProposal{EndAt: 1000}
@@ -1367,7 +1369,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1", ID: "1", Value: "10"}
 				txCommon := &txns.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 				repo.Balance = "100"
 				repo.Config.Gov.PropFee = 0
@@ -1386,7 +1388,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &txns.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "10"
 				repo := state.BareRepository()
 				repo.Config.Gov.PropFee = 100
@@ -1406,7 +1408,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 					txCommon := &txns.TxCommon{}
-					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					txProposal.Value = "101"
 					repo := state.BareRepository()
 					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
@@ -1427,7 +1429,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 					txCommon := &txns.TxCommon{}
-					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					txProposal.Value = "101"
 					repo := state.BareRepository()
 					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
@@ -1450,7 +1452,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &txns.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Gov.PropFee = 100

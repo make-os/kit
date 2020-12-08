@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	logic2 "github.com/make-os/kit/logic"
 	"github.com/make-os/kit/logic/contracts/registerpushkey"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 func TestRegisterPushkey(t *testing.T) {
@@ -24,12 +25,13 @@ func TestRegisterPushkey(t *testing.T) {
 }
 
 var _ = Describe("Contract", func() {
-	var appDB, stateTreeDB storagetypes.Engine
+	var appDB storagetypes.Engine
+	var stateTreeDB tmdb.DB
 	var err error
 	var cfg *config.AppConfig
 	var logic *logic2.Logic
 	var ctrl *gomock.Controller
-	var sender = crypto.NewKeyFromIntSeed(1)
+	var sender = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -59,7 +61,7 @@ var _ = Describe("Contract", func() {
 
 	Describe(".Exec", func() {
 		var err error
-		var pushKey *crypto.PubKey
+		var pushKey *ed25519.PubKey
 		var scopes = []string{"repo1", "repo2"}
 		var feeCap = util.String("10")
 
@@ -69,7 +71,7 @@ var _ = Describe("Contract", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
-				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
+				pushKey = ed25519.NewKeyFromIntSeed(1).PubKey()
 				err = registerpushkey.NewContract().Init(logic, &txns.TxRegisterPushKey{
 					TxCommon:  &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Scopes:    scopes,
@@ -80,7 +82,7 @@ var _ = Describe("Contract", func() {
 			})
 
 			Specify("that the push key was added to the tree", func() {
-				pushKeyID := crypto.CreatePushKeyID(pushKey.ToPublicKey())
+				pushKeyID := ed25519.CreatePushKeyID(pushKey.ToPublicKey())
 				pk := logic.PushKeyKeeper().Get(pushKeyID, 0)
 				Expect(pk.IsNil()).To(BeFalse())
 				Expect(pk.Address).To(Equal(sender.Addr()))
@@ -97,7 +99,7 @@ var _ = Describe("Contract", func() {
 
 		When("sender account update is disabled", func() {
 			BeforeEach(func() {
-				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
+				pushKey = ed25519.NewKeyFromIntSeed(1).PubKey()
 				err = registerpushkey.NewContractWithNoSenderUpdate().Init(logic, &txns.TxRegisterPushKey{
 					TxCommon:  &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Scopes:    scopes,

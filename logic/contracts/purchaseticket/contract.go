@@ -3,7 +3,7 @@ package purchaseticket
 import (
 	"fmt"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
@@ -37,7 +37,7 @@ func (c *Contract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint
 
 func (c *Contract) Exec() error {
 
-	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
+	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	acctKeeper := c.AccountKeeper()
 	fee := c.tx.Fee
 	txType := c.tx.GetType()

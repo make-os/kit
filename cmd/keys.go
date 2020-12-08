@@ -6,7 +6,7 @@ import (
 	path "path/filepath"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/spf13/cobra"
@@ -177,15 +177,15 @@ var keyGenCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		seed, _ := cmd.Flags().GetInt64("seed")
 
-		var key *crypto.Key
+		var key *ed25519.Key
 		var err error
 		if seed != 0 {
-			key, err = crypto.NewKey(&seed)
+			key, err = ed25519.NewKey(&seed)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
 		} else {
-			key, _ = crypto.NewKey(nil)
+			key, _ = ed25519.NewKey(nil)
 		}
 
 		fmt.Println("Private Key:", key.PrivKey().Base58())

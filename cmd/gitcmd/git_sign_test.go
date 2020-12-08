@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/mocks"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -23,14 +23,14 @@ var _ = Describe("GitSign", func() {
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
 	var mockRepo *mocks.MockLocalRepo
-	var key *crypto.Key
+	var key *ed25519.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
 		mockRepo = mocks.NewMockLocalRepo(ctrl)
-		key = crypto.NewKeyFromIntSeed(1)
+		key = ed25519.NewKeyFromIntSeed(1)
 	})
 
 	AfterEach(func() {

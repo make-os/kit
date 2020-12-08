@@ -3,7 +3,7 @@ package pool
 import (
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
@@ -14,7 +14,7 @@ import (
 )
 
 var _ = Describe("senderNonces", func() {
-	var sender = crypto.NewKeyFromIntSeed(1)
+	var sender = ed25519.NewKeyFromIntSeed(1)
 	var tx = txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 	var tx2 = txns.NewCoinTransferTx(2, "something", sender, "0", "0.2", time.Now().Unix())
 	var nc *nonceCollection
@@ -130,7 +130,7 @@ var _ = Describe("NonceCollection", func() {
 
 var _ = Describe("Cache", func() {
 	var c *Cache
-	var sender = crypto.NewKeyFromIntSeed(1)
+	var sender = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		c = NewCache()

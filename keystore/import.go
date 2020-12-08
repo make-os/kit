@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func (ks *Keystore) ImportCmd(keyfile string, keyType types.KeyType, pass string
 	var keyFileContent []byte
 	var fullKeyFilePath string
 
-	if crypto.IsValidPrivKey(keyfile) == nil {
+	if ed25519.IsValidPrivKey(keyfile) == nil {
 		keyFileContent = []byte(keyfile)
 		goto decode_key
 	}
@@ -46,7 +46,7 @@ func (ks *Keystore) ImportCmd(keyfile string, keyType types.KeyType, pass string
 decode_key:
 	// Ensure the key file contains a valid private key
 	fileContentStr := strings.TrimSpace(string(keyFileContent))
-	sk, err := crypto.PrivKeyFromBase58(fileContentStr)
+	sk, err := ed25519.PrivKeyFromBase58(fileContentStr)
 	if err != nil {
 		return errors.Wrap(err, "key file contains invalid private key")
 	}
@@ -77,7 +77,7 @@ decode_key:
 	passphrase = strings.TrimSpace(strings.Trim(passphrase, "/n"))
 
 create:
-	key := crypto.NewKeyFromPrivKey(sk)
+	key := ed25519.NewKeyFromPrivKey(sk)
 	if err := ks.CreateKey(key, keyType, passphrase); err != nil {
 		return err
 	}

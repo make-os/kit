@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	core_types "github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	reflect "reflect"
 )
 
@@ -34,10 +34,10 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // GetBlock mocks base method
-func (m *MockService) GetBlock(height int64) (*core_types.ResultBlock, error) {
+func (m *MockService) GetBlock(height int64) (*coretypes.ResultBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", height)
-	ret0, _ := ret[0].(*core_types.ResultBlock)
+	ret0, _ := ret[0].(*coretypes.ResultBlock)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockServiceMockRecorder) IsSyncing() *gomock.Call {
 }
 
 // NetInfo mocks base method
-func (m *MockService) NetInfo() (*core_types.ResultNetInfo, error) {
+func (m *MockService) NetInfo() (*coretypes.ResultNetInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetInfo")
-	ret0, _ := ret[0].(*core_types.ResultNetInfo)
+	ret0, _ := ret[0].(*coretypes.ResultNetInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

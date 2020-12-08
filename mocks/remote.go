@@ -8,7 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/make-os/kit/config"
-	crypto "github.com/make-os/kit/crypto"
+	ed25519 "github.com/make-os/kit/crypto/ed25519"
 	types "github.com/make-os/kit/dht/types"
 	logger "github.com/make-os/kit/pkgs/logger"
 	fetcher "github.com/make-os/kit/remote/fetcher"
@@ -213,10 +213,10 @@ func (mr *MockRemoteServerMockRecorder) GetRepo(name interface{}) *gomock.Call {
 }
 
 // GetPrivateValidatorKey mocks base method
-func (m *MockRemoteServer) GetPrivateValidatorKey() *crypto.Key {
+func (m *MockRemoteServer) GetPrivateValidatorKey() *ed25519.Key {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPrivateValidatorKey")
-	ret0, _ := ret[0].(*crypto.Key)
+	ret0, _ := ret[0].(*ed25519.Key)
 	return ret0
 }
 

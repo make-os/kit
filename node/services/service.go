@@ -1,7 +1,9 @@
 package services
 
 import (
-	"github.com/tendermint/tendermint/rpc/client"
+	"context"
+
+	"github.com/tendermint/tendermint/rpc/client/http"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -17,13 +19,20 @@ type Service interface {
 // NodeService implements types.Service. It provides node specific
 // operations that can be used by the JS module, RPC APIs etc
 type NodeService struct {
-	tmrpc *client.HTTP
+	tmrpc *http.HTTP
 }
 
-// New creates an instance of NodeService
+// New creates an instance of NodeService.
+// The function panics if rpcAddr is an invalid address.
 func New(rpcAddr string) *NodeService {
+
+	c, err := http.New(rpcAddr, "/websocket")
+	if err != nil {
+		panic(c)
+	}
+
 	return &NodeService{
-		tmrpc: client.NewHTTP(rpcAddr, "/websocket"),
+		tmrpc: c,
 	}
 }
 
@@ -33,12 +42,12 @@ func (s *NodeService) GetBlock(height int64) (*core_types.ResultBlock, error) {
 	if *h == 0 {
 		h = nil
 	}
-	return s.tmrpc.Block(h)
+	return s.tmrpc.Block(context.Background(), h)
 }
 
 // IsSyncing checks whether the node has caught up with the rest of its connected peers
 func (s *NodeService) IsSyncing() (bool, error) {
-	status, err := s.tmrpc.Status()
+	status, err := s.tmrpc.Status(context.Background())
 	if err != nil {
 		return false, err
 	}
@@ -47,7 +56,7 @@ func (s *NodeService) IsSyncing() (bool, error) {
 
 // NetInfo returns network information
 func (s *NodeService) NetInfo() (*core_types.ResultNetInfo, error) {
-	ni, err := s.tmrpc.NetInfo()
+	ni, err := s.tmrpc.NetInfo(context.Background())
 	if err != nil {
 		return nil, err
 	}

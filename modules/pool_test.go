@@ -2,7 +2,7 @@ package modules_test
 
 import (
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/types"
@@ -53,7 +53,7 @@ var _ = Describe("PoolModule", func() {
 	})
 
 	Describe(".GetTop", func() {
-		key := crypto.NewKeyFromIntSeed(1)
+		key := ed25519.NewKeyFromIntSeed(1)
 
 		It("should return top n tx", func() {
 			n := 2

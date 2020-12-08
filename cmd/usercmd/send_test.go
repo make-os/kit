@@ -10,7 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	kstypes "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/rpc/types"
@@ -29,7 +29,7 @@ var _ = Describe("UserCmd", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

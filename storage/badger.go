@@ -13,26 +13,20 @@ import (
 // ErrRecordNotFound indicates that a record was not found
 var ErrRecordNotFound = fmt.Errorf("record not found")
 
-// Badger implements storagetypes.Engine. It provides
+// BadgerStore implements storagetypes.Engine. It provides
 // storage functions built on top of badger.
-type Badger struct {
-	*WrappedTx
+type BadgerStore struct {
+	*Tx
 	lck    *sync.Mutex
 	db     *badger.DB
 	closed bool
 }
 
-// NewBadger creates an instance of Badger storage engine.
-func NewBadger() *Badger {
-	return &Badger{lck: &sync.Mutex{}}
-}
-
 // Init starts the database.
-// If dir is empty, an in-memory DB is created.
-func (b *Badger) Init(dir string) error {
+// If dir is unset, an in-memory DB is initialized.
+func (b *BadgerStore) init(dir string) error {
 
 	opts := badger.DefaultOptions(dir)
-	opts = opts.WithTruncate(true)
 	if dir == "" {
 		opts = opts.WithInMemory(true)
 	}
@@ -49,13 +43,13 @@ func (b *Badger) Init(dir string) error {
 	// on success ops or discards on failure.
 	// It also enables the renewal of the underlying transaction
 	// after executing a read/write operation
-	b.WrappedTx = NewTx(db, true, true)
+	b.Tx = NewTx(db, true, true)
 
 	return nil
 }
 
 // GetDB get the underlying db
-func (b *Badger) GetDB() *badger.DB {
+func (b *BadgerStore) GetDB() *badger.DB {
 	return b.db
 }
 
@@ -66,19 +60,19 @@ func (b *Badger) GetDB() *badger.DB {
 //
 // renew: re-initializes the transaction after each operation. Requires
 // autoFinish to be enabled.
-func (b *Badger) NewTx(autoFinish, renew bool) types.Tx {
+func (b *BadgerStore) NewTx(autoFinish, renew bool) types.Tx {
 	return NewTx(b.db, autoFinish, renew)
 }
 
 // Closed checks whether the DB has been closed
-func (b *Badger) Closed() bool {
+func (b *BadgerStore) Closed() bool {
 	b.lck.Lock()
 	defer b.lck.Unlock()
 	return b.closed
 }
 
 // Close closes the database engine and frees resources
-func (b *Badger) Close() error {
+func (b *BadgerStore) Close() error {
 	b.lck.Lock()
 	defer b.lck.Unlock()
 	if b.db != nil {

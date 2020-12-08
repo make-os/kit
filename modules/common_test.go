@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	mockrpc "github.com/make-os/kit/mocks/rpc"
 	"github.com/make-os/kit/types/api"
@@ -60,7 +60,7 @@ var _ = Describe("Common", func() {
 		})
 
 		It("should return key when options list contain 1 argument that is a string and passed key validation", func() {
-			pk := crypto.NewKeyFromIntSeed(1)
+			pk := ed25519.NewKeyFromIntSeed(1)
 			key, payloadOnly := parseOptions(pk.PrivKey().Base58())
 			Expect(payloadOnly).To(BeFalse())
 			Expect(key.Base58()).To(Equal(pk.PrivKey().Base58()))
@@ -106,7 +106,7 @@ var _ = Describe("Common", func() {
 		})
 
 		It("should sign the tx, set sender public key, sent nonce when key is provided", func() {
-			key := crypto.NewKeyFromIntSeed(1)
+			key := ed25519.NewKeyFromIntSeed(1)
 			mockAcctKeeper.EXPECT().Get(key.Addr()).Return(&state.Account{Nonce: 1})
 			tx := txns.NewBareTxCoinTransfer()
 			payloadOnly, pk := finalizeTx(tx, mockKeepers, nil, key.PrivKey().Base58())
@@ -119,7 +119,7 @@ var _ = Describe("Common", func() {
 		})
 
 		It("should panic if account keeper returns empty account", func() {
-			key := crypto.NewKeyFromIntSeed(1)
+			key := ed25519.NewKeyFromIntSeed(1)
 			mockAcctKeeper.EXPECT().Get(key.Addr()).Return(state.BareAccount())
 			tx := txns.NewBareTxCoinTransfer()
 			Expect(func() {
@@ -133,7 +133,7 @@ var _ = Describe("Common", func() {
 				mockUserClient := mockrpc.NewMockUser(ctrl)
 				mockRPCClient.EXPECT().User().Return(mockUserClient)
 
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				tx := txns.NewBareTxCoinTransfer()
 				mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{Account: &state.Account{Nonce: 1}}, nil)
 
@@ -150,7 +150,7 @@ var _ = Describe("Common", func() {
 				mockUserClient := mockrpc.NewMockUser(ctrl)
 				mockRPCClient.EXPECT().User().Return(mockUserClient)
 
-				key := crypto.NewKeyFromIntSeed(1)
+				key := ed25519.NewKeyFromIntSeed(1)
 				tx := txns.NewBareTxCoinTransfer()
 				mockUserClient.EXPECT().Get(key.Addr().String()).Return(&api.ResultAccount{Account: &state.Account{Nonce: 1}}, nil)
 
@@ -160,7 +160,7 @@ var _ = Describe("Common", func() {
 		})
 
 		It("should panic if rpc client returns error", func() {
-			key := crypto.NewKeyFromIntSeed(1)
+			key := ed25519.NewKeyFromIntSeed(1)
 			tx := txns.NewBareTxCoinTransfer()
 			mockRPCClient := mockrpc.NewMockClient(ctrl)
 			mockUserClient := mockrpc.NewMockUser(ctrl)

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	types2 "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/rpc/types"
@@ -95,7 +95,7 @@ var _ = Describe("Client", func() {
 var _ = Describe("PushKeyAPI", func() {
 	var client *RPCClient
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -214,7 +214,7 @@ var _ = Describe("PushKeyAPI", func() {
 var _ = Describe("RepoAPI", func() {
 	var client *RPCClient
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -586,7 +586,7 @@ var _ = Describe("TxAPI", func() {
 var _ = Describe("UserAPI", func() {
 	var client *RPCClient
 	var ctrl *gomock.Controller
-	var key = crypto.NewKeyFromIntSeed(1)
+	var key = ed25519.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())

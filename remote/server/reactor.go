@@ -6,8 +6,8 @@ import (
 	"io"
 	"os/exec"
 
-	crypto2 "github.com/make-os/kit/crypto"
 	"github.com/make-os/kit/crypto/bdn"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/plumbing"
@@ -193,7 +193,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// we need to determine whether to schedule the local reference for a resynchronization.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
 		if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
-			sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)
+			_ = sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)
 		}
 		return errors.Wrap(err, "failed push note validation")
 	}
@@ -203,7 +203,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// For each packfile fetched, announce commit and tag objects.
 	sv.objfetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
-		plumbing.UnpackPackfile(packfile, func(header *packfile2.ObjectHeader, read func() (object.Object, error)) error {
+		_ = plumbing.UnpackPackfile(packfile, func(header *packfile2.ObjectHeader, read func() (object.Object, error)) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
 				objHash := obj.ID()
@@ -216,7 +216,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// FetchAsync the objects for each references in the push note.
 	// The callback is called when all objects have been fetched successfully.
 	sv.objfetcher.FetchAsync(&note, func(err error) {
-		sv.onObjectsFetched(err, &note, txDetails, polEnforcer)
+		_ = sv.onObjectsFetched(err, &note, txDetails, polEnforcer)
 	})
 
 	return nil
@@ -337,7 +337,7 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	sv.log.Debug("Received a valid push endorsement",
-		"PeerID", peerID, "ID", endID, "Endorser", crypto2.ToBase58PubKey(endorsement.EndorserPubKey))
+		"PeerID", peerID, "ID", endID, "Endorser", ed25519.ToBase58PubKey(endorsement.EndorserPubKey))
 
 	// Cache the sender so we don't broadcast same Endorsement to it later
 	sv.registerEndorsementSender(string(peerID), endID)
@@ -353,7 +353,7 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	sv.registerNoteEndorsement(noteID, &endorsement)
 
 	// Attempt to create an send a PushTx to the transaction pool
-	sv.makePushTx(noteID)
+	_ = sv.makePushTx(noteID)
 
 broadcast:
 	// Broadcast the Endorsement to peers
@@ -460,10 +460,10 @@ func (sv *Server) createPushTx(noteID string) error {
 }
 
 // CreateEndorsementFunc describes a function for creating an endorsement for the given push note
-type CreateEndorsementFunc func(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error)
+type CreateEndorsementFunc func(validatorKey *ed25519.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error)
 
 // createEndorsement creates a push endorsement
-func createEndorsement(validatorKey *crypto2.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error) {
+func createEndorsement(validatorKey *ed25519.Key, note pushtypes.PushNote) (*pushtypes.PushEndorsement, error) {
 
 	var err error
 

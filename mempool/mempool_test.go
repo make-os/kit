@@ -17,7 +17,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/testutil"
 
 	. "github.com/onsi/ginkgo"
@@ -33,7 +33,7 @@ var _ = Describe("Mempool", func() {
 	var err error
 	var cfg *config.AppConfig
 	var mempool *Mempool
-	var sender = crypto.NewKeyFromIntSeed(1)
+	var sender = ed25519.NewKeyFromIntSeed(1)
 	var ctrl *gomock.Controller
 	var mockKeeper *mocks.MockLogic
 	var mockAcctKeeper *mocks.MockAccountKeeper

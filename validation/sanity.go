@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
 	"github.com/thoas/go-funk"
 
@@ -476,7 +476,7 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 		if !identifier.IsWholeNativeURI(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
-		if target[:2] == "a/" && crypto.IsValidUserAddr(target[2:]) != nil {
+		if target[:2] == "a/" && ed25519.IsValidUserAddr(target[2:]) != nil {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is not a valid address",
 				domain))
 		}
@@ -503,7 +503,7 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceRegister, index int) error {
 	}
 
 	if tx.To != "" {
-		if crypto.IsValidUserAddr(tx.To) != nil && identifier.IsValidResourceName(tx.To) != nil {
+		if ed25519.IsValidUserAddr(tx.To) != nil && identifier.IsValidResourceName(tx.To) != nil {
 			return feI(index, "to", "invalid value. Expected a user address or a repository name")
 		}
 	}

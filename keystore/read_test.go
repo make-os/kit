@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	keystoretypes "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/types"
 	. "github.com/onsi/ginkgo"
@@ -39,7 +39,7 @@ var _ = Describe("Read", func() {
 		Describe(".Exist", func() {
 			It("should return true and err = nil when key exists", func() {
 				seed := int64(1)
-				address, _ := crypto.NewKey(&seed)
+				address, _ := ed25519.NewKey(&seed)
 				passphrase := "edge123"
 				err := ks.CreateKey(address, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())
@@ -51,7 +51,7 @@ var _ = Describe("Read", func() {
 
 			It("should return false and err = nil when key does not exist", func() {
 				seed := int64(1)
-				address, _ := crypto.NewKey(&seed)
+				address, _ := ed25519.NewKey(&seed)
 
 				exist, err := ks.Exist(address.Addr().String())
 				Expect(err).To(BeNil())
@@ -60,17 +60,17 @@ var _ = Describe("Read", func() {
 		})
 
 		Describe(".GetByIndex", func() {
-			var address, address2 *crypto.Key
+			var address, address2 *ed25519.Key
 			BeforeEach(func() {
 				seed := int64(1)
-				address, _ = crypto.NewKey(&seed)
+				address, _ = ed25519.NewKey(&seed)
 				passphrase := "edge123"
 				err := ks.CreateKey(address, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())
 				time.Sleep(1 * time.Second)
 
 				seed = int64(2)
-				address2, _ = crypto.NewKey(&seed)
+				address2, _ = ed25519.NewKey(&seed)
 				passphrase = "edge123"
 				err = ks.CreateKey(address2, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())
@@ -92,11 +92,11 @@ var _ = Describe("Read", func() {
 		})
 
 		Describe(".GetByAddress", func() {
-			var address *crypto.Key
+			var address *ed25519.Key
 
 			BeforeEach(func() {
 				seed := int64(1)
-				address, _ = crypto.NewKey(&seed)
+				address, _ = ed25519.NewKey(&seed)
 				passphrase := "edge123"
 				err := ks.CreateKey(address, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())
@@ -122,11 +122,11 @@ var _ = Describe("Read", func() {
 		})
 
 		Describe(".GetByIndexOrAddress", func() {
-			var address *crypto.Key
+			var address *ed25519.Key
 
 			BeforeEach(func() {
 				seed := int64(1)
-				address, _ = crypto.NewKey(&seed)
+				address, _ = ed25519.NewKey(&seed)
 				passphrase := "edge123"
 				err := ks.CreateKey(address, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())
@@ -168,7 +168,7 @@ var _ = Describe("Read", func() {
 				var err error
 				seed := int64(1)
 
-				address, _ := crypto.NewKey(&seed)
+				address, _ := ed25519.NewKey(&seed)
 				passphrase = "edge123"
 				err = ks.CreateKey(address, keystoretypes.KeyTypeUser, passphrase)
 				Expect(err).To(BeNil())

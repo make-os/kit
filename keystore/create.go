@@ -10,7 +10,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/logrusorgru/aurora"
-	"github.com/make-os/kit/crypto"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
@@ -23,7 +23,7 @@ const (
 )
 
 // CreateKey creates a new key
-func (ks *Keystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase string) error {
+func (ks *Keystore) CreateKey(key *ed25519.Key, keyType types.KeyType, passphrase string) error {
 
 	// Check whether the key already exists. Return error if true.
 	exist, err := ks.Exist(key.Addr().String())
@@ -89,7 +89,7 @@ func (ks *Keystore) CreateCmd(
 	keyType types.KeyType,
 	seed int64,
 	passphrase string,
-	nopass bool) (*crypto.Key, error) {
+	nopass bool) (*ed25519.Key, error) {
 
 	var passFromPrompt string
 	var err error
@@ -116,9 +116,9 @@ func (ks *Keystore) CreateCmd(
 	}
 
 	// Generate a key
-	key, err := crypto.NewKey(nil)
+	key, err := ed25519.NewKey(nil)
 	if seed != 0 {
-		key, err = crypto.NewKey(&seed)
+		key, err = ed25519.NewKey(&seed)
 	}
 	if err != nil {
 		return nil, err
