@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/kit/config/chains"
 	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -68,7 +69,9 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 	// Run tendermint initialization command
 	defer tmcfg.EnsureRoot(tmconfig.RootDir)
 	commands.SetConfig(tmconfig)
-	commands.InitFilesCmd.RunE(nil, nil)
+	if err := commands.InitFilesCmd.RunE(nil, nil); err != nil {
+		golog.Fatalf(errors.Wrap(err, "tendermint init failed").Error())
+	}
 
 	// Read the genesis file
 	genDoc, err := tmtypes.GenesisDocFromFile(tmconfig.GenesisFile())
