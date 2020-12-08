@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/data"
+	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
 	"github.com/mitchellh/go-homedir"
 	"github.com/olebedev/emitter"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/tendermint/tendermint/config"
 
-	"github.com/make-os/kit/pkgs/logger"
 	"github.com/spf13/viper"
 )
 
@@ -99,8 +99,7 @@ func setDefaultViperConfig() {
 	viper.SetDefault("mempool.maxTxsSize", 1024*1024*1024) // 1GB
 }
 
-// readTendermintConfig reads tendermint config into a tendermint
-// config object
+// readTendermintConfig reads tendermint config into a tendermint config object
 func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 	v := viper.New()
 	v.SetEnvPrefix("TM")
@@ -129,120 +128,19 @@ func IsTendermintInitialized(tmcfg *config.Config) bool {
 func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
 	NoColorFormatting = viper.GetBool("no-colors")
 
-	// Populate viper from environment variables
-	viper.SetEnvPrefix(AppEnvPrefix)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	// Create app config and populate with default values
-	cfg.Node.Mode = ModeProd
-	cfg.g.Interrupt = itr
-	dataDir := viper.GetString("home")
-	devDataDirPrefix := viper.GetString("home.prefix")
-	devMode := viper.GetBool("dev")
-
-	// If home.prefix is set, set mode to dev mode.
-	if devDataDirPrefix != "" {
-		devMode = true
-		dataDir, _ = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
-	}
-
-	// In development mode, use the development data directory.
-	if devMode {
-		cfg.Node.Mode = ModeDev
-	}
-
-	// Create the data directory and other sub directories
-	os.MkdirAll(dataDir, 0700)
-	os.MkdirAll(path.Join(dataDir, KeystoreDirName), 0700)
-
-	// Read tendermint config file into tmcfg
-	readTendermintConfig(tmcfg, dataDir)
-
-	// Set viper configuration
-	setDefaultViperConfig()
-	viper.SetConfigName(AppName)
-	viper.AddConfigPath(dataDir)
-	viper.AddConfigPath(".")
-
-	// Attempt to read the config file
-	noConfigFile := false
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			noConfigFile = true
-		} else {
-			log.Fatalf("Failed to read config file: %s", err)
-		}
-	}
-
-	// Set tendermint root directory
-	tmcfg.SetRoot(path.Join(dataDir, viper.GetString("net.version")))
-
-	// Ensure tendermint files have been initialized in the network directory
-	if !initializing && !IsTendermintInitialized(tmcfg) {
-		log.Fatalf("data directory has not been initialized (Run `%s "+
-			"init` to initialize this instance)", AppName)
-	}
-
-	// Create the config file if it doesn't exist
-	if noConfigFile {
-		viper.SetConfigType("yaml")
-		if err := viper.WriteConfigAs(path.Join(dataDir, AppName+".yml")); err != nil {
-			log.Fatalf("Failed to create config file: %s", err)
-		}
-	}
-
-	// Read the config file into AppConfig if it exists
-	if err := viper.Unmarshal(&cfg); err != nil {
-		log.Fatalf("Failed to unmarshal configuration file: %s", err)
-	}
-
-	// Set network version environment variable if not already
-	// set and then reset protocol handlers version.
-	SetVersions(uint64(viper.GetInt64("net.version")))
-
-	// Set data and network directories
-	cfg.dataDir = dataDir
-	cfg.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
-	cfg.keystoreDir = path.Join(cfg.DataDir(), KeystoreDirName)
-	cfg.consoleHistoryPath = path.Join(cfg.DataDir(), ".console_history")
-	cfg.repoDir = path.Join(cfg.NetDataDir(), "data", "repos")
-	cfg.extensionDir = path.Join(cfg.DataDir(), "extensions")
-	os.MkdirAll(cfg.extensionDir, 0700)
-
-	os.MkdirAll(cfg.NetDataDir(), 0700)
-	os.MkdirAll(path.Join(cfg.NetDataDir(), "data"), 0700)
-	os.MkdirAll(path.Join(cfg.NetDataDir(), "data", "repos"), 0700)
-	os.MkdirAll(path.Join(cfg.NetDataDir(), "config"), 0700)
-
-	// Create logger with file rotation enabled
-	logPath := path.Join(cfg.NetDataDir(), "logs")
-	os.MkdirAll(logPath, 0700)
-	logFile := path.Join(logPath, "main.log")
-	logLevelSetting := util.ParseLogLevel(viper.GetString("loglevel"))
-	cfg.G().Log = logger.NewLogrusWithFileRotation(logFile, logLevelSetting)
-
-	if devMode {
-		cfg.G().Log.SetToDebug()
-		tmcfg.P2P.AllowDuplicateIP = true
-	}
-
-	// If no logger is wanted, set kit and tendermint log level to `error`
-	noLog := viper.GetBool("no-log")
-	if noLog {
-		tmcfg.LogLevel = fmt.Sprintf("*:error")
-		cfg.G().Log.SetToError()
-	}
-
-	// Disable tendermint's tx indexer
-	tmcfg.TxIndex.Indexer = "null"
-
 	// Set default version information
 	cfg.VersionInfo = &VersionInfo{}
 
-	// Use some of the native config to override tendermint's config
+	// Setup viper and app directories
+	setup(cfg, tmcfg, initializing, itr)
+
+	// Setup logger
+	setupLogger(cfg, tmcfg)
+
+	// Tendermint config overwrites
+	tmcfg.TxIndex.Indexer = "null"
 	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
-	tmcfg.P2P.AddrBookStrict = !devMode
+	tmcfg.P2P.AddrBookStrict = !cfg.IsDev()
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
 	// Add seed peers if .IgnoreSeeds is false
@@ -265,4 +163,118 @@ func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *uti
 
 	cfg.G().Bus = emitter.New(0)
 	cfg.G().TMConfig = tmcfg
+}
+
+func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
+
+	// Populate viper from environment variables
+	viper.SetEnvPrefix(AppEnvPrefix)
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	// Create app config and populate with default values
+	cfg.Node.Mode = ModeProd
+	cfg.g.Interrupt = itr
+	dataDir := viper.GetString("home")
+	devDataDirPrefix := viper.GetString("home.prefix")
+
+	// On dev mode detected.
+	if devDataDirPrefix != "" || viper.GetBool("dev") {
+		cfg.Node.Mode = ModeDev
+		var err error
+		dataDir, err = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
+		if err != nil {
+			log.Fatalf("Failed to get home directory: %s", err)
+		}
+	}
+
+	// Create the data directory and keystore directory
+	_ = os.MkdirAll(dataDir, 0700)
+	_ = os.MkdirAll(path.Join(dataDir, KeystoreDirName), 0700)
+
+	// Set viper configuration
+	setDefaultViperConfig()
+	viper.SetConfigName(AppName)
+	viper.AddConfigPath(dataDir)
+	viper.AddConfigPath(".")
+
+	// Attempt to read the config file
+	noConfigFile := false
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			noConfigFile = true
+		} else {
+			log.Fatalf("Failed to read config file: %s", err)
+		}
+	}
+
+	// Set tendermint root directory
+	tmcfg.SetRoot(path.Join(dataDir, viper.GetString("net.version")))
+
+	// Read tendermint config file into tmcfg
+	if err := readTendermintConfig(tmcfg, tmcfg.RootDir); err != nil {
+		log.Fatalf("Failed to read tendermint configuration")
+	}
+
+	// Allow nodes to share same IP locally
+	if cfg.IsDev() {
+		tmcfg.P2P.AllowDuplicateIP = true
+	}
+
+	// Ensure tendermint files have been initialized in the network directory
+	if !initializing && !IsTendermintInitialized(tmcfg) {
+		log.Fatalf("data directory has not been initialized (Run `%s "+
+			"init` to initialize this instance)", AppName)
+	}
+
+	// Create the config file if it doesn't exist
+	if noConfigFile {
+		viper.SetConfigType("yaml")
+		if err := viper.WriteConfigAs(path.Join(dataDir, AppName+".yml")); err != nil {
+			log.Fatalf("Failed to create config file: %s", err)
+		}
+	}
+
+	// Read the config file into AppConfig if it exists
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Fatalf("Failed to unmarshal configuration file: %s", err)
+	}
+
+	// Set network version environment variable if not already
+	// set and then reset protocol handlers version.
+	SetVersion(uint64(viper.GetInt64("net.version")))
+
+	// Set data and network directories
+	cfg.dataDir = dataDir
+	cfg.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
+	cfg.keystoreDir = path.Join(cfg.DataDir(), KeystoreDirName)
+	cfg.consoleHistoryPath = path.Join(cfg.DataDir(), ".console_history")
+	cfg.repoDir = path.Join(cfg.NetDataDir(), "data", "repos")
+	cfg.extensionDir = path.Join(cfg.DataDir(), "extensions")
+	_ = os.MkdirAll(cfg.extensionDir, 0700)
+	_ = os.MkdirAll(cfg.NetDataDir(), 0700)
+	_ = os.MkdirAll(path.Join(cfg.NetDataDir(), "data"), 0700)
+	_ = os.MkdirAll(path.Join(cfg.NetDataDir(), "data", "repos"), 0700)
+	_ = os.MkdirAll(path.Join(cfg.NetDataDir(), "config"), 0700)
+}
+
+func setupLogger(cfg *AppConfig, tmcfg *config.Config) {
+
+	// Create logger with file rotation enabled
+	logPath := path.Join(cfg.NetDataDir(), "logs")
+	_ = os.MkdirAll(logPath, 0700)
+	logFile := path.Join(logPath, "main.log")
+	logLevelSetting := util.ParseLogLevel(viper.GetString("loglevel"))
+	cfg.G().Log = logger.NewLogrusWithFileRotation(logFile, logLevelSetting)
+
+	if cfg.IsDev() {
+		cfg.G().Log.SetToDebug()
+	}
+
+	// If no logger is wanted, set kit and tendermint log level to `error`
+	noLog := viper.GetBool("no-log")
+	if noLog {
+		tmcfg.LogLevel = fmt.Sprintf("*:error")
+		cfg.G().Log.SetToError()
+	}
 }

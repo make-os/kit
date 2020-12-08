@@ -21,7 +21,7 @@ release-tagged:
 
 # Install from source
 install:
-	cd cmd/kit && go install
+	cd cmd/kit && go install -tags badgerdb
 
 getbin:
 	curl -L https://storage.googleapis.com/kit-bin/kit_$(v)_Linux_x86_64.tar.gz | tar -xz

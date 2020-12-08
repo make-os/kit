@@ -25,10 +25,10 @@ func IsMainNet() bool {
 	return GetNetVersion() == MainNetVersion
 }
 
-// SetVersions sets the protocol version.
+// SetVersion sets the protocol version.
 // All protocol handlers will be prefixed
 // with the version to create a
-func SetVersions(netVersion uint64) {
+func SetVersion(netVersion uint64) {
 	cfgLck.Lock()
 	defer cfgLck.Unlock()
 
@@ -45,5 +45,5 @@ func GetNetVersion() uint64 {
 }
 
 func init() {
-	SetVersions(1)
+	SetVersion(1)
 }
