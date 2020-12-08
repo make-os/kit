@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
@@ -426,7 +425,6 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pktEnc := pktline.NewEncoder(w)
-	pp.Println(r.BasicAuth())
 
 	// Authenticate pusher
 	txDetails, polEnforcer, err := sv.handleAuth(r, repoState, namespace)

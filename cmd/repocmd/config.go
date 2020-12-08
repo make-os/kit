@@ -115,8 +115,14 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 		rcfg.Raw.Section("commit").SetOption("amend", cast.ToString(*args.AmendCommit))
 	}
 
+	// Lookup full path of app binary
+	appBinPath, err := exec.LookPath(config.AppName)
+	if err != nil {
+		return fmt.Errorf("could not find '%s' executable in PATH", config.AppName)
+	}
+
 	// Set kit as `gpg.program`
-	rcfg.Raw.Section("gpg").SetOption("program", config.AppName)
+	rcfg.Raw.Section("gpg").SetOption("program", appBinPath)
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
@@ -136,7 +142,7 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	// Add hooks if allowed
 	dotGitPath := filepath.Join(repo.GetPath(), ".git")
 	if !args.NoHook {
-		if err = addHooks(config.AppName, dotGitPath); err != nil {
+		if err = addHooks(appBinPath, dotGitPath); err != nil {
 			return err
 		}
 	}
@@ -159,7 +165,7 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 // If the hook file does not exist, create it and make it an executable on non-windows system.
 func addHooks(appAppName string, path string) error {
 	for _, hook := range []string{"pre-push"} {
-		cmd := fmt.Sprintf("%s repo hook $1", config.AppName)
+		cmd := fmt.Sprintf("%s repo hook $1", appAppName)
 
 		os.Mkdir(filepath.Join(path, "hooks"), 0700)
 		prePushFile := filepath.Join(path, "hooks", hook)
@@ -193,6 +199,9 @@ func addHooks(appAppName string, path string) error {
 				continue
 			}
 			if strings.Contains(scanner.Text(), appAppName+" repo hook") {
+				goto end
+			}
+			if strings.Contains(scanner.Text(), config.AppName+" repo hook") {
 				goto end
 			}
 		}
