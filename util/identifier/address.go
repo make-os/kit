@@ -92,7 +92,7 @@ func IsValidUserAddr(str string) error {
 		return fmt.Errorf("empty address")
 	}
 
-	hrp, _, err := bech32.Decode(str)
+	hrp, _, err := bech32.Decode(str, 90)
 	if err != nil {
 		return err
 	}

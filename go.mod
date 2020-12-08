@@ -4,14 +4,13 @@ go 1.13
 
 replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
+	github.com/btcsuite/btcutil => github.com/make-os/btcutil v1.0.3-0.20201208011646-272219d09635
 	github.com/imdario/mergo => github.com/ncodes/mergo v0.3.10-0.20200627182710-b10b58df675a
 	github.com/tendermint/tendermint => github.com/make-os/tendermint v0.34.0-rc4.0.20201207191223-e101ff2d82fe
 )
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
-	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1
@@ -19,16 +18,16 @@ require (
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/coreos/go-semver v0.3.0
+	github.com/cosmos/iavl v0.15.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger/v2 v2.2007.2
+	github.com/dgraph-io/ristretto v0.0.4-0.20200906165740-41ebdbffecfd // indirect
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/emirpasic/gods v1.12.0
-	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1
@@ -40,16 +39,13 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c
 	github.com/imdario/mergo v0.3.9
-	github.com/imroc/req v0.3.0 // indirect
 	github.com/ipfs/go-cid v0.0.6
-	github.com/ipfs/go-ds-badger v0.2.3
+	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/ipfs/go-log/v2 v2.1.1 // indirect
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
-	github.com/kavu/go_reuseport v1.5.0 // indirect
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
 	github.com/libp2p/go-libp2p v0.8.3
@@ -58,7 +54,6 @@ require (
 	github.com/libp2p/go-libp2p-record v0.1.3
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
-	github.com/make-os/btcutil v1.0.2-fork
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.3.2
@@ -66,7 +61,6 @@ require (
 	github.com/multiformats/go-multiaddr v0.2.2
 	github.com/multiformats/go-multihash v0.0.13
 	github.com/ncodes/go-prettyjson v0.0.1
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/onsi/ginkgo v1.14.0
@@ -88,21 +82,17 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/objx v0.2.0
 	github.com/stretchr/testify v1.6.1
-	github.com/stumble/gorocksdb v0.0.3 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/tendermint/go-amino v0.15.1
-	github.com/cosmos/iavl v0.15.0
 	github.com/tendermint/tendermint v0.34.0
 	github.com/tendermint/tm-db v0.6.3
 	github.com/thoas/go-funk v0.4.0
-	github.com/tidwall/evio v1.0.7 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	go.dedis.ch/kyber/v3 v3.0.11
 	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200908211811-12e1bf57a112 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
