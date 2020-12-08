@@ -2,7 +2,6 @@ package node
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
@@ -84,11 +83,6 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 
 	a.log.Info("Initializing for the first time")
 	a.log.Info("Creating the chain and generating initial state")
-
-	// State must be empty at initialization
-	if stateTree.WorkingHash() != nil {
-		panic(fmt.Errorf("at initialization, state must be empty...It was not empty"))
-	}
 
 	// Apply genesis state
 	if err := a.logic.ApplyGenesisState(req.AppStateBytes); err != nil {
