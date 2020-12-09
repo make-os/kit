@@ -310,6 +310,15 @@ var repoHookCmd = &cobra.Command{
 			Stdin:              os.Stdin,
 			Stderr:             os.Stderr,
 		}); err != nil {
+			if errors.Cause(err) == common.ErrSigningKeyPassRequired {
+				fmt.Fprintln(os.Stderr, `It appears kit was not able to find a passphrase to unlock your signing key. 
+You can provide it in one of the following ways:
+ - set 'KIT_PASS' or 'KIT_<REPONAME>PASS environment variable.
+ - set 'user.passphrase' git config option (not recommended).
+ - run 'kit pass -c=1h' to cache your passphrase in memory for 1 hour.
+   You can also push at the same time with 'kit pass -c=1h git push'.`)
+				fmt.Fprintln(os.Stderr, "")
+			}
 			log.Fatal(errors.Wrap(err, "hook error").Error())
 		}
 	},

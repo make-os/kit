@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	ErrBodyRequired  = fmt.Errorf("body is required")
-	ErrTitleRequired = fmt.Errorf("title is required")
+	ErrBodyRequired           = fmt.Errorf("body is required")
+	ErrTitleRequired          = fmt.Errorf("title is required")
+	ErrSigningKeyPassRequired = fmt.Errorf("passphrase of signing key is required")
 )
 
 // pagerWriter describes a function for writing a specified content to a pager program
@@ -149,7 +150,7 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 
 	// If key is protected, still no passphrase and prompting is not allowed -> exit with error
 	if protected && args.Passphrase == "" && args.NoPrompt {
-		return nil, fmt.Errorf("passphrase of signing key is required")
+		return nil, ErrSigningKeyPassRequired
 	}
 
 	key, passphrase, err := ks.UnlockKeyUI(args.KeyStoreID, args.Passphrase, args.Prompt)
