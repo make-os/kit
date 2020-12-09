@@ -46,6 +46,8 @@ var _ = Describe("SignNote", func() {
 	})
 
 	Describe(".SignNoteCmd", func() {
+		_ = key
+
 		It("should return error when push key ID is not provided", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
 			args := &SignNoteArgs{}
@@ -66,103 +68,80 @@ var _ = Describe("SignNote", func() {
 		It("should attempt to get pusher key if signing key is a user address", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
 			args := &SignNoteArgs{Name: "note1"}
-			refname := plumbing.ReferenceName("refs/notes/note1")
+			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.Addr().String())
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
-			mockRepo.EXPECT().Reference(refname, true).Return(nil, fmt.Errorf("error"))
-			SignNoteCmd(cfg, mockRepo, args)
+			mockRepo.EXPECT().Reference(refName, false).Return(nil, fmt.Errorf("error"))
+			_ = SignNoteCmd(cfg, mockRepo, args)
 		})
 
-		It("should return error when note does not already exist", func() {
+		It("should return error when unable to get note reference", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
 			args := &SignNoteArgs{Name: "note1"}
-			refname := plumbing.ReferenceName("refs/notes/note1")
+			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
-			mockRepo.EXPECT().Reference(refname, true).Return(nil, fmt.Errorf("error"))
+			mockRepo.EXPECT().Reference(refName, false).Return(nil, fmt.Errorf("error"))
 			err := SignNoteCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get note reference: error"))
+			Expect(err).To(MatchError("error"))
 		})
 
-		It("should return error when unable to get next nonce of pusher", func() {
+		When("nonce is not set", func() {
+			It("should attempt to get nonce and return error of failure", func() {
+				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
+				args := &SignNoteArgs{Name: "note1"}
+				args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
+				refName := plumbing.ReferenceName("refs/notes/note1")
+				mockStoredKey := mocks.NewMockStoredKey(ctrl)
+				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
+				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
+				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
+				ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
+				mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)
+				err := SignNoteCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to get next nonce: error"))
+			})
+		})
+
+		It("should return error when unable to create and sign a push token", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
-			args := &SignNoteArgs{Name: "note1"}
-			refname := plumbing.ReferenceName("refs/notes/note1")
+			args := &SignNoteArgs{Name: "note1", Nonce: 1}
+			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
-			mockRepo.EXPECT().Reference(refname, true).Return(&plumbing.Reference{}, nil)
-			args.GetNextNonce = testGetNextNonce2("", fmt.Errorf("error"))
-			err := SignNoteCmd(cfg, mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get next nonce: error"))
-		})
-
-		It("should return error when unable to update remote URL with push token", func() {
-			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
-			args := &SignNoteArgs{Name: "note1"}
-			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
-			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
-			refname := plumbing.ReferenceName("refs/notes/note1")
-			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
-			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
-			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
-				return "", fmt.Errorf("error")
+			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
+			mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)
+			args.CreateApplyPushTokenToRemote = func(targetRepo remotetypes.LocalRepo, args *server.MakeAndApplyPushTokenToRemoteArgs) error {
+				return fmt.Errorf("error")
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
 
-		It("should return no error when successful", func() {
+		It("should return nil on successful creation and signing of a push token", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
-			args := &SignNoteArgs{Name: "note1"}
+			args := &SignNoteArgs{Name: "note1", Nonce: 1}
+			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
-			refname := plumbing.ReferenceName("refs/notes/note1")
-			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
-			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
-			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
-				return "", nil
+			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
+			mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)
+			args.CreateApplyPushTokenToRemote = func(targetRepo remotetypes.LocalRepo, args *server.MakeAndApplyPushTokenToRemoteArgs) error {
+				return nil
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
 			Expect(err).To(BeNil())
-		})
-
-		When("args.SigningKey is a user address", func() {
-			It("should pass push key id to TxDetail object and GetNextNonce", func() {
-				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).Return(key.Addr().String()).AnyTimes()
-				args := &SignNoteArgs{Name: "note1", SigningKey: key.Addr().String()}
-				mockStoredKey := mocks.NewMockStoredKey(ctrl)
-				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
-				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
-				refname := plumbing.ReferenceName("refs/notes/note1")
-				hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
-				mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
-				args.GetNextNonce = func(address string, rpcClient types.Client) (string, error) {
-					Expect(address).To(Equal(key.PushAddr().String()))
-					return "", nil
-				}
-				args.SetRemotePushToken = func(targetRepo remotetypes.LocalRepo, args *server.GenSetPushTokenArgs) (string, error) {
-					Expect(args.TxDetail.PushKeyID).To(Equal(key.PushAddr().String()))
-					return "", nil
-				}
-				err := SignNoteCmd(cfg, mockRepo, args)
-				Expect(err).To(BeNil())
-			})
 		})
 	})
 })

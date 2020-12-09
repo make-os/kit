@@ -9,7 +9,6 @@ import (
 	"github.com/make-os/kit/cmd/signcmd"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
-	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
@@ -42,6 +41,31 @@ var _ = Describe(".HookCmd", func() {
 			err := HookCmd(cfg, mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
+		})
+
+		When("args.PostCommit is true", func() {
+			It("should attempt to get HEAD reference and return error on failure", func() {
+				in := bytes.NewBuffer(nil)
+				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}, PostCommit: true}
+				mockRepo.EXPECT().Head().Return("", fmt.Errorf("error"))
+				err := HookCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to get HEAD: error"))
+			})
+		})
+
+		When("args.PostCommit is true and current HEAD is a branch reference", func() {
+			It("should attempt to sign the HEAD reference", func() {
+				in := bytes.NewBuffer(nil)
+				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}, PostCommit: true}
+				mockRepo.EXPECT().Head().Return("refs/heads/branch", nil)
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+					Expect(args.Head).To(Equal("refs/heads/branch"))
+					return nil
+				}
+				err := HookCmd(cfg, mockRepo, args)
+				Expect(err).To(BeNil())
+			})
 		})
 
 		When("branch reference was received from stdin", func() {
@@ -80,32 +104,6 @@ var _ = Describe(".HookCmd", func() {
 					Expect(err).To(BeNil())
 					Expect(timesCalled).To(Equal(2))
 				})
-			})
-		})
-
-		When("reference is a merge or issue branch", func() {
-			It("should set AmendCommit argument to true (merge request branch)", func() {
-				refName := plumbing.MakeMergeRequestReference("1")
-				in := bytes.NewBuffer([]byte(refName + " 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 " + refName + " 0000000000000000000000000000000000000000\n"))
-				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
-					Expect(args.AmendCommit).To(BeTrue())
-					return nil
-				}
-				err := HookCmd(cfg, mockRepo, args)
-				Expect(err).To(BeNil())
-			})
-
-			It("should set AmendCommit argument to true (issue branch)", func() {
-				refName := plumbing.MakeIssueReference("1")
-				in := bytes.NewBuffer([]byte(refName + " 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 " + refName + " 0000000000000000000000000000000000000000\n"))
-				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
-					Expect(args.AmendCommit).To(BeTrue())
-					return nil
-				}
-				err := HookCmd(cfg, mockRepo, args)
-				Expect(err).To(BeNil())
 			})
 		})
 

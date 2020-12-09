@@ -2,7 +2,6 @@ package signcmd
 
 import (
 	"io"
-	"os"
 	"strconv"
 
 	"github.com/make-os/kit/cmd/common"
@@ -14,11 +13,7 @@ import (
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/spf13/pflag"
 	"github.com/stretchr/objx"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 type SignTagArgs struct {
@@ -31,9 +26,6 @@ type SignTagArgs struct {
 	// Value is for sending special fee
 	Value string
 
-	// Message is a custom tag message
-	Message string
-
 	// PushKeyID is the signers push key ID
 	SigningKey string
 
@@ -43,20 +35,8 @@ type SignTagArgs struct {
 	// Remote specifies the remote name whose URL we will attach the push token to
 	Remote string
 
-	// Force force git-tag to overwrite existing tag
-	Force bool
-
-	// ForceSign forcefully signs a tag when signing is supposed to be skipped
-	ForceSign bool
-
 	// ResetTokens clears all push tokens from the remote URL before adding the new one.
 	ResetTokens bool
-
-	// SignRefOnly indicates that only the target reference should be signed.
-	SignRefOnly bool
-
-	// CreatePushTokenOnly indicates that only the remote token should be created and signed.
-	CreatePushTokenOnly bool
 
 	// NoPrompt prevents key unlocker prompt
 	NoPrompt bool
@@ -70,36 +50,19 @@ type SignTagArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
 
-	// SetRemotePushToken is a function for setting push tokens on a git remote config
-	SetRemotePushToken server.RemotePushTokenSetter
+	// CreateApplyPushTokenToRemote is a function for creating, signing and apply a push token  to a give remote
+	CreateApplyPushTokenToRemote server.MakeAndApplyPushTokenToRemoteFunc
 
 	Stdout io.Writer
 	Stderr io.Writer
 }
 
-type SignTagFunc func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error
+type SignTagFunc func(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, args *SignTagArgs) error
 
-// SignTagCmd creates an annotated tag, appends transaction information to its
-// message and signs it.
-func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *SignTagArgs) error {
+// SignTagCmd create and sign a push token for a given tag.
+func SignTagCmd(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, args *SignTagArgs) error {
 
 	populateSignTagArgsFromRepoConfig(repo, args)
-
-	// Set -f flag if Force or ForceSign is true
-	if args.Force || args.ForceSign {
-		gitArgs = append(gitArgs, "-f")
-	}
-
-	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
-	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
-	gitFlags.StringP("message", "m", "", "user message")
-	gitFlags.StringP("local-user", "u", "", "user signing key")
-	gitFlags.Parse(gitArgs)
-
-	// If --local-user (-u) flag is provided in the git args, use the value as the push key ID
-	if gitFlags.Lookup("local-user").Changed {
-		args.SigningKey, _ = gitFlags.GetString("local-user")
-	}
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.SigningKey == "" {
@@ -129,30 +92,11 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 	// This is required when the passphrase was gotten via an interactive prompt.
 	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
-	// Get the tag object if it already exists
-	var tag *object.Tag
-	tagRef, err := repo.Tag(gitArgs[0])
-	if err != nil && err != git.ErrTagNotFound {
+	// Get the tag object
+	tagRef, err := repo.Tag(cmdArg[0])
+	if err != nil {
 		return err
-	} else if tagRef != nil {
-		tag, err = repo.TagObject(tagRef.Hash())
-		if err != nil {
-			return err
-		}
 	}
-
-	// If message is unset, use the tag's message if the tag already exists
-	if args.Message == "" && tag != nil {
-		args.Message = tag.Message
-	}
-
-	// If --message (-m) flag is provided, use the value as the message
-	if gitFlags.Lookup("message").Changed {
-		args.Message, _ = gitFlags.GetString("message")
-	}
-
-	// Remove -m, --message, -u, -local-user flag from the git args
-	gitArgs = util.RemoveFlag(gitArgs, "m", "message", "u", "local-user")
 
 	// Get the next nonce, if not set
 	if args.Nonce == 0 {
@@ -163,43 +107,8 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, a
 		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
 
-	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
-	// This is required to allow git-sign learn the passphrase to unlock the push key.
-	passVar := common.MakeRepoScopedEnvVar(cfg.GetAppName(), repo.GetName(), "PASS")
-	if len(os.Getenv(passVar)) == 0 {
-		os.Setenv(passVar, args.PushKeyPass)
-	}
-
-	// Check if the tag already exists and has previously been signed:
-	// Skip resigning if push key of current attempt didn't change and only if args.ForceSign is false.
-	if tag != nil && tag.PGPSignature != "" && !args.ForceSign {
-		txd, _ := types.DecodeSignatureHeader([]byte(tag.PGPSignature))
-		if txd != nil && txd.PushKeyID == pushKeyID {
-			goto create_token
-		}
-	}
-
-	// Skip signing if CreatePushTokenOnly is true
-	if args.CreatePushTokenOnly {
-		goto create_token
-	}
-
-	// Create the signed tag
-	if err = repo.CreateTagWithMsg(gitArgs, args.Message, pushKeyID); err != nil {
-		return err
-	}
-
-	// Create & set push request token on the remote in config.
-create_token:
-
-	// Skip push token creation if only reference signing was requested
-	if args.SignRefOnly {
-		return nil
-	}
-
-	// Create & set request token to remote URLs in config
-	tagRef, _ = repo.Tag(gitArgs[0])
-	if _, err = args.SetRemotePushToken(repo, &server.GenSetPushTokenArgs{
+	// Create & apply request token to the remote
+	if err = args.CreateApplyPushTokenToRemote(repo, &server.MakeAndApplyPushTokenToRemoteArgs{
 		TargetRemote: args.Remote,
 		PushKey:      key,
 		ResetTokens:  args.ResetTokens,
@@ -209,7 +118,7 @@ create_token:
 			Value:     util.String(args.Value),
 			Nonce:     args.Nonce,
 			PushKeyID: pushKeyID,
-			Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),
+			Reference: tagRef.Name().String(),
 			Head:      tagRef.Hash().String(),
 		},
 	}); err != nil {

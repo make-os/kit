@@ -145,14 +145,6 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Raw.Section("commit").Option("amend")).To(Equal("true"))
 		})
 
-		It("should set gpg.program", func() {
-			args := &ConfigArgs{}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("gpg").Option("program")).To(Equal(config.AppName))
-		})
-
 		It("should set remotes", func() {
 			args := &ConfigArgs{Remotes: []Remote{{Name: "r1", URL: "remote.com,remote2.com"}, {Name: "r2", URL: "remote3.com"}}}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
@@ -198,30 +190,26 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
 		})
-
-		It("should set credential.helper", func() {
-			args := &ConfigArgs{}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("credential").Option("helper")).To(Equal("store --file .git/.git-credentials"))
-		})
 	})
 
 	Describe(".addHooks", func() {
 		It("should add hook files if they don't already exist", func() {
-			err := addHooks("", gitDir)
+			err := addHooks(config.AppName, gitDir)
 			Expect(err).To(BeNil())
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
+			Expect(string(prePush)).To(Equal(fmt.Sprintf("#!/bin/sh\n%s repo hook $1", config.AppName)))
+			prePush, err = ioutil.ReadFile(filepath.Join(hooksDir, "post-commit"))
+			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
+			Expect(string(prePush)).To(Equal(fmt.Sprintf("#!/bin/sh\n%s repo hook --post-commit", config.AppName)))
 		})
 
-		When("hook files already exist but the have no CLIName command", func() {
-			It("should add CLIName command to the files", func() {
+		When("hook files already exist but the have no <AppName> command", func() {
+			It("should add <AppName> command to the files", func() {
 				err := ioutil.WriteFile(filepath.Join(hooksDir, "pre-push"), []byte("line 1"), 0700)
 				Expect(err).To(BeNil())
-				err = addHooks("", gitDir)
+				err = addHooks(config.AppName, gitDir)
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())
@@ -231,7 +219,7 @@ var _ = Describe("ConfigCmd", func() {
 
 		When("hook files already exist and have a CLIName command", func() {
 			It("should not re-add CLIName command to the files", func() {
-				err = addHooks("", gitDir)
+				err = addHooks(config.AppName, gitDir)
 				Expect(err).To(BeNil())
 				prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 				Expect(err).To(BeNil())

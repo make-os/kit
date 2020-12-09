@@ -150,7 +150,7 @@ type LocalRepo interface {
 	// UpdateRepoConfig updates the 'repocfg' configuration file
 	UpdateRepoConfig(cfg *LocalConfig) (err error)
 
-	// GetKitConfig returns the 'repocfg' config object
+	// GetRepoConfig returns the 'repocfg' config object
 	GetRepoConfig() (*LocalConfig, error)
 }
 

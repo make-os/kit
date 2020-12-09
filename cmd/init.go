@@ -29,11 +29,6 @@ import (
 
 var cdc = amino.NewCodec()
 
-func init() {
-	// cdc.RegisterInterface((*tmcrypto.PrivKey)(nil), nil)
-	// cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoName, nil)
-}
-
 func genNodeKey(filePath string, pk ed25519.PrivKey) (*p2p.NodeKey, error) {
 	nodeKey := &p2p.NodeKey{
 		PrivKey: pk,

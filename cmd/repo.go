@@ -279,11 +279,18 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 	f.StringP("push-key", "k", "", "Specify the push key (defaults to signing key)")
 }
 
+func setupRepoHookCmd(cmd *cobra.Command) {
+	f := cmd.Flags()
+	f.BoolP("post-commit", "c", false, "Executes hook in post-commit mode")
+}
+
 // repoHookCmd is a command handles git hooks
 var repoHookCmd = &cobra.Command{
 	Use:   "hook [flags] <remote>",
 	Short: "Handles git hook events",
 	Run: func(cmd *cobra.Command, args []string) {
+		isPostCommit, _ := cmd.Flags().GetBool("post-commit")
+
 		targetRepo, client := getRepoAndClient("")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
@@ -291,10 +298,11 @@ var repoHookCmd = &cobra.Command{
 
 		if err := repocmd.HookCmd(cfg, targetRepo, &repocmd.HookArgs{
 			Args:               args,
+			PostCommit:         isPostCommit,
 			RPCClient:          client,
 			KeyUnlocker:        common.UnlockKey,
 			GetNextNonce:       api.GetNextNonceOfPushKeyOwner,
-			SetRemotePushToken: server.GenSetPushToken,
+			SetRemotePushToken: server.MakeAndApplyPushTokenToRemote,
 			CommitSigner:       signcmd.SignCommitCmd,
 			TagSigner:          signcmd.SignTagCmd,
 			NoteSigner:         signcmd.SignNoteCmd,
@@ -387,4 +395,5 @@ func init() {
 	setupRepoVoteCmd(repoVoteCmd)
 	setupRepoConfigCmd(repoConfigCmd)
 	setupRepoInitCmd(repoInitCmd)
+	setupRepoHookCmd(repoHookCmd)
 }

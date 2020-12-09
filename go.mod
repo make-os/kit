@@ -67,6 +67,7 @@ require (
 	github.com/onsi/gomega v1.10.1
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
+	github.com/pkg/browser v0.0.0-20201207095918-0426ae3fba23
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.5.0
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect

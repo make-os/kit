@@ -211,20 +211,21 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.In
 	// Set tendermint root directory
 	tmcfg.SetRoot(path.Join(dataDir, viper.GetString("net.version")))
 
-	// Read tendermint config file into tmcfg
-	if err := readTendermintConfig(tmcfg, tmcfg.RootDir); err != nil {
-		log.Fatalf("Failed to read tendermint configuration")
+	// Ensure tendermint files have been initialized in the network directory
+	if !initializing && !IsTendermintInitialized(tmcfg) {
+		log.Fatalf("Data directory has not been initialized yet (have you ran `%s init` ?)", AppName)
+	}
+
+	// Attempt to read tendermint config file when not initializing
+	if !initializing {
+		if err := readTendermintConfig(tmcfg, tmcfg.RootDir); err != nil {
+			log.Fatalf("Failed to read tendermint configuration:%s ", err.Error())
+		}
 	}
 
 	// Allow nodes to share same IP locally
 	if cfg.IsDev() {
 		tmcfg.P2P.AllowDuplicateIP = true
-	}
-
-	// Ensure tendermint files have been initialized in the network directory
-	if !initializing && !IsTendermintInitialized(tmcfg) {
-		log.Fatalf("data directory has not been initialized (Run `%s "+
-			"init` to initialize this instance)", AppName)
 	}
 
 	// Create the config file if it doesn't exist

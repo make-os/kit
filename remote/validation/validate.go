@@ -1,13 +1,10 @@
 package validation
 
 import (
-	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/make-os/kit/crypto/ed25519"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/core"
@@ -138,22 +135,7 @@ func CheckNote(
 // tag: The target annotated tag
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
-func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-
-	if tag.PGPSignature == "" {
-		return errors.Errorf("tag (%s) is unsigned. Sign the tag with your push key", tag.Hash.String())
-	}
-
-	pubKey, err := getPushKey(txDetail.PushKeyID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get pusher key(%s) to verify commit (%s)",
-			txDetail.PushKeyID, tag.Hash.String())
-	}
-
-	_, err = VerifyCommitOrTagSignature(tag, pubKey)
-	if err != nil {
-		return err
-	}
+func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, _ core.PushKeyGetter) error {
 
 	// Ensure the reference hash in the tx detail matches the current object hash
 	if tag.Hash.String() != txDetail.Head {
@@ -161,62 +143,6 @@ func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey cor
 	}
 
 	return nil
-}
-
-// GetCommitOrTagSigMsg returns the message that is signed to create a commit or tag signature
-func GetCommitOrTagSigMsg(obj object.Object) string {
-	encoded := &plumbing.MemoryObject{}
-	switch o := obj.(type) {
-	case *object.Commit:
-		_ = o.EncodeWithoutSignature(encoded)
-	case *object.Tag:
-		_ = o.EncodeWithoutSignature(encoded)
-	}
-	rdr, _ := encoded.Reader()
-	msg, _ := ioutil.ReadAll(rdr)
-	return string(msg)
-}
-
-// verifyCommitSignature verifies commit and tag signatures
-func VerifyCommitOrTagSignature(obj object.Object, pubKey ed25519.PublicKey) (*types.TxDetail, error) {
-	var sig, hash string
-
-	// Extract the signature for commit or tag object
-	encoded := &plumbing.MemoryObject{}
-	switch o := obj.(type) {
-	case *object.Commit:
-		o.EncodeWithoutSignature(encoded)
-		sig, hash = o.PGPSignature, o.Hash.String()
-	case *object.Tag:
-		o.EncodeWithoutSignature(encoded)
-		sig, hash = o.PGPSignature, o.Hash.String()
-	default:
-		return nil, fmt.Errorf("unsupported object type")
-	}
-
-	// Decode sig from PEM format
-	pemBlock, _ := pem.Decode([]byte(sig))
-	if pemBlock == nil {
-		return nil, fmt.Errorf("signature is malformed")
-	}
-
-	// Re-create TxDetail from signature PEM header
-	txDetail, err := types.TxDetailFromGitSigPEMHeader(pemBlock.Headers)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode PEM header")
-	}
-
-	// Re-create the signature message
-	rdr, _ := encoded.Reader()
-	msg, _ := ioutil.ReadAll(rdr)
-
-	// Verify the signature
-	pk := ed25519.MustPubKeyFromBytes(pubKey.Bytes())
-	if ok, err := pk.Verify(msg, pemBlock.Bytes); !ok || err != nil {
-		return nil, fmt.Errorf("object (%s) signature is invalid", hash)
-	}
-
-	return txDetail, nil
 }
 
 // CommitChecker describes a function for checking a standard commit
@@ -227,24 +153,7 @@ type CommitChecker func(commit *object.Commit, txDetail *types.TxDetail, getPush
 // commit: The target commit object
 // txDetail: The push transaction detail
 // getPushKey: Getter function for fetching push public key
-func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
-
-	// Signature must be set
-	if commit.PGPSignature == "" {
-		return fmt.Errorf("commit (%s) was not signed", commit.Hash.String())
-	}
-
-	// Get the push key for signature verification
-	pubKey, err := getPushKey(txDetail.PushKeyID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get push key (%s)", txDetail.PushKeyID)
-	}
-
-	// Verify the signature
-	_, err = VerifyCommitOrTagSignature(commit, pubKey)
-	if err != nil {
-		return err
-	}
+func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, _ core.PushKeyGetter) error {
 
 	// Ensure the reference hash in the tx detail matches the current object hash
 	if commit.Hash.String() != txDetail.Head {

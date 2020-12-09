@@ -55,7 +55,7 @@ type SignNoteArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
 
-	SetRemotePushToken server.RemotePushTokenSetter
+	CreateApplyPushTokenToRemote server.MakeAndApplyPushTokenToRemoteFunc
 
 	Stdout io.Writer
 	Stderr io.Writer
@@ -63,7 +63,7 @@ type SignNoteArgs struct {
 
 type SignNoteFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error
 
-// SignNoteCmd creates adds transaction information to a note and signs it.
+// SignNoteCmd create and signs a push token for a given note
 func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error {
 
 	populateSignNoteArgsFromRepoConfig(repo, args)
@@ -98,13 +98,13 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 
 	// Expand note name to full reference name if name is short
 	if !plumbing2.IsReference(args.Name) {
-		args.Name = "refs/notes/" + args.Name
+		args.Name = plumbing.NewNoteReferenceName(args.Name).String()
 	}
 
-	// Get the HEAD hash of the note and add it as a option
-	noteRef, err := repo.Reference(plumbing.ReferenceName(args.Name), true)
+	// Get the note's reference
+	noteRef, err := repo.Reference(plumbing.ReferenceName(args.Name), false)
 	if err != nil {
-		return errors.Wrap(err, "failed to get note reference")
+		return err
 	}
 
 	// Get the next nonce, if not set
@@ -117,7 +117,7 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 	}
 
 	// Create & set push request token to remote URLs in config
-	if _, err = args.SetRemotePushToken(repo, &server.GenSetPushTokenArgs{
+	if err = args.CreateApplyPushTokenToRemote(repo, &server.MakeAndApplyPushTokenToRemoteArgs{
 		TargetRemote: args.Remote,
 		PushKey:      key,
 		ResetTokens:  args.ResetTokens,

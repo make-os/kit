@@ -18,7 +18,9 @@ import (
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
+	"gopkg.in/src-d/go-git.v4/config"
 )
 
 var (
@@ -149,11 +151,12 @@ func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
 	return base58.Encode(txDetail.Bytes())
 }
 
-// RemotePushTokenSetter describes a function for setting push tokens on a remote config
-type RemotePushTokenSetter func(targetRepo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (string, error)
+// MakeAndApplyPushTokenToRemoteFunc describes a function for creating, signing and
+// applying push tokens on a repo's remote(s)
+type MakeAndApplyPushTokenToRemoteFunc func(targetRepo remotetypes.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error
 
-// GenSetPushTokenArgs contains arguments for GenSetPushToken
-type GenSetPushTokenArgs struct {
+// MakeAndApplyPushTokenToRemoteArgs contains arguments for MakeAndApplyPushTokenToRemote
+type MakeAndApplyPushTokenToRemoteArgs struct {
 
 	// TargetRemote the name of the remote to update.
 	TargetRemote string
@@ -170,36 +173,67 @@ type GenSetPushTokenArgs struct {
 	Stderr io.Writer
 }
 
-// GenSetPushToken generates a push request token for a target remote and
-// updates the credential file with a url that includes the token. It will
-// also store the token under the <remote>.tokens option in .git/repocfg
-// for future/third-party use.
-//
-// Existing tokens found in <remote>.tokens of repocfg are concatenated and
-// used to update the credential file. Existing tokens that point to same
-// reference as the target reference of a call will be replaced with the
-// token generated in the call.
-func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (string, error) {
+// MakeAndApplyPushTokenToRemote creates and applies signed push token(s) to each remote passed to it.
+// It applies the token(s) to the username part of one or more URLs of a remote. Note:
+//  - The tokens are cached in the repocfg file.
+//  - A URL can have multiple tokens for different references applied to it.
+// 	- If the target reference has an existing token, it is replaced with a new one.
+//  - Setting args.ResetTokens will remove all existing tokens.
+func MakeAndApplyPushTokenToRemote(repo remotetypes.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error {
+
+	gitCfg, err := repo.Config()
+	if err != nil {
+		return errors.Wrap(err, "failed to get repo config")
+	}
+
+	// Get and cleanly split the target remotes
+	var chosenRemotes []string
+	if targets := strings.ReplaceAll(strings.TrimSpace(args.TargetRemote), " ", ""); targets != "" {
+		chosenRemotes = strings.Split(targets, ",")
+	}
+
+	// For each current repository remote:
+	// - Check that the remote was chosen, if at least one one was chosen.
+	// - Prepare the remote URL(s)
+	for name, remote := range gitCfg.Remotes {
+		if len(chosenRemotes) > 0 && !funk.ContainsString(chosenRemotes, name) {
+			continue
+		}
+		if err := makeAndApplyPushTokenToRepoRemote(args, repo, remote, gitCfg); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// makeAndApplyPushTokenToRepoRemote creates signed push token(s)
+// and adds it/them to one more URLs of a remote. Note:
+//  - The tokens are cached in the repocfg file.
+//  - A URL can have multiple tokens for different references applied to it.
+// 	- If the target reference has an existing token, it is replaced with a new one.
+//  - Setting args.ResetTokens will remove all existing tokens.
+func makeAndApplyPushTokenToRepoRemote(
+	args *MakeAndApplyPushTokenToRemoteArgs,
+	repo remotetypes.LocalRepo,
+	remote *config.RemoteConfig,
+	gitCfg *config.Config,
+) error {
+
 	if args.Stderr == nil {
 		args.Stderr = ioutil.Discard
 	}
 
-	// Get the repo configuration
-	gitCfg, err := repo.Config()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get config")
-	}
-
-	// If target remote is set, but it is not listed in the config, return err
-	remote := gitCfg.Remotes[args.TargetRemote]
-	if remote == nil {
-		return "", fmt.Errorf("remote was not found")
+	// If the remote has a `kitignore=true` option, return nil
+	kitIgnore := gitCfg.Raw.Section("remote").Subsection(remote.Name).Option("kitignore")
+	if cast.ToBool(kitIgnore) {
+		return nil
 	}
 
 	// Get the content of repocfg
 	repoCfg, err := repo.GetRepoConfig()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read repocfg file")
+		return errors.Wrap(err, "failed to read repocfg file")
 	} else if _, ok := repoCfg.Tokens[remote.Name]; !ok {
 		repoCfg.Tokens[remote.Name] = []string{}
 	}
@@ -218,16 +252,16 @@ func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (str
 		}
 	}
 
-	var lastRepoName, lastRepoNS, token string
+	var lastRepoName, lastRepoNS string
 	for i, v := range remote.URLs {
-		rawURL, err := url.Parse(v)
+		remoteUrl, err := url.Parse(v)
 		if err != nil {
-			fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote url (%s) found and skipped", v))
+			_, _ = fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote remoteUrl (%s) found and skipped", v))
 			continue
 		}
 
-		// Split the url path; ignore urls with less than 2 path sections
-		pathPath := strings.Split(strings.Trim(rawURL.Path, "/"), "/")
+		// Split the remoteUrl path; ignore urls with less than 2 path sections
+		pathPath := strings.Split(strings.Trim(remoteUrl.Path, "/"), "/")
 		if len(pathPath) < 2 {
 			continue
 		}
@@ -242,24 +276,52 @@ func GenSetPushToken(repo remotetypes.LocalRepo, args *GenSetPushTokenArgs) (str
 		// Ensure URLS do not point to different repos or namespaces.
 		if i > 0 && (txp.RepoName != lastRepoName || txp.RepoNamespace != lastRepoNS) {
 			msg := "remote (%s): multiple urls cannot point to different repositories or namespaces"
-			return "", fmt.Errorf(msg, args.TargetRemote)
+			return fmt.Errorf(msg, args.TargetRemote)
 		}
 		lastRepoName, lastRepoNS = txp.RepoName, txp.RepoNamespace
 
 		// Create, sign new token and add to existing tokens list
-		token = MakePushToken(args.PushKey, &txp)
-		existingTokens[token] = struct{}{}
+		existingTokens[MakePushToken(args.PushKey, &txp)] = struct{}{}
 
-		// Use tokens as URL username and update credential file
-		rawURL.User = url.UserPassword(strings.Join(funk.Keys(existingTokens).([]string), ","), "-")
-		repo.UpdateCredentialFile(rawURL.String())
+		// Use tokens as URL username
+		remoteUrl.User = url.UserPassword(strings.Join(funk.Keys(existingTokens).([]string), ","), "-")
+
+		// Added url.insteadOf option
+		urlCopy, _ := url.Parse(remoteUrl.String())
+		setInstanceOf(gitCfg, urlCopy)
+	}
+
+	if err := repo.SetConfig(gitCfg); err != nil {
+		return errors.Wrap(err, "failed to update repo config")
 	}
 
 	// Update <remote>.tokens in repocfg
 	repoCfg.Tokens[remote.Name] = append([]string{}, funk.Keys(existingTokens).([]string)...)
 	if err = repo.UpdateRepoConfig(repoCfg); err != nil {
-		return "", errors.Wrap(err, "failed to save token(s)")
+		return errors.Wrap(err, "failed to save token(s)")
 	}
 
-	return token, nil
+	return nil
+}
+
+// setInstanceOf sets the instanceOf option for a target url.
+// It will remove existing instanceOf sections with a matching target hostname.
+func setInstanceOf(cfg *config.Config, targetUrl *url.URL) {
+
+	sections := cfg.Raw.Section("url").Subsections
+	for _, sec := range sections {
+		secUrl, err := url.Parse(sec.Name)
+		if err != nil {
+			continue
+		}
+		if secUrl.Host == targetUrl.Host {
+			cfg.Raw.RemoveSubsection("url", sec.Name)
+		}
+	}
+
+	targetUrl.Path = ""
+	subSecVal := targetUrl.String()
+	ss := cfg.Raw.Section("url").Subsection(subSecVal)
+	targetUrl.User = nil
+	ss.AddOption("insteadOf", targetUrl.String())
 }

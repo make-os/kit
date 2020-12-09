@@ -1,11 +1,9 @@
 package validation_test
 
 import (
-	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
@@ -71,102 +69,15 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckCommit", func() {
 		var commit *object.Commit
-		var err error
 
-		When("commit was not signed", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash, _ := testRepo.GetRecentCommitHash()
-				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("commit (.*) was not signed"))
-			})
-		})
-
-		When("commit is signed but unable to get public key using the pushKeyID", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommitHash()
-				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				commit.PGPSignature = "signature"
-				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(nil, fmt.Errorf("not found")))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): not found"))
-			})
-		})
-
-		When("commit has a signature but the signature is malformed", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommitHash()
-				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				commit.PGPSignature = "signature"
-				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("signature is malformed"))
-			})
-		})
-
-		When("commit signature header could not be decoded", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommitHash()
-				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
-					Bytes:   []byte{1, 2, 3},
-					Headers: map[string]string{"nonce": "invalid"},
-					Type:    "SIGNATURE"}))
-				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: 'pkID' is required"))
-			})
-		})
-
-		When("commit has a signature but the signature is not valid", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommitHash()
-				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
-					Bytes:   []byte{1, 2, 3},
-					Headers: txDetail.GetGitSigPEMHeader(),
-					Type:    "SIGNATURE"}))
-				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("object (.*) signature is invalid"))
-			})
-		})
-
-		When("commit has a valid signature but its hash and the signed head did not match", func() {
+		When("commit's hash and the signed head did not match", func() {
 			var err error
-			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
-				sigMsg := validation.GetCommitOrTagSigMsg(commit)
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				pemHeader := txDetail.GetGitSigPEMHeader()
-				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
+				testTxDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				Expect(err).To(BeNil())
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
 				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -176,20 +87,13 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("commit has a valid signature and its hash and the signed head match", func() {
+		When("commit's hash and the signed head match", func() {
 			var err error
-			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
-				sigMsg := validation.GetCommitOrTagSigMsg(commit)
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				pemHeader := txDetail.GetGitSigPEMHeader()
-				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
-				Expect(err).To(BeNil())
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
-				testTxDetail.Head = commitHash
+				testTxDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String(), Head: commitHash}
 				err = validation.CheckCommit(commit, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -203,79 +107,12 @@ var _ = Describe("Validation", func() {
 		var err error
 		var tob *object.Tag
 
-		When("tag is not signed", func() {
+		When("tag's hash and the signed head did not match", func() {
 			BeforeEach(func() {
-				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 1", "v1")
-				tagRef, _ := testRepo.Tag("v1")
-				tob, _ = testRepo.TagObject(tagRef.Hash())
-				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err='txDetail was not set'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("tag (.*) is unsigned. Sign the tag with your push key"))
-			})
-		})
-
-		When("tag is signed but unable to get public key using the pushKeyID", func() {
-			BeforeEach(func() {
+				testTxDetail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Head: "hash1"}
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
-				tob.PGPSignature = "signature"
-				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(nil, fmt.Errorf("bad error")))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to get pusher key(.*) to verify commit .*"))
-			})
-		})
-
-		When("tag has a signature but the signature is malformed", func() {
-			BeforeEach(func() {
-				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := testRepo.Tag("v1")
-				tob, _ = testRepo.TagObject(tagRef.Hash())
-				tob.PGPSignature = "signature"
-				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("signature is malformed"))
-			})
-		})
-
-		When("tag has a signature but the signature is invalid", func() {
-			BeforeEach(func() {
-				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := testRepo.Tag("v1")
-				tob, _ = testRepo.TagObject(tagRef.Hash())
-
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
-				tob.PGPSignature = string(sig)
-
-				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("object (.*) signature is invalid"))
-			})
-		})
-
-		When("tag has a valid signature but its hash and the signed head did not match", func() {
-			BeforeEach(func() {
-				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
-				tagRef, _ := testRepo.Tag("v1")
-				tob, _ = testRepo.TagObject(tagRef.Hash())
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				msg := validation.GetCommitOrTagSigMsg(tob)
-				sig, _ := privKey.PrivKey().Sign([]byte(msg))
-				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
-				tob.PGPSignature = string(pemData)
 				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -285,17 +122,12 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("tag has valid signature and its hash and the signed head match", func() {
+		When("tag's hash and the signed head match", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
-				msg := validation.GetCommitOrTagSigMsg(tob)
-				sig, _ := privKey.PrivKey().Sign([]byte(msg))
-				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.GetGitSigPEMHeader(), Type: "SIGNATURE"})
-				tob.PGPSignature = string(pemData)
-				testTxDetail.Head = tagRef.Hash().String()
+				testTxDetail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Head: tagRef.Hash().String()}
 				err = validation.CheckAnnotatedTag(tob, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 

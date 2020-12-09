@@ -1,18 +1,13 @@
 package cmd
 
 import (
-	"encoding/pem"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/gen2brain/beeep"
-	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/gitcmd"
 	"github.com/make-os/kit/config/chains"
 	"github.com/make-os/kit/pkgs/logger"
-	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/profile"
@@ -119,7 +114,7 @@ var rootCmd = &cobra.Command{
 			}
 			return
 		}
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -174,64 +169,10 @@ func setVersionInfo() {
 	}
 }
 
-// isGitSignRequest checks whether the program arguments
-// indicate a request from git to sign a message.
-// Returns the signing key and true if args indicate a sign
-// request. Otherwise, an empty string and false is returned.
-func isGitSignRequest(args []string) (string, bool) {
-	if len(args) == 4 && args[1] == "--status-fd=2" && args[2] == "-bsau" {
-		return args[3], true
-	}
-
-	if len(args) == 3 && args[1] == "-bsau" {
-		return args[2], true
-	}
-
-	return "", false
-}
-
-// isGitVerifyRequest checks whether the program arguments
-// indicate a request from git to verify a signature
-func isGitVerifyRequest(args []string) bool {
-	return len(args) == 6 && funk.ContainsString(args, "--verify")
-}
-
 // fallbackCmd is called any time an unknown command is executed
 var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if signingKey, ok := isGitSignRequest(args); ok {
-			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
-				Args:            os.Args,
-				PushKeyID:       signingKey,
-				RepoGetter:      repo.Get,
-				PushKeyUnlocker: common.UnlockKey,
-				StdErr:          os.Stderr,
-				StdOut:          os.Stdout,
-			}); err != nil {
-				if cfg.IsDev() {
-					beeep.Alert("ERROR", err.Error(), "")
-				}
-				log.Fatal(err.Error())
-			}
-			os.Exit(0)
-		}
-
-		if isGitVerifyRequest(args) {
-			if err := gitcmd.GitVerifyCmd(cfg, &gitcmd.GitVerifyArgs{
-				Args:            args,
-				RepoGetter:      repo.Get,
-				PushKeyUnlocker: common.UnlockKey,
-				PemDecoder:      pem.Decode,
-				StdOut:          os.Stdout,
-				StdErr:          os.Stderr,
-				StdIn:           os.Stdin,
-			}); err != nil {
-				os.Exit(1)
-			}
-			os.Exit(0)
-		}
-
 		fmt.Print("Unknown command. Use --help to see commands.\n")
 		os.Exit(1)
 	},
@@ -260,26 +201,18 @@ func init() {
 	rootCmd.PersistentFlags().String("remote.address", config.DefaultRemoteServerAddress, "Set the RPC server address")
 	rootCmd.PersistentFlags().String("remote", "origin", "Set the default remote name")
 
-	// Hidden flags relevant to git gpg interface conformance
-	rootCmd.PersistentFlags().String("keyid-format", "", "")
-	rootCmd.PersistentFlags().MarkHidden("keyid-format")
-	rootCmd.PersistentFlags().String("status-fd", "", "")
-	rootCmd.PersistentFlags().MarkHidden("status-fd")
-	rootCmd.PersistentFlags().Bool("verify", false, "")
-	rootCmd.PersistentFlags().MarkHidden("verify")
-
 	// Viper bindings
-	viper.BindPFlag("node.gitpath", rootCmd.PersistentFlags().Lookup("gitpath"))
-	viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
-	viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
-	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
-	viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
-	viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
-	viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
-	viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
-	viper.BindPFlag("rpc.user", rootCmd.PersistentFlags().Lookup("rpc.user"))
-	viper.BindPFlag("rpc.password", rootCmd.PersistentFlags().Lookup("rpc.password"))
-	viper.BindPFlag("remote.address", rootCmd.PersistentFlags().Lookup("remote.address"))
-	viper.BindPFlag("rpc.https", rootCmd.PersistentFlags().Lookup("rpc.https"))
-	viper.BindPFlag("remote.name", rootCmd.PersistentFlags().Lookup("remote"))
+	_ = viper.BindPFlag("node.gitpath", rootCmd.PersistentFlags().Lookup("gitpath"))
+	_ = viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
+	_ = viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
+	_ = viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
+	_ = viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
+	_ = viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
+	_ = viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
+	_ = viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
+	_ = viper.BindPFlag("rpc.user", rootCmd.PersistentFlags().Lookup("rpc.user"))
+	_ = viper.BindPFlag("rpc.password", rootCmd.PersistentFlags().Lookup("rpc.password"))
+	_ = viper.BindPFlag("remote.address", rootCmd.PersistentFlags().Lookup("remote.address"))
+	_ = viper.BindPFlag("rpc.https", rootCmd.PersistentFlags().Lookup("rpc.https"))
+	_ = viper.BindPFlag("remote.name", rootCmd.PersistentFlags().Lookup("remote"))
 }

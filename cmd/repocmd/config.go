@@ -121,9 +121,6 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 		return fmt.Errorf("could not find '%s' executable in PATH", config.AppName)
 	}
 
-	// Set kit as `gpg.program`
-	rcfg.Raw.Section("gpg").SetOption("program", appBinPath)
-
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
 		rcfg.Remotes[remote.Name] = &gogitcfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
@@ -147,11 +144,6 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 		}
 	}
 
-	// Set credential helper
-	rcfg.Raw.Section("credential").
-		SetOption("helper", ""). // Used to clear other helpers from system/global config
-		AddOption("helper", "store --file .git/.git-credentials")
-
 	// Set the config
 	if err = repo.SetConfig(rcfg); err != nil {
 		return err
@@ -161,13 +153,19 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 }
 
 // addHook adds hooks to git repo at the given path.
-// If not already added the hook command already exist, it will not be re-added.
+// If the hook's command already exist, it will not be re-added.
 // If the hook file does not exist, create it and make it an executable on non-windows system.
 func addHooks(appAppName string, path string) error {
-	for _, hook := range []string{"pre-push"} {
-		cmd := fmt.Sprintf("%s repo hook $1", appAppName)
+	for _, hook := range []string{"pre-push", "post-commit"} {
+		var cmd string
+		switch hook {
+		case "pre-push":
+			cmd = fmt.Sprintf("%s repo hook $1", appAppName)
+		case "post-commit":
+			cmd = fmt.Sprintf("%s repo hook -c", appAppName)
+		}
 
-		os.Mkdir(filepath.Join(path, "hooks"), 0700)
+		_ = os.Mkdir(filepath.Join(path, "hooks"), 0700)
 		prePushFile := filepath.Join(path, "hooks", hook)
 		if !util.IsFileOk(prePushFile) {
 			err := ioutil.WriteFile(prePushFile, []byte(fmt.Sprintf("#!/bin/sh\n%s", cmd)), 0644)
@@ -177,7 +175,7 @@ func addHooks(appAppName string, path string) error {
 			if runtime.GOOS == "windows" {
 				continue
 			}
-			err = exec.Command("bash", "-c", "chmod +x "+prePushFile).Run()
+			err = exec.Command("sh", "-c", "chmod +x "+prePushFile).Run()
 			if err != nil {
 				return err
 			}
@@ -188,7 +186,6 @@ func addHooks(appAppName string, path string) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
 
 		// Check if the hook command already exist in the file.
 		// If it does, do not append again.
@@ -198,20 +195,21 @@ func addHooks(appAppName string, path string) error {
 			if line := scanner.Text(); line != "" && line[:1] == "#" {
 				continue
 			}
-			if strings.Contains(scanner.Text(), appAppName+" repo hook") {
-				goto end
-			}
-			if strings.Contains(scanner.Text(), config.AppName+" repo hook") {
+			if strings.Contains(scanner.Text(), "repo hook") {
+				_ = f.Close()
 				goto end
 			}
 		}
 		if scanner.Err() != nil {
+			_ = f.Close()
 			return err
 		}
 		_, err = f.WriteString("\n" + cmd)
 		if err != nil {
+			_ = f.Close()
 			return err
 		}
+		_ = f.Close()
 	end:
 	}
 
