@@ -178,7 +178,7 @@ var repoConfigCmd = &cobra.Command{
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		noSign, _ := cmd.Flags().GetBool("no-hook")
-		remotes, _ := cmd.Flags().GetStringSlice("remote")
+		remotes, _ := cmd.Flags().GetStringSlice("set-remote")
 		passAgentPort, _ := cmd.Flags().GetString("pass-agent-port")
 		passCacheTTL, _ := cmd.Flags().GetString("pass-ttl")
 
@@ -255,7 +255,7 @@ var repoConfigCmd = &cobra.Command{
 func setupRepoConfigCmd(cmd *cobra.Command) {
 	f := cmd.Flags()
 
-	f.StringSliceP("remote", "r", []string{}, "Set one or more remotes")
+	f.StringSliceP("set-remote", "r", []string{}, "Set one or more remotes")
 	f.Bool("no-hook", false, "Do not add git hooks")
 
 	if f.Lookup("value") == nil {
