@@ -17,7 +17,7 @@ var signCmd = &cobra.Command{
 	Short: "Sign a commit, tag or note and generate a push request token",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		_ = cmd.Help()
+		signCommitCmd.Run(cmd, args)
 	},
 }
 
@@ -171,6 +171,7 @@ func init() {
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
 	setupSignCommitCmd(signCommitCmd)
+	setupSignCommitCmd(rootCmd)
 	setupSignTagCmd(signTagCmd)
 
 	pf.Float64P("fee", "f", 0, "Set the network transaction fee")
