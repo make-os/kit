@@ -30,7 +30,7 @@ var pass = &cobra.Command{
 		pf.StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
 		pf.Bool("start-agent", false, "Start the passphrase agent service")
 		pf.Bool("stop-agent", false, "Stop the passphrase agent service")
-		pf.StringP("port", "p", config.DefaultCacheAgentPort, "Set the cache agent listening port")
+		pf.StringP("port", "p", config.DefaultPassAgentPort, "Set the cache agent listening port")
 		pf.ParseErrorsWhitelist.UnknownFlags = true
 		if err = pf.Parse(args); err != nil {
 			log.Fatal(err.Error())
@@ -53,7 +53,7 @@ var pass = &cobra.Command{
 			Port:           port,
 			StartAgent:     startAgent,
 			StopAgent:      stopAgent,
-			CommandCreator: passcmd.NewCommand,
+			CommandCreator: util.NewCommand,
 			AskPass:        passcmd.AskPass,
 			Stdout:         os.Stdout,
 			Stderr:         os.Stderr,
@@ -74,5 +74,5 @@ func init() {
 	pass.Flags().StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
 	pass.Flags().Bool("start-agent", false, "Start the passphrase agent service")
 	pass.Flags().Bool("stop-agent", false, "Stop the passphrase agent service")
-	pass.Flags().String("port", config.DefaultCacheAgentPort, "Set the cache agent listening port")
+	pass.Flags().String("port", config.DefaultPassAgentPort, "Set the cache agent listening port")
 }

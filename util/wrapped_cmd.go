@@ -21,6 +21,14 @@ type Cmd interface {
 	ProcessWait() error
 }
 
+// CommandCreator describes a function for creating a util.Cmd instance
+type CommandCreator func(name string, args ...string) Cmd
+
+// NewCommand creates a Cmd instance
+func NewCommand(name string, args ...string) Cmd {
+	return NewWrappedCmd(exec.Command(name, args...))
+}
+
 // WrappedCmd implements Cmd which exec.Cmd conforms to.
 type WrappedCmd struct {
 	cmd *exec.Cmd

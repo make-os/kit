@@ -64,7 +64,7 @@ type AddArgs struct {
 	RPCClient types.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of an account
 	GetNextNonce api.NextNonceGetter

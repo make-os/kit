@@ -7,11 +7,15 @@ import (
 	"path/filepath"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/util"
+	mocks2 "github.com/make-os/kit/util/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/thoas/go-funk"
 	config2 "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -53,6 +57,24 @@ var _ = Describe("ConfigCmd", func() {
 			args := &ConfigArgs{}
 			err = ConfigCmd(cfg, mockRepo, args)
 			Expect(err).To(MatchError("error"))
+		})
+
+		It("should set args.SigningKeyPass to <APPNAME>_PASS if args.SigningKeyPass is nil", func() {
+			var actual string
+			var expected = "pass"
+			_ = os.Setenv(common.MakePassEnvVar(config.AppName), expected)
+			defer os.Unsetenv(common.MakePassEnvVar(config.AppName))
+			args := &ConfigArgs{
+				PassAgentPort: funk.PtrOf("9004").(*string),
+				PassAgentUp: func(port string) bool {
+					return true
+				},
+				PassAgentSet: func(port, key, pass string, ttl int) error {
+					actual = pass
+					return fmt.Errorf("")
+				}}
+			_ = ConfigCmd(nil, mockRepo, args)
+			Expect(actual).To(Equal(expected))
 		})
 
 		It("should set user.fee if args.Fee is set", func() {
@@ -127,22 +149,61 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
 
-		It("should set user.passphrase if args.SigningKey is set", func() {
-			passphrase := "pass"
-			args := &ConfigArgs{SigningKeyPass: &passphrase}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("user").Option("passphrase")).To(Equal("pass"))
-		})
+		When("starting the passphrase agent (when signing key passphrase is set)", func() {
+			It("should attempt to start the passphrase agent if not already started and return error on failure to start", func() {
+				passphrase := "pass"
+				args := &ConfigArgs{
+					SigningKeyPass: &passphrase,
+					PassAgentPort:  funk.PtrOf("9004").(*string),
+					PassAgentUp: func(port string) bool {
+						Expect(port).To(Equal("9004"))
+						return false
+					},
+					CommandCreator: func(name string, args ...string) util.Cmd {
+						mockCmd := mocks2.NewMockCmd(ctrl)
+						mockCmd.EXPECT().SetStdout(gomock.Any())
+						mockCmd.EXPECT().SetStderr(gomock.Any())
+						mockCmd.EXPECT().Start().Return(fmt.Errorf("error"))
+						return mockCmd
+					},
+				}
+				err = ConfigCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to start passphrase agent: error"))
+			})
 
-		It("should set commit.amend if args.AmendCommit is set", func() {
-			amend := true
-			args := &ConfigArgs{AmendCommit: &amend}
-			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(repoCfg.Raw.Section("commit").Option("amend")).To(Equal("true"))
+			It("should return error when pass cache TTL duration is invalid", func() {
+				passphrase := "pass"
+				args := &ConfigArgs{
+					SigningKeyPass: &passphrase,
+					PassAgentPort:  funk.PtrOf("9004").(*string),
+					PassAgentUp: func(port string) bool {
+						return true
+					},
+					PassCacheTTL: "invalid",
+				}
+				err = ConfigCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("passphrase cache duration is not valid"))
+			})
+
+			It("should return error when unable to send set request to passphrase agent", func() {
+				passphrase := "pass"
+				args := &ConfigArgs{
+					SigningKeyPass: &passphrase,
+					PassAgentPort:  funk.PtrOf("9004").(*string),
+					PassAgentUp: func(port string) bool {
+						return true
+					},
+					PassCacheTTL: "1h",
+					PassAgentSet: func(port, key, pass string, ttl int) error {
+						return fmt.Errorf("error")
+					},
+				}
+				err = ConfigCmd(cfg, mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to send set request to passphrase agent: error"))
+			})
 		})
 
 		It("should set remotes", func() {
@@ -202,7 +263,7 @@ var _ = Describe("ConfigCmd", func() {
 			prePush, err = ioutil.ReadFile(filepath.Join(hooksDir, "post-commit"))
 			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
-			Expect(string(prePush)).To(Equal(fmt.Sprintf("#!/bin/sh\n%s repo hook --post-commit", config.AppName)))
+			Expect(string(prePush)).To(Equal(fmt.Sprintf("#!/bin/sh\n%s repo hook -c", config.AppName)))
 		})
 
 		When("hook files already exist but the have no <AppName> command", func() {

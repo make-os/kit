@@ -14,7 +14,6 @@ import (
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/stretchr/objx"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -50,7 +49,7 @@ type SignNoteArgs struct {
 	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
@@ -91,10 +90,6 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs
 
 	// Get push key from key (args.SigningKey may not be push key address)
 	pushKeyID := key.GetPushKeyAddress()
-
-	// Updated the push key passphrase to the actual passphrase used to unlock the key.
-	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
 	// Expand note name to full reference name if name is short
 	if !plumbing2.IsReference(args.Name) {

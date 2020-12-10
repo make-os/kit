@@ -81,7 +81,7 @@ var _ = Describe("Agent", func() {
 		})
 	})
 
-	Describe(".RunAgentServer", func() {
+	Describe(".Run", func() {
 		var svr *httptest.Server
 		var port string
 
@@ -95,25 +95,25 @@ var _ = Describe("Agent", func() {
 			svr.Close()
 		})
 
-		Describe(".SendSetRequest", func() {
+		Describe(".Set", func() {
 			It("should set key and value", func() {
-				err := SendSetRequest(port, "mykey", "value", 10)
+				err := Set(port, "mykey", "value", 10)
 				Expect(err).To(BeNil())
 			})
 		})
 
-		Describe(".SendGetRequest", func() {
+		Describe(".Get", func() {
 			It("should get key's value", func() {
 				mem.Add("mykey", "some_value")
-				val, err := SendGetRequest(port, "mykey")
+				val, err := Get(port, "mykey")
 				Expect(err).To(BeNil())
 				Expect(val).To(Equal("some_value"))
 			})
 		})
 
-		Describe(".IsAgentUp", func() {
+		Describe(".IsUp", func() {
 			It("should set key and value", func() {
-				Expect(IsAgentUp(port)).To(BeTrue())
+				Expect(IsUp(port)).To(BeTrue())
 			})
 		})
 	})

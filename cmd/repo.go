@@ -8,6 +8,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/cmd/repocmd"
 	"github.com/make-os/kit/cmd/signcmd"
 	"github.com/make-os/kit/config"
@@ -160,8 +161,8 @@ func setupRepoVoteCmd(cmd *cobra.Command) {
 	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
 	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
 	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
-	cmd.MarkFlagRequired("fee")
-	cmd.MarkFlagRequired("signing-key")
+	_ = cmd.MarkFlagRequired("fee")
+	_ = cmd.MarkFlagRequired("signing-key")
 }
 
 // repoConfigCmd represents a command for configuring a repository
@@ -176,9 +177,10 @@ var repoConfigCmd = &cobra.Command{
 		signingKey, _ := cmd.Flags().GetString("signing-key")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
-		noSign, _ := cmd.Flags().GetBool("no-sign")
-		amendCommit, _ := cmd.Flags().GetBool("commit.amend")
+		noSign, _ := cmd.Flags().GetBool("no-hook")
 		remotes, _ := cmd.Flags().GetStringSlice("remote")
+		passAgentPort, _ := cmd.Flags().GetString("pass-agent-port")
+		passCacheTTL, _ := cmd.Flags().GetString("pass-ttl")
 
 		var targetRepoDir string
 		var err error
@@ -207,7 +209,6 @@ var repoConfigCmd = &cobra.Command{
 			Value:          &value,
 			Nonce:          &nonce,
 			Fee:            &fee,
-			AmendCommit:    &amendCommit,
 			RPCClient:      client,
 			PushKey:        &pushKey,
 			SigningKey:     &signingKey,
@@ -216,6 +217,12 @@ var repoConfigCmd = &cobra.Command{
 			Remotes:        remoteObjs,
 			KeyUnlocker:    common.UnlockKey,
 			GetNextNonce:   api.GetNextNonceOfAccount,
+			PassAgentUp:    agent.IsUp,
+			PassAgentSet:   agent.Set,
+			PassAgentPort:  &passAgentPort,
+			PassCacheTTL:   passCacheTTL,
+			CommandCreator: util.NewCommand,
+			Stderr:         os.Stderr,
 			Stdout:         os.Stdout,
 		}
 
@@ -239,10 +246,6 @@ var repoConfigCmd = &cobra.Command{
 			configArgs.SigningKeyPass = nil
 		}
 
-		if !cmd.Flags().Changed("commit.amend") {
-			configArgs.AmendCommit = nil
-		}
-
 		if err := repocmd.ConfigCmd(cfg, targetRepo, configArgs); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -253,8 +256,7 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 	f := cmd.Flags()
 
 	f.StringSliceP("remote", "r", []string{}, "Set one or more remotes")
-	f.Bool("no-sign", false, "Do not enable automatic signing hook")
-	f.Bool("commit.amend", true, "Sign an amended commit (instead of creating a new one)")
+	f.Bool("no-hook", false, "Do not add git hooks")
 
 	if f.Lookup("value") == nil {
 		f.Float64P("value", "v", 0, "Set transaction value")
@@ -277,6 +279,8 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 	}
 
 	f.StringP("push-key", "k", "", "Specify the push key (defaults to signing key)")
+	f.String("pass-agent-port", config.DefaultPassAgentPort, "Specify the port the passphrase agent will use")
+	f.String("pass-ttl", "24h", "The cache duration of signing key passphrase")
 }
 
 func setupRepoHookCmd(cmd *cobra.Command) {
@@ -313,10 +317,10 @@ var repoHookCmd = &cobra.Command{
 			if errors.Cause(err) == common.ErrSigningKeyPassRequired {
 				fmt.Fprintln(os.Stderr, `It appears kit was not able to find a passphrase to unlock your signing key. 
 You can provide it in one of the following ways:
- - set 'KIT_PASS' or 'KIT_<REPONAME>PASS environment variable.
- - set 'user.passphrase' git config option (not recommended).
  - run 'kit pass -c=1h' to cache your passphrase in memory for 1 hour.
-   You can also push at the same time with 'kit pass -c=1h git push'.`)
+   You can also push at the same time with 'kit pass -c=1h git push'.
+ - set 'KIT_PASS' or 'KIT_<REPONAME>PASS environment variable.
+ - set 'user.passphrase' git config option.`)
 				fmt.Fprintln(os.Stderr, "")
 			}
 			log.Fatal(errors.Wrap(err, "hook error").Error())

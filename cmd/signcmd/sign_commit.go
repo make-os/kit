@@ -17,7 +17,6 @@ import (
 	"github.com/make-os/kit/util/api"
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/stretchr/objx"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -59,7 +58,7 @@ type SignCommitArgs struct {
 	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
@@ -107,10 +106,6 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommit
 
 	// Get push key from key (args.SigningKey may not be push key address)
 	pushKeyID := key.GetPushKeyAddress()
-
-	// Updated the pushkey's passphrase to the passphrase that was used to unlock the key.
-	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = objx.New(key.GetMeta().Map()).Get("passphrase").Str(args.PushKeyPass)
 
 	// If MergeID is set, validate it.
 	if args.MergeID != "" {

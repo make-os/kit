@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
-	types2 "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/server"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -70,7 +69,6 @@ var _ = Describe("SignTag", func() {
 
 			args := &SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			mockRepo.EXPECT().Tag("tag1").Return(nil, git.ErrTagNotFound)
@@ -87,7 +85,6 @@ var _ = Describe("SignTag", func() {
 				})).AnyTimes()
 				args := &SignTagArgs{}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
-				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				refName := plumbing.ReferenceName("refs/tags/tag1")
@@ -106,7 +103,6 @@ var _ = Describe("SignTag", func() {
 			})).AnyTimes()
 			args := &SignTagArgs{Nonce: 1}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			refName := plumbing.ReferenceName("refs/tags/tag1")
@@ -126,7 +122,6 @@ var _ = Describe("SignTag", func() {
 			})).AnyTimes()
 			args := &SignTagArgs{Nonce: 1}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			refName := plumbing.ReferenceName("refs/tags/tag1")

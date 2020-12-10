@@ -66,8 +66,8 @@ type UnlockKeyArgs struct {
 	Stdout io.Writer
 }
 
-// KeyUnlocker describes a function for unlocking a keystore key.
-type KeyUnlocker func(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, error)
+// UnlockKeyFunc describes a function for unlocking a keystore key.
+type UnlockKeyFunc func(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, error)
 
 // UnlockKey takes a key address or index, unlocks it and returns the key.
 // - It will using the given passphrase if set, otherwise
@@ -114,33 +114,33 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 	if protected && args.Passphrase == "" {
 
 		// Determine the port; Use default or the value of env <APPNAME>_PASSAGENT_PORT
-		port := config.DefaultCacheAgentPort
+		port := config.DefaultPassAgentPort
 		if envPort := os.Getenv(fmt.Sprintf("%s_PASSAGENT_PORT",
 			strings.ToUpper(config.AppName))); envPort != "" {
 			port = envPort
 		}
 
 		// Get passphrase from pass-agent associated with the key's user address
-		if passphrase, err := agent.SendGetRequest(port, key.GetUserAddress()); err == nil && passphrase != "" {
+		if passphrase, err := agent.Get(port, key.GetUserAddress()); err == nil && passphrase != "" {
 			args.Passphrase = passphrase
 			goto endAgentQuery
 		}
 
 		// Get passphrase from pass-agent associated with the key's push address
-		if passphrase, err := agent.SendGetRequest(port, key.GetPushKeyAddress()); err == nil && passphrase != "" {
+		if passphrase, err := agent.Get(port, key.GetPushKeyAddress()); err == nil && passphrase != "" {
 			args.Passphrase = passphrase
 			goto endAgentQuery
 		}
 
 		// Get passphrase from pass-agent associated with the original query key
-		if passphrase, err := agent.SendGetRequest(port, args.KeyStoreID); err == nil && passphrase != "" {
+		if passphrase, err := agent.Get(port, args.KeyStoreID); err == nil && passphrase != "" {
 			args.Passphrase = passphrase
 			goto endAgentQuery
 		}
 
 		// Get passphrase from pass-agent associated with the target repository as the key
 		if args.TargetRepo != nil {
-			if passphrase, err := agent.SendGetRequest(port, args.TargetRepo.GetName()); err == nil && passphrase != "" {
+			if passphrase, err := agent.Get(port, args.TargetRepo.GetName()); err == nil && passphrase != "" {
 				args.Passphrase = passphrase
 				goto endAgentQuery
 			}
@@ -158,8 +158,9 @@ func UnlockKey(cfg *config.AppConfig, args *UnlockKeyArgs) (types.StoredKey, err
 		return nil, errors.Wrapf(err, "failed to unlock key (%s)", args.KeyStoreID)
 	}
 
-	// Index the passphrase used to unlock the key.
-	key.GetMeta()["passphrase"] = passphrase
+	// Set env variable for other components that
+	// may require the user-provided passphrase
+	_ = os.Setenv(MakePassEnvVar(config.AppName), passphrase)
 
 	return key, nil
 }

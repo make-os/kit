@@ -44,7 +44,7 @@ var _ = Describe("Pass", func() {
 
 		It("should return error when unable to stop agent when args.StopAgent is true", func() {
 			args := &passcmd.PassArgs{StopAgent: true}
-			args.AgentStopper = func(string) error {
+			args.AgentStop = func(string) error {
 				return fmt.Errorf("error")
 			}
 			err := passcmd.PassCmd(args)
@@ -62,7 +62,7 @@ var _ = Describe("Pass", func() {
 
 			It("should attempt to start agent process if not already started but return error when unable to start the agent", func() {
 				args := &passcmd.PassArgs{CacheDuration: "1s"}
-				args.AgentStatusChecker = func(port string) bool { return false }
+				args.AgentUp = func(port string) bool { return false }
 				args.CommandCreator = func(name string, args ...string) util.Cmd {
 					mockCmd := mocks.NewMockCmd(ctrl)
 					mockCmd.EXPECT().Start().Return(fmt.Errorf("error"))
@@ -99,8 +99,8 @@ var _ = Describe("Pass", func() {
 		It("should send set request if cache is set and agent service is running", func() {
 			sent := false
 			args := &passcmd.PassArgs{Key: "mykey", CacheDuration: "10s"}
-			args.AgentStatusChecker = func(port string) bool { return true }
-			args.SetRequestSender = func(port, key, pass string, ttl int) error {
+			args.AgentUp = func(port string) bool { return true }
+			args.AgentSet = func(port, key, pass string, ttl int) error {
 				sent = true
 				return nil
 			}
@@ -114,8 +114,8 @@ var _ = Describe("Pass", func() {
 
 		It("should return error when unable to send set request", func() {
 			args := &passcmd.PassArgs{Key: "mykey", CacheDuration: "10s"}
-			args.AgentStatusChecker = func(port string) bool { return true }
-			args.SetRequestSender = func(port, key, pass string, ttl int) error {
+			args.AgentUp = func(port string) bool { return true }
+			args.AgentSet = func(port, key, pass string, ttl int) error {
 				return fmt.Errorf("error")
 			}
 			args.AskPass = func(_ ...string) (string, error) {

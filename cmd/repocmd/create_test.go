@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/objx"
 )
 
-func TestRepocmd(t *testing.T) {
+func TestRepoCmd(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "RepoCmd Suite")
 }

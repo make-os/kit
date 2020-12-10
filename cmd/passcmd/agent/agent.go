@@ -49,7 +49,7 @@ func getHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, mem.Get(strings.ToLower(body.Get("key").Str())))
+	_, _ = fmt.Fprint(w, mem.Get(strings.ToLower(body.Get("key").Str())))
 }
 
 // stopHandler handles /stop request
@@ -62,11 +62,11 @@ func statusHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// AgentStatusChecker describes a function for checking the status of the checker
-type AgentStatusChecker func(port string) bool
+// IsUpFunc describes a function for checking the status of the checker
+type IsUpFunc func(port string) bool
 
-// IsAgentUp checks whether the agent is running
-func IsAgentUp(port string) bool {
+// IsUp checks whether the agent is running
+func IsUp(port string) bool {
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/status", port))
 	if err != nil {
 		return false
@@ -74,11 +74,11 @@ func IsAgentUp(port string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-// SetRequestSender describes a function for sending set request
-type SetRequestSender func(port, key, pass string, ttl int) error
+// SetFunc describes a function for sending set request
+type SetFunc func(port, key, pass string, ttl int) error
 
-// SendSetRequest sends a set request to store a key/passphrase mapping
-func SendSetRequest(port, key, pass string, ttl int) error {
+// Set sends a set request to store a key/passphrase mapping
+func Set(port, key, pass string, ttl int) error {
 	_, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/set?key=%s&pass=%s&ttl=%d", port, key, pass, ttl))
 	if err != nil {
 		return err
@@ -86,8 +86,8 @@ func SendSetRequest(port, key, pass string, ttl int) error {
 	return nil
 }
 
-// SendGetRequest sends a get request from a passphrase corresponding to the given key
-func SendGetRequest(port, key string) (string, error) {
+// Get sends a get request from a passphrase corresponding to the given key
+func Get(port, key string) (string, error) {
 	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/get?key=%s", port, key))
 	if err != nil {
 		return "", err
@@ -99,8 +99,11 @@ func SendGetRequest(port, key string) (string, error) {
 	return string(bz), nil
 }
 
-// SendStopRequest sends a stop request to the agent
-func SendStopRequest(port string) error {
+// StopFunc represents a function for stopping the server
+type StopFunc func(port string) error
+
+// Stop sends a stop request to the agent
+func Stop(port string) error {
 	_, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/stop", port))
 	if err != nil {
 		return err
@@ -117,10 +120,10 @@ func getMux() *http.ServeMux {
 	return mux
 }
 
-// ServerStarterStopperFunc represents a function for starting and stopping a server
-type ServerStarterStopperFunc func(port string) error
+// RunFunc represents a function for starting the server
+type RunFunc func(port string) error
 
-// RunAgentServer starts up
-func RunAgentServer(port string) error {
+// Run starts up the server at the given port
+func Run(port string) error {
 	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%s", port), getMux())
 }

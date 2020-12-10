@@ -13,7 +13,6 @@ import (
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/stretchr/objx"
 )
 
 type SignTagArgs struct {
@@ -45,7 +44,7 @@ type SignTagArgs struct {
 	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
@@ -87,10 +86,6 @@ func SignTagCmd(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, ar
 
 	// Get push key from key (args.SigningKey may not be push key address)
 	pushKeyID := key.GetPushKeyAddress()
-
-	// Updated the push key passphrase to the actual passphrase used to unlock the key.
-	// This is required when the passphrase was gotten via an interactive prompt.
-	args.PushKeyPass = objx.New(key.GetMeta()).Get("passphrase").Str(args.PushKeyPass)
 
 	// Get the tag object
 	tagRef, err := repo.Tag(cmdArg[0])

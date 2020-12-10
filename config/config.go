@@ -46,8 +46,8 @@ var (
 	// DefaultDHTAddress is the default DHT listening address
 	DefaultDHTAddress = ":9003"
 
-	// DefaultCacheAgentPort is the port on which the pass cache agent listens on
-	DefaultCacheAgentPort = "9004"
+	// DefaultPassAgentPort is the port on which the passphrase cache agent listens on
+	DefaultPassAgentPort = "9004"
 
 	// NoColorFormatting indicates that stdout/stderr output should have no color
 	NoColorFormatting = false

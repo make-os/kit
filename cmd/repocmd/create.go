@@ -48,7 +48,7 @@ type CreateArgs struct {
 	RPCClient types.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of an account
 	GetNextNonce api.NextNonceGetter
@@ -128,9 +128,9 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 
 	// Display transaction info and track status
 	if args.Stdout != nil {
-		fmt.Fprintln(args.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Transaction sent!"))
-		fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
-		fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
+		_, _ = fmt.Fprintln(args.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Transaction sent!"))
+		_, _ = fmt.Fprintln(args.Stdout, fmt.Sprintf(" - Name: %s", fmt2.CyanString("r/"+body.Name)))
+		_, _ = fmt.Fprintln(args.Stdout, " - Hash:", fmt2.CyanString(hash))
 		if err := args.ShowTxStatusTracker(args.Stdout, hash, args.RPCClient); err != nil {
 			return err
 		}

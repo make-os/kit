@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
-	types2 "github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/server"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -72,7 +71,6 @@ var _ = Describe("SignNote", func() {
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.Addr().String())
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockRepo.EXPECT().Reference(refName, false).Return(nil, fmt.Errorf("error"))
 			_ = SignNoteCmd(cfg, mockRepo, args)
 		})
@@ -83,7 +81,6 @@ var _ = Describe("SignNote", func() {
 			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			mockRepo.EXPECT().Reference(refName, false).Return(nil, fmt.Errorf("error"))
 			err := SignNoteCmd(cfg, mockRepo, args)
@@ -99,7 +96,6 @@ var _ = Describe("SignNote", func() {
 				refName := plumbing.ReferenceName("refs/notes/note1")
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-				mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 				ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
 				mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)
@@ -115,7 +111,6 @@ var _ = Describe("SignNote", func() {
 			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
 			mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)
@@ -133,7 +128,6 @@ var _ = Describe("SignNote", func() {
 			refName := plumbing.ReferenceName("refs/notes/note1")
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
-			mockStoredKey.EXPECT().GetMeta().Return(types2.StoredKeyMeta{})
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
 			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
 			mockRepo.EXPECT().Reference(refName, false).Return(ref, nil)

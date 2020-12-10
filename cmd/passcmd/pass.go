@@ -3,7 +3,6 @@ package passcmd
 import (
 	"io"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/make-os/kit/cmd/common"
@@ -42,30 +41,26 @@ type PassArgs struct {
 	StopAgent bool
 
 	// CommandCreator creates a wrapped exec.Cmd object
-	CommandCreator func(name string, args ...string) util.Cmd
+	CommandCreator util.CommandCreator
 
 	// AskPass is a function for reading a passphrase from stdin
 	AskPass keystore.AskPassOnceFunc
 
 	// AgentStarter is a function that starts the pass agent service
-	AgentStarter agent.ServerStarterStopperFunc
+	AgentStarter agent.RunFunc
 
-	// AgentStopper is a function that stops the pass agent service
-	AgentStopper agent.ServerStarterStopperFunc
+	// AgentStop is a function that stops the pass agent service
+	AgentStop agent.StopFunc
 
-	// AgentStatusChecker is a function that checks if the agent server is running
-	AgentStatusChecker agent.AgentStatusChecker
+	// AgentUp is a function that checks if the agent server is running
+	AgentUp agent.IsUpFunc
 
-	// SetRequestSender is a function for sending set request to the agent service
-	SetRequestSender agent.SetRequestSender
+	// AgentSet is a function for sending set request to the agent service
+	AgentSet agent.SetFunc
 
 	Stdout io.Writer
 	Stderr io.Writer
 	Stdin  io.Reader
-}
-
-func NewCommand(name string, args ...string) util.Cmd {
-	return util.NewWrappedCmd(exec.Command(name, args...))
 }
 
 // AskPass prompts for passphrase
@@ -79,19 +74,19 @@ func AskPass(prompt ...string) (string, error) {
 func PassCmd(args *PassArgs) (err error) {
 
 	if args.AgentStarter == nil {
-		args.AgentStarter = agent.RunAgentServer
+		args.AgentStarter = agent.Run
 	}
 
-	if args.AgentStopper == nil {
-		args.AgentStopper = agent.SendStopRequest
+	if args.AgentStop == nil {
+		args.AgentStop = agent.Stop
 	}
 
-	if args.AgentStatusChecker == nil {
-		args.AgentStatusChecker = agent.IsAgentUp
+	if args.AgentUp == nil {
+		args.AgentUp = agent.IsUp
 	}
 
-	if args.SetRequestSender == nil {
-		args.SetRequestSender = agent.SendSetRequest
+	if args.AgentSet == nil {
+		args.AgentSet = agent.Set
 	}
 
 	// Use repo name as the default key
@@ -106,7 +101,7 @@ func PassCmd(args *PassArgs) (err error) {
 
 	// If --stop-agent is set, send stop request to the agent
 	if args.StopAgent {
-		return args.AgentStopper(args.Port)
+		return args.AgentStop(args.Port)
 	}
 
 	// If caching is requested, run cache agent
@@ -117,7 +112,7 @@ func PassCmd(args *PassArgs) (err error) {
 			return errors.Wrap(err, "bad duration")
 		}
 
-		if !args.AgentStatusChecker(args.Port) {
+		if !args.AgentUp(args.Port) {
 			cmd := args.CommandCreator(config.AppName, "pass", "--start-agent", "--port", args.Port)
 			cmd.SetStdout(args.Stdout)
 			cmd.SetStderr(args.Stderr)
@@ -134,11 +129,11 @@ func PassCmd(args *PassArgs) (err error) {
 	}
 
 	// Store the passphrase to on an env variable where the key unlocker will find it
-	os.Setenv(common.MakePassEnvVar(config.AppName), passphrase)
+	_ = os.Setenv(common.MakePassEnvVar(config.AppName), passphrase)
 
 	// If cache is required, send set request to agent
 	if args.CacheDuration != "" {
-		if err := args.SetRequestSender(args.Port, args.Key, passphrase, int(cacheDur.Seconds())); err != nil {
+		if err := args.AgentSet(args.Port, args.Key, passphrase, int(cacheDur.Seconds())); err != nil {
 			return errors.Wrap(err, "failed to send set request")
 		}
 	}

@@ -29,7 +29,7 @@ type HookArgs struct {
 	RPCClient types2.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter

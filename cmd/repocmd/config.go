@@ -10,13 +10,16 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/types"
 	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/api"
+	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
@@ -38,9 +41,6 @@ type ConfigArgs struct {
 	// Nonce is the next nonce of the signing account
 	Nonce *uint64
 
-	// CommitAmend amends and sign the last commit instead of creating new one.
-	AmendCommit *bool
-
 	// SigningKey is the key that will be used to sign the transaction.
 	SigningKey *string
 
@@ -60,59 +60,93 @@ type ConfigArgs struct {
 	RPCClient rpctypes.Client
 
 	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
-	KeyUnlocker common.KeyUnlocker
+	KeyUnlocker common.UnlockKeyFunc
 
 	// GetNextNonce is a function for getting the next nonce of an account
 	GetNextNonce api.NextNonceGetter
 
-	// CreateRepo is a function for generating a transaction for creating a repository
-	CreateRepo api.RepoCreator
+	// CommandCreator creates a wrapped exec.Cmd object
+	CommandCreator util.CommandCreator
 
+	// PassAgentPort determines the port where the passphrase agent will bind to
+	PassAgentPort *string
+
+	// PassCacheTTL is the number of seconds a cached passphrase will live for.
+	PassCacheTTL string
+
+	// PassAgentSet is a function for sending set request to the agent service
+	PassAgentSet agent.SetFunc
+
+	// PassAgentUp is a function that checks if the agent server is running
+	PassAgentUp agent.IsUpFunc
+
+	Stderr io.Writer
 	Stdout io.Writer
 }
 
 // ConfigCmd configures a repository
-func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) error {
+func ConfigCmd(_ *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) error {
 
-	rcfg, err := repo.Config()
+	gitCfg, err := repo.Config()
 	if err != nil {
 		return err
 	}
 
+	// If signing key was not provided, get it from the environment
+	if args.SigningKeyPass == nil {
+		envPass := os.Getenv(common.MakePassEnvVar(config.AppName))
+		args.SigningKeyPass = &envPass
+	}
+
 	// Set fee at `user.fee`
 	if args.Fee != nil {
-		rcfg.Raw.Section("user").SetOption("fee", cast.ToString(*args.Fee))
+		gitCfg.Raw.Section("user").SetOption("fee", cast.ToString(*args.Fee))
 	} else {
-		rcfg.Raw.Section("user").SetOption("fee", "0")
+		gitCfg.Raw.Section("user").SetOption("fee", "0")
 	}
 
 	// Set value at `user.value`
 	if args.Value != nil {
-		rcfg.Raw.Section("user").SetOption("value", cast.ToString(*args.Value))
+		gitCfg.Raw.Section("user").SetOption("value", cast.ToString(*args.Value))
 	}
 
 	// Set nonce at `user.nonce`
 	if args.Nonce != nil {
-		rcfg.Raw.Section("user").SetOption("nonce", cast.ToString(*args.Nonce))
+		gitCfg.Raw.Section("user").SetOption("nonce", cast.ToString(*args.Nonce))
 	} else {
-		rcfg.Raw.Section("user").SetOption("nonce", "0")
+		gitCfg.Raw.Section("user").SetOption("nonce", "0")
 	}
 
 	// Set signing key at `user.signingKey` only if args.PushKey is unset, otherwise use args.PushKey.
 	if args.SigningKey != nil && (args.PushKey == nil || *args.PushKey == "") {
-		rcfg.Raw.Section("user").SetOption("signingKey", *args.SigningKey)
+		gitCfg.Raw.Section("user").SetOption("signingKey", *args.SigningKey)
 	} else if args.PushKey != nil && *args.PushKey != "" {
-		rcfg.Raw.Section("user").SetOption("signingKey", *args.PushKey)
+		gitCfg.Raw.Section("user").SetOption("signingKey", *args.PushKey)
 	}
 
-	// Set signing key passphrase at `user.passphrase`
-	if args.SigningKeyPass != nil {
-		rcfg.Raw.Section("user").SetOption("passphrase", *args.SigningKeyPass)
-	}
+	// If signing key is set, start the passphrase agent and cache the passphrase.
+	if args.SigningKeyPass != nil && *args.SigningKeyPass != "" {
+		if !args.PassAgentUp(*args.PassAgentPort) {
+			cmd := args.CommandCreator(config.AppName, "pass", "--start-agent", "--port", *args.PassAgentPort)
+			cmd.SetStdout(args.Stdout)
+			cmd.SetStderr(args.Stderr)
+			if err := cmd.Start(); err != nil {
+				return errors.Wrap(err, "failed to start passphrase agent")
+			}
+			time.Sleep(500 * time.Millisecond) // give the agent time to start
+		}
 
-	// Set commit amendment `commit.amend`
-	if args.AmendCommit != nil {
-		rcfg.Raw.Section("commit").SetOption("amend", cast.ToString(*args.AmendCommit))
+		var ttl int
+		if args.PassCacheTTL != "" {
+			dur, err := time.ParseDuration(args.PassCacheTTL)
+			if err != nil {
+				return fmt.Errorf("passphrase cache duration is not valid")
+			}
+			ttl = int(dur.Seconds())
+		}
+		if err := args.PassAgentSet(*args.PassAgentPort, repo.GetName(), *args.SigningKeyPass, ttl); err != nil {
+			return errors.Wrap(err, "failed to send set request to passphrase agent")
+		}
 	}
 
 	// Lookup full path of app binary
@@ -123,17 +157,17 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
-		rcfg.Remotes[remote.Name] = &gogitcfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
+		gitCfg.Remotes[remote.Name] = &gogitcfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
 	}
 
 	// If no remote was set, add default remote pointing to the local remote.
-	if len(rcfg.Remotes) == 0 {
+	if len(gitCfg.Remotes) == 0 {
 		defaultAddr := config.DefaultRemoteServerAddress
 		if defaultAddr[:1] == ":" {
 			defaultAddr = "127.0.0.1" + defaultAddr
 		}
 		url := fmt.Sprintf("http://%s/r/%s", defaultAddr, repo.GetName())
-		rcfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
+		gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
 	// Add hooks if allowed
@@ -145,7 +179,7 @@ func ConfigCmd(cfg *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) er
 	}
 
 	// Set the config
-	if err = repo.SetConfig(rcfg); err != nil {
+	if err = repo.SetConfig(gitCfg); err != nil {
 		return err
 	}
 
