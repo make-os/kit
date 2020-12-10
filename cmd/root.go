@@ -3,9 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/make-os/kit/cmd/repocmd"
 	"github.com/make-os/kit/config/chains"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
@@ -173,9 +175,24 @@ func setVersionInfo() {
 var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		repo, _ := getRepoAndClient("")
+
+		if isAskPassRequest(args) {
+			if err := repocmd.AskPassCmd(repo, args, os.Stdout); err != nil {
+				os.Exit(1)
+			}
+			return
+		}
+
 		fmt.Print("Unknown command. Use --help to see commands.\n")
 		os.Exit(1)
 	},
+}
+
+// isAskPassRequest detects git calling the app when it is used as a askPass credential helper
+func isAskPassRequest(args []string) bool {
+	return len(args) == 2 && regexp.MustCompile("Username|Password for").MatchString(args[1])
 }
 
 func init() {

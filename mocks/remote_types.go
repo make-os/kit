@@ -1225,21 +1225,6 @@ func (mr *MockLocalRepoMockRecorder) Prune(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockLocalRepo)(nil).Prune), arg0)
 }
 
-// ReadCredentialFile mocks base method
-func (m *MockLocalRepo) ReadCredentialFile() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadCredentialFile")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ReadCredentialFile indicates an expected call of ReadCredentialFile
-func (mr *MockLocalRepoMockRecorder) ReadCredentialFile() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadCredentialFile", reflect.TypeOf((*MockLocalRepo)(nil).ReadCredentialFile))
-}
-
 // RefDelete mocks base method
 func (m *MockLocalRepo) RefDelete(arg0 string) error {
 	m.ctrl.T.Helper()
@@ -1470,20 +1455,6 @@ func (m *MockLocalRepo) Tags() (storer.ReferenceIter, error) {
 func (mr *MockLocalRepoMockRecorder) Tags() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tags", reflect.TypeOf((*MockLocalRepo)(nil).Tags))
-}
-
-// UpdateCredentialFile mocks base method
-func (m *MockLocalRepo) UpdateCredentialFile(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCredentialFile", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateCredentialFile indicates an expected call of UpdateCredentialFile
-func (mr *MockLocalRepoMockRecorder) UpdateCredentialFile(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCredentialFile", reflect.TypeOf((*MockLocalRepo)(nil).UpdateCredentialFile), arg0)
 }
 
 // UpdateRepoConfig mocks base method

@@ -251,6 +251,14 @@ var _ = Describe("ConfigCmd", func() {
 			Expect(err).To(BeNil())
 			Expect(prePush).ToNot(BeEmpty())
 		})
+
+		It("should set core.askPass to AppName if args.NoHook is false", func() {
+			args := &ConfigArgs{NoHook: false}
+			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
+			err = ConfigCmd(cfg, mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(repoCfg.Raw.Section("core").Option("askPass")).To(ContainSubstring(config.AppName))
+		})
 	})
 
 	Describe(".addHooks", func() {

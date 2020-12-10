@@ -29,7 +29,7 @@ var repoCmd = &cobra.Command{
 	Short: "Create, find and manage repositories",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -97,8 +97,8 @@ func setupRepoCreateCmd(cmd *cobra.Command) {
 		f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
 	}
 
-	cmd.MarkFlagRequired("fee")
-	cmd.MarkFlagRequired("signing-key")
+	_ = cmd.MarkFlagRequired("fee")
+	_ = cmd.MarkFlagRequired("signing-key")
 }
 
 // repoVoteCmd represents a sub-command for voting on a repository's proposal
@@ -285,7 +285,7 @@ func setupRepoConfigCmd(cmd *cobra.Command) {
 
 func setupRepoHookCmd(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.BoolP("post-commit", "c", false, "Executes hook in post-commit mode")
+	f.BoolP("post-commit", "c", false, "Executes the hook in post-commit mode")
 }
 
 // repoHookCmd is a command handles git hooks
@@ -315,13 +315,13 @@ var repoHookCmd = &cobra.Command{
 			Stderr:             os.Stderr,
 		}); err != nil {
 			if errors.Cause(err) == common.ErrSigningKeyPassRequired {
-				fmt.Fprintln(os.Stderr, `It appears kit was not able to find a passphrase to unlock your signing key. 
+				_, _ = fmt.Fprintln(os.Stderr, `It appears kit was not able to find a passphrase to unlock your signing key. 
 You can provide it in one of the following ways:
  - run 'kit pass -c=1h' to cache your passphrase in memory for 1 hour.
    You can also push at the same time with 'kit pass -c=1h git push'.
  - set 'KIT_PASS' or 'KIT_<REPONAME>PASS environment variable.
  - set 'user.passphrase' git config option.`)
-				fmt.Fprintln(os.Stderr, "")
+				_, _ = fmt.Fprintln(os.Stderr, "")
 			}
 			log.Fatal(errors.Wrap(err, "hook error").Error())
 		}

@@ -27,15 +27,6 @@ type LocalRepo interface {
 	// References returns an unsorted ReferenceIter for all references.
 	References() (storer.ReferenceIter, error)
 
-	// UpdateCredentialFile adds a url to the credential file located at
-	// <repo-path>/.git/.git-credentials.
-	// If a URL with protocol,host,path exist, it is replaced.
-	UpdateCredentialFile(url string) error
-
-	// GetCredentialFile returns the content of the credential file located at
-	// <repo-path>/.git/.git-credentials.
-	ReadCredentialFile() (res []string, err error)
-
 	// IsContributor checks whether a push key is a contributor to either
 	// the repository or its namespace
 	IsContributor(pushKeyID string) bool
@@ -155,12 +146,12 @@ type LocalRepo interface {
 }
 
 type LocalConfig struct {
-	Tokens map[string][]string `toml:"tokens"`
+	Tokens map[string][]string `yaml:"tokens"`
 }
 
 // EmptyLocalConfig returns an instance of LocalConfig with fields initialized to zero values.
 func EmptyLocalConfig() *LocalConfig {
-	return &LocalConfig{Tokens: map[string][]string{}}
+	return &LocalConfig{Tokens: make(map[string][]string)}
 }
 
 type RefFetchArgs struct {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/signcmd"
@@ -13,6 +14,8 @@ import (
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	gogitcfg "gopkg.in/src-d/go-git.v4/config"
+	fmtcfg "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 )
 
 var _ = Describe(".HookCmd", func() {
@@ -154,6 +157,123 @@ var _ = Describe(".HookCmd", func() {
 				}
 				err := HookCmd(cfg, mockRepo, args)
 				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".AskPassCmd", func() {
+		It("should return - for Password request", func() {
+			buf := bytes.NewBuffer(nil)
+			err := AskPassCmd(mockRepo, []string{"", "Password for 'http://127.0.0.1:8002':"}, buf)
+			Expect(err).To(BeNil())
+			Expect(buf.String()).To(Equal("-"))
+		})
+
+		When("git is requesting for Username", func() {
+			It("should return error if request url is invalid", func() {
+				buf := bytes.NewBuffer(nil)
+				err := AskPassCmd(mockRepo, []string{"", "Username for 'htt*:://127**.0/s1:8002':"}, buf)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("bad remote url"))
+			})
+
+			It("should return error when unable to get repo config", func() {
+				mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
+				buf := bytes.NewBuffer(nil)
+				err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("unable to read git config: error"))
+			})
+
+			It("should return error when no remotes with matching hostname url(s) exist", func() {
+				gitCfg := &gogitcfg.Config{}
+				mockRepo.EXPECT().Config().Return(gitCfg, nil)
+				buf := bytes.NewBuffer(nil)
+				err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("no push token(s) found"))
+			})
+
+			When("a remote has a url that matches the requested url's hostname", func() {
+				It("should return error when unable to get repocfg", func() {
+					gitCfg := &gogitcfg.Config{Raw: &fmtcfg.Config{
+						Sections: fmtcfg.Sections{
+							{Name: "remote", Subsections: []*fmtcfg.Subsection{
+								{Name: "origin", Options: []*fmtcfg.Option{
+									{Key: "url", Value: "http://127.0.0.1:8002/r/repo"},
+								}},
+							}},
+						},
+					}}
+					mockRepo.EXPECT().Config().Return(gitCfg, nil)
+					mockRepo.EXPECT().GetRepoConfig().Return(nil, fmt.Errorf("error"))
+					buf := bytes.NewBuffer(nil)
+					err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("unable to read repocfg file: error"))
+				})
+
+				It("should return error when no push tokens where found for the selected origin", func() {
+					gitCfg := &gogitcfg.Config{Raw: &fmtcfg.Config{
+						Sections: fmtcfg.Sections{
+							{Name: "remote", Subsections: []*fmtcfg.Subsection{
+								{Name: "origin", Options: []*fmtcfg.Option{
+									{Key: "url", Value: "http://127.0.0.1:8002/r/repo"},
+								}},
+							}},
+						},
+					}}
+					mockRepo.EXPECT().Config().Return(gitCfg, nil)
+					mockRepo.EXPECT().GetRepoConfig().Return(&types.LocalConfig{Tokens: map[string][]string{}}, nil)
+					buf := bytes.NewBuffer(nil)
+					err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("no push token(s) found"))
+					Expect(buf.String()).To(Equal(""))
+				})
+
+				It("should return nil error and non-empty output and when push tokens where found for the selected origin", func() {
+					gitCfg := &gogitcfg.Config{Raw: &fmtcfg.Config{
+						Sections: fmtcfg.Sections{
+							{Name: "remote", Subsections: []*fmtcfg.Subsection{
+								{Name: "origin", Options: []*fmtcfg.Option{
+									{Key: "url", Value: "http://127.0.0.1:8002/r/repo"},
+								}},
+								{Name: "origin2", Options: []*fmtcfg.Option{
+									{Key: "push", Value: "http://127.0.0.1:8002/r/repo2"},
+								}},
+							}},
+						},
+					}}
+					mockRepo.EXPECT().Config().Return(gitCfg, nil)
+					mockRepo.EXPECT().GetRepoConfig().Return(&types.LocalConfig{Tokens: map[string][]string{
+						"origin":  {"token1", "token2"},
+						"origin2": {"token3"},
+					}}, nil)
+					buf := bytes.NewBuffer(nil)
+					err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+					Expect(err).To(BeNil())
+					Expect(strings.Split(buf.String(), ",")).To(ContainElements("token1", "token2", "token3"))
+				})
+
+				It("should skip remote with kitignore option", func() {
+					gitCfg := &gogitcfg.Config{Raw: &fmtcfg.Config{
+						Sections: fmtcfg.Sections{
+							{Name: "remote", Subsections: []*fmtcfg.Subsection{
+								{Name: "origin", Options: []*fmtcfg.Option{
+									{Key: "url", Value: "http://127.0.0.1:8002/r/repo"},
+									{Key: "kitignore", Value: "true"},
+								}},
+							}},
+						},
+					}}
+					mockRepo.EXPECT().Config().Return(gitCfg, nil)
+					buf := bytes.NewBuffer(nil)
+					err := AskPassCmd(mockRepo, []string{"", "Username for 'http://127.0.0.1:8002':"}, buf)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("no push token(s) found"))
+					Expect(buf.String()).To(Equal(""))
+				})
 			})
 		})
 	})

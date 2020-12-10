@@ -170,6 +170,11 @@ func ConfigCmd(_ *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) erro
 		gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
+	// Add core.askPass if allowed
+	if !args.NoHook {
+		gitCfg.Raw.Section("core").SetOption("askPass", appBinPath)
+	}
+
 	// Add hooks if allowed
 	dotGitPath := filepath.Join(repo.GetPath(), ".git")
 	if !args.NoHook {
