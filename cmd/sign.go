@@ -33,7 +33,6 @@ var signCommitCmd = &cobra.Command{
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		head, _ := cmd.Flags().GetString("head")
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
-		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
@@ -43,7 +42,6 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
-			Message:                      msg,
 			Fee:                          cast.ToString(fee),
 			Nonce:                        nonce,
 			Value:                        value,
@@ -148,12 +146,8 @@ var signNoteCmd = &cobra.Command{
 }
 
 func setupSignCommitCmd(cmd *cobra.Command) {
-	cmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
+	cmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
 	cmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
-}
-
-func setupSignTagCmd(cmd *cobra.Command) {
-	cmd.Flags().Bool("force", false, "Overwrite existing tag with matching name")
 }
 
 func init() {
@@ -165,14 +159,12 @@ func init() {
 	pf := signCmd.PersistentFlags()
 
 	// Top-level flags
-	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
-	pf.StringP("message", "m", "", "commit message")
+	pf.BoolP("reset", "x", false, "Clear existing remote tokens before creating a new one")
 	pf.StringP("value", "v", "", "Set a value for paying additional fees")
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
 	setupSignCommitCmd(signCommitCmd)
 	setupSignCommitCmd(signCmd)
-	setupSignTagCmd(signTagCmd)
 
 	pf.Float64P("fee", "f", 0, "Set the network transaction fee")
 	pf.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")

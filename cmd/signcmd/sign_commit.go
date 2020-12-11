@@ -30,9 +30,6 @@ type SignCommitArgs struct {
 	// Value is for sending special fee
 	Value string
 
-	// Message is a custom commit message
-	Message string
-
 	// MergeID indicates an optional merge proposal ID to attach to the transaction
 	MergeID string
 

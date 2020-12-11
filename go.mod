@@ -11,7 +11,7 @@ replace (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
-	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
+	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1
 	github.com/btcsuite/btcutil v1.0.2
@@ -29,11 +29,12 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
+	github.com/go-openapi/strfmt v0.19.11 // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.4.3
-	github.com/google/go-cmp v0.5.0
+	github.com/google/go-cmp v0.5.2
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.4
@@ -42,6 +43,7 @@ require (
 	github.com/ipfs/go-cid v0.0.6
 	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/ipfs/go-log/v2 v2.1.1 // indirect
+	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
@@ -56,7 +58,7 @@ require (
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/mitchellh/mapstructure v1.3.2
+	github.com/mitchellh/mapstructure v1.3.3
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.2.2
 	github.com/multiformats/go-multihash v0.0.13
