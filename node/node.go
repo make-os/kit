@@ -2,9 +2,12 @@ package node
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
+	"time"
 
 	dhtserver "github.com/make-os/kit/dht/server"
 	"github.com/make-os/kit/dht/types"
@@ -14,6 +17,8 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/core"
+	"github.com/spf13/cast"
+	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/make-os/kit/modules"
@@ -59,8 +64,9 @@ type Node struct {
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
 	db             storagetypes.Engine
-	stateTreeDB    tmdb.DB
+	stateDB        tmdb.DB
 	tm             *nm.Node
+	tmLog          log.Logger
 	service        services.Service
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
@@ -84,24 +90,25 @@ func NewNode(cfg *config.AppConfig) *Node {
 }
 
 // OpenDB opens the app and state databases.
-func (n *Node) OpenDB() error {
+func (n *Node) OpenDB() (err error) {
 
 	if n.db != nil {
 		return fmt.Errorf("db already open")
 	}
 
-	db, err := storage.NewBadger(n.cfg.GetAppDBDir())
+	n.db, err = storage.NewBadger(n.cfg.GetAppDBDir())
 	if err != nil {
 		return err
 	}
 
-	stateTreeDB, err := storage.NewBadgerTMDB(n.cfg.GetStateTreeDBDir())
-	if err != nil {
-		return err
+	if !n.cfg.IsLightNode() {
+		n.stateDB, err = storage.NewBadgerTMDB(n.cfg.GetStateTreeDBDir())
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	n.db = db
-	n.stateTreeDB = stateTreeDB
 	return nil
 }
 
@@ -116,6 +123,16 @@ func createCustomMempool(cfg *config.AppConfig, logic core.Logic) *nm.CustomMemp
 	}
 }
 
+func (n *Node) setupTMLogger() error {
+	n.tmLog = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	var err error
+	n.tmLog, err = tmflags.ParseLogLevel(n.cfg.G().TMConfig.LogLevel, n.tmLog, tmconfig.DefaultLogLevel())
+	if err != nil {
+		return errors.Wrap(err, "failed to parse log level")
+	}
+	return nil
+}
+
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
@@ -125,11 +142,9 @@ func (n *Node) Start() error {
 
 	n.log.Info("Starting node...", "NodeID", n.cfg.G().NodeKey.ID(), "DevMode", n.cfg.IsDev())
 
-	tmLog := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	var err error
-	tmLog, err = tmflags.ParseLogLevel(n.cfg.G().TMConfig.LogLevel, tmLog, tmconfig.DefaultLogLevel())
-	if err != nil {
-		return errors.Wrap(err, "failed to parse log level")
+	if err = n.setupTMLogger(); err != nil {
+		return err
 	}
 
 	if err := n.OpenDB(); err != nil {
@@ -139,10 +154,13 @@ func (n *Node) Start() error {
 	n.log.Info("App database has been loaded", "AppDBDir", n.cfg.GetAppDBDir())
 
 	// Read private validator
-	pv := privval.LoadFilePV(n.cfg.G().TMConfig.PrivValidatorKeyFile(), n.cfg.G().TMConfig.PrivValidatorStateFile())
+	pv := privval.LoadFilePV(
+		n.cfg.G().TMConfig.PrivValidatorKeyFile(),
+		n.cfg.G().TMConfig.PrivValidatorStateFile(),
+	)
 
 	// Create an atomic logic provider
-	n.logic = logic.NewAtomic(n.db, n.stateTreeDB, n.cfg)
+	n.logic = logic.NewAtomic(n.db, n.stateDB, n.cfg)
 
 	// Create ticket manager
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
@@ -164,59 +182,99 @@ func (n *Node) Start() error {
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch seed generator function
-	cusMemp := createCustomMempool(n.cfg, n.logic)
-	memp := cusMemp.Mempool.(*mempool.Mempool)
-	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
+	appMempool := createCustomMempool(n.cfg, n.logic)
 
 	// Pass mempool reactor to logic
-	n.logic.SetMempoolReactor(mempR)
+	appMempoolReactor := appMempool.MempoolReactor.(*mempool.Reactor)
+	n.logic.SetMempoolReactor(appMempoolReactor)
 
-	// Create remote server and pass it to logic
-	remoteServer := server.New(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
+	// Create remote server
+	mp := appMempool.Mempool.(*mempool.Mempool)
+	remoteServer := server.New(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, mp, n)
 	n.remoteServer = remoteServer
 	n.logic.SetRemoteServer(remoteServer)
 	for _, ch := range remoteServer.GetChannels() {
 		node.AddChannels([]byte{ch.ID})
 	}
 
-	// Create node
-	n.tm, err = nm.NewNodeWithCustomMempool(
-		n.cfg.G().TMConfig,
-		pv,
-		n.nodeKey,
-		clientCreator,
-		cusMemp,
-		nm.DefaultGenesisDocProviderFunc(n.cfg.G().TMConfig),
-		nm.DefaultDBProvider,
-		nm.DefaultMetricsProvider(n.cfg.G().TMConfig.Instrumentation),
-		tmLog)
-	if err != nil {
-		return errors.Wrap(err, "failed to fully create node")
+	// Create node only in non-light mode
+	if !n.cfg.IsLightNode() {
+		n.tm, err = nm.NewNodeWithCustomMempool(
+			n.cfg.G().TMConfig,
+			pv,
+			n.nodeKey,
+			clientCreator,
+			appMempool,
+			nm.DefaultGenesisDocProviderFunc(n.cfg.G().TMConfig),
+			nm.DefaultDBProvider,
+			nm.DefaultMetricsProvider(n.cfg.G().TMConfig.Instrumentation),
+			n.tmLog)
+		if err != nil {
+			return errors.Wrap(err, "failed to fully create node")
+		}
+
+		// Register the custom reactors
+		n.tm.Switch().AddReactor("RemoteServerReactor", remoteServer)
+
+		// Pass the proxy app to the mempool
+		mp.SetProxyApp(n.tm.ProxyApp().Mempool())
+
+		fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.cfg.G().TMConfig.P2P.ListenAddress)
+		n.log.Info("Now listening for connections", "Address", fullAddr)
+
+		// Store mempool reactor reference
+		n.mempoolReactor = appMempoolReactor
+
+		// Pass repo manager to logic manager
+		n.logic.SetRemoteServer(remoteServer)
 	}
 
-	// Register the custom reactors
-	n.tm.Switch().AddReactor("RemoteServerReactor", remoteServer)
-
-	// Pass the proxy app to the mempool
-	memp.SetProxyApp(n.tm.ProxyApp().Mempool())
-
-	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.cfg.G().TMConfig.P2P.ListenAddress)
-	n.log.Info("Now listening for connections", "Address", fullAddr)
-
-	// Set references of various instances on the node
-	n.mempoolReactor = mempR
-
-	// Pass repo manager to logic manager
-	n.logic.SetRemoteServer(remoteServer)
-
-	// Start tendermint
-	if err := n.tm.Start(); err != nil {
-		n.Stop()
-		return err
+	// Start tendermint or the light client
+	if !n.cfg.IsLightNode() {
+		if err := n.tm.Start(); err != nil {
+			n.Stop()
+			return err
+		}
+	} else {
+		go n.startLightNode()
 	}
 
 	// Initialize extension manager and start extensions
 	n.configureInterfaces()
+
+	return nil
+}
+
+// startLightNode starts a light node
+func (n *Node) startLightNode() error {
+	trustingPeriod, err := time.ParseDuration(n.cfg.Node.LightNodeTrustingPeriod)
+	if err != nil {
+		return errors.Wrap(err, "bad trusting period")
+	}
+
+	trustedHash, err := hex.DecodeString(n.cfg.Node.LightNodeTrustedHeaderHash)
+	if err != nil {
+		return errors.Wrap(err, "malformed trusted header hash")
+	}
+
+	err = commands.RunProxy(&commands.Params{
+		ListenAddr:         fmt.Sprintf("tcp://%s", n.cfg.Node.ListeningAddr),
+		PrimaryAddr:        n.cfg.Node.LightNodePrimaryAddr,
+		WitnessAddrs:       strings.Join(n.cfg.Node.LightNodeWitnessAddrs, ","),
+		ChainID:            cast.ToString(n.cfg.Net.Version),
+		Home:               n.cfg.GetDBRootDir(),
+		MaxOpenConnections: n.cfg.Node.LightMaxOpenConnections,
+		Sequential:         n.cfg.Node.LightNodeSequentialVerification,
+		TrustingPeriod:     trustingPeriod,
+		TrustedHeight:      n.cfg.Node.LightNodeTrustedHeaderHeight,
+		TrustedHash:        trustedHash,
+		TrustLevelStr:      n.cfg.Node.LightNodeTrustLevel,
+		Verbose:            n.cfg.IsDev(),
+	})
+	if err != nil {
+		n.Stop()
+		return errors.Wrap(err, "failed to start proxy server")
+	}
 
 	return nil
 }
@@ -314,13 +372,15 @@ func (n *Node) Stop() {
 			n.db.Close()
 		}
 
-		if n.stateTreeDB != nil {
-			n.stateTreeDB.Close()
+		if n.stateDB != nil {
+			n.stateDB.Close()
 		}
 
 		if !n.cfg.IsAttachMode() {
 			n.log.Info("Databases have been closed")
 		}
+
+		config.GetInterrupt().Close()
 
 		n.log.Info("Stopped")
 	})

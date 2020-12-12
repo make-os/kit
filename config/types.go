@@ -37,11 +37,43 @@ type NodeConfig struct {
 	// ExtensionsArgs contains arguments for extensions
 	ExtensionsArgs map[string]string `json:"extsargs" mapstructure:"extsargs"`
 
-	// Validator indicates whether to run the node in validator capacity
+	// Validator indicates whether to run the node in validator mode
 	Validator bool `json:"validator" mapstructure:"validator"`
 
 	// IgnoreSeeds will prevent seed address from being used
 	IgnoreSeeds bool `json:"ignoreSeeds" mapstructure:"ignoreSeeds"`
+
+	// *** Light Node Options ***
+
+	// Light indicates whether to run the node in light mode
+	Light bool `json:"light" mapstructure:"light"`
+
+	// LightNodePrimaryAddr is the light node's primary node address
+	LightNodePrimaryAddr string `json:"primary" mapstructure:"primary"`
+
+	// LightNodeWitnessAddrs is a list of witness addresses to pass to the light node
+	LightNodeWitnessAddrs []string `json:"witaddress" mapstructure:"witaddress"`
+
+	// LightMaxOpenConnections is the maximum number of open connections to the light node RPC proxy service
+	LightMaxOpenConnections int `json:"maxopenconns" mapstructure:"maxopenconns"`
+
+	// LightNodeTrustingPeriod is the time within which headers can be verified.
+	// Should be significantly less than the unbonding period.
+	LightNodeTrustingPeriod string `json:"period" mapstructure:"period"`
+
+	// LightNodeTrustedHeaderHeight is the light node trusted header height
+	LightNodeTrustedHeaderHeight int64 `json:"height" mapstructure:"height"`
+
+	// LightNodeTrustedHeaderHash is the light node trusted header hash
+	LightNodeTrustedHeaderHash string `json:"hash" mapstructure:"hash"`
+
+	// LightNodeTrustLevel is the trust level to attain before a header is accepted.
+	// Must be between 1/3 and 3/3.
+	LightNodeTrustLevel string `json:"trustlevel" mapstructure:"trustlevel"`
+
+	// LightNodeSequentialVerification allows the node to verify all headers sequentially
+	// instead of skipping verification.
+	LightNodeSequentialVerification bool `json:"sequential" mapstructure:"sequential"`
 }
 
 // RepoConfig represents repo-related configuration
@@ -167,9 +199,6 @@ type AppConfig struct {
 	// accountDir is where the node's accounts are stored
 	keystoreDir string
 
-	// dbDir is where the node's database files are stored
-	dbDir string
-
 	// repoDir is where repositories are stored
 	repoDir string
 
@@ -253,9 +282,14 @@ func (c *AppConfig) GetRepoRoot() string {
 	return c.repoDir
 }
 
-// IsValidatorNode checks if the node is a validator node
+// IsValidatorNode checks if the node is in validator mode
 func (c *AppConfig) IsValidatorNode() bool {
 	return c.Node.Validator
+}
+
+// IsLightNode checks if the node is in light mode
+func (c *AppConfig) IsLightNode() bool {
+	return c.Node.Light
 }
 
 // GetExtensionDir returns the extension directory
@@ -273,9 +307,15 @@ func (c *AppConfig) IsAttachMode() bool {
 	return viper.GetBool("attachmode")
 }
 
-// GetAppDBDir returns the path where app's database files are stored
+// GetAppDBDir returns the path where app's database files are stored.
 func (c *AppConfig) GetAppDBDir() string {
-	return filepath.Join(c.GetDBRootDir(), "appdata.db")
+
+	dbName := "appdata.db"
+	if c.IsLightNode() {
+		dbName = "light-appdata.db"
+	}
+
+	return filepath.Join(c.GetDBRootDir(), dbName)
 }
 
 // GetDHTStoreDir returns the path where dht database files are stored

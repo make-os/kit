@@ -109,10 +109,13 @@ func NewAtomic(db storagetypes.Engine, stateTreeDB tmdb.DB, cfg *config.AppConfi
 // All keepers will use the transactions allowing for atomic state operations across them.
 func newLogicWithTx(dbTx storagetypes.Tx, stateTreeDBTx tmdb.DB, cfg *config.AppConfig) *Logic {
 
-	// Load the state tree
-	safeTree, _ := tree.NewSafeTree(stateTreeDBTx, 5000)
-	if _, err := safeTree.Load(); err != nil {
-		panic(errors.Wrap(err, "failed to load state tree"))
+	// Load the state tree in non-light mode
+	var safeTree *tree.SafeTree
+	if !cfg.IsLightNode() {
+		safeTree, _ = tree.NewSafeTree(stateTreeDBTx, 5000)
+		if _, err := safeTree.Load(); err != nil {
+			panic(errors.Wrap(err, "failed to load state tree"))
+		}
 	}
 
 	// Create the logic instances

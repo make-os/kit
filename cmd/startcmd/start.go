@@ -70,6 +70,21 @@ func setStartFlags(cmd *cobra.Command) {
 	f.StringSliceP("repo.untrack", "u", []string{}, "Untrack one or more repositories")
 	f.BoolP("repo.untrackall", "x", false, "Untrack all previously tracked repositories")
 
+	// Light node primary
+	f.Bool("node.light", false, "Run the node in light mode")
+	f.String("node.primary", "", "Set light node's primary node address")
+	f.StringSlice("node.witaddress", nil,
+		"Set the witnesses address for cross-checking a light node's primary")
+	f.Int("node.maxopenconns", 900,
+		"Maximum number of simultaneous connections to the light node's RPC proxy server")
+	f.Duration("node.period", config.DefaultLightNodeTrustPeriod,
+		"Light node trusting period within which an header can be verified")
+	f.Int64("node.height", 0, "Light node's trusted header height")
+	f.String("node.hash", "", "Light node's trusted header hash")
+	f.String("node.trustlevel", "1/3", "Light node's trusted level. Must be between 1/3 and 3/3")
+	f.Bool("node.sequential", false,
+		"Let the light node use sequential verification to verify headers instead of skipping verification")
+
 	extArgsMap := map[string]string{}
 	f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 	viper.Set("node.extsargs", extArgsMap)

@@ -7,6 +7,7 @@ import (
 	"os"
 	path "path/filepath"
 	"strings"
+	"time"
 
 	"github.com/make-os/kit/data"
 	"github.com/make-os/kit/pkgs/logger"
@@ -56,6 +57,11 @@ var (
 
 	// NoColorFormatting indicates that stdout/stderr output should have no color
 	NoColorFormatting = false
+
+	// DefaultLightNodeTrustPeriod is the trusting period that headers can be
+	// verified within. Should be significantly less than the unbonding period.
+	// TODO: Determine actual value for production env
+	DefaultLightNodeTrustPeriod = 168 * time.Hour
 
 	// PersistentSeedPeers are peers are trusted, permanent peers to connect us to the network.
 	// They will be redialed on connection failure.
