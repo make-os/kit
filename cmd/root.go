@@ -8,7 +8,17 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/make-os/kit/cmd/common"
+	"github.com/make-os/kit/cmd/contribcmd"
+	"github.com/make-os/kit/cmd/issuecmd"
+	"github.com/make-os/kit/cmd/keycmd"
+	"github.com/make-os/kit/cmd/mergecmd"
+	"github.com/make-os/kit/cmd/passcmd"
+	"github.com/make-os/kit/cmd/pkcmd"
 	"github.com/make-os/kit/cmd/repocmd"
+	"github.com/make-os/kit/cmd/signcmd"
+	"github.com/make-os/kit/cmd/startcmd"
+	"github.com/make-os/kit/cmd/txcmd"
+	"github.com/make-os/kit/cmd/usercmd"
 	"github.com/make-os/kit/config/chains"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
@@ -41,13 +51,10 @@ var (
 	log logger.Logger
 
 	// cfg is the application config
-	cfg = config.EmptyAppConfig()
+	cfg = config.GetConfig()
 
 	// Get a reference to tendermint's config object
 	tmconfig = tmcfg.DefaultConfig()
-
-	// itr is used to inform the stoppage of all modules
-	itr = util.Interrupt(make(chan struct{}))
 
 	profiler interface{ Stop() }
 )
@@ -57,9 +64,9 @@ func Execute() {
 
 	// When command is unknown, run the root command PersistentPreRun
 	// then run the fallback command
-	_, _, err := rootCmd.Find(os.Args[1:])
+	_, _, err := RootCmd.Find(os.Args[1:])
 	if err != nil && strings.Index(err.Error(), "unknown command") != -1 {
-		rootCmd.PersistentPreRun(fallbackCmd, os.Args)
+		RootCmd.PersistentPreRun(fallbackCmd, os.Args)
 		fallbackCmd.Run(&cobra.Command{}, os.Args)
 		return
 	}
@@ -71,7 +78,7 @@ func Execute() {
 		}
 	}()
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
@@ -90,8 +97,8 @@ func setupProfiler(rootCmd *cobra.Command, cfg *config.AppConfig) {
 	}
 }
 
-// rootCmd represents the base command when called without any sub-commands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any sub-commands
+var RootCmd = &cobra.Command{
 	Use:   config.AppName,
 	Short: "Kit is the official client for the MakeOS network",
 	Long:  ``,
@@ -132,7 +139,7 @@ func preRun(cmd *cobra.Command) {
 	}
 
 	// Configure the node
-	config.Configure(cfg, tmconfig, isInit, &itr)
+	config.Configure(config.GetConfig(), tmconfig, isInit)
 	log = cfg.G().Log
 
 	// Setup the profiler
@@ -197,40 +204,55 @@ func isAskPassRequest(args []string) bool {
 }
 
 func init() {
-	rootCmd.AddCommand(fallbackCmd)
-	rootCmd.Flags().SortFlags = false
+	RootCmd.Flags().SortFlags = false
+	RootCmd.AddCommand(
+		fallbackCmd,
+		signcmd.SignCmd,
+		txcmd.TxCmd,
+		repocmd.RepoCmd,
+		issuecmd.IssueCmd,
+		startcmd.StartCmd,
+		startcmd.ConsoleCmd,
+		startcmd.AttachCmd,
+		contribcmd.ContribCmd,
+		pkcmd.PushKeyRegCmd,
+		keycmd.KeysCmd,
+		mergecmd.MergeReqCmd,
+		passcmd.PassAgentCmd,
+		usercmd.UserCmd,
+	)
 
 	// Register flags
-	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
-	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
-	rootCmd.PersistentFlags().String("gitpath", "git", "Set path to git executable")
-	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
-	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
-	rootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
-	rootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
-	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
-	rootCmd.PersistentFlags().StringToString("loglevel", map[string]string{}, "Set log level for modules")
-	rootCmd.PersistentFlags().String("profile.mode", "", "Enable profiling mode, one of [cpu, mem, mutex, block]")
+	RootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
+	RootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
+	RootCmd.PersistentFlags().String("gitpath", "git", "Set path to git executable")
+	RootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
+	RootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
+	RootCmd.PersistentFlags().Bool("no-log", false, "Disables loggers")
+	RootCmd.PersistentFlags().Bool("no-colors", false, "Disables output colors")
+	RootCmd.Flags().BoolP("version", "v", false, "Print version information")
+	RootCmd.PersistentFlags().StringToString("loglevel", map[string]string{}, "Set log level for modules")
+	RootCmd.PersistentFlags().String("profile.mode", "", "Enable profiling mode, one of [cpu, mem, mutex, block]")
 
 	// Remote API connection flags
-	rootCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
-	rootCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
-	rootCmd.PersistentFlags().Bool("rpc.https", false, "Force the client to use https:// protocol")
-	rootCmd.PersistentFlags().String("remote.address", config.DefaultRemoteServerAddress, "Set the RPC server address")
-	rootCmd.PersistentFlags().String("remote", "origin", "Set the default remote name")
+	RootCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
+	RootCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
+	RootCmd.PersistentFlags().Bool("rpc.https", false, "Force the client to use https:// protocol")
+	RootCmd.PersistentFlags().String("remote.address", config.DefaultRemoteServerAddress, "Set the RPC server address")
+	RootCmd.PersistentFlags().String("remote", "origin", "Set the default remote name")
 
 	// Viper bindings
-	_ = viper.BindPFlag("node.gitpath", rootCmd.PersistentFlags().Lookup("gitpath"))
-	_ = viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
-	_ = viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
-	_ = viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
-	_ = viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
-	_ = viper.BindPFlag("no-log", rootCmd.PersistentFlags().Lookup("no-log"))
-	_ = viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
-	_ = viper.BindPFlag("no-colors", rootCmd.PersistentFlags().Lookup("no-colors"))
-	_ = viper.BindPFlag("rpc.user", rootCmd.PersistentFlags().Lookup("rpc.user"))
-	_ = viper.BindPFlag("rpc.password", rootCmd.PersistentFlags().Lookup("rpc.password"))
-	_ = viper.BindPFlag("remote.address", rootCmd.PersistentFlags().Lookup("remote.address"))
-	_ = viper.BindPFlag("rpc.https", rootCmd.PersistentFlags().Lookup("rpc.https"))
-	_ = viper.BindPFlag("remote.name", rootCmd.PersistentFlags().Lookup("remote"))
+	_ = viper.BindPFlag("node.gitpath", RootCmd.PersistentFlags().Lookup("gitpath"))
+	_ = viper.BindPFlag("net.version", RootCmd.PersistentFlags().Lookup("net"))
+	_ = viper.BindPFlag("dev", RootCmd.PersistentFlags().Lookup("dev"))
+	_ = viper.BindPFlag("home", RootCmd.PersistentFlags().Lookup("home"))
+	_ = viper.BindPFlag("home.prefix", RootCmd.PersistentFlags().Lookup("home.prefix"))
+	_ = viper.BindPFlag("no-log", RootCmd.PersistentFlags().Lookup("no-log"))
+	_ = viper.BindPFlag("loglevel", RootCmd.PersistentFlags().Lookup("loglevel"))
+	_ = viper.BindPFlag("no-colors", RootCmd.PersistentFlags().Lookup("no-colors"))
+	_ = viper.BindPFlag("rpc.user", RootCmd.PersistentFlags().Lookup("rpc.user"))
+	_ = viper.BindPFlag("rpc.password", RootCmd.PersistentFlags().Lookup("rpc.password"))
+	_ = viper.BindPFlag("remote.address", RootCmd.PersistentFlags().Lookup("remote.address"))
+	_ = viper.BindPFlag("rpc.https", RootCmd.PersistentFlags().Lookup("rpc.https"))
+	_ = viper.BindPFlag("remote.name", RootCmd.PersistentFlags().Lookup("remote"))
 }

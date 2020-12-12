@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/signcmd"
+	types3 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/server"
 	"github.com/make-os/kit/remote/types"
@@ -21,7 +21,7 @@ import (
 )
 
 type HookArgs struct {
-	*signcmd.SignCommitArgs
+	*types3.SignCommitArgs
 
 	// Args is the command arguments
 	Args []string
@@ -41,9 +41,9 @@ type HookArgs struct {
 	// SetRemotePushToken is a function for creating, signing and apply a push token  to a give remote
 	SetRemotePushToken server.MakeAndApplyPushTokenToRemoteFunc
 
-	CommitSigner signcmd.SignCommitFunc
-	TagSigner    signcmd.SignTagFunc
-	NoteSigner   signcmd.SignNoteFunc
+	CommitSigner types3.SignCommitFunc
+	TagSigner    types3.SignTagFunc
+	NoteSigner   types3.SignNoteFunc
 
 	Stdout io.Writer
 	Stderr io.Writer
@@ -84,7 +84,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 		}
 
 		if ref.IsBranch() {
-			if err := args.CommitSigner(cfg, repo, &signcmd.SignCommitArgs{
+			if err := args.CommitSigner(cfg, repo, &types3.SignCommitArgs{
 				Head:                         ref.String(),
 				Remote:                       remote,
 				NoPrompt:                     true,
@@ -100,7 +100,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 
 		if ref.IsTag() {
 			name := strings.Replace(ref.String(), "refs/tags/", "", 1)
-			if err := args.TagSigner(cfg, []string{name}, repo, &signcmd.SignTagArgs{
+			if err := args.TagSigner(cfg, []string{name}, repo, &types3.SignTagArgs{
 				Remote:                       remote,
 				NoPrompt:                     true,
 				ResetTokens:                  false,
@@ -114,7 +114,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 		}
 
 		if ref.IsNote() {
-			if err := args.NoteSigner(cfg, repo, &signcmd.SignNoteArgs{
+			if err := args.NoteSigner(cfg, repo, &types3.SignNoteArgs{
 				Name:                         strings.Replace(ref.String(), "refs/notes/", "", 1),
 				Remote:                       remote,
 				NoPrompt:                     true,

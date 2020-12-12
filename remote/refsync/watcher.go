@@ -54,7 +54,7 @@ func NewWatcher(cfg *config.AppConfig, txHandler TxHandlerFunc, keepers core.Kee
 	w.service = services.New(w.cfg.G().TMConfig.RPC.ListenAddress)
 
 	go func() {
-		cfg.G().Interrupt.Wait()
+		config.GetInterrupt().Wait()
 		w.Stop()
 	}()
 

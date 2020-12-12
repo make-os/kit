@@ -1,18 +1,24 @@
-package cmd
+package signcmd
 
 import (
 	"os"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/signcmd"
+	"github.com/make-os/kit/cmd/signcmd/types"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/server"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
-// signCmd represents the commit command
-var signCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// SignCmd represents the commit command
+var SignCmd = &cobra.Command{
 	Use:   "sign [command]",
 	Short: "Sign a commit, tag or note",
 	Long:  `Sign a commit, tag or note. Run 'kit sign' to sign the current commit.`,
@@ -41,7 +47,7 @@ var signCommitCmd = &cobra.Command{
 			log.Fatal("no repository found in current directory")
 		}
 
-		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
+		if err := SignCommitCmd(cfg, targetRepo, &types.SignCommitArgs{
 			Fee:                          cast.ToString(fee),
 			Nonce:                        nonce,
 			Value:                        value,
@@ -82,7 +88,7 @@ var signTagCmd = &cobra.Command{
 		}
 
 		args = cmd.Flags().Args()
-		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
+		if err := SignTagCmd(cfg, args, targetRepo, &types.SignTagArgs{
 			Fee:                          cast.ToString(fee),
 			Nonce:                        nonce,
 			Value:                        value,
@@ -124,7 +130,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("no repository found in current directory")
 		}
 
-		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
+		if err := SignNoteCmd(cfg, targetRepo, &types.SignNoteArgs{
 			Name:                         args[0],
 			Fee:                          cast.ToString(fee),
 			Nonce:                        nonce,
@@ -151,12 +157,11 @@ func setupSignCommitCmd(cmd *cobra.Command) {
 }
 
 func init() {
-	rootCmd.AddCommand(signCmd)
-	signCmd.AddCommand(signTagCmd)
-	signCmd.AddCommand(signCommitCmd)
-	signCmd.AddCommand(signNoteCmd)
+	SignCmd.AddCommand(signTagCmd)
+	SignCmd.AddCommand(signCommitCmd)
+	SignCmd.AddCommand(signNoteCmd)
 
-	pf := signCmd.PersistentFlags()
+	pf := SignCmd.PersistentFlags()
 
 	// Top-level flags
 	pf.BoolP("reset", "x", false, "Clear existing remote tokens before creating a new one")
@@ -164,12 +169,12 @@ func init() {
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
 	setupSignCommitCmd(signCommitCmd)
-	setupSignCommitCmd(signCmd)
+	setupSignCommitCmd(SignCmd)
 
 	pf.Float64P("fee", "f", 0, "Set the network transaction fee")
 	pf.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
 	pf.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
 	pf.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
-	_ = signCmd.MarkFlagRequired("fee")
-	_ = signCmd.MarkFlagRequired("signing-key")
+	_ = SignCmd.MarkFlagRequired("fee")
+	_ = SignCmd.MarkFlagRequired("signing-key")
 }

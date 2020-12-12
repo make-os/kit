@@ -1,4 +1,4 @@
-package cmd
+package repocmd
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/passcmd/agent"
-	"github.com/make-os/kit/cmd/repocmd"
 	"github.com/make-os/kit/cmd/signcmd"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/server"
@@ -24,8 +23,13 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-// repoCmd represents the repo command
-var repoCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// RepoCmd represents the repo command
+var RepoCmd = &cobra.Command{
 	Use:   "repo",
 	Short: "Create, find and manage repositories",
 	Long:  ``,
@@ -53,7 +57,7 @@ var repoCreateCmd = &cobra.Command{
 		configPath, _ := cmd.Flags().GetString("config")
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
+		if err := CreateCmd(cfg, &CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
 			Value:               value,
@@ -133,7 +137,7 @@ var repoVoteCmd = &cobra.Command{
 		}
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
+		if err := VoteCmd(cfg, &VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          proposalID,
 			Vote:                cast.ToInt(args[0]),
@@ -197,16 +201,16 @@ var repoConfigCmd = &cobra.Command{
 			log.Fatal("no repository found in current directory")
 		}
 
-		var remoteObjs []repocmd.Remote
+		var remoteObjs []Remote
 		for _, r := range remotes {
 			path := strings.Fields(r)
 			if len(path) < 2 {
 				log.Fatal("invalid remote format. Expected '<name> <url>'")
 			}
-			remoteObjs = append(remoteObjs, repocmd.Remote{Name: path[0], URL: path[1]})
+			remoteObjs = append(remoteObjs, Remote{Name: path[0], URL: path[1]})
 		}
 
-		configArgs := &repocmd.ConfigArgs{
+		configArgs := &ConfigArgs{
 			Value:          &value,
 			Nonce:          &nonce,
 			Fee:            &fee,
@@ -247,7 +251,7 @@ var repoConfigCmd = &cobra.Command{
 			configArgs.SigningKeyPass = nil
 		}
 
-		if err := repocmd.ConfigCmd(cfg, targetRepo, configArgs); err != nil {
+		if err := ConfigCmd(cfg, targetRepo, configArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -301,7 +305,7 @@ var repoHookCmd = &cobra.Command{
 			log.Fatal("no repository found in current directory")
 		}
 
-		if err := repocmd.HookCmd(cfg, targetRepo, &repocmd.HookArgs{
+		if err := HookCmd(cfg, targetRepo, &HookArgs{
 			Args:               args,
 			PostCommit:         isPostCommit,
 			RPCClient:          client,
@@ -398,12 +402,11 @@ func setupRepoInitCmd(cmd *cobra.Command) {
 }
 
 func init() {
-	rootCmd.AddCommand(repoCmd)
-	repoCmd.AddCommand(repoCreateCmd)
-	repoCmd.AddCommand(repoVoteCmd)
-	repoCmd.AddCommand(repoConfigCmd)
-	repoCmd.AddCommand(repoHookCmd)
-	repoCmd.AddCommand(repoInitCmd)
+	RepoCmd.AddCommand(repoCreateCmd)
+	RepoCmd.AddCommand(repoVoteCmd)
+	RepoCmd.AddCommand(repoConfigCmd)
+	RepoCmd.AddCommand(repoHookCmd)
+	RepoCmd.AddCommand(repoInitCmd)
 
 	setupRepoCreateCmd(repoCreateCmd)
 	setupRepoVoteCmd(repoVoteCmd)

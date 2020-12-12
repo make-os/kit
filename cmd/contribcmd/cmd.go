@@ -1,4 +1,4 @@
-package cmd
+package contribcmd
 
 import (
 	"encoding/json"
@@ -6,14 +6,19 @@ import (
 	"os"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/contribcmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
 )
 
-// contribCmd represents the contributor command
-var contribCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// ContribCmd represents the contributor command
+var ContribCmd = &cobra.Command{
 	Use:   "contributor",
 	Short: "Manage repository contributors",
 	Long:  ``,
@@ -54,7 +59,7 @@ var contribAddCmd = &cobra.Command{
 		}
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := contribcmd.AddCmd(cfg, &contribcmd.AddArgs{
+		if err := AddCmd(cfg, &AddArgs{
 			Name:                name,
 			PushKeys:            args,
 			PropID:              propID,
@@ -81,8 +86,7 @@ var contribAddCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(contribCmd)
-	contribCmd.AddCommand(contribAddCmd)
+	ContribCmd.AddCommand(contribAddCmd)
 
 	// Set flags
 	contribF := contribAddCmd.Flags()

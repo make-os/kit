@@ -1,4 +1,4 @@
-package cmd
+package issuecmd
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/issuecmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
@@ -17,8 +17,13 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// issueCmd represents the issue command
-var issueCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// IssueCmd represents the issue command
+var IssueCmd = &cobra.Command{
 	Use:   "issue",
 	Short: "Create, read, list and respond to issues",
 	Long:  ``,
@@ -71,7 +76,7 @@ var issueCreateCmd = &cobra.Command{
 			useEditor = true
 		}
 
-		issueCreateArgs := &issuecmd.IssueCreateArgs{
+		issueCreateArgs := &IssueCreateArgs{
 			ID:                 targetID,
 			Title:              title,
 			Body:               body,
@@ -114,7 +119,7 @@ var issueCreateCmd = &cobra.Command{
 			}
 		}
 
-		if err := issuecmd.IssueCreateCmd(curRepo, issueCreateArgs); err != nil {
+		if err := IssueCreateCmd(curRepo, issueCreateArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -137,7 +142,7 @@ var issueListCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueListCmd(curRepo, &issuecmd.IssueListArgs{
+		if err = IssueListCmd(curRepo, &IssueListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -171,8 +176,8 @@ var issueReadCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueReadCmd(curRepo, &issuecmd.IssueReadArgs{
-			Reference:     issuecmd.NormalizeIssueReferenceName(curRepo, args),
+		if err = IssueReadCmd(curRepo, &IssueReadArgs{
+			Reference:     NormalizeIssueReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -202,8 +207,8 @@ var issueCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueCloseCmd(curRepo, &issuecmd.IssueCloseArgs{
-			Reference:          issuecmd.NormalizeIssueReferenceName(curRepo, args),
+		if err = IssueCloseCmd(curRepo, &IssueCloseArgs{
+			Reference:          NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -226,8 +231,8 @@ var issueReopenCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueReopenCmd(curRepo, &issuecmd.IssueReopenArgs{
-			Reference:          issuecmd.NormalizeIssueReferenceName(curRepo, args),
+		if err = IssueReopenCmd(curRepo, &IssueReopenArgs{
+			Reference:          NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -248,8 +253,8 @@ var issueStatusCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueStatusCmd(curRepo, &issuecmd.IssueStatusArgs{
-			Reference:    issuecmd.NormalizeIssueReferenceName(curRepo, args),
+		if err = IssueStatusCmd(curRepo, &IssueStatusArgs{
+			Reference:    NormalizeIssueReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {
@@ -259,15 +264,14 @@ var issueStatusCmd = &cobra.Command{
 }
 
 func init() {
-	issueCmd.AddCommand(issueCreateCmd)
-	issueCmd.AddCommand(issueReadCmd)
-	issueCmd.AddCommand(issueListCmd)
-	issueCmd.AddCommand(issueCloseCmd)
-	issueCmd.AddCommand(issueReopenCmd)
-	issueCmd.AddCommand(issueStatusCmd)
-	rootCmd.AddCommand(issueCmd)
+	IssueCmd.AddCommand(issueCreateCmd)
+	IssueCmd.AddCommand(issueReadCmd)
+	IssueCmd.AddCommand(issueListCmd)
+	IssueCmd.AddCommand(issueCloseCmd)
+	IssueCmd.AddCommand(issueReopenCmd)
+	IssueCmd.AddCommand(issueStatusCmd)
 
-	issueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
+	IssueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
 	issueCreateCmd.Flags().StringP("title", "t", "", "The title of the issue (max. 250 B)")
 	issueCreateCmd.Flags().StringP("body", "b", "", "The body of the issue (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")

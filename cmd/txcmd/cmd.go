@@ -1,17 +1,22 @@
-package cmd
+package txcmd
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/txcmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
 )
 
-// txCmd represents the repo command
-var txCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// TxCmd represents the repo command
+var TxCmd = &cobra.Command{
 	Use:   "tx",
 	Short: "Create and read transaction data or status",
 	Long:  ``,
@@ -34,7 +39,7 @@ var txGetCmd = &cobra.Command{
 		status, _ := cmd.Flags().GetBool("status")
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := txcmd.GetCmd(&txcmd.GetArgs{
+		if err := GetCmd(&GetArgs{
 			Hash:           args[0],
 			RPCClient:      client,
 			Status:         status,
@@ -47,8 +52,6 @@ var txGetCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(txCmd)
-	txCmd.AddCommand(txGetCmd)
-
+	TxCmd.AddCommand(txGetCmd)
 	txGetCmd.Flags().BoolP("status", "s", false, "Show only status information")
 }

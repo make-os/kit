@@ -94,8 +94,8 @@ func New(ctx context.Context, keepers core.Keepers, cfg *config.AppConfig) (*Ser
 	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
 
 	go func() {
-		cfg.G().Interrupt.Wait()
-		node.Stop()
+		config.GetInterrupt().Wait()
+		_ = node.Stop()
 	}()
 
 	return node, err

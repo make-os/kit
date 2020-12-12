@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang/mock/gomock"
-	"github.com/make-os/kit/cmd/signcmd"
+	types2 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/types"
@@ -62,7 +62,7 @@ var _ = Describe(".HookCmd", func() {
 				in := bytes.NewBuffer(nil)
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}, PostCommit: true}
 				mockRepo.EXPECT().Head().Return("refs/heads/branch", nil)
-				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignCommitArgs) error {
 					Expect(args.Head).To(Equal("refs/heads/branch"))
 					return nil
 				}
@@ -75,7 +75,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return error if commit signer failed", func() {
 				in := bytes.NewBuffer([]byte("refs/heads/master 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/heads/master 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignCommitArgs) error {
 					return fmt.Errorf("commit sign error")
 				}
 				err := HookCmd(cfg, mockRepo, args)
@@ -86,7 +86,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return no error if commit signer succeeded", func() {
 				in := bytes.NewBuffer([]byte("refs/heads/master 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/heads/master 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+				args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignCommitArgs) error {
 					return nil
 				}
 				err := HookCmd(cfg, mockRepo, args)
@@ -99,7 +99,7 @@ var _ = Describe(".HookCmd", func() {
 					in := bytes.NewBuffer([]byte("refs/heads/master 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/heads/master 0000000000000000000000000000000000000000\n"))
 					in.Write([]byte("refs/heads/dev fbbefce3f78361968fcce78cc44b5a6dbebe4952 refs/heads/dev 0000000000000000000000000000000000000000\n"))
 					args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-					args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignCommitArgs) error {
+					args.CommitSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignCommitArgs) error {
 						timesCalled++
 						return nil
 					}
@@ -114,7 +114,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return error if tag signer failed", func() {
 				in := bytes.NewBuffer([]byte("refs/tags/v1.2 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/tag/v1.2 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.TagSigner = func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *signcmd.SignTagArgs) error {
+				args.TagSigner = func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *types2.SignTagArgs) error {
 					Expect(gitArgs[0]).To(Equal("v1.2"))
 					return fmt.Errorf("tag sign error")
 				}
@@ -126,7 +126,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return no error if commit signer succeeded", func() {
 				in := bytes.NewBuffer([]byte("refs/tags/v1.2 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/tag/v1.2 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.TagSigner = func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *signcmd.SignTagArgs) error {
+				args.TagSigner = func(cfg *config.AppConfig, gitArgs []string, repo types.LocalRepo, args *types2.SignTagArgs) error {
 					Expect(gitArgs[0]).To(Equal("v1.2"))
 					return nil
 				}
@@ -139,7 +139,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return error if notes signer failed", func() {
 				in := bytes.NewBuffer([]byte("refs/notes/note1 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/notes/note1 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.NoteSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignNoteArgs) error {
+				args.NoteSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignNoteArgs) error {
 					Expect(args.Name).To(Equal("note1"))
 					return fmt.Errorf("notes sign error")
 				}
@@ -151,7 +151,7 @@ var _ = Describe(".HookCmd", func() {
 			It("should return no error if commit signer succeeded", func() {
 				in := bytes.NewBuffer([]byte("refs/notes/note1 03f6ce13b4c2b8ff230d474dc058af1edff0deb9 refs/notes/note1 0000000000000000000000000000000000000000\n"))
 				args := &HookArgs{Stdin: in, Args: []string{"remote_name"}}
-				args.NoteSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *signcmd.SignNoteArgs) error {
+				args.NoteSigner = func(cfg *config.AppConfig, repo types.LocalRepo, args *types2.SignNoteArgs) error {
 					Expect(args.Name).To(Equal("note1"))
 					return nil
 				}

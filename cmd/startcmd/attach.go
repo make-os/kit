@@ -1,4 +1,4 @@
-package cmd
+package startcmd
 
 import (
 	"net"
@@ -41,8 +41,8 @@ func connectToServer(cfg *config.AppConfig) (types.Client, []rpc.MethodInfo, err
 	return cl, methods, nil
 }
 
-// attachCmd represents the attach command
-var attachCmd = &cobra.Command{
+// AttachCmd represents the attach command
+var AttachCmd = &cobra.Command{
 	Use:   "attach",
 	Short: "Start a JavaScript console attached to a node",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -60,7 +60,7 @@ var attachCmd = &cobra.Command{
 		ks := keystore.New(cfg.KeystoreDir())
 		console.SetModulesHub(modules.NewAttachable(cfg, rpcClient, ks))
 		console.OnStop(func() {
-			itr.Close()
+			config.GetInterrupt().Close()
 		})
 
 		// Run the console
@@ -70,11 +70,10 @@ var attachCmd = &cobra.Command{
 			}
 		}()
 
-		itr.Wait()
+		config.GetInterrupt().Wait()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(attachCmd)
-	attachCmd.Flags().String("exec", "", "Execute the given JavaScript code")
+	AttachCmd.Flags().String("exec", "", "Execute the given JavaScript code")
 }

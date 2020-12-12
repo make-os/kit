@@ -1,4 +1,4 @@
-package cmd
+package startcmd
 
 import (
 	"os"
@@ -30,7 +30,7 @@ func start(onStart func(n *node.Node)) {
 		onStart(n)
 	}
 
-	itr.Wait()
+	config.GetInterrupt().Wait()
 	n.Stop()
 }
 
@@ -39,12 +39,12 @@ func listenForInterrupt() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
-		itr.Close()
+		config.GetInterrupt().Close()
 	}()
 }
 
-// startCmd represents the start command
-var startCmd = &cobra.Command{
+// StartCmd represents the start command
+var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Launch the node to join the network.",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -80,6 +80,5 @@ func setStartFlags(cmd *cobra.Command) {
 }
 
 func init() {
-	rootCmd.AddCommand(startCmd)
-	setStartFlags(startCmd)
+	setStartFlags(StartCmd)
 }

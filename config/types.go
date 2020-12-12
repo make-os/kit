@@ -3,6 +3,7 @@ package config
 import (
 	"path/filepath"
 
+	"github.com/make-os/kit/pkgs/logger"
 	"github.com/spf13/viper"
 )
 
@@ -200,7 +201,9 @@ func EmptyAppConfig() *AppConfig {
 		Mempool:            &MempoolConfig{},
 		GenesisFileEntries: []*GenDataEntry{},
 		VersionInfo:        &VersionInfo{},
-		g:                  &Globals{},
+		g: &Globals{
+			Log: logger.NewLogrus(nil),
+		},
 	}
 }
 

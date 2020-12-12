@@ -114,7 +114,7 @@ func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announc
 	}
 
 	go func() {
-		cfg.G().Interrupt.Wait()
+		config.GetInterrupt().Wait()
 		rs.Stop()
 	}()
 

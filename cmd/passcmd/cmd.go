@@ -1,10 +1,9 @@
-package cmd
+package passcmd
 
 import (
 	"os"
 	"os/exec"
 
-	"github.com/make-os/kit/cmd/passcmd"
 	"github.com/make-os/kit/config"
 	rr "github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
@@ -12,8 +11,13 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// pass represents the pass command
-var pass = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// PassAgentCmd represents the PassAgentCmd command
+var PassAgentCmd = &cobra.Command{
 	Use:   "pass",
 	Short: "Ask and cache a passphrase in memory",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -45,7 +49,7 @@ var pass = &cobra.Command{
 		startAgent, _ := pf.GetBool("start-agent")
 		stopAgent, _ := pf.GetBool("stop-agent")
 
-		if err := passcmd.PassCmd(&passcmd.PassArgs{
+		if err := PassCmd(&PassArgs{
 			Args:           args,
 			RepoName:       repoName,
 			Key:            key,
@@ -54,7 +58,7 @@ var pass = &cobra.Command{
 			StartAgent:     startAgent,
 			StopAgent:      stopAgent,
 			CommandCreator: util.NewCommand,
-			AskPass:        passcmd.AskPass,
+			AskPass:        AskPass,
 			Stdout:         os.Stdout,
 			Stderr:         os.Stderr,
 			Stdin:          os.Stdin,
@@ -68,11 +72,10 @@ var pass = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(pass)
-	pass.DisableFlagParsing = true
-	pass.Flags().StringP("key", "k", "", "The index or address of the key")
-	pass.Flags().StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
-	pass.Flags().Bool("start-agent", false, "Start the passphrase agent service")
-	pass.Flags().Bool("stop-agent", false, "Stop the passphrase agent service")
-	pass.Flags().String("port", config.DefaultPassAgentPort, "Set the cache agent listening port")
+	PassAgentCmd.DisableFlagParsing = true
+	PassAgentCmd.Flags().StringP("key", "k", "", "The index or address of the key")
+	PassAgentCmd.Flags().StringP("cache", "c", "", "Cache the key for the specified duration (e.g 10s, 2m, 24h)")
+	PassAgentCmd.Flags().Bool("start-agent", false, "Start the passphrase agent service")
+	PassAgentCmd.Flags().Bool("stop-agent", false, "Stop the passphrase agent service")
+	PassAgentCmd.Flags().String("port", config.DefaultPassAgentPort, "Set the cache agent listening port")
 }

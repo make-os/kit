@@ -178,7 +178,7 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(initCmd)
+	RootCmd.AddCommand(initCmd)
 	initCmd.Flags().StringSliceP("validators", "v", nil, "Public key of initial validators")
 	initCmd.Flags().StringP("validator-key", "k", "", "Private key to use for validator role")
 	initCmd.Flags().Uint64P("gen-time", "t", 0, "Specify genesis time (default: current UTC time)")

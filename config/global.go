@@ -4,7 +4,6 @@ import (
 	golog "log"
 
 	"github.com/make-os/kit/crypto/ed25519"
-	"github.com/make-os/kit/util"
 
 	"github.com/tendermint/tendermint/privval"
 
@@ -17,12 +16,11 @@ import (
 
 // Globals holds references to global objects
 type Globals struct {
-	Log       logger.Logger
-	Bus       *emitter.Emitter
-	NodeKey   *p2p.NodeKey
-	TMConfig  *tmcfg.Config
-	PrivVal   *ed25519.FilePV
-	Interrupt *util.Interrupt
+	Log      logger.Logger
+	Bus      *emitter.Emitter
+	NodeKey  *p2p.NodeKey
+	TMConfig *tmcfg.Config
+	PrivVal  *ed25519.FilePV
 }
 
 // G returns the global object

@@ -7,7 +7,6 @@ import (
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // NormalizeIssueReferenceName normalizes a reference from args[0] to one that

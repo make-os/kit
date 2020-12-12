@@ -1,4 +1,4 @@
-package cmd
+package mergecmd
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/mergecmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
@@ -18,13 +18,18 @@ import (
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// mergeReqCmd represents the merge request command
-var mergeReqCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// MergeReqCmd represents the merge request command
+var MergeReqCmd = &cobra.Command{
 	Use:   "mr",
 	Short: "Create, read, list and respond to merge requests",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -133,7 +138,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			baseBranchHash, _ = r.RefGet(baseBranch)
 		}
 
-		mrCreateArgs := &mergecmd.MergeRequestCreateArgs{
+		mrCreateArgs := &MergeRequestCreateArgs{
 			ID:                 targetPostID,
 			Title:              title,
 			Body:               body,
@@ -159,7 +164,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			mrCreateArgs.Close = &cls
 		}
 
-		if err := mergecmd.MergeRequestCreateCmd(r, mrCreateArgs); err != nil {
+		if err := MergeRequestCreateCmd(r, mrCreateArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -182,7 +187,7 @@ var mergeReqListCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeRequestListCmd(curRepo, &mergecmd.MergeRequestListArgs{
+		if err = MergeRequestListCmd(curRepo, &MergeRequestListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -216,8 +221,8 @@ var mergeReqReadCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeRequestReadCmd(curRepo, &mergecmd.MergeRequestReadArgs{
-			Reference:     mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeRequestReadCmd(curRepo, &MergeRequestReadArgs{
+			Reference:     NormalMergeReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -247,8 +252,8 @@ var mergeReqCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
-			Reference:          mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeReqCloseCmd(curRepo, &MergeReqCloseArgs{
+			Reference:          NormalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -271,8 +276,8 @@ var mergeReqReopenCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
-			Reference:          mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeReqReopenCmd(curRepo, &MergeReqReopenArgs{
+			Reference:          NormalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -293,8 +298,8 @@ var mergeReqStatusCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeReqStatusCmd(curRepo, &mergecmd.MergeReqStatusArgs{
-			Reference:    mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeReqStatusCmd(curRepo, &MergeReqStatusArgs{
+			Reference:    NormalMergeReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {
@@ -325,8 +330,8 @@ var mergeReqCheckoutCmd = &cobra.Command{
 			args = args[1:]
 		}
 
-		if err = mergecmd.MergeReqCheckoutCmd(curRepo, &mergecmd.MergeReqCheckoutArgs{
-			Reference:             mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeReqCheckoutCmd(curRepo, &MergeReqCheckoutArgs{
+			Reference:             NormalMergeReferenceName(curRepo, args),
 			ReadPostBody:          plumbing.ReadPostBody,
 			ForceCheckout:         force,
 			ForceFetch:            forceFetch,
@@ -361,8 +366,8 @@ var mergeReqFetchCmd = &cobra.Command{
 			args = args[1:]
 		}
 
-		if err = mergecmd.MergeReqFetchCmd(curRepo, &mergecmd.MergeReqFetchArgs{
-			Reference:    mergecmd.NormalMergeReferenceName(curRepo, args),
+		if err = MergeReqFetchCmd(curRepo, &MergeReqFetchArgs{
+			Reference:    NormalMergeReferenceName(curRepo, args),
 			ForceFetch:   forceFetch,
 			ReadPostBody: plumbing.ReadPostBody,
 			Remote:       remote,
@@ -374,19 +379,17 @@ var mergeReqFetchCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(mergeReqCmd)
-
-	mergeReqCmd.Flags().SortFlags = false
-	mergeReqCmd.PersistentFlags().SortFlags = false
-	mergeReqCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
-	mergeReqCmd.AddCommand(mergeReqCreateCmd)
-	mergeReqCmd.AddCommand(mergeReqListCmd)
-	mergeReqCmd.AddCommand(mergeReqReadCmd)
-	mergeReqCmd.AddCommand(mergeReqCloseCmd)
-	mergeReqCmd.AddCommand(mergeReqReopenCmd)
-	mergeReqCmd.AddCommand(mergeReqStatusCmd)
-	mergeReqCmd.AddCommand(mergeReqCheckoutCmd)
-	mergeReqCmd.AddCommand(mergeReqFetchCmd)
+	MergeReqCmd.Flags().SortFlags = false
+	MergeReqCmd.PersistentFlags().SortFlags = false
+	MergeReqCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
+	MergeReqCmd.AddCommand(mergeReqCreateCmd)
+	MergeReqCmd.AddCommand(mergeReqListCmd)
+	MergeReqCmd.AddCommand(mergeReqReadCmd)
+	MergeReqCmd.AddCommand(mergeReqCloseCmd)
+	MergeReqCmd.AddCommand(mergeReqReopenCmd)
+	MergeReqCmd.AddCommand(mergeReqStatusCmd)
+	MergeReqCmd.AddCommand(mergeReqCheckoutCmd)
+	MergeReqCmd.AddCommand(mergeReqFetchCmd)
 
 	mergeReqCreateCmd.Flags().StringP("title", "t", "", "The merge request title (max. 250 B)")
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")

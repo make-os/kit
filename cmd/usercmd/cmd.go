@@ -1,22 +1,27 @@
-package cmd
+package usercmd
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/make-os/kit/cmd/common"
-	usercmd "github.com/make-os/kit/cmd/usercmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
 )
 
-// userCmd represents the user command
-var userCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// UserCmd represents the user command
+var UserCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Access and manage a user's personal resources",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -38,7 +43,7 @@ var userSendCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := usercmd.SendCmd(cfg, &usercmd.SendArgs{
+		if err := SendCmd(cfg, &SendArgs{
 			Recipient:           args[0],
 			Value:               value,
 			Nonce:               nonce,
@@ -58,8 +63,7 @@ var userSendCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(userCmd)
-	userCmd.AddCommand(userSendCmd)
+	UserCmd.AddCommand(userSendCmd)
 
 	// Set flags
 	f := userSendCmd.Flags()
@@ -68,6 +72,6 @@ func init() {
 	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
 	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
 	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
-	userSendCmd.MarkFlagRequired("fee")
-	userSendCmd.MarkFlagRequired("signing-key")
+	_ = userSendCmd.MarkFlagRequired("fee")
+	_ = userSendCmd.MarkFlagRequired("signing-key")
 }

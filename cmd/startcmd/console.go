@@ -1,13 +1,19 @@
-package cmd
+package startcmd
 
 import (
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/console"
 	"github.com/make-os/kit/node"
 	"github.com/spf13/cobra"
 )
 
-// consoleCmd represents the console command
-var consoleCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// ConsoleCmd represents the console command
+var ConsoleCmd = &cobra.Command{
 	Use:   "console",
 	Short: "Start a JavaScript console and connect the node to the network",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -20,7 +26,7 @@ var consoleCmd = &cobra.Command{
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
 				n.Stop()
-				itr.Close()
+				config.GetInterrupt().Close()
 			})
 
 			// Register JS module hub
@@ -37,6 +43,5 @@ var consoleCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(consoleCmd)
-	setStartFlags(consoleCmd)
+	setStartFlags(ConsoleCmd)
 }

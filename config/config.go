@@ -22,6 +22,11 @@ import (
 )
 
 var (
+	cfg = EmptyAppConfig()
+
+	// itr is used to interrupt subscribed components
+	itr = util.Interrupt(make(chan struct{}))
+
 	// AppName is the name of the application
 	AppName = "kit"
 
@@ -69,6 +74,21 @@ var (
 		"/dns4/s4.seeders.live/tcp/9003/p2p/12D3KooWE7KybnAaoxuw6UiMpof2LT9hMky8k83tZgpdNCqRWx9P",
 	}
 )
+
+// SetConfig sets the app config
+func SetConfig(c *AppConfig) {
+	cfg = c
+}
+
+// GetConfig get the app config
+func GetConfig() *AppConfig {
+	return cfg
+}
+
+// GetInterrupt returns the component interrupt channel
+func GetInterrupt() *util.Interrupt {
+	return &itr
+}
 
 func init() {
 	DefaultDataDir, _ = homedir.Expand(path.Join("~", "."+AppName))
@@ -125,47 +145,47 @@ func IsTendermintInitialized(tmcfg *config.Config) bool {
 // ConfigureVM sets up the application command structure, tendermint
 // and kit configuration. This is where all configuration and
 // settings are prepared
-func Configure(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
+func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	NoColorFormatting = viper.GetBool("no-colors")
 
 	// Set default version information
-	cfg.VersionInfo = &VersionInfo{}
+	appCfg.VersionInfo = &VersionInfo{}
 
 	// Setup viper and app directories
-	setup(cfg, tmcfg, initializing, itr)
+	setup(appCfg, tmcfg, initializing)
 
 	// Setup logger
-	setupLogger(cfg, tmcfg)
+	setupLogger(appCfg, tmcfg)
 
 	// Tendermint config overwrites
 	tmcfg.TxIndex.Indexer = "null"
-	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
-	tmcfg.P2P.AddrBookStrict = !cfg.IsDev()
-	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
+	tmcfg.P2P.ListenAddress = appCfg.Node.ListeningAddr
+	tmcfg.P2P.AddrBookStrict = !appCfg.IsDev()
+	tmcfg.RPC.ListenAddress = "tcp://" + appCfg.RPC.TMRPCAddress
 
 	// Add seed peers if .IgnoreSeeds is false
-	if !cfg.Node.IgnoreSeeds {
-		tmcfg.P2P.PersistentPeers = cfg.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
-		cfg.DHT.BootstrapPeers = cfg.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
+	if !appCfg.Node.IgnoreSeeds {
+		tmcfg.P2P.PersistentPeers = appCfg.Node.PersistentPeers + "," + strings.Join(PersistentSeedPeers, ",")
+		appCfg.DHT.BootstrapPeers = appCfg.DHT.BootstrapPeers + "," + strings.Join(SeedDHTPeers, ",")
 	}
 
-	if cfg.DHT.Address != "" && cfg.DHT.Address[:1] == ":" {
-		cfg.DHT.Address = "0.0.0.0" + cfg.DHT.Address
+	if appCfg.DHT.Address != "" && appCfg.DHT.Address[:1] == ":" {
+		appCfg.DHT.Address = "0.0.0.0" + appCfg.DHT.Address
 	}
 
-	if cfg.RPC.User == "" && cfg.RPC.Password == "" {
-		cfg.RPC.DisableAuth = true
+	if appCfg.RPC.User == "" && appCfg.RPC.Password == "" {
+		appCfg.RPC.DisableAuth = true
 	}
 
 	if tmcfg.P2P.ListenAddress != "" && tmcfg.P2P.ListenAddress[:1] == ":" {
 		tmcfg.P2P.ListenAddress = "0.0.0.0" + tmcfg.P2P.ListenAddress
 	}
 
-	cfg.G().Bus = emitter.New(0)
-	cfg.G().TMConfig = tmcfg
+	appCfg.G().Bus = emitter.New(0)
+	appCfg.G().TMConfig = tmcfg
 }
 
-func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.Interrupt) {
+func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 
 	// Populate viper from environment variables
 	viper.SetEnvPrefix(AppEnvPrefix)
@@ -174,7 +194,6 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool, itr *util.In
 
 	// Create app config and populate with default values
 	cfg.Node.Mode = ModeProd
-	cfg.g.Interrupt = itr
 	dataDir := viper.GetString("home")
 	devDataDirPrefix := viper.GetString("home.prefix")
 

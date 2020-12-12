@@ -45,8 +45,7 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	// Initialize the config using the test root command
 	var tmcfg = tmconfig.DefaultConfig()
 	cfg = config.EmptyAppConfig()
-	interrupt := util.Interrupt(make(chan struct{}))
-	config.Configure(cfg, tmcfg, true, &interrupt)
+	config.Configure(cfg, tmcfg, true)
 	cfg.Node.Mode = config.ModeTest
 
 	// Initialize the directory

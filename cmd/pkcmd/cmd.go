@@ -1,13 +1,18 @@
-package cmd
+package pkcmd
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/make-os/kit/cmd/common"
-	"github.com/make-os/kit/cmd/pkcmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
+)
+
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
 )
 
 // pushKeyCmd represents
@@ -16,12 +21,12 @@ var pushKeyCmd = &cobra.Command{
 	Short: "Register and manage network push keys",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
-// pushKeyRegCmd represents a sub-command to register a public key as a push key
-var pushKeyRegCmd = &cobra.Command{
+// PushKeyRegCmd represents a sub-command to register a public key as a push key
+var PushKeyRegCmd = &cobra.Command{
 	Use:   "register [flags] <publicKey|keyId>",
 	Short: "Register a public key on the network",
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -41,7 +46,7 @@ var pushKeyRegCmd = &cobra.Command{
 		feeCap, _ := cmd.Flags().GetFloat64("feeCap")
 
 		_, client := common.GetRepoAndClient(cfg, "")
-		if err := pkcmd.RegisterCmd(cfg, &pkcmd.RegisterArgs{
+		if err := RegisterCmd(cfg, &RegisterArgs{
 			Target:              target,
 			TargetPass:          targetPass,
 			Fee:                 fee,
@@ -63,10 +68,9 @@ var pushKeyRegCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(pushKeyCmd)
-	pushKeyCmd.AddCommand(pushKeyRegCmd)
+	pushKeyCmd.AddCommand(PushKeyRegCmd)
 
-	f := pushKeyRegCmd.Flags()
+	f := PushKeyRegCmd.Flags()
 
 	// Set flags
 	f.StringSliceP("scopes", "s", []string{}, "Set one or more push key scopes")
@@ -74,10 +78,11 @@ func init() {
 	f.String("pass", "", "Specify the passphrase of a chosen push key account")
 	f.Float64P("fee", "f", 0, "Set the network transaction fee")
 	f.Uint64P("nonce", "n", 0, "Set the next nonce of the signing account signing")
-	f.StringP("signing-key", "u", "", "Address or index of local account to use for signing transaction")
+	f.StringP("signing-key", "u", "",
+		"Address or index of local account to use for signing transaction")
 	f.StringP("signing-key-pass", "p", "", "Passphrase for unlocking the signing account")
 
 	// Set required field
-	pushKeyRegCmd.MarkFlagRequired("fee")
-	pushKeyRegCmd.MarkFlagRequired("signing-key")
+	_ = PushKeyRegCmd.MarkFlagRequired("fee")
+	_ = PushKeyRegCmd.MarkFlagRequired("signing-key")
 }

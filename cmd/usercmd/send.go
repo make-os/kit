@@ -1,4 +1,4 @@
-package contribcmd
+package usercmd
 
 import (
 	"fmt"

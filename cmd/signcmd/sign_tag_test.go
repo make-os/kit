@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
@@ -44,7 +45,7 @@ var _ = Describe("SignTag", func() {
 		It("should return error when unable to get push key", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
 
-			err := SignTagCmd(cfg, []string{}, mockRepo, &SignTagArgs{})
+			err := SignTagCmd(cfg, []string{}, mockRepo, &types.SignTagArgs{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(ErrMissingPushKeyID))
 		})
@@ -54,7 +55,7 @@ var _ = Describe("SignTag", func() {
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
-			args := &SignTagArgs{}
+			args := &types.SignTagArgs{}
 			args.KeyUnlocker = testPushKeyUnlocker(nil, fmt.Errorf("error"))
 
 			err := SignTagCmd(cfg, []string{}, mockRepo, args)
@@ -67,7 +68,7 @@ var _ = Describe("SignTag", func() {
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
 
-			args := &SignTagArgs{}
+			args := &types.SignTagArgs{}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
@@ -83,7 +84,7 @@ var _ = Describe("SignTag", func() {
 				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 					"user.signingKey": key.PushAddr().String(),
 				})).AnyTimes()
-				args := &SignTagArgs{}
+				args := &types.SignTagArgs{}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
@@ -101,7 +102,7 @@ var _ = Describe("SignTag", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
-			args := &SignTagArgs{Nonce: 1}
+			args := &types.SignTagArgs{Nonce: 1}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
@@ -120,7 +121,7 @@ var _ = Describe("SignTag", func() {
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).DoAndReturn(mockGetConfig(map[string]string{
 				"user.signingKey": key.PushAddr().String(),
 			})).AnyTimes()
-			args := &SignTagArgs{Nonce: 1}
+			args := &types.SignTagArgs{Nonce: 1}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())

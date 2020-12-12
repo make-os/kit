@@ -1,4 +1,4 @@
-package cmd
+package keycmd
 
 import (
 	"fmt"
@@ -13,8 +13,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-// keysCmd represents the parent command for all key related commands
-var keysCmd = &cobra.Command{
+var (
+	cfg = config.GetConfig()
+	log = cfg.G().Log
+)
+
+// KeysCmd represents the parent command for all key related commands
+var KeysCmd = &cobra.Command{
 	Use:   "key command [flags]",
 	Short: "Create and manage your account and push keys.",
 	Long: `This command provides the ability to create, list, import and update 
@@ -196,14 +201,13 @@ var keyGenCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(keysCmd)
-	keysCmd.AddCommand(keyCreateCmd)
-	keysCmd.AddCommand(keyListCmd)
-	keysCmd.AddCommand(keyUpdateCmd)
-	keysCmd.AddCommand(keyImportCmd)
-	keysCmd.AddCommand(keyGetCmd)
-	keysCmd.AddCommand(keyGenCmd)
-	keysCmd.PersistentFlags().String("pass", "", "Password to unlock the target key and skip interactive mode")
+	KeysCmd.AddCommand(keyCreateCmd)
+	KeysCmd.AddCommand(keyListCmd)
+	KeysCmd.AddCommand(keyUpdateCmd)
+	KeysCmd.AddCommand(keyImportCmd)
+	KeysCmd.AddCommand(keyGetCmd)
+	KeysCmd.AddCommand(keyGenCmd)
+	KeysCmd.PersistentFlags().String("pass", "", "Password to unlock the target key and skip interactive mode")
 	keyCreateCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
 	keyGenCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
