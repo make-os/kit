@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
+	cmdutil "github.com/make-os/kit/util/cmd"
 	"github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ var mergeReqCreateCmd = &cobra.Command{
 	Short: "Create a merge request or add a comment to an existing one",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		rejectFlagCombo(cmd, "close", "reopen")
+		util.FatalOnError(cmdutil.RejectFlagCombo(cmd, "close", "reopen"))
 
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
@@ -216,7 +217,7 @@ var mergeReqReadCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeRequestReadCmd(curRepo, &mergecmd.MergeRequestReadArgs{
-			Reference:     normalMergeReferenceName(curRepo, args),
+			Reference:     mergecmd.NormalMergeReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -247,7 +248,7 @@ var mergeReqCloseCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
-			Reference:          normalMergeReferenceName(curRepo, args),
+			Reference:          mergecmd.NormalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -271,7 +272,7 @@ var mergeReqReopenCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
-			Reference:          normalMergeReferenceName(curRepo, args),
+			Reference:          mergecmd.NormalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
@@ -293,7 +294,7 @@ var mergeReqStatusCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqStatusCmd(curRepo, &mergecmd.MergeReqStatusArgs{
-			Reference:    normalMergeReferenceName(curRepo, args),
+			Reference:    mergecmd.NormalMergeReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {
@@ -325,7 +326,7 @@ var mergeReqCheckoutCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqCheckoutCmd(curRepo, &mergecmd.MergeReqCheckoutArgs{
-			Reference:             normalMergeReferenceName(curRepo, args),
+			Reference:             mergecmd.NormalMergeReferenceName(curRepo, args),
 			ReadPostBody:          plumbing.ReadPostBody,
 			ForceCheckout:         force,
 			ForceFetch:            forceFetch,
@@ -361,7 +362,7 @@ var mergeReqFetchCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqFetchCmd(curRepo, &mergecmd.MergeReqFetchArgs{
-			Reference:    normalMergeReferenceName(curRepo, args),
+			Reference:    mergecmd.NormalMergeReferenceName(curRepo, args),
 			ForceFetch:   forceFetch,
 			ReadPostBody: plumbing.ReadPostBody,
 			Remote:       remote,

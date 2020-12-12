@@ -37,7 +37,7 @@ var userSendCmd = &cobra.Command{
 		signingKeyPass, _ := cmd.Flags().GetString("signing-key-pass")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 
-		_, client := getRepoAndClient("")
+		_, client := common.GetRepoAndClient(cfg, "")
 		if err := usercmd.SendCmd(cfg, &usercmd.SendArgs{
 			Recipient:           args[0],
 			Value:               value,

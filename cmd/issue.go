@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/util"
+	cmdutil "github.com/make-os/kit/util/cmd"
 	"github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ var issueCreateCmd = &cobra.Command{
 	Short: "Create an issue or add a comment to an existing issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		rejectFlagCombo(cmd, "close", "reopen")
+		util.FatalOnError(cmdutil.RejectFlagCombo(cmd, "close", "reopen"))
 
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
@@ -171,7 +172,7 @@ var issueReadCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueReadCmd(curRepo, &issuecmd.IssueReadArgs{
-			Reference:     normalizeIssueReferenceName(curRepo, args),
+			Reference:     issuecmd.NormalizeIssueReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -202,7 +203,7 @@ var issueCloseCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueCloseCmd(curRepo, &issuecmd.IssueCloseArgs{
-			Reference:          normalizeIssueReferenceName(curRepo, args),
+			Reference:          issuecmd.NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -226,7 +227,7 @@ var issueReopenCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueReopenCmd(curRepo, &issuecmd.IssueReopenArgs{
-			Reference:          normalizeIssueReferenceName(curRepo, args),
+			Reference:          issuecmd.NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 			Force:              force,
@@ -248,7 +249,7 @@ var issueStatusCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueStatusCmd(curRepo, &issuecmd.IssueStatusArgs{
-			Reference:    normalizeIssueReferenceName(curRepo, args),
+			Reference:    issuecmd.NormalizeIssueReferenceName(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {

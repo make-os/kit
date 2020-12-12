@@ -179,7 +179,7 @@ var _ = Describe("SignCommit", func() {
 			It("should return error", func() {
 				ref := plumbing.ReferenceName("refs/heads/master")
 				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
-				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce}
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), GetNextNonce: testGetNextNonce}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 				mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
@@ -196,7 +196,7 @@ var _ = Describe("SignCommit", func() {
 				ref := plumbing.ReferenceName("refs/heads/master")
 				ref2 := plumbing.ReferenceName("refs/heads/dev")
 				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
-				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message",
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
 					GetNextNonce: testGetNextNonce, Head: ref2.String()}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
@@ -215,7 +215,7 @@ var _ = Describe("SignCommit", func() {
 				ref2 := "dev"
 				expected := plumbing.ReferenceName("refs/heads/dev")
 				mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
-				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message",
+				args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(),
 					GetNextNonce: testGetNextNonce, Head: ref2}
 				mockStoredKey := mocks.NewMockStoredKey(ctrl)
 				args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
@@ -230,7 +230,7 @@ var _ = Describe("SignCommit", func() {
 			refName := plumbing.ReferenceName("refs/heads/master")
 			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
-			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce}
+			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), GetNextNonce: testGetNextNonce}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())
@@ -247,7 +247,7 @@ var _ = Describe("SignCommit", func() {
 			refName := plumbing.ReferenceName("refs/heads/master")
 			ref := plumbing.NewHashReference(refName, plumbing.NewHash("5cb1af69935120f4944a8cd515f008e12290de52"))
 			mockRepo.EXPECT().GetGitConfigOption(gomock.Any()).AnyTimes()
-			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce}
+			args := &SignCommitArgs{Fee: "1", SigningKey: key.PushAddr().String(), GetNextNonce: testGetNextNonce}
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			args.KeyUnlocker = testPushKeyUnlocker(mockStoredKey, nil)
 			mockStoredKey.EXPECT().GetPushKeyAddress().Return(key.PushAddr().String())

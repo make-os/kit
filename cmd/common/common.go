@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,11 +15,17 @@ import (
 	"github.com/make-os/kit/keystore"
 	"github.com/make-os/kit/keystore/types"
 	types3 "github.com/make-os/kit/modules/types"
+	rr "github.com/make-os/kit/remote/repo"
 	remotetypes "github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/rpc/client"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util/api"
 	"github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
+	"github.com/spf13/viper"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
 var (
@@ -38,8 +45,8 @@ func WriteToPager(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) 
 	cmd.Stderr = stdErr
 	cmd.Stdin = content
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintln(stdOut, err.Error())
-		fmt.Fprint(stdOut, content)
+		_, _ = fmt.Fprintln(stdOut, err.Error())
+		_, _ = fmt.Fprint(stdOut, content)
 		return
 	}
 }
@@ -206,4 +213,80 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client)
 		}
 	}
 	return nil
+}
+
+// GetRPCClient returns an RPC client. If target repo is provided,
+// the RPC server information will be extracted from one of the remote URLs.
+// The target remote is set via viper's "remote.name" or "--remote" root flag.
+func GetRPCClient(targetRepo remotetypes.LocalRepo) (*client.RPCClient, error) {
+	remoteName := viper.GetString("remote.name")
+	rpcAddress := viper.GetString("remote.address")
+	rpcUser := viper.GetString("rpc.user")
+	rpcPassword := viper.GetString("rpc.password")
+	rpcSecured := viper.GetBool("rpc.https")
+
+	var err error
+	var host, port string
+
+	// If a target repo is provided, get the URL from the specified remote
+	if targetRepo != nil {
+		h, p, ok := GetRemoteAddrFromRepo(targetRepo, remoteName)
+		if ok {
+			host, port = h, cast.ToString(p)
+			goto create
+		}
+	}
+
+	host, port, err = net.SplitHostPort(rpcAddress)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed parse rpc address")
+	}
+
+create:
+	c := client.NewClient(&types2.Options{
+		Host:     host,
+		Port:     cast.ToInt(port),
+		User:     rpcUser,
+		Password: rpcPassword,
+		HTTPS:    rpcSecured,
+	})
+
+	return c, nil
+}
+
+// GetRemoteAddrFromRepo gets remote address from the given repo.
+// It will return false if no (good) url was found.
+func GetRemoteAddrFromRepo(repo remotetypes.LocalRepo, remoteName string) (string, int, bool) {
+	urls := repo.GetRemoteURLs(remoteName)
+	if len(urls) > 0 {
+		for _, url := range urls {
+			ep, err := transport.NewEndpoint(url)
+			if err != nil {
+				continue
+			}
+			return ep.Host, ep.Port, true
+		}
+	}
+	return "", 0, false
+}
+
+// GetRepoAndClient opens a the repository on the current working directory
+// and returns an RPC client.
+func GetRepoAndClient(cfg *config.AppConfig, repoDir string) (remotetypes.LocalRepo, types2.Client) {
+
+	var err error
+	var targetRepo remotetypes.LocalRepo
+
+	if repoDir == "" {
+		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
+	} else {
+		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
+	}
+
+	rpcClient, err := GetRPCClient(targetRepo)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return targetRepo, rpcClient
 }

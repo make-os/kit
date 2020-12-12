@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/txcmd"
 	"github.com/make-os/kit/util/api"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ var txGetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		status, _ := cmd.Flags().GetBool("status")
 
-		_, client := getRepoAndClient("")
+		_, client := common.GetRepoAndClient(cfg, "")
 		if err := txcmd.GetCmd(&txcmd.GetArgs{
 			Hash:           args[0],
 			RPCClient:      client,

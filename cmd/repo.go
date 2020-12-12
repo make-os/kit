@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/kit/remote/server"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/api"
+	cmdutil "github.com/make-os/kit/util/cmd"
 	"github.com/make-os/kit/util/colorfmt"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client := getRepoAndClient("")
+		_, client := common.GetRepoAndClient(cfg, "")
 		if err := repocmd.CreateCmd(cfg, &repocmd.CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
@@ -115,7 +116,7 @@ var repoVoteCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		rejectFlagCombo(cmd, "id", "mr")
+		util.FatalOnError(cmdutil.RejectFlagCombo(cmd, "id", "mr"))
 
 		repoName, _ := cmd.Flags().GetString("repo")
 		fee, _ := cmd.Flags().GetFloat64("fee")
@@ -131,7 +132,7 @@ var repoVoteCmd = &cobra.Command{
 			proposalID = "MR" + mrID
 		}
 
-		_, client := getRepoAndClient("")
+		_, client := common.GetRepoAndClient(cfg, "")
 		if err := repocmd.VoteCmd(cfg, &repocmd.VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          proposalID,
@@ -191,7 +192,7 @@ var repoConfigCmd = &cobra.Command{
 			}
 		}
 
-		targetRepo, client := getRepoAndClient(targetRepoDir)
+		targetRepo, client := common.GetRepoAndClient(cfg, targetRepoDir)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -295,7 +296,7 @@ var repoHookCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		isPostCommit, _ := cmd.Flags().GetBool("post-commit")
 
-		targetRepo, client := getRepoAndClient("")
+		targetRepo, client := common.GetRepoAndClient(cfg, "")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}

@@ -685,3 +685,10 @@ func ToByteSlice(v []int) []byte {
 	}
 	return bz
 }
+
+// FatalOnError logs a message of Fatal level if err is not nil
+func FatalOnError(err error) {
+	if err != nil {
+		logrus.Fatal(err)
+	}
+}

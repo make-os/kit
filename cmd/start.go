@@ -74,7 +74,9 @@ func setStartFlags(cmd *cobra.Command) {
 	f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 	viper.Set("node.extsargs", extArgsMap)
 
-	viperBindFlagSet(cmd)
+	if len(os.Args) > 1 && os.Args[1] == cmd.Name() {
+		_ = viper.BindPFlags(cmd.Flags())
+	}
 }
 
 func init() {

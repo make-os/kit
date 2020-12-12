@@ -36,7 +36,7 @@ var signCommitCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client := getRepoAndClient("")
+		targetRepo, client := common.GetRepoAndClient(cfg, "")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -76,7 +76,7 @@ var signTagCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client := getRepoAndClient("")
+		targetRepo, client := common.GetRepoAndClient(cfg, "")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -119,7 +119,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client := getRepoAndClient("")
+		targetRepo, client := common.GetRepoAndClient(cfg, "")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}

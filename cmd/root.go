@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/repocmd"
 	"github.com/make-os/kit/config/chains"
 	"github.com/make-os/kit/pkgs/logger"
@@ -176,7 +177,7 @@ var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		repo, _ := getRepoAndClient("")
+		repo, _ := common.GetRepoAndClient(cfg, "")
 
 		if isAskPassRequest(args) {
 			if err := repocmd.AskPassCmd(repo, args, os.Stdout); err != nil {
