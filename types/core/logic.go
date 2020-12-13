@@ -66,17 +66,6 @@ type SystemKeeper interface {
 	GetHelmRepo() (string, error)
 }
 
-// TxKeeper describes an interface for managing transaction data
-type TxKeeper interface {
-
-	// Index takes a transaction and stores it.
-	// It uses the tx hash as the index key
-	Index(tx types.BaseTx) error
-
-	// GetTx gets a transaction by its hash
-	GetTx(hash []byte) (types.BaseTx, error)
-}
-
 // BalanceAccount represents an account that maintains currency balance
 type BalanceAccount interface {
 	GetBalance() util.String
@@ -360,9 +349,6 @@ type Keepers interface {
 
 	// ValidatorKeeper manages and provides access to validators information
 	ValidatorKeeper() ValidatorKeeper
-
-	// TxKeeper manages and provides access to transaction information
-	TxKeeper() TxKeeper
 
 	// RepoKeeper manages and provides access to repository information
 	RepoKeeper() RepoKeeper

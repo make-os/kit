@@ -50,7 +50,7 @@ var _ = Describe("Manager", func() {
 		appDB, stateTreeDB = testutil.GetDB()
 		logic = l.New(appDB, stateTreeDB, cfg)
 		mgr = NewManager(appDB.NewTx(true, true), cfg, logic)
-		mockObjects := testutil.MockLogic(ctrl)
+		mockObjects := testutil.Mocks(ctrl)
 		mockLogic = mockObjects.Logic
 		mockSysKeeper = mockObjects.SysKeeper
 		Expect(err).To(BeNil())

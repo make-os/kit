@@ -50,7 +50,7 @@ var _ = Describe("TxValidator", func() {
 		appDB, stateTreeDB = testutil.GetDB()
 
 		ctrl = gomock.NewController(GinkgoT())
-		mockObjects = testutil.MockLogic(ctrl)
+		mockObjects = testutil.Mocks(ctrl)
 		mockLogic = mockObjects.Logic
 		mockSysKeeper = mockObjects.SysKeeper
 		mockTickMgr = mockObjects.TicketManager

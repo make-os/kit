@@ -1,6 +1,7 @@
 package refsync
 
 import (
+	context2 "context"
 	"fmt"
 	"sync"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
+	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -177,7 +180,7 @@ func (w *Watcher) Do(task *rstypes.WatcherTask) error {
 	start := task.StartHeight
 	var foundTx bool
 	for start <= task.EndHeight {
-		block, err := w.service.GetBlock(int64(start))
+		block, err := w.service.GetBlock(context2.Background(), funk.PtrOf(cast.ToInt64(start)).(*int64))
 		if err != nil {
 			w.processing.Remove(task.GetID())
 			return errors.Wrapf(err, "failed to get block (height=%d)", start)

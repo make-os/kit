@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os/exec"
@@ -125,7 +126,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	sv.markNoteAsSeen(noteID)
 
 	// Ignore note if already processed in a block
-	_, err := sv.logic.TxKeeper().GetTx(note.ID().Bytes())
+	_, _, err := sv.nodeService.GetTx(context.Background(), note.ID().Bytes(), sv.cfg.IsLightNode())
 	if err != nil && err != types.ErrTxNotFound {
 		return errors.Wrap(err, "failed to check if note has been processed")
 	} else if err == nil {
@@ -202,7 +203,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	sv.registerNoteSender(string(peerID), noteID)
 
 	// For each packfile fetched, announce commit and tag objects.
-	sv.objfetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
+	sv.objFetcher.OnPackReceived(func(hash string, packfile io.ReadSeeker) {
 		_ = plumbing.UnpackPackfile(packfile, func(header *packfile2.ObjectHeader, read func() (object.Object, error)) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
@@ -215,7 +216,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// FetchAsync the objects for each references in the push note.
 	// The callback is called when all objects have been fetched successfully.
-	sv.objfetcher.FetchAsync(&note, func(err error) {
+	sv.objFetcher.FetchAsync(&note, func(err error) {
 		_ = sv.onObjectsFetched(err, &note, txDetails, polEnforcer)
 	})
 

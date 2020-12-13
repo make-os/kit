@@ -4,8 +4,8 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
-	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -96,7 +96,7 @@ func (tx *TxCoinTransfer) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxCoinTransfer) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(crypto2.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(tmhash.Sum(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

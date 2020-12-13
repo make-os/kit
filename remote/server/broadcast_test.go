@@ -40,7 +40,7 @@ var _ = Describe("Reactor", func() {
 		_, err := repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
-		mockObjects := testutil.MockLogic(ctrl)
+		mockObjects := testutil.Mocks(ctrl)
 		mockTickMgr = mockObjects.TicketManager
 
 		mockDHT := mocks.NewMockDHT(ctrl)
@@ -48,7 +48,7 @@ var _ = Describe("Reactor", func() {
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
 
 		svr = New(cfg, ":9000", mockObjects.Logic, mockDHT,
-			mocks.NewMockMempool(ctrl), mocks.NewMockBlockGetter(ctrl))
+			mocks.NewMockMempool(ctrl), mockObjects.Service, mocks.NewMockBlockGetter(ctrl))
 
 	})
 

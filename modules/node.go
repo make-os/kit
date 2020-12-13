@@ -1,6 +1,7 @@
 package modules
 
 import (
+	context2 "context"
 	"fmt"
 	"strconv"
 
@@ -112,7 +113,7 @@ func (m *NodeModule) GetBlock(height string) util.Map {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
-	res, err := m.service.GetBlock(blockHeight)
+	res, err := m.service.GetBlock(context2.Background(), &blockHeight)
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
@@ -216,7 +217,7 @@ func (m *NodeModule) IsSyncing() bool {
 		return syncing
 	}
 
-	syncing, err := m.service.IsSyncing()
+	syncing, err := m.service.IsSyncing(context2.Background())
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}

@@ -44,7 +44,7 @@ var _ = Describe("Contract", func() {
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&state.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockLogic = testutil.Mocks(ctrl)
 	})
 
 	AfterEach(func() {

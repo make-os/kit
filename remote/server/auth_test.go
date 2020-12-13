@@ -55,7 +55,7 @@ var _ = Describe("Auth", func() {
 		Expect(err).To(BeNil())
 
 		ctrl = gomock.NewController(GinkgoT())
-		mocksObjs := testutil.MockLogic(ctrl)
+		mocksObjs := testutil.Mocks(ctrl)
 		mockLogic = mocksObjs.Logic
 
 		mockDHT := mocks.NewMockDHT(ctrl)
@@ -64,7 +64,8 @@ var _ = Describe("Auth", func() {
 
 		mockMempool := mocks.NewMockMempool(ctrl)
 		mockBlockGetter := mocks.NewMockBlockGetter(ctrl)
-		svr = New(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		mockService := mocks.NewMockService(ctrl)
+		svr = New(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockService, mockBlockGetter)
 	})
 
 	AfterEach(func() {

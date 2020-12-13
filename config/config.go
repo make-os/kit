@@ -164,7 +164,7 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	setupLogger(appCfg, tmcfg)
 
 	// Tendermint config overwrites
-	tmcfg.TxIndex.Indexer = "null"
+	tmcfg.TxIndex.Indexer = "kv"
 	tmcfg.P2P.ListenAddress = appCfg.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !appCfg.IsDev()
 	tmcfg.RPC.ListenAddress = "tcp://" + appCfg.RPC.TMRPCAddress

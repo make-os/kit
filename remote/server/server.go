@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/dht/announcer"
 	dhttypes "github.com/make-os/kit/dht/types"
+	nodeService "github.com/make-os/kit/node/services"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/pkgs/cache"
 	"github.com/make-os/kit/pkgs/logger"
@@ -63,28 +64,33 @@ var services = [][]interface{}{
 // and service a git repositories through http and ssh protocols.
 type Server struct {
 	p2p.BaseReactor
-	cfg                        *config.AppConfig
-	log                        logger.Logger                           // log is the application logger
-	wg                         *sync.WaitGroup                         // wait group for waiting for the remote server
-	mux                        *http.ServeMux                          // The request multiplexer
-	srv                        *http.Server                            // The http server
-	rpcHandler                 *rpc.Handler                            // JSON-RPC 2.0 handler
-	rootDir                    string                                  // the root directory where all repos are stored
-	addr                       string                                  // addr is the listening address for the http server
-	gitBinPath                 string                                  // gitBinPath is the path of the git executable
-	pushPool                   pushtypes.PushPool                      // The transaction pool for push transactions
-	mempool                    core.Mempool                            // The general transaction pool for block-bound transaction
-	logic                      core.Logic                              // logic is the application logic provider
-	validatorKey               *ed25519.Key                            // the node's private validator key for signing transactions
-	pushKeyGetter              core.PushKeyGetter                      // finds and returns PGP public key
-	dht                        dhttypes.DHT                            // The dht service
-	objfetcher                 fetcher.ObjectFetcher                   // The object fetcher service
-	blockGetter                core.BlockGetter                        // Provides access to blocks
-	noteSenders                *cache.Cache                            // Store senders of push notes
-	endorsementSenders         *cache.Cache                            // Stores senders of Endorsement messages
-	endorsements               *cache.Cache                            // Stores push endorsements
-	notesReceived              *cache.Cache                            // Stores ID of push notes recently received
-	refSyncer                  rstypes.RefSync                         // Responsible for syncing pushed references in a push transaction
+	cfg           *config.AppConfig
+	log           logger.Logger         // log is the application logger
+	wg            *sync.WaitGroup       // wait group for waiting for the remote server
+	mux           *http.ServeMux        // The request multiplexer
+	srv           *http.Server          // The http server
+	rpcHandler    *rpc.Handler          // JSON-RPC 2.0 handler
+	rootDir       string                // the root directory where all repos are stored
+	validatorKey  *ed25519.Key          // the node's private validator key for signing transactions
+	addr          string                // addr is the listening address for the http server
+	gitBinPath    string                // gitBinPath is the path of the git executable
+	pushPool      pushtypes.PushPool    // The transaction pool for push transactions
+	mempool       core.Mempool          // The general transaction pool for block-bound transaction
+	logic         core.Logic            // logic is the application logic provider
+	nodeService   nodeService.Service   // The node external service provider
+	pushKeyGetter core.PushKeyGetter    // finds and returns PGP public key
+	dht           dhttypes.DHT          // The dht service
+	objFetcher    fetcher.ObjectFetcher // The object fetcher service
+	blockGetter   core.BlockGetter      // Provides access to blocks
+	refSyncer     rstypes.RefSync       // Responsible for syncing pushed references in a push transaction
+
+	// Cache or Indexes
+	noteSenders        *cache.Cache // Store senders of push notes
+	endorsementSenders *cache.Cache // Stores senders of Endorsement messages
+	endorsements       *cache.Cache // Stores push endorsements
+	notesReceived      *cache.Cache // Stores ID of push notes recently received
+
+	// Composable functions members
 	authenticate               AuthenticatorFunc                       // Function for performing authentication
 	checkPushNote              validation.CheckPushNoteFunc            // Function for performing PushNote validation
 	makeReferenceUpdatePack    push.MakeReferenceUpdateRequestPackFunc // Function for creating a reference update pack for updating a repository
@@ -106,6 +112,7 @@ func New(
 	appLogic core.Logic,
 	dht dhttypes.DHT,
 	mempool core.Mempool,
+	nodeService nodeService.Service,
 	blockGetter core.BlockGetter) *Server {
 
 	// Create wait group
@@ -131,10 +138,11 @@ func New(
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
 		pushPool:                pushPool,
+		nodeService:             nodeService,
 		logic:                   appLogic,
 		validatorKey:            key,
 		dht:                     dht,
-		objfetcher:              mFetcher,
+		objFetcher:              mFetcher,
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
 		refSyncer:               refsync.New(cfg, pushPool, mFetcher, dht, appLogic),
@@ -167,7 +175,7 @@ func New(
 
 	// Start reference synchronization and object fetcher in non-validator or test mode.
 	if !cfg.Node.Validator && cfg.Node.Mode != config.ModeTest {
-		server.objfetcher.Start()
+		server.objFetcher.Start()
 	}
 
 	// Register DHT object checkers
@@ -210,7 +218,7 @@ func (sv *Server) SetRootDir(dir string) {
 
 // GetFetcher returns the fetcher service
 func (sv *Server) GetFetcher() fetcher.ObjectFetcher {
-	return sv.objfetcher
+	return sv.objFetcher
 }
 
 // getPushKey returns a pusher key by its ID
@@ -544,7 +552,7 @@ func (sv *Server) Shutdown(ctx context.Context) {
 // Stop implements Reactor
 func (sv *Server) Stop() error {
 	sv.BaseReactor.Stop()
-	sv.objfetcher.Stop()
+	sv.objFetcher.Stop()
 	sv.Shutdown(context.Background())
 	sv.log.Info("Shutdown")
 	return nil

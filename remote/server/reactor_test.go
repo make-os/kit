@@ -48,7 +48,7 @@ var _ = Describe("Reactor", func() {
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 	var mockDHT *mocks.MockDHT
-	var mockTxKeeper *mocks.MockTxKeeper
+	var mockService *mocks.MockService
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = ed25519.NewKeyFromIntSeed(1)
@@ -67,11 +67,10 @@ var _ = Describe("Reactor", func() {
 		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
-		mockObjects := testutil.MockLogic(ctrl)
+		mockObjects := testutil.Mocks(ctrl)
 		mockLogic = mockObjects.Logic
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockRepoSyncInfoKeeper = mockObjects.RepoSyncInfoKeeper
-		mockTxKeeper = mockObjects.TxKeeper
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
@@ -81,7 +80,8 @@ var _ = Describe("Reactor", func() {
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockTickMgr = mockObjects.TicketManager
 		mockNS = mockObjects.NamespaceKeeper
-		svr = New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		mockService = mockObjects.Service
+		svr = New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockService, mockBlockGetter)
 
 		mockPeer = mocks.NewMockPeer(ctrl)
 	})
@@ -114,14 +114,15 @@ var _ = Describe("Reactor", func() {
 		When("checking if push note has been processed in a block", func() {
 			It("should return nil if note has not been processed", func() {
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, nil)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).Return(nil, nil, nil)
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 				Expect(err).To(BeNil())
 			})
 
 			It("should return error if unable to check due to error", func() {
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, fmt.Errorf("error"))
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, fmt.Errorf("error"))
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to check if note has been processed: error"))
@@ -131,7 +132,8 @@ var _ = Describe("Reactor", func() {
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "unknown"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
@@ -146,7 +148,8 @@ var _ = Describe("Reactor", func() {
 		When("namespace is set but it is unknown", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: repoName, Namespace: "ns1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -164,7 +167,8 @@ var _ = Describe("Reactor", func() {
 		When("authentication fails", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: repoName}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -186,7 +190,8 @@ var _ = Describe("Reactor", func() {
 			var validated bool
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -226,7 +231,8 @@ var _ = Describe("Reactor", func() {
 				cfg.Node.Validator = true
 
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -265,7 +271,8 @@ var _ = Describe("Reactor", func() {
 			var validated bool
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -303,7 +310,8 @@ var _ = Describe("Reactor", func() {
 		When("unable to open target repository", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: "repo1"}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -326,7 +334,8 @@ var _ = Describe("Reactor", func() {
 		When("push note validation fail", func() {
 			BeforeEach(func() {
 				pn := &types.Note{RepoName: repoName}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -353,7 +362,8 @@ var _ = Describe("Reactor", func() {
 			var reSyncScheduled bool
 			It("should schedule repo resync", func() {
 				pn := &types.Note{RepoName: repoName}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -384,7 +394,8 @@ var _ = Describe("Reactor", func() {
 
 			BeforeEach(func() {
 				pn = &types.Note{RepoName: repoName}
-				mockTxKeeper.EXPECT().GetTx(pn.ID().Bytes()).Return(nil, types2.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), pn.ID().Bytes(), cfg.IsLightNode()).
+					Return(nil, nil, types2.ErrTxNotFound)
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
@@ -415,7 +426,7 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should add fetch task to object fetcher", func() {
-				Expect(svr.objfetcher.QueueSize()).To(Equal(1))
+				Expect(svr.objFetcher.QueueSize()).To(Equal(1))
 			})
 		})
 	})

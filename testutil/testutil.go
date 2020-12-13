@@ -84,7 +84,6 @@ type MockObjects struct {
 	AccountKeeper      *mocks.MockAccountKeeper
 	ValidatorKeeper    *mocks.MockValidatorKeeper
 	RepoKeeper         *mocks.MockRepoKeeper
-	TxKeeper           *mocks.MockTxKeeper
 	TicketManager      *mocks.MockTicketManager
 	RepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 	StateTree          *mocks.MockTree
@@ -93,10 +92,11 @@ type MockObjects struct {
 	NamespaceKeeper    *mocks.MockNamespaceKeeper
 	BlockGetter        *mocks.MockBlockGetter
 	DHTKeeper          *mocks.MockDHTKeeper
+	Service            *mocks.MockService
 }
 
-// MockLogic returns logic package mocks
-func MockLogic(ctrl *gomock.Controller) *MockObjects {
+// Mocks returns logic package mocks
+func Mocks(ctrl *gomock.Controller) *MockObjects {
 	mo := &MockObjects{}
 	mo.Logic = mocks.NewMockLogic(ctrl)
 	mo.AtomicLogic = mocks.NewMockAtomicLogic(ctrl)
@@ -106,7 +106,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AccountKeeper = mocks.NewMockAccountKeeper(ctrl)
 	mo.RepoKeeper = mocks.NewMockRepoKeeper(ctrl)
 	mo.ValidatorKeeper = mocks.NewMockValidatorKeeper(ctrl)
-	mo.TxKeeper = mocks.NewMockTxKeeper(ctrl)
 	mo.TicketManager = mocks.NewMockTicketManager(ctrl)
 	mo.StateTree = mocks.NewMockTree(ctrl)
 	mo.RemoteServer = mocks.NewMockRemoteServer(ctrl)
@@ -115,13 +114,13 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.BlockGetter = mocks.NewMockBlockGetter(ctrl)
 	mo.RepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
 	mo.DHTKeeper = mocks.NewMockDHTKeeper(ctrl)
+	mo.Service = mocks.NewMockService(ctrl)
 
 	mo.Logic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.Logic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
 	mo.Logic.EXPECT().AccountKeeper().Return(mo.AccountKeeper).MinTimes(0)
 	mo.Logic.EXPECT().RepoKeeper().Return(mo.RepoKeeper).MinTimes(0)
 	mo.Logic.EXPECT().ValidatorKeeper().Return(mo.ValidatorKeeper).MinTimes(0)
-	mo.Logic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.Logic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
 	mo.Logic.EXPECT().GetRemoteServer().Return(mo.RemoteServer).MinTimes(0)
@@ -129,13 +128,13 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().RepoSyncInfoKeeper().Return(mo.RepoSyncInfoKeeper).MinTimes(0)
 	mo.Logic.EXPECT().DHTKeeper().Return(mo.DHTKeeper).MinTimes(0)
+	mo.Logic.EXPECT().DHTKeeper().Return(mo.DHTKeeper).MinTimes(0)
 
 	mo.AtomicLogic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.AtomicLogic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().AccountKeeper().Return(mo.AccountKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().RepoKeeper().Return(mo.RepoKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().ValidatorKeeper().Return(mo.ValidatorKeeper).MinTimes(0)
-	mo.AtomicLogic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.AtomicLogic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetRemoteServer().Return(mo.RemoteServer).MinTimes(0)

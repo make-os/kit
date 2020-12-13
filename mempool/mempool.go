@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	types2 "github.com/make-os/kit/mempool/types"
+	memtypes "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
@@ -92,7 +92,7 @@ func (mp *Mempool) Add(tx types.BaseTx) (bool, error) {
 
 	// Check the transaction
 	if err := mp.validateTx(tx, -1, mp.logic); err != nil {
-		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRejected, err, tx)
+		mp.cfg.G().Bus.Emit(memtypes.EvtMempoolTxRejected, err, tx)
 		mp.log.Debug("Rejected an invalid transaction", "Reason", err.Error())
 		return false, err
 	}
@@ -100,7 +100,7 @@ func (mp *Mempool) Add(tx types.BaseTx) (bool, error) {
 	// Add valid transaction to the pool
 	addedToPool, err := mp.pool.Put(tx)
 	if err != nil {
-		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRejected, err, tx)
+		mp.cfg.G().Bus.Emit(memtypes.EvtMempoolTxRejected, err, tx)
 		return false, err
 	}
 
@@ -265,11 +265,11 @@ func (mp *Mempool) Update(blockHeight int64, txs tmtypes.Txs,
 
 		// Remove it from the pool
 		mp.pool.Remove(tx)
-		mp.cfg.G().Bus.Emit(types2.EvtMempoolTxRemoved, nil, tx)
+		mp.cfg.G().Bus.Emit(memtypes.EvtMempoolTxRemoved, nil, tx)
 
 		// If the tx was processed into a block, emit event
 		if len(responses) > 0 && responses[i].GetCode() == abci.CodeTypeOK {
-			mp.cfg.G().Bus.Emit(types2.EvtMempoolTxCommitted, nil, tx)
+			mp.cfg.G().Bus.Emit(memtypes.EvtMempoolTxCommitted, nil, tx)
 		}
 	}
 

@@ -33,7 +33,7 @@ var _ = Describe("Merge", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		mockObjs := testutil.MockLogic(ctrl)
+		mockObjs := testutil.Mocks(ctrl)
 		mockLogic = mockObjs.Logic
 		mockRepoKeeper = mockObjs.RepoKeeper
 		mockPushKeyKeeper = mockObjs.PushKeyKeeper

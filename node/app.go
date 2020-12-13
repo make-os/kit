@@ -238,8 +238,7 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Register the successfully processed tx to the un-indexed tx cache.
-	// They will be committed in the COMMIT phase
+	// Keep reference of successfully processed txs
 	a.okTxs = append(a.okTxs, blockTx{tx, a.txIndex})
 
 	return resp
@@ -394,7 +393,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Index the un-indexed txs
-	a.indexTransactions()
+	a.broadcastTx()
 
 	// Index proposal votes
 	a.indexProposalVotes()
@@ -509,18 +508,11 @@ func (a *App) indexProposalVotes() {
 	}
 }
 
-// indexTransactions indexes transactions
-func (a *App) indexTransactions() {
+// broadcastTx selected transactions that may be need by other app processes
+func (a *App) broadcastTx() {
 	for _, btx := range a.okTxs {
-
-		if err := a.logic.TxKeeper().Index(btx.tx); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
-		}
-
-		// Broadcast pushed transaction
 		if btx.tx.Is(txns.TxTypePush) {
-			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed,
-				btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
+			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
 		}
 	}
 }

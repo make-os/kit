@@ -20,7 +20,7 @@ var _ = Describe("Create", func() {
 	var cfg *config.AppConfig
 	var repoMgr *Server
 	var ctrl *gomock.Controller
-	var mockLogic *testutil.MockObjects
+	var mockObjects *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
@@ -30,7 +30,7 @@ var _ = Describe("Create", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockObjects = testutil.Mocks(ctrl)
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
@@ -38,7 +38,8 @@ var _ = Describe("Create", func() {
 
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = New(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
+		repoMgr = New(cfg, ":45000", mockObjects.Logic, mockDHT,
+			mockMempool, mockObjects.Service, mockBlockGetter)
 	})
 
 	AfterEach(func() {

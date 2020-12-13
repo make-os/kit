@@ -45,7 +45,7 @@ var _ = Describe("Validation", func() {
 
 		privKey = ed25519.NewKeyFromIntSeed(1)
 
-		mockObjs := testutil.MockLogic(ctrl)
+		mockObjs := testutil.Mocks(ctrl)
 		mockLogic = mockObjs.Logic
 		mockTickMgr = mockObjs.TicketManager
 		mockRepoKeeper = mockObjs.RepoKeeper

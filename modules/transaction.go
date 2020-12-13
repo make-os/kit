@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 
 	modulestypes "github.com/make-os/kit/modules/types"
@@ -93,8 +94,8 @@ func (m *TxModule) Get(hash string) util.Map {
 		panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
-	// Check tx in transaction index (finalized check)
-	tx, err := m.logic.TxKeeper().GetTx(bz)
+	// Check tx in transaction
+	tx, _, err := m.service.GetTx(context.Background(), bz, m.logic.Config().IsLightNode())
 	if err != nil && err != types.ErrTxNotFound {
 		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	} else if tx != nil {

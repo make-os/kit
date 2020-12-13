@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/kit/config"
 	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	mocksrpc "github.com/make-os/kit/mocks/rpc"
@@ -23,22 +24,22 @@ import (
 )
 
 var _ = Describe("TxModule", func() {
+	var cfg *config.AppConfig
 	var m *modules.TxModule
 	var ctrl *gomock.Controller
 	var mockService *mocks.MockService
 	var mockLogic *mocks.MockLogic
 	var mockMempoolReactor *mocks.MockMempoolReactor
-	var mockTxKeeper *mocks.MockTxKeeper
 	var pk = crypto2.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
+		cfg = config.EmptyAppConfig()
 		ctrl = gomock.NewController(GinkgoT())
 		mockService = mocks.NewMockService(ctrl)
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
-		mockTxKeeper = mocks.NewMockTxKeeper(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
+		mockLogic.EXPECT().Config().Return(cfg).AnyTimes()
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
-		mockLogic.EXPECT().TxKeeper().Return(mockTxKeeper).AnyTimes()
 		m = modules.NewTxModule(mockService, mockLogic)
 	})
 
@@ -91,19 +92,19 @@ var _ = Describe("TxModule", func() {
 
 		It("should panic if unable to get transaction from tx index", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			hash := tx.GetID()
-			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(nil, fmt.Errorf("error"))
+			hash := tx.GetHash()
+			mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(nil, nil, fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.Get(hash)
+				m.Get(hash.String())
 			})
 		})
 
 		It("should return result status=TxStatusInBlock and data=<tx> when transaction exists in tx index", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			hash := tx.GetID()
-			mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(tx, nil)
-			res := m.Get(hash)
+			hash := tx.GetHash()
+			mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(tx, nil, nil)
+			res := m.Get(hash.String())
 			Expect(res).To(HaveKey("status"))
 			Expect(res["status"]).To(Equal(types2.TxStatusInBlock))
 			Expect(res).To(HaveKey("data"))
@@ -113,10 +114,10 @@ var _ = Describe("TxModule", func() {
 		When("tx not found in tx index, check mempool", func() {
 			It("should return result status=TxStatusInMempool and data=<tx> when transaction exists in the mempool", func() {
 				tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-				hash := tx.GetID()
-				mockTxKeeper.EXPECT().GetTx(util.MustFromHex(hash)).Return(nil, types.ErrTxNotFound)
-				mockMempoolReactor.EXPECT().GetTx(hash).Return(tx)
-				res := m.Get(hash)
+				hash := tx.GetHash()
+				mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(nil, nil, types.ErrTxNotFound)
+				mockMempoolReactor.EXPECT().GetTx(hash.String()).Return(tx)
+				res := m.Get(hash.String())
 				Expect(res).To(HaveKey("status"))
 				Expect(res["status"]).To(Equal(types2.TxStatusInMempool))
 				Expect(res).To(HaveKey("data"))
@@ -128,7 +129,7 @@ var _ = Describe("TxModule", func() {
 			It("should return result status=TxStatusInPushpool and data=<note> when transaction exists in the pushpool", func() {
 				note := &types3.Note{RepoName: "repo1"}
 				hash := note.ID()
-				mockTxKeeper.EXPECT().GetTx(note.ID().Bytes()).Return(nil, types.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(nil, nil, types.ErrTxNotFound)
 				mockMempoolReactor.EXPECT().GetTx(hash.String()).Return(nil)
 
 				mockRemoteSrv := mocks.NewMockRemoteServer(ctrl)
@@ -149,7 +150,7 @@ var _ = Describe("TxModule", func() {
 			It("should panic", func() {
 				note := &types3.Note{RepoName: "repo1"}
 				hash := note.ID()
-				mockTxKeeper.EXPECT().GetTx(note.ID().Bytes()).Return(nil, types.ErrTxNotFound)
+				mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(nil, nil, types.ErrTxNotFound)
 				mockMempoolReactor.EXPECT().GetTx(hash.String()).Return(nil)
 
 				mockRemoteSrv := mocks.NewMockRemoteServer(ctrl)

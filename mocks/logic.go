@@ -179,58 +179,6 @@ func (mr *MockSystemKeeperMockRecorder) GetHelmRepo() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmRepo", reflect.TypeOf((*MockSystemKeeper)(nil).GetHelmRepo))
 }
 
-// MockTxKeeper is a mock of TxKeeper interface
-type MockTxKeeper struct {
-	ctrl     *gomock.Controller
-	recorder *MockTxKeeperMockRecorder
-}
-
-// MockTxKeeperMockRecorder is the mock recorder for MockTxKeeper
-type MockTxKeeperMockRecorder struct {
-	mock *MockTxKeeper
-}
-
-// NewMockTxKeeper creates a new mock instance
-func NewMockTxKeeper(ctrl *gomock.Controller) *MockTxKeeper {
-	mock := &MockTxKeeper{ctrl: ctrl}
-	mock.recorder = &MockTxKeeperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
-	return m.recorder
-}
-
-// Index mocks base method
-func (m *MockTxKeeper) Index(tx types1.BaseTx) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Index", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Index indicates an expected call of Index
-func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTxKeeper)(nil).Index), tx)
-}
-
-// GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash []byte) (types1.BaseTx, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTx", hash)
-	ret0, _ := ret[0].(types1.BaseTx)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTx indicates an expected call of GetTx
-func (mr *MockTxKeeperMockRecorder) GetTx(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockTxKeeper)(nil).GetTx), hash)
-}
-
 // MockBalanceAccount is a mock of BalanceAccount interface
 type MockBalanceAccount struct {
 	ctrl     *gomock.Controller
@@ -856,20 +804,6 @@ func (mr *MockAtomicLogicMockRecorder) ValidatorKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).ValidatorKeeper))
 }
 
-// TxKeeper mocks base method
-func (m *MockAtomicLogic) TxKeeper() core.TxKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(core.TxKeeper)
-	return ret0
-}
-
-// TxKeeper indicates an expected call of TxKeeper
-func (mr *MockAtomicLogicMockRecorder) TxKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TxKeeper))
-}
-
 // RepoKeeper mocks base method
 func (m *MockAtomicLogic) RepoKeeper() core.RepoKeeper {
 	m.ctrl.T.Helper()
@@ -1235,20 +1169,6 @@ func (mr *MockLogicMockRecorder) ValidatorKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockLogic)(nil).ValidatorKeeper))
 }
 
-// TxKeeper mocks base method
-func (m *MockLogic) TxKeeper() core.TxKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(core.TxKeeper)
-	return ret0
-}
-
-// TxKeeper indicates an expected call of TxKeeper
-func (mr *MockLogicMockRecorder) TxKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockLogic)(nil).TxKeeper))
-}
-
 // RepoKeeper mocks base method
 func (m *MockLogic) RepoKeeper() core.RepoKeeper {
 	m.ctrl.T.Helper()
@@ -1572,20 +1492,6 @@ func (m *MockKeepers) ValidatorKeeper() core.ValidatorKeeper {
 func (mr *MockKeepersMockRecorder) ValidatorKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockKeepers)(nil).ValidatorKeeper))
-}
-
-// TxKeeper mocks base method
-func (m *MockKeepers) TxKeeper() core.TxKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(core.TxKeeper)
-	return ret0
-}
-
-// TxKeeper indicates an expected call of TxKeeper
-func (mr *MockKeepersMockRecorder) TxKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockKeepers)(nil).TxKeeper))
 }
 
 // RepoKeeper mocks base method

@@ -15,10 +15,8 @@ const (
 	TagNS                      = "ns"
 	TagClosedProp              = "cp"
 	TagBlockInfo               = "b"
-	TagLastRepoSyncHeight      = "rh"
 	TagHelmRepo                = "hr"
 	TagValidators              = "v"
-	TagTx                      = "t"
 	TagTrackedRepo             = "tr"
 	TagAnnouncementScheduleKey = "ak"
 	TagRepoRefLastSyncHeight   = "rrh"
@@ -98,11 +96,6 @@ func MakeKeyBlockInfo(height int64) []byte {
 	return common.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagBlockInfo))
 }
 
-// MakeKeyRepoSyncHeight creates a key for accessing last height successfully synchronized by the repo syncer
-func MakeKeyRepoSyncHeight() []byte {
-	return common.MakePrefix([]byte(TagLastRepoSyncHeight))
-}
-
 // MakeKeyHelmRepo creates a key for getting/setting the helm repo
 func MakeKeyHelmRepo() []byte {
 	return common.MakePrefix([]byte(TagHelmRepo))
@@ -121,11 +114,6 @@ func MakeBlockValidatorsKey(height int64) []byte {
 // MakeQueryKeyBlockValidators creates a key for querying all block validators
 func MakeQueryKeyBlockValidators() []byte {
 	return common.MakePrefix([]byte(TagValidators))
-}
-
-// MakeTxKey creates a key for storing a transaction
-func MakeTxKey(hash []byte) []byte {
-	return common.MakePrefix([]byte(TagTx), hash)
 }
 
 // MakeAnnounceListKey creates a key for adding DHT key announcement entry

@@ -8,6 +8,7 @@ import (
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -187,7 +188,7 @@ func (pt *Note) Len() uint64 {
 
 // ID returns the hash of the push note
 func (pt *Note) ID(recompute ...bool) util.Bytes32 {
-	return util.BytesToBytes32(crypto2.Blake2b256(pt.Bytes(recompute...)))
+	return util.BytesToBytes32(tmhash.Sum(pt.Bytes(recompute...)))
 }
 
 // IsFromRemotePeer checks whether the note was sent by a remote peer
@@ -198,7 +199,7 @@ func (pt *Note) IsFromRemotePeer() bool {
 // BytesAndID returns the serialized version of the tx and the id
 func (pt *Note) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
 	bz := pt.Bytes(recompute...)
-	return bz, util.BytesToBytes32(crypto2.Blake2b256(bz))
+	return bz, pt.ID(recompute...)
 }
 
 // TxSize is the size of the transaction

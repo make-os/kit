@@ -58,13 +58,15 @@ var _ = Describe("NodeModule", func() {
 		})
 
 		It("should panic when unable to get block at height", func() {
-			mockService.EXPECT().GetBlock(int64(1)).Return(nil, fmt.Errorf("error"))
+			var height = int64(1)
+			mockService.EXPECT().GetBlock(gomock.Any(), &height).Return(nil, fmt.Errorf("error"))
 			Expect(func() { m.GetBlock("1") }).To(Panic())
 		})
 
 		It("should return expected result on success", func() {
 			expected := &core_types.ResultBlock{Block: &types.Block{}}
-			mockService.EXPECT().GetBlock(int64(1)).Return(expected, nil)
+			var height = int64(1)
+			mockService.EXPECT().GetBlock(gomock.Any(), &height).Return(expected, nil)
 			res := m.GetBlock("1")
 			Expect(map[string]interface{}(res)).To(Equal(util.ToMap(expected)))
 		})
@@ -129,12 +131,12 @@ var _ = Describe("NodeModule", func() {
 
 	Describe(".IsSyncing", func() {
 		It("should panic if unable to check sync status", func() {
-			mockService.EXPECT().IsSyncing().Return(false, fmt.Errorf("error"))
+			mockService.EXPECT().IsSyncing(gomock.Any()).Return(false, fmt.Errorf("error"))
 			Expect(func() { m.IsSyncing() }).To(Panic())
 		})
 
 		It("should return no error if able to check sync status", func() {
-			mockService.EXPECT().IsSyncing().Return(true, nil)
+			mockService.EXPECT().IsSyncing(gomock.Any()).Return(true, nil)
 			Expect(func() {
 				res := m.IsSyncing()
 				Expect(res).To(BeTrue())

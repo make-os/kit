@@ -190,7 +190,7 @@ func (n *Node) Start() error {
 
 	// Create remote server
 	mp := appMempool.Mempool.(*mempool.Mempool)
-	remoteServer := server.New(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, mp, n)
+	remoteServer := server.New(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, mp, n.service, n)
 	n.remoteServer = remoteServer
 	n.logic.SetRemoteServer(remoteServer)
 	for _, ch := range remoteServer.GetChannels() {

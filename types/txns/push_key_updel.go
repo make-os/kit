@@ -2,7 +2,7 @@ package txns
 
 import (
 	"github.com/make-os/kit/util"
-	"github.com/make-os/kit/util/crypto"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -74,7 +74,7 @@ func (tx *TxUpDelPushKey) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxUpDelPushKey) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(crypto.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(tmhash.Sum(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

@@ -61,9 +61,6 @@ type Logic struct {
 	// validatorKeeper provides operations for managing validator data
 	validatorKeeper *keepers.ValidatorKeeper
 
-	// txKeeper provides operations for managing transaction data
-	txKeeper *keepers.TxKeeper
-
 	// RepoSyncInfoKeeper provides functionalities for managing tracked repositories
 	repoSyncInfoKeeper *keepers.RepoSyncInfoKeeper
 
@@ -124,7 +121,6 @@ func newLogicWithTx(dbTx storagetypes.Tx, stateTreeDBTx tmdb.DB, cfg *config.App
 
 	// Create the keepers
 	l.systemKeeper = keepers.NewSystemKeeper(dbTx)
-	l.txKeeper = keepers.NewTxKeeper(dbTx)
 	l.accountKeeper = keepers.NewAccountKeeper(safeTree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
 	l.repoKeeper = keepers.NewRepoKeeper(safeTree, dbTx)
@@ -256,11 +252,6 @@ func (l *Logic) NamespaceKeeper() core.NamespaceKeeper {
 // DHTKeeper returns the DHT keeper
 func (l *Logic) DHTKeeper() core.DHTKeeper {
 	return l.dhtKeeper
-}
-
-// TxKeeper returns the transaction keeper
-func (l *Logic) TxKeeper() core.TxKeeper {
-	return l.txKeeper
 }
 
 // ValidatorKeeper returns the validator keeper

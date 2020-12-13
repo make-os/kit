@@ -38,7 +38,7 @@ var _ = Describe("TxDetail", func() {
 		privKey = ed25519.NewKeyFromIntSeed(1)
 		privKey2 = ed25519.NewKeyFromIntSeed(2)
 
-		mockObjs := testutil.MockLogic(ctrl)
+		mockObjs := testutil.Mocks(ctrl)
 		mockLogic = mockObjs.Logic
 		mockRepoKeeper = mockObjs.RepoKeeper
 		mockPushKeyKeeper = mockObjs.PushKeyKeeper

@@ -73,7 +73,7 @@ var _ = Describe("App", func() {
 		app = NewApp(cfg, c, logic, ticketmgr)
 
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockLogic = testutil.Mocks(ctrl)
 	})
 
 	AfterEach(func() {
@@ -555,26 +555,6 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("error occurred when trying to save non-indexed tx", func() {
-
-			BeforeEach(func() {
-				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
-				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-				app.heightToSaveNewValidators = 100
-				mockLogic.TxKeeper.EXPECT().Index(gomock.Any()).Return(fmt.Errorf("error"))
-				mockLogic.AtomicLogic.EXPECT().Discard().Return()
-				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
-				app.logic = mockLogic.AtomicLogic
-				app.okTxs = append(app.okTxs, blockTx{txns.NewBareTxCoinTransfer(), 0})
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
-			})
-		})
-
 		When("no error occurred", func() {
 			appHash := []byte("working_hash")
 
@@ -709,22 +689,12 @@ var _ = Describe("App", func() {
 		})
 	})
 
-	Describe(".indexTransactions", func() {
-		It("should panic when unable to index transaction", func() {
-			tx := txns.NewBareTxCoinTransfer()
-			tx.Value = "10"
-			app.okTxs = []blockTx{{tx, 0}}
-			mockLogic.TxKeeper.EXPECT().Index(tx).Return(fmt.Errorf("error"))
-			mockLogic.AtomicLogic.EXPECT().Discard()
-			app.logic = mockLogic.AtomicLogic
-			Expect(func() { app.indexTransactions() }).To(Panic())
-		})
-
+	Describe(".broadcastTx", func() {
 		It("should broadcast push transaction", func() {
 			tx := txns.NewBareTxPush()
 			tx.Nonce = 100
 			app.okTxs = []blockTx{{tx, 0}}
-			go app.indexTransactions()
+			go app.broadcastTx()
 			evt := <-cfg.G().Bus.On(core.EvtTxPushProcessed)
 			Expect(evt.Args).To(HaveLen(3))
 			Expect(evt.Args[0]).To(Equal(tx))

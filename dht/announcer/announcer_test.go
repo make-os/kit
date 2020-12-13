@@ -46,7 +46,7 @@ var _ = Describe("Announcer", func() {
 		Expect(err).To(BeNil())
 		cfg2.DHT.Address = testutil2.RandomAddr()
 
-		logic := testutil.MockLogic(ctrl)
+		logic := testutil.Mocks(ctrl)
 		mockDHTKeeper = logic.DHTKeeper
 		ann = announcer.New(cfg, dhtA.DHT(), logic.Logic)
 	})

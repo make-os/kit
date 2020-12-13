@@ -35,7 +35,7 @@ var _ = Describe("Server", func() {
 	var path, repoName string
 	var repo types2.LocalRepo
 	var ctrl *gomock.Controller
-	var mockLogic *testutil.MockObjects
+	var mockObjects *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
@@ -47,16 +47,17 @@ var _ = Describe("Server", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 
-		mockLogic = testutil.MockLogic(ctrl)
+		mockObjects = testutil.Mocks(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		mockRepoSyncInfoKeeper = mockLogic.RepoSyncInfoKeeper
+		mockRepoSyncInfoKeeper = mockObjects.RepoSyncInfoKeeper
 
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
 
 		port, _ := freeport.GetFreePort()
-		svr = New(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
+		svr = New(cfg, fmt.Sprintf(":%d", port), mockObjects.Logic, mockDHT,
+			mockMempool, mockObjects.Service, mockBlockGetter)
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)

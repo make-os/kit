@@ -55,6 +55,7 @@ var _ = Describe("BasicHandler", func() {
 	var mockDHT *mocks.MockDHT
 	var mockGitRcvCmd *mocks2.MockCmd
 	var mockPushPool *mocks.MockPushPool
+	var mockService *mocks.MockService
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -77,8 +78,9 @@ var _ = Describe("BasicHandler", func() {
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockGitRcvCmd = mocks2.NewMockCmd(ctrl)
 		mockPushPool = mocks.NewMockPushPool(ctrl)
+		mockService = mocks.NewMockService(ctrl)
 
-		svr = server.New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = server.New(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockService, mockBlockGetter)
 		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
 		mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log)
 		mockRemoteSrv.EXPECT().GetPushPool().Return(mockPushPool).AnyTimes()
