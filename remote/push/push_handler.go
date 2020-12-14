@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/make-os/kit/dht/announcer"
+	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"

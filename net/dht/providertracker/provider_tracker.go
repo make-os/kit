@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/make-os/kit/dht"
+	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/pkgs/cache"
 	"github.com/make-os/kit/util/crypto"
 )
@@ -32,7 +32,7 @@ type ProviderTracker struct {
 	nopeCache *cache.Cache
 
 	lck       *sync.Mutex
-	providers map[string]*dht.ProviderInfo
+	providers map[string]*dht2.ProviderInfo
 }
 
 // New creates an instance of dht.ProviderTracker.
@@ -41,7 +41,7 @@ func New() *ProviderTracker {
 		lck:       &sync.Mutex{},
 		banned:    cache.NewCacheWithExpiringEntry(100000),
 		nopeCache: cache.NewCacheWithExpiringEntry(100000),
-		providers: make(map[string]*dht.ProviderInfo),
+		providers: make(map[string]*dht2.ProviderInfo),
 	}
 }
 
@@ -51,7 +51,7 @@ func (m *ProviderTracker) Register(addrs ...peer.AddrInfo) {
 	defer m.lck.Unlock()
 	for _, addr := range addrs {
 		if _, ok := m.providers[addr.ID.Pretty()]; !ok {
-			m.providers[addr.ID.Pretty()] = &dht.ProviderInfo{Addr: &addr, LastSeen: time.Now()}
+			m.providers[addr.ID.Pretty()] = &dht2.ProviderInfo{Addr: &addr, LastSeen: time.Now()}
 		}
 	}
 }
@@ -67,7 +67,7 @@ func (m *ProviderTracker) BanCache() *cache.Cache {
 }
 
 // Get implements ProviderTracker
-func (m *ProviderTracker) Get(id peer.ID, cb func(*dht.ProviderInfo)) *dht.ProviderInfo {
+func (m *ProviderTracker) Get(id peer.ID, cb func(*dht2.ProviderInfo)) *dht2.ProviderInfo {
 	m.lck.Lock()
 	defer m.lck.Unlock()
 	provider, ok := m.providers[id.Pretty()]
@@ -133,7 +133,7 @@ func (m *ProviderTracker) Ban(peer peer.ID, dur time.Duration) {
 
 // MarkFailure implements ProviderTracker
 func (m *ProviderTracker) MarkFailure(id peer.ID) {
-	m.Get(id, func(info *dht.ProviderInfo) {
+	m.Get(id, func(info *dht2.ProviderInfo) {
 		info.Failed++
 		info.LastFailure = time.Now()
 		if info.Failed >= MaxFailureBeforeBan {
@@ -144,7 +144,7 @@ func (m *ProviderTracker) MarkFailure(id peer.ID) {
 
 // MarkSeen implements ProviderTracker
 func (m *ProviderTracker) MarkSeen(id peer.ID) {
-	m.Get(id, func(info *dht.ProviderInfo) {
+	m.Get(id, func(info *dht2.ProviderInfo) {
 		info.Failed = 0
 		info.LastSeen = time.Now()
 	})

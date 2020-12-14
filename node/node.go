@@ -9,9 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/make-os/kit/dht"
-	dhtserver "github.com/make-os/kit/dht/server"
 	modtypes "github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/net"
+	dht2 "github.com/make-os/kit/net/dht"
+	dhtserver "github.com/make-os/kit/net/dht/server"
 	"github.com/make-os/kit/remote/server"
 	rpcApi "github.com/make-os/kit/rpc/api"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -58,6 +59,7 @@ import (
 
 // RPCServer represents the client
 type Node struct {
+	ctx            context.Context
 	app            *App
 	cfg            *config.AppConfig
 	acctMgr        *keystore.Keystore
@@ -71,15 +73,16 @@ type Node struct {
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
-	dht            dht.DHT
+	dht            dht2.DHT
 	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
 	closeOnce      *sync.Once
 }
 
 // NewNode creates an instance of RPCServer
-func NewNode(cfg *config.AppConfig) *Node {
+func NewNode(ctx context.Context, cfg *config.AppConfig) *Node {
 	return &Node{
+		ctx:       ctx,
 		cfg:       cfg,
 		nodeKey:   cfg.G().NodeKey,
 		log:       cfg.G().Log.Module("node"),
@@ -166,9 +169,15 @@ func (n *Node) Start() error {
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
 	n.logic.SetTicketManager(n.ticketMgr)
 
+	// Create overlay network host
+	host, err := net.New(n.ctx, n.cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create overlay network host")
+	}
+
 	// Initialize and start the DHT module (only in non-validator mode)
 	if !n.cfg.IsValidatorNode() {
-		n.dht, err = dhtserver.New(context.Background(), n.logic, n.cfg)
+		n.dht, err = dhtserver.New(n.ctx, host, n.logic, n.cfg)
 		if err != nil {
 			return err
 		}

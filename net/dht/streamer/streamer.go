@@ -12,9 +12,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	dht2 "github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/providertracker"
+	dht3 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/providertracker"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
@@ -44,11 +43,11 @@ func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
 // BasicObjectStreamer implements Streamer. It provides a mechanism for
 // announcing or transferring repository objects to/from the DHT.
 type BasicObjectStreamer struct {
-	dht              dht.DHT
+	dht              dht3.DHT
 	log              logger.Logger
 	reposDir         string
 	gitBinPath       string
-	tracker          dht.ProviderTracker
+	tracker          dht3.ProviderTracker
 	OnWantHandler    WantSendHandler
 	OnSendHandler    WantSendHandler
 	RepoGetter       repo.GetLocalRepoFunc
@@ -57,8 +56,8 @@ type BasicObjectStreamer struct {
 	PackObjectGetter plumbing.PackObjectFinder
 }
 
-// NewObjectStreamer creates an instance of BasicObjectStreamer
-func NewObjectStreamer(dht dht.DHT, cfg *config.AppConfig) *BasicObjectStreamer {
+// NewStreamer creates an instance of BasicObjectStreamer
+func NewStreamer(dht dht3.DHT, cfg *config.AppConfig) *BasicObjectStreamer {
 	ce := &BasicObjectStreamer{
 		dht:              dht,
 		reposDir:         cfg.GetRepoRoot(),
@@ -80,7 +79,7 @@ func NewObjectStreamer(dht dht.DHT, cfg *config.AppConfig) *BasicObjectStreamer 
 }
 
 // SetProviderTracker overwrites the default provider tracker.
-func (c *BasicObjectStreamer) SetProviderTracker(t dht.ProviderTracker) {
+func (c *BasicObjectStreamer) SetProviderTracker(t dht3.ProviderTracker) {
 	c.tracker = t
 }
 
@@ -199,9 +198,9 @@ func (c *BasicObjectStreamer) GetCommit(
 // with a nil error.
 func GetCommitWithAncestors(
 	ctx context.Context,
-	c dht2.Streamer,
+	c dht3.Streamer,
 	repoGetter repo.GetLocalRepoFunc,
-	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
 	var r types.LocalRepo
@@ -429,9 +428,9 @@ func (c *BasicObjectStreamer) GetTag(
 //   with a nil error.
 func GetTaggedCommitWithAncestors(
 	ctx context.Context,
-	st dht2.Streamer,
+	st dht3.Streamer,
 	repoGetter repo.GetLocalRepoFunc,
-	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
 	var r types.LocalRepo
@@ -527,7 +526,7 @@ func GetTaggedCommitWithAncestors(
 // If ResultCB returns an error, the method exits with that error. Use ErrExit to exit
 // with a nil error.
 func (c *BasicObjectStreamer) GetCommitWithAncestors(ctx context.Context,
-	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 	args.ReposDir, args.GitBinPath = c.reposDir, c.gitBinPath
 	return GetCommitWithAncestors(ctx, c, c.RepoGetter, args)
 }
@@ -544,7 +543,7 @@ func (c *BasicObjectStreamer) GetCommitWithAncestors(ctx context.Context,
 // - If ResultCB returns an error, the method exits with that error. Use ErrExit to exit
 //   with a nil error.
 func (c *BasicObjectStreamer) GetTaggedCommitWithAncestors(ctx context.Context,
-	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 	args.ReposDir, args.GitBinPath = c.reposDir, c.gitBinPath
 	return GetTaggedCommitWithAncestors(ctx, c, c.RepoGetter, args)
 }
@@ -566,7 +565,7 @@ func (c *BasicObjectStreamer) Handler(s network.Stream) {
 func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 
 	// Get request message
-	msgType, repoName, hash, err := dht2.ReadWantOrSendMsg(s)
+	msgType, repoName, hash, err := dht3.ReadWantOrSendMsg(s)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to read request")
 	}
@@ -574,12 +573,12 @@ func (c *BasicObjectStreamer) OnRequest(s network.Stream) (bool, error) {
 	switch msgType {
 
 	// Handle 'want' message
-	case dht2.MsgTypeWant:
+	case dht3.MsgTypeWant:
 		err := c.OnWantHandler(repoName, hash, s)
 		return false, err
 
 	// Handle 'send' message
-	case dht2.MsgTypeSend:
+	case dht3.MsgTypeSend:
 		err := c.OnSendHandler(repoName, hash, s)
 		return err == nil, err
 
@@ -610,18 +609,18 @@ func (c *BasicObjectStreamer) OnWantRequest(repo string, hash []byte, s network.
 
 	// Check if object exist in the repo
 	if !r.ObjectExist(commitHash) {
-		if _, err = s.Write(dht2.MakeNopeMsg()); err != nil {
+		if _, err = s.Write(dht3.MakeNopeMsg()); err != nil {
 			return errors.Wrap(err, "failed to write 'nope' message")
 		}
 		c.log.Debug("Requested object does not exist in repo", "Repo", repo, "Hash", commitHash)
-		return dht2.ErrObjNotFound
+		return dht3.ErrObjNotFound
 	}
 
 	c.log.Debug("WANT<-: Requested object exist in repo", "Repo", repo, "Hash", commitHash,
 		"Peer", remotePeerID)
 
 	// Respond with a 'have' message
-	if _, err := s.Write(dht2.MakeHaveMsg()); err != nil {
+	if _, err := s.Write(dht3.MakeHaveMsg()); err != nil {
 		s.Reset()
 		c.log.Error("failed to Write 'have' message", "Err", err)
 		return err
@@ -661,7 +660,7 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 		c.log.Debug("SEND<-: Object requested was not found", "Repo", repo, "Hash",
 			commitHash, "Peer", remotePeerID)
 
-		if _, err = s.Write(dht2.MakeNopeMsg()); err != nil {
+		if _, err = s.Write(dht3.MakeNopeMsg()); err != nil {
 			return errors.Wrap(err, "failed to write 'nope' message")
 		}
 

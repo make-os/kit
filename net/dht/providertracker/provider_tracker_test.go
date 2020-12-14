@@ -7,8 +7,8 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/providertracker"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/providertracker"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
@@ -53,8 +53,8 @@ var _ = Describe("ProviderTracker", func() {
 			peerID := peer.ID("peer1")
 			addrs := []peer.AddrInfo{{ID: peerID}}
 			tracker.Register(addrs...)
-			var found *dht.ProviderInfo
-			retval := tracker.Get(peerID, func(info *dht.ProviderInfo) {
+			var found *dht2.ProviderInfo
+			retval := tracker.Get(peerID, func(info *dht2.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(Equal(found))
@@ -67,8 +67,8 @@ var _ = Describe("ProviderTracker", func() {
 
 		It("should return nil if provider does not exist", func() {
 			peerID := peer.ID("peer1")
-			var found *dht.ProviderInfo
-			retval := tracker.Get(peerID, func(info *dht.ProviderInfo) {
+			var found *dht2.ProviderInfo
+			retval := tracker.Get(peerID, func(info *dht2.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(BeNil())

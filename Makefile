@@ -76,11 +76,12 @@ genmocks:
 	mockgen -source=remote/refsync/types/types.go -destination=mocks/refsync.go -package mocks
 	mockgen -source=remote/push/push_handler.go -destination=mocks/push_handler.go -package mocks
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks
-	mockgen -source=dht/dht.go -destination=mocks/dht_server.go -package mocks
-	mockgen -source=dht/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
-	mockgen -source=dht/announcer.go -destination=mocks/announcer.go -package mocks
-	mockgen -source=dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
-	mockgen -source=dht/streamer.go -destination=mocks/dht_streamer.go -package mocks
+	mockgen -source=net/dht/dht.go -destination=mocks/dht_server.go -package mocks
+	mockgen -source=net/dht/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
+	mockgen -source=net/dht/announcer.go -destination=mocks/announcer.go -package mocks
+	mockgen -source=net/dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
+	mockgen -source=net/dht/streamer.go -destination=mocks/dht_streamer.go -package mocks
+	mockgen -source=net/host.go -destination=mocks/net/net.go -package mocks
 	mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks
 	mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks
 	mockgen -source=modules/types/types.go -destination=mocks/modules.go -package mocks

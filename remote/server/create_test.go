@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/mocks"
+	"github.com/make-os/kit/net/dht/announcer"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"

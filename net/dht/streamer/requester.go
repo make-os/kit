@@ -12,7 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/make-os/kit/dht"
+	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util/io"
@@ -75,7 +75,7 @@ type RequestArgs struct {
 	Log logger.Logger
 
 	// BasicProviderTracker for recording and tracking provider behaviour
-	ProviderTracker dht.ProviderTracker
+	ProviderTracker dht2.ProviderTracker
 }
 
 // BasicObjectRequester manages object download sessions between multiple providers
@@ -88,7 +88,7 @@ type BasicObjectRequester struct {
 	log                   logger.Logger
 	reposDir              string
 	closed                bool
-	tracker               dht.ProviderTracker
+	tracker               dht2.ProviderTracker
 	providerStreams       []network.Stream
 	OnWantResponseHandler func(network.Stream) error
 	OnSendResponseHandler func(network.Stream) (io.ReadSeekerCloser, error)
@@ -164,7 +164,7 @@ func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 
 		// Send 'WANT' message to provider
 		var s network.Stream
-		s, err = r.Write(ctx, prov, ObjectStreamerProtocolID, dht.MakeWantMsg(r.repoName, r.key))
+		s, err = r.Write(ctx, prov, ObjectStreamerProtocolID, dht2.MakeWantMsg(r.repoName, r.key))
 		if err != nil {
 			wg.Done()
 			r.log.Error("Unable to write `WANT` message to peer", "Peer", prov.ID.Pretty(), "Err", err)
@@ -210,7 +210,7 @@ func (r *BasicObjectRequester) Do(ctx context.Context) (result *PackResult, err 
 		}
 
 		// Send a 'SEND' message to the stream.
-		if err = r.WriteToStream(str, dht.MakeSendMsg(r.repoName, r.key)); err != nil {
+		if err = r.WriteToStream(str, dht2.MakeSendMsg(r.repoName, r.key)); err != nil {
 			str.Reset()
 			r.log.Error("failed to write 'SEND' message to peer", "Err", err,
 				"Peer", str.Conn().RemotePeer().Pretty())
@@ -266,17 +266,17 @@ func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 		r.tracker.MarkSeen(remotePeer)
 	}
 
-	hash, _ := dht.ParseObjectKeyToHex(r.key)
+	hash, _ := dht2.ParseObjectKeyToHex(r.key)
 
 	switch string(msg[:4]) {
-	case dht.MsgTypeHave:
+	case dht2.MsgTypeHave:
 		r.log.Debug("HAVE<-: Received message from provider",
 			"Repo", r.repoName, "Hash", hash, "Peer", remotePeer.Pretty())
 		r.lck.Lock()
 		r.providerStreams = append(r.providerStreams, s)
 		r.lck.Unlock()
 
-	case dht.MsgTypeNope:
+	case dht2.MsgTypeNope:
 		r.log.Debug("NOPE<-: Provider does not have the object",
 			"Hash", hash, "Peer", remotePeer.Pretty())
 		s.Reset()
@@ -311,16 +311,16 @@ func (r *BasicObjectRequester) OnSendResponse(s network.Stream) (io.ReadSeekerCl
 		r.tracker.MarkSeen(remotePeer)
 	}
 
-	hash, _ := dht.ParseObjectKeyToHex(r.key)
+	hash, _ := dht2.ParseObjectKeyToHex(r.key)
 
 	switch string(op) {
-	case dht.MsgTypeNope:
+	case dht2.MsgTypeNope:
 		r.log.Debug("NOPE<-: Expected packfile but provider refused to send",
 			"Repo", r.repoName, "Hash", hash, "Peer", remotePeer.Pretty())
 		r.tracker.PeerSentNope(remotePeer, r.key)
-		return nil, dht.ErrObjNotFound
+		return nil, dht2.ErrObjNotFound
 
-	case dht.MsgTypePack:
+	case dht2.MsgTypePack:
 		r.log.Debug("PACK<-: Packfile received from provider",
 			"Repo", r.repoName, "Hash", hash, "Peer", remotePeer.Pretty())
 		rdr, err := io.LimitedReadToTmpFile(buf, MaxPackSize)

@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht/announcer"
 	"github.com/make-os/kit/mocks"
+	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"

@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/storage"
+	"github.com/phayes/freeport"
 	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -153,4 +154,12 @@ func ReturnStringOnCallCount(callCount *int, ret ...string) string {
 	str := ret[*callCount]
 	*callCount++
 	return str
+}
+
+func RandomAddr() string {
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("127.0.0.1:%d", port)
 }

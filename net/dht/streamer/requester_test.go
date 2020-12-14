@@ -13,10 +13,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/providertracker"
-	"github.com/make-os/kit/dht/streamer"
 	"github.com/make-os/kit/mocks"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/providertracker"
+	"github.com/make-os/kit/net/dht/streamer"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
@@ -159,7 +159,7 @@ var _ = Describe("BasicObjectRequester", func() {
 			mockHost.EXPECT().Peerstore().Return(mockPeerstore)
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().SetDeadline(gomock.Any())
-			mockStream.EXPECT().Write(dht.MakeWantMsg(repoName, key)).Return(0, nil)
+			mockStream.EXPECT().Write(dht2.MakeWantMsg(repoName, key)).Return(0, nil)
 			mockHost.EXPECT().NewStream(ctx, prov.ID, streamer.ObjectStreamerProtocolID).Return(mockStream, nil)
 
 			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{
@@ -211,7 +211,7 @@ var _ = Describe("BasicObjectRequester", func() {
 
 			It("should return error when attempt to write 'SEND' message to stream failed", func() {
 				ctx := context.Background()
-				mockStream.EXPECT().Write(dht.MakeSendMsg(repoName, key)).Return(0, fmt.Errorf("error"))
+				mockStream.EXPECT().Write(dht2.MakeSendMsg(repoName, key)).Return(0, fmt.Errorf("error"))
 				mockStream.EXPECT().Reset()
 				mockConn := mocks.NewMockConn(ctrl)
 				mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
@@ -225,7 +225,7 @@ var _ = Describe("BasicObjectRequester", func() {
 
 			It("should return error when 'SEND' message response handler failed", func() {
 				ctx := context.Background()
-				mockStream.EXPECT().Write(dht.MakeSendMsg(repoName, key)).Return(0, nil)
+				mockStream.EXPECT().Write(dht2.MakeSendMsg(repoName, key)).Return(0, nil)
 				mockStream.EXPECT().Reset()
 				mockConn := mocks.NewMockConn(ctrl)
 				mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
@@ -242,7 +242,7 @@ var _ = Describe("BasicObjectRequester", func() {
 
 			It("should return packfile when 'SEND' message response handler succeeds", func() {
 				ctx := context.Background()
-				mockStream.EXPECT().Write(dht.MakeSendMsg(repoName, key)).Return(0, nil)
+				mockStream.EXPECT().Write(dht2.MakeSendMsg(repoName, key)).Return(0, nil)
 				mockConn := mocks.NewMockConn(ctrl)
 				remotePeerID := core.PeerID("peer_id")
 				mockConn.EXPECT().RemotePeer().Return(remotePeerID)
@@ -287,8 +287,8 @@ var _ = Describe("BasicObjectRequester", func() {
 
 		It("should add stream to provider's stream cache, when message type is 'HAVE'", func() {
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-				copy(p, dht.MsgTypeHave)
-				return len(dht.MsgTypeHave), nil
+				copy(p, dht2.MsgTypeHave)
+				return len(dht2.MsgTypeHave), nil
 			})
 			mockConn := mocks.NewMockConn(ctrl)
 			mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
@@ -305,8 +305,8 @@ var _ = Describe("BasicObjectRequester", func() {
 
 			BeforeEach(func() {
 				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-					copy(p, dht.MsgTypeNope)
-					return len(dht.MsgTypeNope), nil
+					copy(p, dht2.MsgTypeNope)
+					return len(dht2.MsgTypeNope), nil
 				})
 				mockConn := mocks.NewMockConn(ctrl)
 				mockConn.EXPECT().RemotePeer().Return(remotePeer)
@@ -389,8 +389,8 @@ var _ = Describe("BasicObjectRequester", func() {
 		When("msg type is 'NOPE'", func() {
 			BeforeEach(func() {
 				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-					copy(p, dht.MsgTypeNope)
-					return len(dht.MsgTypeNope), nil
+					copy(p, dht2.MsgTypeNope)
+					return len(dht2.MsgTypeNope), nil
 				})
 			})
 
@@ -398,7 +398,7 @@ var _ = Describe("BasicObjectRequester", func() {
 				r := streamer.NewBasicObjectRequester(reqArgs)
 				_, err := r.OnSendResponse(mockStream)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(dht.ErrObjNotFound))
+				Expect(err).To(Equal(dht2.ErrObjNotFound))
 			})
 
 			Specify("that the peer was added to the NOPE cache for the given key", func() {
@@ -411,8 +411,8 @@ var _ = Describe("BasicObjectRequester", func() {
 
 		It("should return packfile if msg type is 'PACK'", func() {
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
-				copy(p, dht.MsgTypePack)
-				return len(dht.MsgTypePack), io.EOF
+				copy(p, dht2.MsgTypePack)
+				return len(dht2.MsgTypePack), io.EOF
 			})
 			r := streamer.NewBasicObjectRequester(reqArgs)
 			packfile, err := r.OnSendResponse(mockStream)
@@ -420,7 +420,7 @@ var _ = Describe("BasicObjectRequester", func() {
 			Expect(packfile).ToNot(BeNil())
 			data, err := ioutil.ReadAll(packfile)
 			Expect(err).To(BeNil())
-			Expect(data).To(Equal([]byte(dht.MsgTypePack)))
+			Expect(data).To(Equal([]byte(dht2.MsgTypePack)))
 		})
 
 		It("should return ErrUnknownMsgType if msg type is unknown", func() {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/announcer"
 	modulestypes "github.com/make-os/kit/modules/types"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/remote/plumbing"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types/constants"
@@ -24,7 +24,7 @@ import (
 type DHTModule struct {
 	modulestypes.ModuleCommon
 	cfg *config.AppConfig
-	dht dht.DHT
+	dht dht2.DHT
 }
 
 // NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
@@ -33,7 +33,7 @@ func NewAttachableDHTModule(cfg *config.AppConfig, client types2.Client) *DHTMod
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, dht dht.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, dht dht2.DHT) *DHTModule {
 	return &DHTModule{cfg: cfg, dht: dht}
 }
 
@@ -114,7 +114,7 @@ func (m *DHTModule) Store(key string, val string) {
 
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
-	if err := m.dht.Store(ctx, dht.MakeKey(key), []byte(val)); err != nil {
+	if err := m.dht.Store(ctx, dht2.MakeKey(key), []byte(val)); err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
@@ -134,7 +134,7 @@ func (m *DHTModule) Lookup(key string) string {
 
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
-	bz, err := m.dht.Lookup(ctx, dht.MakeKey(key))
+	bz, err := m.dht.Lookup(ctx, dht2.MakeKey(key))
 	if err != nil {
 		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}

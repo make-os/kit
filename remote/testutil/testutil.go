@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
-	"github.com/phayes/freeport"
 )
 
 var GitEnv = os.Environ()
@@ -137,12 +136,4 @@ func ExecAnyCmd(workDir, name string, args ...string) []byte {
 
 func GetRecentCommitHash(path, ref string) string {
 	return strings.TrimSpace(string(ExecGit(path, "--no-pager", "log", ref, "-1", "--format=%H")))
-}
-
-func RandomAddr() string {
-	port, err := freeport.GetFreePort()
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("127.0.0.1:%d", port)
 }

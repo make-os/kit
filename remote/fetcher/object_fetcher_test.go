@@ -9,8 +9,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/mocks"
+	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/remote/fetcher"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push/types"
@@ -30,7 +30,7 @@ var _ = Describe("ObjectFetcher", func() {
 	var f *fetcher.BasicObjectFetcher
 	var mockDHT *mocks.MockDHT
 	var ctrl *gomock.Controller
-	var mockObjStreamer *mocks.MockObjectStreamer
+	var mockObjStreamer *mocks.MockStreamer
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -38,7 +38,7 @@ var _ = Describe("ObjectFetcher", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockDHT = mocks.NewMockDHT(ctrl)
-		mockObjStreamer = mocks.NewMockObjectStreamer(ctrl)
+		mockObjStreamer = mocks.NewMockStreamer(ctrl)
 		f = fetcher.NewFetcher(mockDHT, cfg)
 	})
 
@@ -86,7 +86,7 @@ var _ = Describe("ObjectFetcher", func() {
 
 				mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 				mockF := mockObjStreamer.EXPECT().GetCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.RepoName).To(Equal(note.RepoName))
 					Expect(args.StartHash).To(Equal(plumbing.HashToBytes(newHash)))
 					Expect(args.ExcludeEndCommit).To(BeTrue())
@@ -115,7 +115,7 @@ var _ = Describe("ObjectFetcher", func() {
 
 				mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 				mockF := mockObjStreamer.EXPECT().GetCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.RepoName).To(Equal(note.RepoName))
 					Expect(args.StartHash).To(Equal(plumbing.HashToBytes(newHash)))
 					Expect(args.ExcludeEndCommit).To(BeTrue())
@@ -144,7 +144,7 @@ var _ = Describe("ObjectFetcher", func() {
 
 				mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 				mockF := mockObjStreamer.EXPECT().GetCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.RepoName).To(Equal(note.RepoName))
 					Expect(args.StartHash).To(Equal(plumbing.HashToBytes(newHash)))
 					Expect(args.ExcludeEndCommit).To(BeTrue())
@@ -173,7 +173,7 @@ var _ = Describe("ObjectFetcher", func() {
 
 				mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 				mockF := mockObjStreamer.EXPECT().GetCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.EndHash).To(BeEmpty())
 					Expect(args.RepoName).To(Equal(note.RepoName))
 					Expect(args.StartHash).To(Equal(plumbing.HashToBytes(newHash)))
@@ -221,7 +221,7 @@ var _ = Describe("ObjectFetcher", func() {
 					mockRepo.EXPECT().TagObject(plumbing2.NewHash(oldHash)).Return(endTag, nil)
 					note.SetTargetRepo(mockRepo)
 					mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-					mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+					mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 						Expect(args.RepoName).To(Equal(note.RepoName))
 						Expect(args.StartHash).To(Equal(plumbing.HashToBytes(newHash)))
 						Expect(args.ExcludeEndCommit).To(BeTrue())
@@ -256,7 +256,7 @@ var _ = Describe("ObjectFetcher", func() {
 					mockRepo.EXPECT().TagObject(targetHash).Return(endTagParent, nil)
 					note.SetTargetRepo(mockRepo)
 					mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-					mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+					mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 						Expect(args.EndHash).To(Equal(commitHash[:]))
 						return nil, nil
 					})
@@ -281,7 +281,7 @@ var _ = Describe("ObjectFetcher", func() {
 				note.SetTargetRepo(mockRepo)
 
 				mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.EndHash).To(Equal(commitHash[:]))
 					return nil, fmt.Errorf("error")
 				})
@@ -311,7 +311,7 @@ var _ = Describe("ObjectFetcher", func() {
 				note.SetTargetRepo(mockRepo)
 
 				mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.EndHash).To(Equal(commitHash[:]))
 					return nil, args.ResultCB(testutil.WrapReadSeekerCloser{Rdr: bytes.NewBuffer(nil)}, "")
 				})
@@ -341,7 +341,7 @@ var _ = Describe("ObjectFetcher", func() {
 				note.SetTargetRepo(mockRepo)
 
 				mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.EndHash).To(Equal(commitHash[:]))
 					return nil, args.ResultCB(testutil.WrapReadSeekerCloser{Rdr: bytes.NewBuffer(nil)}, "")
 				})
@@ -365,7 +365,7 @@ var _ = Describe("ObjectFetcher", func() {
 
 				mockDHT.EXPECT().ObjectStreamer().Return(mockObjStreamer)
 				mockF := mockObjStreamer.EXPECT().GetTaggedCommitWithAncestors(gomock.Any(), gomock.Any())
-				mockF.DoAndReturn(func(ctx context.Context, args dht.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+				mockF.DoAndReturn(func(ctx context.Context, args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 					Expect(args.EndHash).To(BeEmpty())
 					return nil, args.ResultCB(testutil.WrapReadSeekerCloser{Rdr: bytes.NewBuffer(nil)}, "")
 				})

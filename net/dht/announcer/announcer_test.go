@@ -8,11 +8,15 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/libp2p/go-libp2p-core/peer"
+	record "github.com/libp2p/go-libp2p-record"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht/announcer"
-	"github.com/make-os/kit/dht/server"
 	"github.com/make-os/kit/mocks"
-	testutil2 "github.com/make-os/kit/remote/testutil"
+	mocks2 "github.com/make-os/kit/mocks/net"
+	"github.com/make-os/kit/net"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/announcer"
+	"github.com/make-os/kit/net/dht/server"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
 	. "github.com/onsi/ginkgo"
@@ -32,30 +36,33 @@ var _ = Describe("Announcer", func() {
 	var dhtB *server.Server
 	var ann *announcer.Announcer
 	var mockDHTKeeper *mocks.MockDHTKeeper
+	var mockHost *mocks2.MockHost
+	var mockObjects *testutil.MockObjects
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 
-		cfg.DHT.Address = testutil2.RandomAddr()
-		dhtA, err = server.New(context.Background(), nil, cfg)
-		Expect(err).To(BeNil())
+		cfg.DHT.Address = testutil.RandomAddr()
+		mockHost = mocks2.NewMockHost(ctrl)
 
 		cfg2, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg2.DHT.Address = testutil2.RandomAddr()
+		cfg2.DHT.Address = testutil.RandomAddr()
 
-		logic := testutil.Mocks(ctrl)
-		mockDHTKeeper = logic.DHTKeeper
-		ann = announcer.New(cfg, dhtA.DHT(), logic.Logic)
+		mockObjects = testutil.Mocks(ctrl)
+		mockDHTKeeper = mockObjects.DHTKeeper
+
+		dhtA = makePeer(cfg, mockHost, nil)
+		ann = announcer.New(cfg, dhtA.DHT(), mockObjects.Logic)
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
-		dhtA.Stop()
+		_ = dhtA.Stop()
 		if dhtB != nil {
-			dhtB.Stop()
+			_ = dhtB.Stop()
 		}
 		ann.Stop()
 		err = os.RemoveAll(cfg.DataDir())
@@ -113,11 +120,10 @@ var _ = Describe("Announcer", func() {
 			})
 		})
 
-		When("annoucement is successful", func() {
+		When("announcement is successful", func() {
 			task := &announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}}
 			BeforeEach(func() {
-				dhtB, err = server.New(context.Background(), nil, cfg2)
-				Expect(err).To(BeNil())
+				dhtB = makePeer(cfg2, mockHost, nil)
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 				err = dhtA.Bootstrap()
 				Expect(err).To(BeNil())
@@ -221,3 +227,21 @@ var _ = Describe("Session", func() {
 		})
 	})
 })
+
+func makePeer(cfg *config.AppConfig, mockHost *mocks2.MockHost, keepers core.Keepers) *server.Server {
+	cfg.DHT.Address = testutil.RandomAddr()
+	host, err := net.New(context.Background(), cfg)
+	Expect(err).To(BeNil())
+	mockHost.EXPECT().Get().Return(host.Get())
+	mockHost.EXPECT().ID().Return(peer.ID("peer-id"))
+	mockHost.EXPECT().Addrs().Return(host.Get().Addrs())
+	svr, err := server.New(context.Background(), mockHost, keepers, cfg)
+	Expect(err).To(BeNil())
+	svr.DHT().Validator.(record.NamespacedValidator)[dht2.ObjectNamespace] = okValidator{}
+	return svr
+}
+
+type okValidator struct{ err error }
+
+func (v okValidator) Validate(key string, value []byte) error         { return nil }
+func (v okValidator) Select(key string, values [][]byte) (int, error) { return 0, nil }

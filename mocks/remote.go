@@ -9,7 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/make-os/kit/config"
 	ed25519 "github.com/make-os/kit/crypto/ed25519"
-	dht "github.com/make-os/kit/dht"
+	dht "github.com/make-os/kit/net/dht"
 	logger "github.com/make-os/kit/pkgs/logger"
 	fetcher "github.com/make-os/kit/remote/fetcher"
 	types "github.com/make-os/kit/remote/push/types"

@@ -12,8 +12,8 @@ import (
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
-	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/announcer"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/announcer"
 	nodeService "github.com/make-os/kit/node/services"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/pkgs/cache"
@@ -79,7 +79,7 @@ type Server struct {
 	logic         core.Logic            // logic is the application logic provider
 	nodeService   nodeService.Service   // The node external service provider
 	pushKeyGetter core.PushKeyGetter    // finds and returns PGP public key
-	dht           dht.DHT               // The dht service
+	dht           dht2.DHT              // The dht service
 	objFetcher    fetcher.ObjectFetcher // The object fetcher service
 	blockGetter   core.BlockGetter      // Provides access to blocks
 	refSyncer     rstypes.RefSync       // Responsible for syncing pushed references in a push transaction
@@ -110,7 +110,7 @@ func New(
 	cfg *config.AppConfig,
 	addr string,
 	appLogic core.Logic,
-	dht dht.DHT,
+	dht dht2.DHT,
 	mempool core.Mempool,
 	nodeService nodeService.Service,
 	blockGetter core.BlockGetter) *Server {
@@ -361,7 +361,7 @@ func (sv *Server) GetMempool() core.Mempool {
 }
 
 // GetDHT returns the dht service
-func (sv *Server) GetDHT() dht.DHT {
+func (sv *Server) GetDHT() dht2.DHT {
 	return sv.dht
 }
 

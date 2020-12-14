@@ -10,8 +10,7 @@ import (
 	cid2 "github.com/ipfs/go-cid"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	dht2 "github.com/make-os/kit/dht"
+	dht3 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/types/core"
@@ -28,7 +27,7 @@ const (
 var ErrDelisted = fmt.Errorf("key delisted")
 
 const (
-	// KeyReannounceDur is the duration that passes between key re-announcement.
+	// KeyReannounceDur is the duration that passes streamer/streamer_test.go:630:between key re-announcement.
 	KeyReannounceDur = 5 * time.Hour
 
 	// ReannouncerInterval is the duration between each reannoucement process.
@@ -40,13 +39,13 @@ var MaxRetry = 3
 
 // Session represents a multi-announcement session.
 type Session struct {
-	a        dht.Announcer
+	a        dht3.Announcer
 	wg       *sync.WaitGroup
 	errCount int
 }
 
 // NewSession creates an instance of Session
-func NewSession(a dht.Announcer) *Session {
+func NewSession(a dht3.Announcer) *Session {
 	return &Session{a: a, wg: &sync.WaitGroup{}}
 }
 
@@ -158,7 +157,7 @@ func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(e
 }
 
 // NewSession creates an instance of Session
-func (a *Announcer) NewSession() dht.Session {
+func (a *Announcer) NewSession() dht3.Session {
 	return NewSession(a)
 }
 
@@ -239,7 +238,7 @@ func (a *Announcer) keyExist(task *Task) bool {
 		a.keepers.DHTKeeper().RemoveFromAnnounceList(task.Key)
 		return false
 	}
-	return cf.(dht.CheckFunc)(task.RepoName, task.Key)
+	return cf.(dht3.CheckFunc)(task.RepoName, task.Key)
 }
 
 // Do announces the key in the given task.
@@ -263,7 +262,7 @@ func (a *Announcer) Do(task *Task) (err error) {
 	// Make CID out of the key
 	var key = task.Key
 	var cid cid2.Cid
-	cid, err = dht2.MakeCID(key)
+	cid, err = dht3.MakeCID(key)
 	if err != nil {
 		return
 	}
@@ -304,6 +303,6 @@ func (a *Announcer) Reannounce() {
 
 // RegisterChecker allows external caller to register existence checker
 // for a given object type. Only one checker per object type.
-func (a *Announcer) RegisterChecker(objType int, checker dht.CheckFunc) {
+func (a *Announcer) RegisterChecker(objType int, checker dht3.CheckFunc) {
 	a.checkers.Store(objType, checker)
 }

@@ -320,6 +320,11 @@ func (c *AppConfig) GetAppDBDir() string {
 
 // GetDHTStoreDir returns the path where dht database files are stored
 func (c *AppConfig) GetDHTStoreDir() string {
+
+	if c.Node.Mode == ModeTest {
+		return ""
+	}
+
 	return filepath.Join(c.GetDBRootDir(), "dht.db")
 }
 

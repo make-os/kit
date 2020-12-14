@@ -8,51 +8,21 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/libp2p/go-libp2p-core/peer"
 	routing2 "github.com/libp2p/go-libp2p-core/routing"
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/announcer"
-	"github.com/make-os/kit/dht/server"
 	"github.com/make-os/kit/mocks"
-	testutil2 "github.com/make-os/kit/remote/testutil"
+	mocks2 "github.com/make-os/kit/mocks/net"
+	"github.com/make-os/kit/net"
+	dht2 "github.com/make-os/kit/net/dht"
+	"github.com/make-os/kit/net/dht/announcer"
+	"github.com/make-os/kit/net/dht/server"
 	"github.com/make-os/kit/testutil"
+	"github.com/make-os/kit/types/core"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func TestServer(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Server Suite")
-}
-
-type testObjectFinder struct {
-	value []byte
-	err   error
-}
-
-func (t *testObjectFinder) FindObject(key []byte) ([]byte, error) {
-	return t.value, t.err
-}
-
-type errValidator struct {
-	err error
-}
-
-// Validate conforms to the Validator interface.
-func (v errValidator) Validate(key string, value []byte) error {
-	return v.err
-}
-
-// Select conforms to the Validator interface.
-func (v errValidator) Select(key string, values [][]byte) (int, error) {
-	return 0, v.err
-}
-
-type okValidator struct{ err error }
-
-func (v okValidator) Validate(key string, value []byte) error         { return nil }
-func (v okValidator) Select(key string, values [][]byte) (int, error) { return 0, nil }
 
 var _ = Describe("Server", func() {
 	var err error
@@ -62,6 +32,7 @@ var _ = Describe("Server", func() {
 	var dhtA *server.Server
 	var keepers *mocks.MockKeepers
 	var dhtKeepers *mocks.MockDHTKeeper
+	var mockHost *mocks2.MockHost
 
 	BeforeEach(func() {
 		server.ConnectTickerInterval = 1 * time.Millisecond
@@ -71,11 +42,13 @@ var _ = Describe("Server", func() {
 		Expect(err).To(BeNil())
 		cfg2, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.DHT.Address = testutil2.RandomAddr()
-		cfg2.DHT.Address = testutil2.RandomAddr()
+		cfg.DHT.Address = testutil.RandomAddr()
+		cfg2.DHT.Address = testutil.RandomAddr()
 
+		mockHost = mocks2.NewMockHost(ctrl)
 		keepers = mocks.NewMockKeepers(ctrl)
 		dhtKeepers = mocks.NewMockDHTKeeper(ctrl)
+
 		keepers.EXPECT().DHTKeeper().Return(dhtKeepers).AnyTimes()
 	})
 
@@ -83,11 +56,11 @@ var _ = Describe("Server", func() {
 		ctrl.Finish()
 
 		if dhtA != nil {
-			dhtA.Stop()
+			_ = dhtA.Stop()
 		}
 
 		if dhtB != nil {
-			dhtB.Stop()
+			_ = dhtB.Stop()
 		}
 
 		err = os.RemoveAll(cfg.DataDir())
@@ -96,37 +69,9 @@ var _ = Describe("Server", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".New", func() {
-		When("address format is not valid", func() {
-			It("should return err", func() {
-				cfg.DHT.Address = "invalid"
-				_, err = server.New(context.Background(), keepers, cfg)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("invalid address: address invalid: missing port in address"))
-			})
-		})
-
-		When("unable to create host", func() {
-			It("should return err", func() {
-				cfg.DHT.Address = "0.1.1.1.0:999999"
-				_, err = server.New(context.Background(), keepers, cfg)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to create host"))
-			})
-		})
-
-		When("no problem", func() {
-			It("should return nil", func() {
-				_, err = server.New(context.Background(), keepers, cfg)
-				Expect(err).To(BeNil())
-			})
-		})
-	})
-
 	Describe(".Bootstrap", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), keepers, cfg)
-			Expect(err).To(BeNil())
+			dhtA = makePeer(cfg, mockHost, keepers)
 		})
 
 		When("no bootstrap address exist", func() {
@@ -148,7 +93,7 @@ var _ = Describe("Server", func() {
 		})
 
 		When("an address exist and is valid but not reachable", func() {
-			It("should not return error and ", func() {
+			It("should not return error", func() {
 				addr := "/ip4/127.0.0.1/tcp/9111/p2p/12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd"
 				cfg.DHT.BootstrapPeers = addr
 				err = dhtA.Bootstrap()
@@ -159,8 +104,7 @@ var _ = Describe("Server", func() {
 
 		When("a reachable address exist", func() {
 			BeforeEach(func() {
-				dhtB, err = server.New(context.Background(), nil, cfg2)
-				Expect(err).To(BeNil())
+				dhtB = makePeer(cfg2, mockHost, keepers)
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 			})
 
@@ -177,8 +121,7 @@ var _ = Describe("Server", func() {
 
 	When(".Peers", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), keepers, cfg)
-			Expect(err).To(BeNil())
+			dhtA = makePeer(cfg, mockHost, keepers)
 		})
 
 		When("not connected to any peers", func() {
@@ -195,8 +138,8 @@ var _ = Describe("Server", func() {
 
 		When("connected to a peer", func() {
 			BeforeEach(func() {
-				dhtB, err = server.New(context.Background(), nil, cfg2)
-				Expect(err).To(BeNil())
+				dhtB = makePeer(cfg2, mockHost, keepers)
+
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 				err = dhtA.Bootstrap()
 				Expect(err).To(BeNil())
@@ -211,11 +154,9 @@ var _ = Describe("Server", func() {
 
 	Describe(".Store", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), keepers, cfg)
-			Expect(err).To(BeNil())
-			dhtA.DHT().Validator.(record.NamespacedValidator)[dht.ObjectNamespace] = okValidator{}
-			dhtB, err = server.New(context.Background(), nil, cfg2)
-			Expect(err).To(BeNil())
+			dhtA = makePeer(cfg, mockHost, keepers)
+			dhtB = makePeer(cfg2, mockHost, keepers)
+
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
@@ -229,10 +170,10 @@ var _ = Describe("Server", func() {
 		})
 
 		It("should return validation failed", func() {
-			dhtA.DHT().Validator.(record.NamespacedValidator)[dht.ObjectNamespace] = errValidator{
+			dhtA.DHT().Validator.(record.NamespacedValidator)[dht2.ObjectNamespace] = errValidator{
 				err: fmt.Errorf("validation error"),
 			}
-			key := dht.MakeKey("hash1")
+			key := dht2.MakeKey("hash1")
 			err = dhtA.Store(context.Background(), key, []byte("value"))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("validation error"))
@@ -241,11 +182,12 @@ var _ = Describe("Server", func() {
 
 	Describe(".Lookup", func() {
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), keepers, cfg)
-			Expect(err).To(BeNil())
-			dhtA.DHT().Validator.(record.NamespacedValidator)[dht.ObjectNamespace] = okValidator{}
-			dhtB, err = server.New(context.Background(), nil, cfg2)
-			Expect(err).To(BeNil())
+			// Peer A
+			dhtA = makePeer(cfg, mockHost, keepers)
+
+			// Peer B
+			dhtB = makePeer(cfg2, mockHost, keepers)
+
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
@@ -262,7 +204,7 @@ var _ = Describe("Server", func() {
 
 		When("key is found", func() {
 			It("should return error when unable to find object", func() {
-				key := dht.MakeKey("hash1")
+				key := dht2.MakeKey("hash1")
 				err := dhtA.Store(context.Background(), key, []byte("value"))
 				Expect(err).To(BeNil())
 				val, err := dhtA.Lookup(context.Background(), "unknown_key")
@@ -272,7 +214,7 @@ var _ = Describe("Server", func() {
 			})
 
 			It("should return its corresponding value", func() {
-				key := dht.MakeKey("hash1")
+				key := dht2.MakeKey("hash1")
 				dhtA.Store(context.Background(), key, []byte("value"))
 				val, err := dhtA.Lookup(context.Background(), key)
 				Expect(err).To(BeNil())
@@ -282,7 +224,7 @@ var _ = Describe("Server", func() {
 
 		Context("both peers lookup check", func() {
 			Specify("that connected peer can also lookup the key's value", func() {
-				key := dht.MakeKey("hash1")
+				key := dht2.MakeKey("hash1")
 				err = dhtA.Store(context.Background(), key, []byte("value"))
 				Expect(err).To(BeNil())
 				val, err := dhtB.Lookup(context.Background(), key)
@@ -296,10 +238,12 @@ var _ = Describe("Server", func() {
 		var key = []byte("key")
 
 		BeforeEach(func() {
-			dhtA, err = server.New(context.Background(), keepers, cfg)
-			Expect(err).To(BeNil())
-			dhtB, err = server.New(context.Background(), nil, cfg2)
-			Expect(err).To(BeNil())
+			// Peer A
+			dhtA = makePeer(cfg, mockHost, keepers)
+
+			// Peer B
+			dhtB = makePeer(cfg2, mockHost, keepers)
+
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
@@ -335,3 +279,40 @@ var _ = Describe("Server", func() {
 		})
 	})
 })
+
+func makePeer(cfg *config.AppConfig, mockHost *mocks2.MockHost, keepers core.Keepers) *server.Server {
+	cfg.DHT.Address = testutil.RandomAddr()
+	host, err := net.New(context.Background(), cfg)
+	Expect(err).To(BeNil())
+	mockHost.EXPECT().Get().Return(host.Get())
+	mockHost.EXPECT().ID().Return(peer.ID("peer-id"))
+	mockHost.EXPECT().Addrs().Return(host.Get().Addrs())
+	svr, err := server.New(context.Background(), mockHost, keepers, cfg)
+	Expect(err).To(BeNil())
+	svr.DHT().Validator.(record.NamespacedValidator)[dht2.ObjectNamespace] = okValidator{}
+	return svr
+}
+
+func TestServer(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Server Suite")
+}
+
+type errValidator struct {
+	err error
+}
+
+// Validate conforms to the Validator interface.
+func (v errValidator) Validate(key string, value []byte) error {
+	return v.err
+}
+
+// Select conforms to the Validator interface.
+func (v errValidator) Select(key string, values [][]byte) (int, error) {
+	return 0, v.err
+}
+
+type okValidator struct{ err error }
+
+func (v okValidator) Validate(key string, value []byte) error         { return nil }
+func (v okValidator) Select(key string, values [][]byte) (int, error) { return 0, nil }
