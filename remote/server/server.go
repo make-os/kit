@@ -12,8 +12,8 @@ import (
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
+	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/dht/announcer"
-	dhttypes "github.com/make-os/kit/dht/types"
 	nodeService "github.com/make-os/kit/node/services"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/pkgs/cache"
@@ -79,7 +79,7 @@ type Server struct {
 	logic         core.Logic            // logic is the application logic provider
 	nodeService   nodeService.Service   // The node external service provider
 	pushKeyGetter core.PushKeyGetter    // finds and returns PGP public key
-	dht           dhttypes.DHT          // The dht service
+	dht           dht.DHT               // The dht service
 	objFetcher    fetcher.ObjectFetcher // The object fetcher service
 	blockGetter   core.BlockGetter      // Provides access to blocks
 	refSyncer     rstypes.RefSync       // Responsible for syncing pushed references in a push transaction
@@ -110,7 +110,7 @@ func New(
 	cfg *config.AppConfig,
 	addr string,
 	appLogic core.Logic,
-	dht dhttypes.DHT,
+	dht dht.DHT,
 	mempool core.Mempool,
 	nodeService nodeService.Service,
 	blockGetter core.BlockGetter) *Server {
@@ -230,7 +230,7 @@ func (sv *Server) getPushKey(pushKeyID string) (ed25519.PublicKey, error) {
 	return pk.PubKey, nil
 }
 
-// checkRepo implements dhttypes.CheckFunc for checking
+// checkRepo implements dht.CheckFunc for checking
 // the existence of a repository.
 func (sv *Server) checkRepo(_ string, key []byte) bool {
 	_, err := sv.GetRepo(string(key))
@@ -248,7 +248,7 @@ func (sv *Server) TryScheduleReSync(note pushtypes.PushNote, ref string, fromBeg
 	return sv.tryScheduleReSync(note, ref, fromBeginning)
 }
 
-// checkRepoObject implements dhttypes.CheckFunc for checking the existence
+// checkRepoObject implements dht.CheckFunc for checking the existence
 // of an object in the given repository.
 func (sv *Server) checkRepoObject(repo string, key []byte) bool {
 	r, err := sv.GetRepo(repo)
@@ -361,7 +361,7 @@ func (sv *Server) GetMempool() core.Mempool {
 }
 
 // GetDHT returns the dht service
-func (sv *Server) GetDHT() dhttypes.DHT {
+func (sv *Server) GetDHT() dht.DHT {
 	return sv.dht
 }
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
-	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/fetcher"
 	pushtypes "github.com/make-os/kit/remote/push/types"
@@ -85,7 +85,7 @@ type RemoteServer interface {
 	TryScheduleReSync(note pushtypes.PushNote, ref string, fromBeginning bool) error
 
 	// GetDHT returns the dht service
-	GetDHT() types.DHT
+	GetDHT() dht.DHT
 
 	// Shutdown shuts down the server
 	Shutdown(ctx context.Context)

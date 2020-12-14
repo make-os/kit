@@ -13,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util/io"
@@ -76,7 +75,7 @@ type RequestArgs struct {
 	Log logger.Logger
 
 	// BasicProviderTracker for recording and tracking provider behaviour
-	ProviderTracker types.ProviderTracker
+	ProviderTracker dht.ProviderTracker
 }
 
 // BasicObjectRequester manages object download sessions between multiple providers
@@ -89,7 +88,7 @@ type BasicObjectRequester struct {
 	log                   logger.Logger
 	reposDir              string
 	closed                bool
-	tracker               types.ProviderTracker
+	tracker               dht.ProviderTracker
 	providerStreams       []network.Stream
 	OnWantResponseHandler func(network.Stream) error
 	OnSendResponseHandler func(network.Stream) (io.ReadSeekerCloser, error)

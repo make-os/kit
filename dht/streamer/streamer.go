@@ -12,10 +12,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/dht"
 	dht2 "github.com/make-os/kit/dht"
 	"github.com/make-os/kit/dht/providertracker"
-	types3 "github.com/make-os/kit/dht/streamer/types"
-	types4 "github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
@@ -42,14 +41,14 @@ func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
 	return repoName + hash.String()
 }
 
-// BasicObjectStreamer implements ObjectStreamer. It provides a mechanism for
+// BasicObjectStreamer implements Streamer. It provides a mechanism for
 // announcing or transferring repository objects to/from the DHT.
 type BasicObjectStreamer struct {
-	dht              types4.DHT
+	dht              dht.DHT
 	log              logger.Logger
 	reposDir         string
 	gitBinPath       string
-	tracker          types4.ProviderTracker
+	tracker          dht.ProviderTracker
 	OnWantHandler    WantSendHandler
 	OnSendHandler    WantSendHandler
 	RepoGetter       repo.GetLocalRepoFunc
@@ -59,7 +58,7 @@ type BasicObjectStreamer struct {
 }
 
 // NewObjectStreamer creates an instance of BasicObjectStreamer
-func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStreamer {
+func NewObjectStreamer(dht dht.DHT, cfg *config.AppConfig) *BasicObjectStreamer {
 	ce := &BasicObjectStreamer{
 		dht:              dht,
 		reposDir:         cfg.GetRepoRoot(),
@@ -81,7 +80,7 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 }
 
 // SetProviderTracker overwrites the default provider tracker.
-func (c *BasicObjectStreamer) SetProviderTracker(t types4.ProviderTracker) {
+func (c *BasicObjectStreamer) SetProviderTracker(t dht.ProviderTracker) {
 	c.tracker = t
 }
 
@@ -200,9 +199,9 @@ func (c *BasicObjectStreamer) GetCommit(
 // with a nil error.
 func GetCommitWithAncestors(
 	ctx context.Context,
-	c types3.ObjectStreamer,
+	c dht2.Streamer,
 	repoGetter repo.GetLocalRepoFunc,
-	args types3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
 	var r types.LocalRepo
@@ -430,9 +429,9 @@ func (c *BasicObjectStreamer) GetTag(
 //   with a nil error.
 func GetTaggedCommitWithAncestors(
 	ctx context.Context,
-	st types3.ObjectStreamer,
+	st dht2.Streamer,
 	repoGetter repo.GetLocalRepoFunc,
-	args types3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
 	var r types.LocalRepo
@@ -528,7 +527,7 @@ func GetTaggedCommitWithAncestors(
 // If ResultCB returns an error, the method exits with that error. Use ErrExit to exit
 // with a nil error.
 func (c *BasicObjectStreamer) GetCommitWithAncestors(ctx context.Context,
-	args types3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 	args.ReposDir, args.GitBinPath = c.reposDir, c.gitBinPath
 	return GetCommitWithAncestors(ctx, c, c.RepoGetter, args)
 }
@@ -545,7 +544,7 @@ func (c *BasicObjectStreamer) GetCommitWithAncestors(ctx context.Context,
 // - If ResultCB returns an error, the method exits with that error. Use ErrExit to exit
 //   with a nil error.
 func (c *BasicObjectStreamer) GetTaggedCommitWithAncestors(ctx context.Context,
-	args types3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
+	args dht2.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 	args.ReposDir, args.GitBinPath = c.reposDir, c.gitBinPath
 	return GetTaggedCommitWithAncestors(ctx, c, c.RepoGetter, args)
 }

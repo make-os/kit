@@ -2,17 +2,23 @@ package providertracker_test
 
 import (
 	"os"
+	"testing"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/dht/providertracker"
-	"github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestProviderTracker(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "ProviderTracker Suite")
+}
 
 var _ = Describe("ProviderTracker", func() {
 	var err error
@@ -47,8 +53,8 @@ var _ = Describe("ProviderTracker", func() {
 			peerID := peer.ID("peer1")
 			addrs := []peer.AddrInfo{{ID: peerID}}
 			tracker.Register(addrs...)
-			var found *types.ProviderInfo
-			retval := tracker.Get(peerID, func(info *types.ProviderInfo) {
+			var found *dht.ProviderInfo
+			retval := tracker.Get(peerID, func(info *dht.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(Equal(found))
@@ -61,8 +67,8 @@ var _ = Describe("ProviderTracker", func() {
 
 		It("should return nil if provider does not exist", func() {
 			peerID := peer.ID("peer1")
-			var found *types.ProviderInfo
-			retval := tracker.Get(peerID, func(info *types.ProviderInfo) {
+			var found *dht.ProviderInfo
+			retval := tracker.Get(peerID, func(info *dht.ProviderInfo) {
 				found = info
 			})
 			Expect(retval).To(BeNil())

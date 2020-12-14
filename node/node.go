@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/make-os/kit/dht"
 	dhtserver "github.com/make-os/kit/dht/server"
-	"github.com/make-os/kit/dht/types"
-	types2 "github.com/make-os/kit/modules/types"
+	modtypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/remote/server"
 	rpcApi "github.com/make-os/kit/rpc/api"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -71,8 +71,8 @@ type Node struct {
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
-	dht            types.DHT
-	modules        types2.ModulesHub
+	dht            dht.DHT
+	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
 	closeOnce      *sync.Once
 }
@@ -350,7 +350,7 @@ func (n *Node) isConsoleMode() bool {
 }
 
 // GetModulesHub returns the modules hub
-func (n *Node) GetModulesHub() types2.ModulesHub {
+func (n *Node) GetModulesHub() modtypes.ModulesHub {
 	return n.modules
 }
 

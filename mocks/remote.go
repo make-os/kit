@@ -9,11 +9,11 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/make-os/kit/config"
 	ed25519 "github.com/make-os/kit/crypto/ed25519"
-	types "github.com/make-os/kit/dht/types"
+	dht "github.com/make-os/kit/dht"
 	logger "github.com/make-os/kit/pkgs/logger"
 	fetcher "github.com/make-os/kit/remote/fetcher"
-	types0 "github.com/make-os/kit/remote/push/types"
-	types1 "github.com/make-os/kit/remote/types"
+	types "github.com/make-os/kit/remote/push/types"
+	types0 "github.com/make-os/kit/remote/types"
 	rpc "github.com/make-os/kit/rpc"
 	core "github.com/make-os/kit/types/core"
 	reflect "reflect"
@@ -43,10 +43,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types0.PushPool {
+func (m *MockPoolGetter) GetPushPool() types.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types.PushPool)
 	return ret0
 }
 
@@ -94,10 +94,10 @@ func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRemoteServer) GetPushPool() types0.PushPool {
+func (m *MockRemoteServer) GetPushPool() types.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types.PushPool)
 	return ret0
 }
 
@@ -150,14 +150,14 @@ func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...types1.KVOption) (types1.RepoRefsState, error) {
+func (m *MockRemoteServer) GetRepoState(target types0.LocalRepo, options ...types0.KVOption) (types0.RepoRefsState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoState", varargs...)
-	ret0, _ := ret[0].(types1.RepoRefsState)
+	ret0, _ := ret[0].(types0.RepoRefsState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -198,10 +198,10 @@ func (mr *MockRemoteServerMockRecorder) GetLogic() *gomock.Call {
 }
 
 // GetRepo mocks base method
-func (m *MockRemoteServer) GetRepo(name string) (types1.LocalRepo, error) {
+func (m *MockRemoteServer) GetRepo(name string) (types0.LocalRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types1.LocalRepo)
+	ret0, _ := ret[0].(types0.LocalRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -293,7 +293,7 @@ func (mr *MockRemoteServerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomoc
 }
 
 // BroadcastNoteAndEndorsement mocks base method
-func (m *MockRemoteServer) BroadcastNoteAndEndorsement(note types0.PushNote) error {
+func (m *MockRemoteServer) BroadcastNoteAndEndorsement(note types.PushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastNoteAndEndorsement", note)
 	ret0, _ := ret[0].(error)
@@ -335,7 +335,7 @@ func (mr *MockRemoteServerMockRecorder) GetFetcher() *gomock.Call {
 }
 
 // CheckNote mocks base method
-func (m *MockRemoteServer) CheckNote(note types0.PushNote) error {
+func (m *MockRemoteServer) CheckNote(note types.PushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckNote", note)
 	ret0, _ := ret[0].(error)
@@ -349,7 +349,7 @@ func (mr *MockRemoteServerMockRecorder) CheckNote(note interface{}) *gomock.Call
 }
 
 // TryScheduleReSync mocks base method
-func (m *MockRemoteServer) TryScheduleReSync(note types0.PushNote, ref string, fromBeginning bool) error {
+func (m *MockRemoteServer) TryScheduleReSync(note types.PushNote, ref string, fromBeginning bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TryScheduleReSync", note, ref, fromBeginning)
 	ret0, _ := ret[0].(error)
@@ -363,10 +363,10 @@ func (mr *MockRemoteServerMockRecorder) TryScheduleReSync(note, ref, fromBeginni
 }
 
 // GetDHT mocks base method
-func (m *MockRemoteServer) GetDHT() types.DHT {
+func (m *MockRemoteServer) GetDHT() dht.DHT {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
-	ret0, _ := ret[0].(types.DHT)
+	ret0, _ := ret[0].(dht.DHT)
 	return ret0
 }
 

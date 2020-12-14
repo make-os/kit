@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/dht/announcer"
-	anntypes "github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/pkgs/cache"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/fetcher"
@@ -39,7 +39,7 @@ type RefSync struct {
 	cfg                     *config.AppConfig
 	log                     logger.Logger
 	fetcher                 fetcher.ObjectFetcherService
-	announcer               anntypes.AnnouncerService
+	announcer               dht.AnnouncerService
 	makeReferenceUpdatePack push.MakeReferenceUpdateRequestPackFunc
 	RepoGetter              repo.GetLocalRepoFunc
 	UpdateRepoUsingNote     UpdateRepoUsingNoteFunc
@@ -56,7 +56,7 @@ type RefSync struct {
 // New creates an instance of RefSync
 func New(cfg *config.AppConfig,
 	pool types.PushPool, fetcher fetcher.ObjectFetcherService,
-	announcer anntypes.AnnouncerService,
+	announcer dht.AnnouncerService,
 	keepers core.Keepers) *RefSync {
 
 	rs := &RefSync{

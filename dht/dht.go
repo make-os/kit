@@ -1,11 +1,10 @@
-package types
+package dht
 
 import (
 	"context"
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/make-os/kit/dht/streamer/types"
 )
 
 // DHT represents a distributed hash table
@@ -30,7 +29,7 @@ type DHT interface {
 	RegisterChecker(objType int, f CheckFunc)
 
 	// BasicObjectStreamer returns the object streamer
-	ObjectStreamer() types.ObjectStreamer
+	ObjectStreamer() Streamer
 
 	// Host returns the wrapped IPFS host
 	Host() host.Host

@@ -5,7 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/dht/types"
+	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/extensions"
 	"github.com/make-os/kit/keystore"
 	"github.com/make-os/kit/mempool"
@@ -26,7 +26,7 @@ type Module struct {
 
 // New creates an instance of Module
 func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Service, logic core.Logic,
-	mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht types.DHT,
+	mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht dht.DHT,
 	extMgr *extensions.Manager, remoteSvr core.RemoteServer) *Module {
 
 	return &Module{

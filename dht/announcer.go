@@ -1,4 +1,4 @@
-package types
+package dht
 
 type Announcer interface {
 	// Announce queues an object to be announced.

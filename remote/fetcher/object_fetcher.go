@@ -8,8 +8,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/make-os/kit/config"
-	types2 "github.com/make-os/kit/dht/streamer/types"
-	dhttypes "github.com/make-os/kit/dht/types"
+	dht "github.com/make-os/kit/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push/types"
@@ -67,7 +66,7 @@ func NewTask(note types.PushNote, resCb func(err error)) *Task {
 // BasicObjectFetcher provides the ability to download objects from the DHT.
 type BasicObjectFetcher struct {
 	cfg                *config.AppConfig
-	dht                dhttypes.DHT
+	dht                dht.DHT
 	lck                *sync.Mutex
 	log                logger.Logger
 	stopped            bool
@@ -78,7 +77,7 @@ type BasicObjectFetcher struct {
 }
 
 // NewFetcher creates an instance of BasicObjectFetcher
-func NewFetcher(dht dhttypes.DHT, cfg *config.AppConfig) *BasicObjectFetcher {
+func NewFetcher(dht dht.DHT, cfg *config.AppConfig) *BasicObjectFetcher {
 	return &BasicObjectFetcher{
 		log:                cfg.G().Log.Module("object-fetcher"),
 		dht:                dht,
@@ -157,7 +156,7 @@ func (f *BasicObjectFetcher) Operation(task *Task) error {
 			}
 
 			ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-			_, err := streamer.GetCommitWithAncestors(ctx, types2.GetAncestorArgs{
+			_, err := streamer.GetCommitWithAncestors(ctx, dht.GetAncestorArgs{
 				RepoName:         task.note.GetRepoName(),
 				StartHash:        plumbing.HashToBytes(ref.NewHash),
 				EndHash:          endHash,
@@ -217,7 +216,7 @@ func (f *BasicObjectFetcher) Operation(task *Task) error {
 			}
 
 			ctx, cn := context.WithTimeout(context.Background(), 30*time.Second)
-			_, err := streamer.GetTaggedCommitWithAncestors(ctx, types2.GetAncestorArgs{
+			_, err := streamer.GetTaggedCommitWithAncestors(ctx, dht.GetAncestorArgs{
 				RepoName:         task.note.GetRepoName(),
 				StartHash:        plumbing.HashToBytes(ref.NewHash),
 				EndHash:          endHash,

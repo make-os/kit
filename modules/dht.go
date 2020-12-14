@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/dht"
 	"github.com/make-os/kit/dht/announcer"
-	"github.com/make-os/kit/dht/types"
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/remote/plumbing"
 	types2 "github.com/make-os/kit/rpc/types"
@@ -25,7 +24,7 @@ import (
 type DHTModule struct {
 	modulestypes.ModuleCommon
 	cfg *config.AppConfig
-	dht types.DHT
+	dht dht.DHT
 }
 
 // NewAttachableDHTModule creates an instance of DHTModule suitable in attach mode
@@ -34,7 +33,7 @@ func NewAttachableDHTModule(cfg *config.AppConfig, client types2.Client) *DHTMod
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, dht dht.DHT) *DHTModule {
 	return &DHTModule{cfg: cfg, dht: dht}
 }
 

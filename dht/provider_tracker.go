@@ -1,4 +1,4 @@
-package types
+package dht
 
 import (
 	"time"

@@ -8,10 +8,10 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	cid2 "github.com/ipfs/go-cid"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
+	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/dht"
 	dht2 "github.com/make-os/kit/dht"
-	"github.com/make-os/kit/dht/types"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/types/core"
@@ -40,13 +40,13 @@ var MaxRetry = 3
 
 // Session represents a multi-announcement session.
 type Session struct {
-	a        types.Announcer
+	a        dht.Announcer
 	wg       *sync.WaitGroup
 	errCount int
 }
 
 // NewSession creates an instance of Session
-func NewSession(a types.Announcer) *Session {
+func NewSession(a dht.Announcer) *Session {
 	return &Session{a: a, wg: &sync.WaitGroup{}}
 }
 
@@ -84,14 +84,14 @@ func (t *Task) GetID() interface{} {
 	return t.Key.String()
 }
 
-// Announcer implements types.Announcer.
+// Announcer implements dht.Announcer.
 // It provides the mechanism for announcing keys on the DHT.
 // Announcement requests are queued up an concurrently executed by n workers.
 // When an announcement fails, it is retried several times.
 type Announcer struct {
 	keepers     core.Keepers
 	log         logger.Logger
-	dht         *dht.IpfsDHT
+	dht         *kaddht.IpfsDHT
 	checkers    *sync.Map
 	lck         *sync.Mutex
 	queue       chan *Task
@@ -102,7 +102,7 @@ type Announcer struct {
 }
 
 // New creates an instance of Announcer
-func New(cfg *config.AppConfig, dht *dht.IpfsDHT, keepers core.Keepers) *Announcer {
+func New(cfg *config.AppConfig, dht *kaddht.IpfsDHT, keepers core.Keepers) *Announcer {
 	rs := &Announcer{
 		keepers:  keepers,
 		dht:      dht,
@@ -158,7 +158,7 @@ func (a *Announcer) Announce(objType int, repo string, key []byte, doneCB func(e
 }
 
 // NewSession creates an instance of Session
-func (a *Announcer) NewSession() types.Session {
+func (a *Announcer) NewSession() dht.Session {
 	return NewSession(a)
 }
 
@@ -239,7 +239,7 @@ func (a *Announcer) keyExist(task *Task) bool {
 		a.keepers.DHTKeeper().RemoveFromAnnounceList(task.Key)
 		return false
 	}
-	return cf.(types.CheckFunc)(task.RepoName, task.Key)
+	return cf.(dht.CheckFunc)(task.RepoName, task.Key)
 }
 
 // Do announces the key in the given task.
@@ -304,6 +304,6 @@ func (a *Announcer) Reannounce() {
 
 // RegisterChecker allows external caller to register existence checker
 // for a given object type. Only one checker per object type.
-func (a *Announcer) RegisterChecker(objType int, checker types.CheckFunc) {
+func (a *Announcer) RegisterChecker(objType int, checker dht.CheckFunc) {
 	a.checkers.Store(objType, checker)
 }
