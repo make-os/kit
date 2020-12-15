@@ -13,6 +13,7 @@ import (
 	"github.com/make-os/kit/net"
 	dht2 "github.com/make-os/kit/net/dht"
 	dhtserver "github.com/make-os/kit/net/dht/server"
+	"github.com/make-os/kit/net/parent2p"
 	"github.com/make-os/kit/remote/server"
 	rpcApi "github.com/make-os/kit/rpc/api"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -59,16 +60,18 @@ import (
 
 // RPCServer represents the client
 type Node struct {
-	ctx            context.Context
+	ctx       context.Context
+	log       logger.Logger
+	tmLog     log.Logger
+	closeOnce *sync.Once
+
 	app            *App
 	cfg            *config.AppConfig
 	acctMgr        *keystore.Keystore
 	nodeKey        *p2p.NodeKey
-	log            logger.Logger
 	db             storagetypes.Engine
 	stateDB        tmdb.DB
 	tm             *nm.Node
-	tmLog          log.Logger
 	service        services.Service
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
@@ -76,7 +79,7 @@ type Node struct {
 	dht            dht2.DHT
 	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
-	closeOnce      *sync.Once
+	p2l            parent2p.Parent2P
 }
 
 // NewNode creates an instance of RPCServer
@@ -236,16 +239,27 @@ func (n *Node) Start() error {
 
 		// Pass repo manager to logic manager
 		n.logic.SetRemoteServer(remoteServer)
-	}
 
-	// Start tendermint or the light client
-	if !n.cfg.IsLightNode() {
+		// Start tendermint or the light client
 		if err := n.tm.Start(); err != nil {
 			n.Stop()
 			return err
 		}
-	} else {
+	}
+
+	// Start parent to peer protocol handler
+	if err := n.setupParent2p(host); err != nil {
+		return err
+	}
+
+	// In light mode:
+	// - Start light client.
+	// - Start remote server manually in light mode.
+	if n.cfg.IsLightNode() {
 		go n.startLightNode()
+		if err := remoteServer.Start(); err != nil {
+			return err
+		}
 	}
 
 	// Initialize extension manager and start extensions
@@ -254,8 +268,33 @@ func (n *Node) Start() error {
 	return nil
 }
 
+// setupParent2p configures and starts the parent2p protocol
+func (n *Node) setupParent2p(host net.Host) error {
+	n.p2l = parent2p.New(n.cfg, host)
+
+	// Connect to light client parent
+	if n.cfg.IsLightNode() {
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cn()
+		if err := n.p2l.ConnectToParent(ctx, n.cfg.Node.LightNodePrimaryAddr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // startLightNode starts a light node
 func (n *Node) startLightNode() error {
+
+	trackedRepos := funk.Keys(n.logic.RepoSyncInfoKeeper().Tracked()).([]string)
+
+	// Send handshake to parent and hopefully get a RPC address to
+	parentRPCAddr, err := n.p2l.SendHandshakeMsg(context.Background(), trackedRepos)
+	if err != nil {
+		return err
+	}
+
 	trustingPeriod, err := time.ParseDuration(n.cfg.Node.LightNodeTrustingPeriod)
 	if err != nil {
 		return errors.Wrap(err, "bad trusting period")
@@ -267,8 +306,8 @@ func (n *Node) startLightNode() error {
 	}
 
 	err = commands.RunProxy(&commands.Params{
-		ListenAddr:         fmt.Sprintf("tcp://%s", n.cfg.Node.ListeningAddr),
-		PrimaryAddr:        n.cfg.Node.LightNodePrimaryAddr,
+		ListenAddr:         fmt.Sprintf("tcp://%s", n.cfg.RPC.TMRPCAddress),
+		PrimaryAddr:        fmt.Sprintf("tcp://%s", parentRPCAddr),
 		WitnessAddrs:       strings.Join(n.cfg.Node.LightNodeWitnessAddrs, ","),
 		ChainID:            cast.ToString(n.cfg.Net.Version),
 		Home:               n.cfg.GetDBRootDir(),
@@ -281,6 +320,7 @@ func (n *Node) startLightNode() error {
 		Verbose:            n.cfg.IsDev(),
 	})
 	if err != nil {
+		n.log.Error(err.Error())
 		n.Stop()
 		return errors.Wrap(err, "failed to start proxy server")
 	}
@@ -369,20 +409,20 @@ func (n *Node) Stop() {
 		n.log.Info("Stopping...")
 
 		if n.dht != nil {
-			n.dht.Stop()
+			_ = n.dht.Stop()
 		}
 
 		if n.tm != nil && n.tm.IsRunning() {
-			n.tm.Stop()
+			_ = n.tm.Stop()
 			n.tm.Wait()
 		}
 
 		if n.db != nil {
-			n.db.Close()
+			_ = n.db.Close()
 		}
 
 		if n.stateDB != nil {
-			n.stateDB.Close()
+			_ = n.stateDB.Close()
 		}
 
 		if !n.cfg.IsAttachMode() {

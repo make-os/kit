@@ -76,3 +76,17 @@ func (mr *MockHostMockRecorder) Addrs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Addrs", reflect.TypeOf((*MockHost)(nil).Addrs))
 }
+
+// FullAddr mocks base method
+func (m *MockHost) FullAddr() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FullAddr")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// FullAddr indicates an expected call of FullAddr
+func (mr *MockHostMockRecorder) FullAddr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullAddr", reflect.TypeOf((*MockHost)(nil).FullAddr))
+}

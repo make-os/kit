@@ -64,8 +64,7 @@ func New(ctx context.Context, host kitnet.Host, keepers core.Keepers, cfg *confi
 	}
 
 	log := cfg.G().Log.Module("dht")
-	fullAddr := fmt.Sprintf("%s/p2p/%s", host.Addrs()[0].String(), host.ID().Pretty())
-	log.Info("Server service has started", "Address", fullAddr)
+	log.Info("DHT is running on host address")
 
 	node := &Server{
 		host:      h,
