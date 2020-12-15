@@ -9,7 +9,8 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	host "github.com/libp2p/go-libp2p-core/host"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	dht "github.com/make-os/kit/net/dht"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	dht0 "github.com/make-os/kit/net/dht"
 	reflect "reflect"
 )
 
@@ -95,10 +96,10 @@ func (mr *MockDHTMockRecorder) Announce(objType, repo, key, doneCB interface{}) 
 }
 
 // NewAnnouncerSession mocks base method
-func (m *MockDHT) NewAnnouncerSession() dht.Session {
+func (m *MockDHT) NewAnnouncerSession() dht0.Session {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewAnnouncerSession")
-	ret0, _ := ret[0].(dht.Session)
+	ret0, _ := ret[0].(dht0.Session)
 	return ret0
 }
 
@@ -109,7 +110,7 @@ func (mr *MockDHTMockRecorder) NewAnnouncerSession() *gomock.Call {
 }
 
 // RegisterChecker mocks base method
-func (m *MockDHT) RegisterChecker(objType int, f dht.CheckFunc) {
+func (m *MockDHT) RegisterChecker(objType int, f dht0.CheckFunc) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterChecker", objType, f)
 }
@@ -121,10 +122,10 @@ func (mr *MockDHTMockRecorder) RegisterChecker(objType, f interface{}) *gomock.C
 }
 
 // ObjectStreamer mocks base method
-func (m *MockDHT) ObjectStreamer() dht.Streamer {
+func (m *MockDHT) ObjectStreamer() dht0.Streamer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObjectStreamer")
-	ret0, _ := ret[0].(dht.Streamer)
+	ret0, _ := ret[0].(dht0.Streamer)
 	return ret0
 }
 
@@ -146,6 +147,20 @@ func (m *MockDHT) Host() host.Host {
 func (mr *MockDHTMockRecorder) Host() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Host", reflect.TypeOf((*MockDHT)(nil).Host))
+}
+
+// DHT mocks base method
+func (m *MockDHT) DHT() *dht.IpfsDHT {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DHT")
+	ret0, _ := ret[0].(*dht.IpfsDHT)
+	return ret0
+}
+
+// DHT indicates an expected call of DHT
+func (mr *MockDHTMockRecorder) DHT() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHT", reflect.TypeOf((*MockDHT)(nil).DHT))
 }
 
 // Start mocks base method

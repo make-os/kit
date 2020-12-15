@@ -10,10 +10,30 @@ import (
 	"github.com/olebedev/emitter"
 )
 
+// subscribe subscribes to various incoming events
+func (sv *Server) subscribe() {
+
+	// On EvtMempoolTxRemoved:
+	// Remove the transaction from the push pool
+	go func() {
+		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRemoved) {
+			_ = handleFailedPushTxEvt(sv, evt)
+		}
+	}()
+
+	// On EvtMempoolTxRejected:
+	// Remove the transaction from the push pool
+	go func() {
+		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRejected) {
+			_ = handleFailedPushTxEvt(sv, evt)
+		}
+	}()
+}
+
 // handleFailedPushTxEvt responds to a failed push transaction
 // event by removing the corresponding push note from the push pool
 func handleFailedPushTxEvt(sv *Server, evt emitter.Event) error {
-	util.CheckEvtArgs(evt.Args)
+	_ = util.CheckEvtArgs(evt.Args)
 
 	tx, ok := evt.Args[1].(types.BaseTx)
 	if !ok {
@@ -25,24 +45,4 @@ func handleFailedPushTxEvt(sv *Server, evt emitter.Event) error {
 	}
 
 	return nil
-}
-
-// subscribe subscribes to various incoming events
-func (sv *Server) subscribe() {
-
-	// On EvtMempoolTxRemoved:
-	// Remove the transaction from the push pool
-	go func() {
-		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRemoved) {
-			handleFailedPushTxEvt(sv, evt)
-		}
-	}()
-
-	// On EvtMempoolTxRejected:
-	// Remove the transaction from the push pool
-	go func() {
-		for evt := range sv.cfg.G().Bus.On(types2.EvtMempoolTxRejected) {
-			handleFailedPushTxEvt(sv, evt)
-		}
-	}()
 }

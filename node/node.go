@@ -175,7 +175,7 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to create overlay network host")
 	}
 
-	// Initialize and start the DHT module (only in non-validator mode)
+	// As a non-validator, initialize and start the DHT
 	if !n.cfg.IsValidatorNode() {
 		n.dht, err = dhtserver.New(n.ctx, host, n.logic, n.cfg)
 		if err != nil {

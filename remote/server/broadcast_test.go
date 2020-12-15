@@ -47,8 +47,7 @@ var _ = Describe("Reactor", func() {
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeRepoName, gomock.Any())
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
 
-		svr = New(cfg, ":9000", mockObjects.Logic, mockDHT,
-			mocks.NewMockMempool(ctrl), mockObjects.Service, mocks.NewMockBlockGetter(ctrl))
+		svr = New(cfg, ":9000", mockObjects.Logic, mockDHT, mocks.NewMockMempool(ctrl), mockObjects.Service, mocks.NewMockBlockGetter(ctrl))
 
 	})
 

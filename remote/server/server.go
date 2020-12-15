@@ -113,7 +113,8 @@ func New(
 	dht dht2.DHT,
 	mempool core.Mempool,
 	nodeService nodeService.Service,
-	blockGetter core.BlockGetter) *Server {
+	blockGetter core.BlockGetter,
+) *Server {
 
 	// Create wait group
 	wg := &sync.WaitGroup{}
@@ -195,18 +196,18 @@ func (sv *Server) applyRepoTrackingConfig() {
 
 	// Add repositories to the tracking list
 	for _, repo := range sv.cfg.Repo.Track {
-		sv.logic.RepoSyncInfoKeeper().Track(repo)
+		_ = sv.logic.RepoSyncInfoKeeper().Track(repo)
 	}
 
 	// Remove repositories from tracking list
 	for _, repo := range sv.cfg.Repo.Untrack {
-		sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+		_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
 	}
 
 	// If request to untrack all repos is enabled, untrack all.
 	if sv.cfg.Repo.UntrackAll {
 		for repo := range sv.logic.RepoSyncInfoKeeper().Tracked() {
-			sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+			_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
 		}
 	}
 }
@@ -322,7 +323,9 @@ func (sv *Server) Start() error {
 	sv.srv = &http.Server{Addr: sv.addr, Handler: sv.mux}
 
 	go func() {
-		sv.srv.ListenAndServe()
+		if err := sv.srv.ListenAndServe(); err != nil {
+			sv.log.Error("Failed to serve remote server", "Err", err)
+		}
 		sv.wg.Done()
 	}()
 
@@ -442,9 +445,9 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		pktEnc.Encode(plumbing.SidebandInfoln("authentication has failed"))
-		pktEnc.Encode(plumbing.SidebandErr(err.Error()))
-		pktEnc.Flush()
+		_ = pktEnc.Encode(plumbing.SidebandInfoln("authentication has failed"))
+		_ = pktEnc.Encode(plumbing.SidebandErr(err.Error()))
+		_ = pktEnc.Flush()
 		return
 	}
 
@@ -545,15 +548,19 @@ func (sv *Server) Wait() {
 func (sv *Server) Shutdown(ctx context.Context) {
 	sv.log.Info("Shutting down")
 	if sv.srv != nil {
-		sv.srv.Shutdown(ctx)
+		_ = sv.srv.Shutdown(ctx)
 	}
 }
 
 // Stop implements Reactor
 func (sv *Server) Stop() error {
-	sv.BaseReactor.Stop()
+	_ = sv.BaseReactor.Stop()
 	sv.objFetcher.Stop()
 	sv.Shutdown(context.Background())
 	sv.log.Info("Shutdown")
 	return nil
+}
+
+func makeRepoPubSubAction(name string) string {
+	return "repo:push:" + name
 }

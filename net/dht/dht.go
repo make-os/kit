@@ -5,6 +5,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 )
 
 // DHT represents a distributed hash table
@@ -33,6 +34,9 @@ type DHT interface {
 
 	// Host returns the wrapped IPFS host
 	Host() host.Host
+
+	// DHT returns the wrapped IPFS dht
+	DHT() *kaddht.IpfsDHT
 
 	// Start starts the DHT
 	Start() error

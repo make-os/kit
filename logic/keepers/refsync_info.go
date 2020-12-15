@@ -37,7 +37,7 @@ func NewRepoSyncInfoKeeper(db storagetypes.Tx, state *tree.SafeTree) *RepoSyncIn
 // If will not re-add an already repo
 func (t *RepoSyncInfoKeeper) Track(targets string, height ...uint64) error {
 
-	var final = []string{}
+	var final []string
 	for _, target := range strings.Split(targets, ",") {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
@@ -90,7 +90,7 @@ func (t *RepoSyncInfoKeeper) Tracked() (res map[string]*core.TrackedRepo) {
 	res = make(map[string]*core.TrackedRepo)
 	t.db.NewTx(true, true).Iterate(MakeQueryTrackedRepoKey(), false, func(r *common.Record) bool {
 		var tr core.TrackedRepo
-		r.Scan(&tr)
+		_ = r.Scan(&tr)
 		res[string(common.SplitPrefix(r.GetKey())[1])] = &tr
 		return false
 	})
@@ -109,7 +109,7 @@ func (t *RepoSyncInfoKeeper) GetTracked(name string) *core.TrackedRepo {
 		return nil
 	}
 	var tr core.TrackedRepo
-	rec.Scan(&tr)
+	_ = rec.Scan(&tr)
 	return &tr
 }
 
@@ -119,7 +119,7 @@ func (t *RepoSyncInfoKeeper) GetTracked(name string) *core.TrackedRepo {
 //
 // If a user namespace is provided, all repository targets are removed.
 func (t *RepoSyncInfoKeeper) UnTrack(targets string) error {
-	var final = []string{}
+	var final []string
 	for _, target := range strings.Split(targets, ",") {
 		target = strings.TrimSpace(target)
 		if identifier.IsUserURI(target) {
@@ -160,14 +160,14 @@ func (t *RepoSyncInfoKeeper) UnTrack(targets string) error {
 	return nil
 }
 
-// SetLastSyncedNonce sets the last synchronized nonce of repo's reference.
+// SetLastSyncedNonce sets the last synchronized height of repo's reference.
 func (t *RepoSyncInfoKeeper) UpdateRefLastSyncHeight(repo, ref string, height uint64) error {
 	data := util.EncodeNumber(height)
 	rec := common.NewFromKeyValue(MakeRepoRefLastSyncHeightKey(repo, ref), data)
 	return t.db.Put(rec)
 }
 
-// GetLastSyncedNonce returns the last synchronized nonce of the given repo's reference
+// GetLastSyncedNonce returns the last synchronized height of the given repo's reference
 func (t *RepoSyncInfoKeeper) GetRefLastSyncHeight(repo, ref string) (uint64, error) {
 	rec, err := t.db.Get(MakeRepoRefLastSyncHeightKey(repo, ref))
 	if err != nil {

@@ -38,8 +38,7 @@ var _ = Describe("Create", func() {
 
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = New(cfg, ":45000", mockObjects.Logic, mockDHT,
-			mockMempool, mockObjects.Service, mockBlockGetter)
+		repoMgr = New(cfg, ":45000", mockObjects.Logic, mockDHT, mockMempool, mockObjects.Service, mockBlockGetter)
 	})
 
 	AfterEach(func() {

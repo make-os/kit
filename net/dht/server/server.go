@@ -149,7 +149,7 @@ func (dht *Server) Bootstrap() (err error) {
 		}
 		cn()
 
-		if _, err = dht.dht.RoutingTable().TryAddPeer(info.ID, true); err != nil {
+		if _, err = dht.dht.RoutingTable().TryAddPeer(info.ID, true, true); err != nil {
 			dht.log.Error("failed to add peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
 			continue
 		}

@@ -56,8 +56,7 @@ var _ = Describe("Server", func() {
 		mockDHT.EXPECT().RegisterChecker(announcer.ObjTypeGit, gomock.Any())
 
 		port, _ := freeport.GetFreePort()
-		svr = New(cfg, fmt.Sprintf(":%d", port), mockObjects.Logic, mockDHT,
-			mockMempool, mockObjects.Service, mockBlockGetter)
+		svr = New(cfg, fmt.Sprintf(":%d", port), mockObjects.Logic, mockDHT, mockMempool, mockObjects.Service, mockBlockGetter)
 
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)

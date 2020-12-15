@@ -707,6 +707,34 @@ func (mr *MockStreamMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStream)(nil).Close))
 }
 
+// CloseWrite mocks base method
+func (m *MockStream) CloseWrite() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CloseWrite")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CloseWrite indicates an expected call of CloseWrite
+func (mr *MockStreamMockRecorder) CloseWrite() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseWrite", reflect.TypeOf((*MockStream)(nil).CloseWrite))
+}
+
+// CloseRead mocks base method
+func (m *MockStream) CloseRead() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CloseRead")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CloseRead indicates an expected call of CloseRead
+func (mr *MockStreamMockRecorder) CloseRead() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseRead", reflect.TypeOf((*MockStream)(nil).CloseRead))
+}
+
 // Reset mocks base method
 func (m *MockStream) Reset() error {
 	m.ctrl.T.Helper()
@@ -761,6 +789,20 @@ func (m *MockStream) SetWriteDeadline(arg0 time.Time) error {
 func (mr *MockStreamMockRecorder) SetWriteDeadline(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriteDeadline", reflect.TypeOf((*MockStream)(nil).SetWriteDeadline), arg0)
+}
+
+// ID mocks base method
+func (m *MockStream) ID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockStreamMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockStream)(nil).ID))
 }
 
 // Protocol mocks base method
@@ -936,6 +978,20 @@ func (m *MockConn) RemoteMultiaddr() multiaddr.Multiaddr {
 func (mr *MockConnMockRecorder) RemoteMultiaddr() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteMultiaddr", reflect.TypeOf((*MockConn)(nil).RemoteMultiaddr))
+}
+
+// ID mocks base method
+func (m *MockConn) ID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockConnMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockConn)(nil).ID))
 }
 
 // NewStream mocks base method
