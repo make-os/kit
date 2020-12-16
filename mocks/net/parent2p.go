@@ -64,6 +64,20 @@ func (mr *MockParent2PMockRecorder) SendHandshakeMsg(ctx, trackList interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHandshakeMsg", reflect.TypeOf((*MockParent2P)(nil).SendHandshakeMsg), ctx, trackList)
 }
 
+// SendUpdateTrackListMsg mocks base method
+func (m *MockParent2P) SendUpdateTrackListMsg(ctx context.Context, trackListAdd, trackListRemove []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendUpdateTrackListMsg", ctx, trackListAdd, trackListRemove)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendUpdateTrackListMsg indicates an expected call of SendUpdateTrackListMsg
+func (mr *MockParent2PMockRecorder) SendUpdateTrackListMsg(ctx, trackListAdd, trackListRemove interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUpdateTrackListMsg", reflect.TypeOf((*MockParent2P)(nil).SendUpdateTrackListMsg), ctx, trackListAdd, trackListRemove)
+}
+
 // Parent mocks base method
 func (m *MockParent2P) Parent() peer.ID {
 	m.ctrl.T.Helper()
