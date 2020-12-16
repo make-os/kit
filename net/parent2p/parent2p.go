@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/libp2p/go-libp2p-core/network"
@@ -19,8 +20,8 @@ import (
 const (
 	ProtocolID = protocol.ID("parent2p/1.0")
 
-	// MaxHeadMsgSize is the maximum HEAD message size.
-	MaxHeadMsgSize = 1000000
+	// MaxMsgSize is the maximum message size.
+	MaxMsgSize = 1000000
 
 	hand = "HAND"
 	ackh = "ACKH"
@@ -102,7 +103,7 @@ func (b *BasicParent2P) ConnectToParent(ctx context.Context, parentAddr string) 
 // Handler takes a stream and begins processing it
 func (b *BasicParent2P) Handler(s network.Stream) error {
 
-	bz := make([]byte, MaxHeadMsgSize)
+	bz := make([]byte, MaxMsgSize)
 	read, err := s.Read(bz)
 	if err != nil {
 		return errors.Wrap(err, "failed to read message")
@@ -111,9 +112,14 @@ func (b *BasicParent2P) Handler(s network.Stream) error {
 	}
 
 	bz = bytes.Trim(bz, "\x00")
-	switch string(bz[:4]) {
+	parts := bytes.Split(bz, []byte(" "))
+	if len(parts) > 2 {
+		return fmt.Errorf("bad message format")
+	}
+
+	switch string(parts[0]) {
 	case hand:
-		return b.HandleHandshake(bz[4:], s)
+		return b.HandleHandshake(string(parts[1]), s)
 	default:
 		return fmt.Errorf("unknown message type")
 	}
@@ -134,32 +140,36 @@ func (b *BasicParent2P) SendHandshakeMsg(ctx context.Context, trackList []string
 	}
 
 	// Read ack. message
-	bz := make([]byte, MaxHeadMsgSize)
-	read, err := s.Read(bz)
-	if err != nil {
+	var bz = bytes.NewBuffer(nil)
+	read, err := io.CopyN(bz, s, MaxMsgSize)
+	if err != nil && err != io.EOF {
 		return "", errors.Wrap(err, "failed to read handshake response message")
 	} else if read < 4 {
 		return "", fmt.Errorf("bad message length")
 	}
 
-	switch string(bz[:4]) {
+	fields := strings.Split(bz.String(), " ")
+	if len(fields) > 2 {
+		return "", fmt.Errorf("bad message format")
+	}
+
+	switch fields[0] {
 	case ackh:
-		return strings.TrimSpace(string(bytes.Trim(bz[4:], "\x00"))), nil
+		return fields[1], nil
 	default:
 		return "", fmt.Errorf("unknown message type")
 	}
 }
 
 // HandleHandshake handles incoming handshake message.
-func (b *BasicParent2P) HandleHandshake(msg []byte, s network.Stream) error {
+func (b *BasicParent2P) HandleHandshake(msg string, s network.Stream) error {
 	defer s.Close()
 
 	p := &LightPeer{
 		TrackList: map[string]struct{}{},
 	}
 
-	trackList := strings.TrimSpace(string(msg))
-	for _, val := range strings.Split(trackList, ",") {
+	for _, val := range strings.Split(msg, ",") {
 		if val != "" {
 			p.TrackList[val] = struct{}{}
 		}

@@ -1,6 +1,7 @@
 package parent2p_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -105,6 +106,18 @@ var _ = Describe("Parent2p", func() {
 			Expect(err.Error()).To(Equal("bad message length"))
 		})
 
+		It("should return error if message format is invalid", func() {
+			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+				v := "valid_type part1 unexpected_part"
+				copy(p, v)
+				return len(v), nil
+			})
+			err := p2p.Handler(mockStream)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("bad message format"))
+		})
+
 		It("should return error if message type is unsupported", func() {
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
@@ -173,6 +186,21 @@ var _ = Describe("Parent2p", func() {
 			Expect(err.Error()).To(Equal("bad message length"))
 		})
 
+		It("should return error when message format is unexpected", func() {
+			trackList := []string{"repo"}
+			mockStream := mocks.NewMockStream(ctrl)
+			mockStream.EXPECT().Write(parent2p.MakeHandshakeMsg(trackList)).Return(0, nil)
+			bad := bytes.NewBuffer([]byte("valid_type something something_unexpected"))
+			mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+				return bad.Read(p)
+			}).AnyTimes()
+			mockStream.EXPECT().Close()
+			mockHost.EXPECT().NewStream(gomock.Any(), gomock.Any(), parent2p.ProtocolID).Return(mockStream, nil)
+			_, err := p2p.SendHandshakeMsg(context.Background(), trackList)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("bad message format"))
+		})
+
 		It("should return error when handshake response message has unknown type", func() {
 			trackList := []string{"repo"}
 			mockStream := mocks.NewMockStream(ctrl)
@@ -218,7 +246,7 @@ var _ = Describe("Parent2p", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			cfg.RPC.TMRPCAddress = testutil.RandomAddr()
 			mockStream.EXPECT().Write(parent2p.MakeAckHandshakeMsg(cfg.RPC.TMRPCAddress))
-			bz := []byte("repo1,repo2")
+			bz := "repo1,repo2"
 			err = p2p.HandleHandshake(bz, mockStream)
 			Expect(err).To(BeNil())
 			peers := p2p.Peers()
@@ -236,7 +264,7 @@ var _ = Describe("Parent2p", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			cfg.RPC.TMRPCAddress = testutil.RandomAddr()
 			mockStream.EXPECT().Write(gomock.Any()).Return(0, fmt.Errorf("error"))
-			err = p2p.HandleHandshake(nil, mockStream)
+			err = p2p.HandleHandshake("", mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to send ack handshake: error"))
 		})
