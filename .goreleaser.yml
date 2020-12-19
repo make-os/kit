@@ -1,18 +1,30 @@
 project_name: kit
 builds:
   - binary: kit
+    id: kit
     main: ./cmd/kit/main.go
     flags:
       - -tags=badgerdb
     goos:
       - linux
-      - darwin
       - windows
     goarch:
       - amd64
     goarm:
       - "6"
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.goversion={{.Env.GOVERSION}}
+  - binary: kit
+    id: kit-macos
+    main: ./cmd/kit/main.go
+    flags:
+      - -tags=badgerdb
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.goversion={{.Env.GOVERSION}}
+    hooks:
+      post: gon .gon.hcl
 archives:
   -
     replacements:
