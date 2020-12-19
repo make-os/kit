@@ -13,7 +13,6 @@ import (
 	"github.com/make-os/kit/net"
 	dht2 "github.com/make-os/kit/net/dht"
 	dhtserver "github.com/make-os/kit/net/dht/server"
-	"github.com/make-os/kit/net/parent2p"
 	"github.com/make-os/kit/remote/server"
 	rpcApi "github.com/make-os/kit/rpc/api"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -79,7 +78,6 @@ type Node struct {
 	dht            dht2.DHT
 	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
-	p2l            parent2p.Parent2P
 }
 
 // NewNode creates an instance of RPCServer
@@ -247,19 +245,10 @@ func (n *Node) Start() error {
 		}
 	}
 
-	// Start parent to peer protocol handler
-	if err := n.setupParent2p(host); err != nil {
-		return err
-	}
-
 	// In light mode:
 	// - Start light client.
-	// - Start remote server manually in light mode.
 	if n.cfg.IsLightNode() {
 		go n.startLightNode()
-		if err := remoteServer.Start(); err != nil {
-			return err
-		}
 	}
 
 	// Initialize extension manager and start extensions
@@ -268,32 +257,8 @@ func (n *Node) Start() error {
 	return nil
 }
 
-// setupParent2p configures and starts the parent2p protocol
-func (n *Node) setupParent2p(host net.Host) error {
-	n.p2l = parent2p.New(n.cfg, host)
-
-	// Connect to light client parent
-	if n.cfg.IsLightNode() {
-		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cn()
-		if err := n.p2l.ConnectToParent(ctx, n.cfg.Node.LightNodePrimaryAddr); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // startLightNode starts a light node
 func (n *Node) startLightNode() error {
-
-	trackedRepos := funk.Keys(n.logic.RepoSyncInfoKeeper().Tracked()).([]string)
-
-	// Send handshake to parent and hopefully get a RPC address to
-	parentRPCAddr, err := n.p2l.SendHandshakeMsg(context.Background(), trackedRepos)
-	if err != nil {
-		return err
-	}
 
 	trustingPeriod, err := time.ParseDuration(n.cfg.Node.LightNodeTrustingPeriod)
 	if err != nil {
@@ -307,7 +272,7 @@ func (n *Node) startLightNode() error {
 
 	err = commands.RunProxy(&commands.Params{
 		ListenAddr:         fmt.Sprintf("tcp://%s", n.cfg.RPC.TMRPCAddress),
-		PrimaryAddr:        fmt.Sprintf("tcp://%s", parentRPCAddr),
+		PrimaryAddr:        fmt.Sprintf("tcp://%s", n.cfg.Node.LightNodePrimaryAddr),
 		WitnessAddrs:       strings.Join(n.cfg.Node.LightNodeWitnessAddrs, ","),
 		ChainID:            cast.ToString(n.cfg.Net.Version),
 		Home:               n.cfg.GetDBRootDir(),

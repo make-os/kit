@@ -82,7 +82,6 @@ genmocks:
 	mockgen -source=net/dht/streamer/requester.go -destination=mocks/dht_requester.go -package mocks
 	mockgen -source=net/dht/streamer.go -destination=mocks/dht_streamer.go -package mocks
 	mockgen -source=net/host.go -destination=mocks/net/net.go -package mocks
-	mockgen -source=net/parent2p/parent2p.go -destination=mocks/net/parent2p.go -package mocks
 	mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks
 	mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks
 	mockgen -source=modules/types/types.go -destination=mocks/modules.go -package mocks
