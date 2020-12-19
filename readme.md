@@ -29,7 +29,7 @@ make install
 
 ### Use Pre-built binaries
 We also provide pre-built binaries for macOS, Linux and Windows platforms. See our
-[release](https://github.com/make-os/lobe/releases) page for the latest binaries.
+[release](https://github.com/make-os/kit/releases) page for the latest binaries.
 
 ## Test
 Run all Kit's test suites:
