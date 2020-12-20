@@ -382,7 +382,7 @@ Enter the repository by typing:
 
 Inside that repository, you can run the following commands:
 
-  `+colorfmt.CyanString(config.AppName+" pass git push")+`:
+  `+colorfmt.CyanString("git push")+`:
     To push your commits, tags and notes with automatic signing.
 
   `+colorfmt.CyanString(config.AppName+" config")+`:
