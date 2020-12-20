@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install git
 RUN git clone https://gitlab.com/makeos/kit
 
 # Build and install
-RUN cd kit && git checkout ${branch} && make install && mv /go/bin/kit /go/bin/kit
+RUN cd kit && git checkout ${branch} && make install
 
 # Start the node (in dev mode).
 # Note: Initiator must have initialized the node and pass the home directory as a volume target.
