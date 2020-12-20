@@ -9,7 +9,7 @@ import (
 
 const (
 	// ModeProd refers to production mode
-	ModeProd = iota
+	ModeProd = iota + 1
 	// ModeDev refers to development mode
 	ModeDev
 	// ModeTest refers to test mode
@@ -341,4 +341,9 @@ func (c *AppConfig) IsDev() bool {
 // IsProd checks whether the current environment is 'production'
 func (c *AppConfig) IsProd() bool {
 	return c.Node.Mode == ModeProd
+}
+
+// IsTest checks whether the current environment is 'test'
+func (c *AppConfig) IsTest() bool {
+	return c.Node.Mode == ModeTest
 }

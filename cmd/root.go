@@ -19,7 +19,6 @@ import (
 	"github.com/make-os/kit/cmd/startcmd"
 	"github.com/make-os/kit/cmd/txcmd"
 	"github.com/make-os/kit/cmd/usercmd"
-	"github.com/make-os/kit/config/chains"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/colorfmt"
@@ -54,7 +53,7 @@ var (
 	cfg = config.GetConfig()
 
 	// Get a reference to tendermint's config object
-	tmconfig = tmcfg.DefaultConfig()
+	tmc = tmcfg.DefaultConfig()
 
 	profiler interface{ Stop() }
 )
@@ -134,12 +133,12 @@ func preRun(cmd *cobra.Command) {
 	isInit := cmd.CalledAs() == "init"
 	if isInit {
 		if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
-			viper.Set("net.version", chains.TestnetV1.NetVersion)
+			viper.Set("net.version", config.TestnetV1.NetVersion)
 		}
 	}
 
 	// Configure the node
-	config.Configure(config.GetConfig(), tmconfig, isInit)
+	config.Configure(config.GetConfig(), tmc, isInit)
 	log = cfg.G().Log
 
 	// Setup the profiler
@@ -147,7 +146,7 @@ func preRun(cmd *cobra.Command) {
 
 	// Load keys in the config object
 	if !isInit {
-		cfg.LoadKeys(tmconfig.NodeKeyFile(), tmconfig.PrivValidatorKeyFile(), tmconfig.PrivValidatorStateFile())
+		cfg.LoadKeys(tmc.NodeKeyFile(), tmc.PrivValidatorKeyFile(), tmc.PrivValidatorStateFile())
 	}
 
 	// Skip git exec check for certain commands

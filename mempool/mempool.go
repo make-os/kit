@@ -6,14 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/make-os/kit/config"
 	memtypes "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/validation"
-
-	"github.com/make-os/kit/config"
 
 	"github.com/make-os/kit/types"
 
@@ -44,6 +43,10 @@ type Mempool struct {
 
 	// A log of mempool txs
 	wal *auto.AutoFile
+
+	// notify listeners (ie. consensus) when txs are available
+	notifiedTxsAvailable bool
+	txsAvailable         chan struct{} // fires once for each height, when the mempool is not empty
 
 	log     logger.Logger
 	metrics *mempool.Metrics
@@ -105,12 +108,14 @@ func (mp *Mempool) Add(tx types.BaseTx) (bool, error) {
 	}
 
 	if addedToPool {
-		mp.log.Info("Added a new transaction to the pool",
-			"Hash", tx.GetHash(),
+		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash(),
 			"PoolSize", mp.Size())
+
+		// send notification about available tx
+		mp.notifyTxsAvailable()
+
 	} else {
-		mp.log.Info("Added a new transaction to the cache",
-			"Hash", tx.GetHash(),
+		mp.log.Info("Added a new transaction to the cache", "Hash", tx.GetHash(),
 			"CacheSize", mp.CacheSize())
 	}
 
@@ -214,7 +219,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) tmtypes.Txs {
 
 	// Flush ignored tx back to the pool
 	for _, tx := range ignoredTx {
-		mp.pool.Put(tx)
+		_, _ = mp.pool.Put(tx)
 	}
 
 	return txs
@@ -252,8 +257,14 @@ func (mp *Mempool) recheckTxs() {
 // Update informs the mempool that the given txs were committed and can be discarded.
 // NOTE: this should be called *after* block is committed by consensus.
 // NOTE: unsafe; Lock/Unlock must be managed by caller
-func (mp *Mempool) Update(blockHeight int64, txs tmtypes.Txs,
-	responses []*abci.ResponseDeliverTx, _ mempool.PreCheckFunc, _ mempool.PostCheckFunc) error {
+func (mp *Mempool) Update(
+	blockHeight int64,
+	txs tmtypes.Txs,
+	responses []*abci.ResponseDeliverTx,
+	_ mempool.PreCheckFunc,
+	_ mempool.PostCheckFunc,
+) error {
+	mp.notifiedTxsAvailable = false
 
 	for i, txBs := range txs {
 
@@ -276,6 +287,11 @@ func (mp *Mempool) Update(blockHeight int64, txs tmtypes.Txs,
 	// Recheck existing transactions in the pool
 	mp.recheckTxs()
 
+	// notify about available tx
+	if mp.Size() > 0 {
+		mp.notifyTxsAvailable()
+	}
+
 	return nil
 }
 
@@ -288,13 +304,28 @@ func (mp *Mempool) Flush() {
 // and only when transactions are available in the mempool.
 // NOTE: the returned channel may be nil if EnableTxsAvailable was not called.
 func (mp *Mempool) TxsAvailable() <-chan struct{} {
-	return nil
+	return mp.txsAvailable
 }
 
 // EnableTxsAvailable initializes the TxsAvailable channel, ensuring it will
 // trigger once every height when transactions are available.
 func (mp *Mempool) EnableTxsAvailable() {
+	mp.txsAvailable = make(chan struct{}, 1)
+}
 
+// notifyTxsAvailable sets the notify channel to indicate existence of a tx
+func (mp *Mempool) notifyTxsAvailable() {
+	if mp.Size() == 0 {
+		panic("notified txs available but mempool is empty!")
+	}
+	if mp.txsAvailable != nil && !mp.notifiedTxsAvailable {
+		// channel cap is 1, so this will send once
+		mp.notifiedTxsAvailable = true
+		select {
+		case mp.txsAvailable <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // Size returns the number of transactions in the mempool.

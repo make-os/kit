@@ -12,7 +12,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/config/chains"
 	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -57,19 +56,19 @@ func genNodeKey(filePath string, pk ed25519.PrivKey) (*p2p.NodeKey, error) {
 func tendermintInit(validatorKey string, genesisValidators []string, genesisState string, genesisTime uint64) error {
 
 	// If already initialized, return immediately
-	if config.IsTendermintInitialized(tmconfig) {
+	if config.IsTendermintInitialized(tmc) {
 		return nil
 	}
 
 	// Run tendermint initialization command
-	defer tmcfg.EnsureRoot(tmconfig.RootDir)
-	commands.SetConfig(tmconfig)
+	defer tmcfg.EnsureRoot(tmc.RootDir)
+	commands.SetConfig(tmc)
 	if err := commands.InitFilesCmd.RunE(nil, nil); err != nil {
 		golog.Fatalf(errors.Wrap(err, "tendermint init failed").Error())
 	}
 
 	// Read the genesis file
-	genDoc, err := tmtypes.GenesisDocFromFile(tmconfig.GenesisFile())
+	genDoc, err := tmtypes.GenesisDocFromFile(tmc.GenesisFile())
 	if err != nil {
 		golog.Fatalf("Failed to read genesis file: %s", err)
 	}
@@ -119,7 +118,7 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 	}
 
 	// Save the updated genesis file
-	if err = genDoc.SaveAs(tmconfig.GenesisFile()); err != nil {
+	if err = genDoc.SaveAs(tmc.GenesisFile()); err != nil {
 		golog.Fatalf("Genesis config file initialization failed: %s", err)
 	}
 
@@ -129,8 +128,8 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 		if err != nil {
 			golog.Fatalf("Failed to decode validator private key: %s", err.Error())
 		}
-		pv, _ := privval.GenFilePV(tmconfig.PrivValidatorKeyFile(),
-			tmconfig.PrivValidatorStateFile(), tmtypes.ABCIPubKeyTypeEd25519)
+		pv, _ := privval.GenFilePV(tmc.PrivValidatorKeyFile(),
+			tmc.PrivValidatorStateFile(), tmtypes.ABCIPubKeyTypeEd25519)
 		pv.Key.PrivKey = vk
 		pv.Key.Address = vk.PubKey().Address()
 		pv.Key.PubKey = vk.PubKey()
@@ -139,8 +138,8 @@ func tendermintInit(validatorKey string, genesisValidators []string, genesisStat
 		// Overwrite node key file with one derived from the validator key.
 		// TODO: find a way to do this directly without letting tendermint have a
 		//  chance to do it before us or submit a PR to upstream for a third-party friendly approach
-		nodeKeyFile := tmconfig.NodeKeyFile()
-		os.RemoveAll(nodeKeyFile)
+		nodeKeyFile := tmc.NodeKeyFile()
+		_ = os.RemoveAll(nodeKeyFile)
 		if _, err = genNodeKey(nodeKeyFile, vk); err != nil {
 			golog.Fatalf("Failed to create node key file: %s", err.Error())
 		}
@@ -163,8 +162,8 @@ var initCmd = &cobra.Command{
 
 		// If testnet v1 present is requested, overwrite validators, genesis time and state
 		if configureTestnetV1 {
-			validators = chains.TestnetV1.Validators
-			genesisTime = chains.TestnetV1.GenesisTime
+			validators = config.TestnetV1.Validators
+			genesisTime = config.TestnetV1.GenesisTime
 			genState = ""
 		}
 
@@ -173,7 +172,7 @@ var initCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		fmt.Fprintln(os.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Node initialized!"))
+		_, _ = fmt.Fprintln(os.Stdout, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ Node initialized!"))
 	},
 }
 

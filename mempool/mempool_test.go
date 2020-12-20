@@ -154,6 +154,25 @@ var _ = Describe("Mempool", func() {
 		})
 	})
 
+	Describe(".notifyTxsAvailable", func() {
+		It("should panic if mempool is empty", func() {
+			Expect(mempool.notifiedTxsAvailable).To(BeFalse())
+			Expect(func() {
+				mempool.notifyTxsAvailable()
+			}).To(Panic())
+		})
+
+		It("should set notifiedTxsAvailable to true", func() {
+			Expect(mempool.notifiedTxsAvailable).To(BeFalse())
+			tx := txns.NewCoinTransferTx(1, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+			_, err := mempool.Add(tx)
+			Expect(err).To(BeNil())
+			mempool.EnableTxsAvailable()
+			mempool.notifyTxsAvailable()
+			Expect(mempool.notifiedTxsAvailable).To(BeTrue())
+		})
+	})
+
 	Describe(".Update", func() {
 		It("should return error when unable to decode transaction", func() {
 			txs := tmtypes.Txs{[]byte("bad tx")}

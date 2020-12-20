@@ -59,18 +59,24 @@ import (
 
 // RPCServer represents the client
 type Node struct {
-	ctx       context.Context
-	log       logger.Logger
-	tmLog     log.Logger
-	closeOnce *sync.Once
+	ctx context.Context
 
+	// Loggers
+	log   logger.Logger
+	tmLog log.Logger
+
+	// Config objects
+	tmc *tmconfig.Config
+	cfg *config.AppConfig
+
+	// Database objects
+	db      storagetypes.Engine
+	stateDB tmdb.DB
+
+	tm             *nm.Node
 	app            *App
-	cfg            *config.AppConfig
 	acctMgr        *keystore.Keystore
 	nodeKey        *p2p.NodeKey
-	db             storagetypes.Engine
-	stateDB        tmdb.DB
-	tm             *nm.Node
 	service        services.Service
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
@@ -78,6 +84,8 @@ type Node struct {
 	dht            dht2.DHT
 	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
+
+	closeOnce *sync.Once
 }
 
 // NewNode creates an instance of RPCServer
@@ -118,16 +126,21 @@ func (n *Node) OpenDB() (err error) {
 
 // createCustomMempool creates a custom mempool and mempool reactor
 // to replace tendermint's default mempool
-func createCustomMempool(cfg *config.AppConfig, logic core.Logic) *nm.CustomMempool {
+func createCustomMempool(cfg *config.AppConfig, tmc *tmconfig.Config, logic core.Logic) *nm.CustomMempool {
 	memp := mempool.NewMempool(cfg, logic)
 	mempReactor := mempool.NewReactor(cfg, memp)
+
+	if tmc.Consensus.WaitForTxs() {
+		memp.EnableTxsAvailable()
+	}
+
 	return &nm.CustomMempool{
 		Mempool:        memp,
 		MempoolReactor: mempReactor,
 	}
 }
 
-func (n *Node) setupTMLogger() error {
+func (n *Node) setupTendermintLogger() error {
 	n.tmLog = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	var err error
 	n.tmLog, err = tmflags.ParseLogLevel(n.cfg.G().TMConfig.LogLevel, n.tmLog, tmconfig.DefaultLogLevel())
@@ -140,6 +153,8 @@ func (n *Node) setupTMLogger() error {
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
+	tmc := n.cfg.G().TMConfig
+
 	if n.cfg.IsAttachMode() {
 		return n.startConsoleOnly()
 	}
@@ -147,7 +162,7 @@ func (n *Node) Start() error {
 	n.log.Info("Starting node...", "NodeID", n.cfg.G().NodeKey.ID(), "DevMode", n.cfg.IsDev())
 
 	var err error
-	if err = n.setupTMLogger(); err != nil {
+	if err = n.setupTendermintLogger(); err != nil {
 		return err
 	}
 
@@ -192,7 +207,7 @@ func (n *Node) Start() error {
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch seed generator function
-	appMempool := createCustomMempool(n.cfg, n.logic)
+	appMempool := createCustomMempool(n.cfg, tmc, n.logic)
 
 	// Pass mempool reactor to logic
 	appMempoolReactor := appMempool.MempoolReactor.(*mempool.Reactor)

@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	cfg = EmptyAppConfig()
+	// cfg = EmptyAppConfig()
 
 	// itr is used to interrupt subscribed components
 	itr = util.Interrupt(make(chan struct{}))
@@ -81,14 +81,9 @@ var (
 	}
 )
 
-// SetConfig sets the app config
-func SetConfig(c *AppConfig) {
-	cfg = c
-}
-
 // GetConfig get the app config
 func GetConfig() *AppConfig {
-	return cfg
+	return nil
 }
 
 // GetInterrupt returns the component interrupt channel
@@ -160,14 +155,11 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	// Setup viper and app directories
 	setup(appCfg, tmcfg, initializing)
 
+	// Tendermint config overwrites
+	setupTendermintCfg(appCfg, tmcfg)
+
 	// Setup logger
 	setupLogger(appCfg, tmcfg)
-
-	// Tendermint config overwrites
-	tmcfg.TxIndex.Indexer = "kv"
-	tmcfg.P2P.ListenAddress = appCfg.Node.ListeningAddr
-	tmcfg.P2P.AddrBookStrict = !appCfg.IsDev()
-	tmcfg.RPC.ListenAddress = "tcp://" + appCfg.RPC.TMRPCAddress
 
 	// Add seed peers if .IgnoreSeeds is false
 	if !appCfg.Node.IgnoreSeeds {
@@ -191,6 +183,25 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	appCfg.G().TMConfig = tmcfg
 }
 
+func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
+	tmcfg.TxIndex.Indexer = "kv"
+	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
+	tmcfg.P2P.AddrBookStrict = !cfg.IsDev()
+	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
+	netVersion := viper.GetString("net.version")
+	chain := Get(netVersion)
+
+	if cfg.IsTest() {
+		return
+	}
+
+	if chain != nil {
+		chain.Config(cfg, tmcfg)
+	}
+
+	log.Fatalf("network version (%s) is unknown", netVersion)
+}
+
 func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 
 	// Populate viper from environment variables
@@ -198,18 +209,21 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	// Create app config and populate with default values
-	cfg.Node.Mode = ModeProd
 	dataDir := viper.GetString("home")
-	devDataDirPrefix := viper.GetString("home.prefix")
 
-	// On dev mode detected.
-	if devDataDirPrefix != "" || viper.GetBool("dev") {
-		cfg.Node.Mode = ModeDev
-		var err error
-		dataDir, err = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
-		if err != nil {
-			log.Fatalf("Failed to get home directory: %s", err)
+	// Set mode to production if unset
+	if cfg.Node.Mode == 0 {
+		cfg.Node.Mode = ModeProd
+
+		// On dev mode detected.
+		devDataDirPrefix := viper.GetString("home.prefix")
+		if devDataDirPrefix != "" || viper.GetBool("dev") {
+			cfg.Node.Mode = ModeDev
+			var err error
+			dataDir, err = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
+			if err != nil {
+				log.Fatalf("Failed to get home directory: %s", err)
+			}
 		}
 	}
 

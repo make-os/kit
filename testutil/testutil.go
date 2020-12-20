@@ -35,7 +35,7 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 		panic(fmt.Errorf("failed to create test directory"))
 	}
 	dataDir := path.Join(dir, dataDirName)
-	os.MkdirAll(dataDir, 0700)
+	_ = os.MkdirAll(dataDir, 0700)
 
 	// Set required viper keys
 	viper.Set("net.version", 10000000)
@@ -46,8 +46,8 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	// Initialize the config using the test root command
 	var tmcfg = tmconfig.DefaultConfig()
 	cfg = config.EmptyAppConfig()
-	config.Configure(cfg, tmcfg, true)
 	cfg.Node.Mode = config.ModeTest
+	config.Configure(cfg, tmcfg, true)
 
 	// Initialize the directory
 	commands.SetConfig(tmcfg)
