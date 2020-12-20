@@ -25,11 +25,11 @@ install:
 
 getbin:
 	curl -L https://storage.googleapis.com/kit-bin/kit_$(v)_Linux_x86_64.tar.gz | tar -xz
-	mv ./lob /usr/bin/kit
+	mv ./kit /usr/bin/kit
 
 # Initialize node for testnet-v1
 testnet-v1-init:
-	lob init -v 47shQ9ihsZBf2nYL6tAYR8q8Twb47KTNjimowxaNFRyGPL93oZL,48LZFEsZsRPda1q2kiNZKToiTaeSx63GJdq6DWq9m9C4mSvWhHD,48pFW5Yd5BLm4EVUJW8g9oG1BkNQz4wp2saLB8XmkvMRwRAB2FH,48GKXaSLgJ5ox2C1jDshFGtD6Y4Zhd1doxK6iTDp3KCSZjzdWKt -k $(vKey) -t 1595700581 --net=2000
+	kit init --v1 -k $(vKey)
 
 # Build and run a docker container that runs a pre-built binary located in ./dist and connects to testnet-v1
 join: testnet-v1-init
