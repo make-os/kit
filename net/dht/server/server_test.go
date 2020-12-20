@@ -20,6 +20,7 @@ import (
 	"github.com/make-os/kit/net/dht/server"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -32,7 +33,6 @@ var _ = Describe("Server", func() {
 	var dhtA *server.Server
 	var keepers *mocks.MockKeepers
 	var dhtKeepers *mocks.MockDHTKeeper
-	var mockHost *mocks2.MockHost
 
 	BeforeEach(func() {
 		server.ConnectTickerInterval = 1 * time.Millisecond
@@ -45,7 +45,6 @@ var _ = Describe("Server", func() {
 		cfg.DHT.Address = testutil.RandomAddr()
 		cfg2.DHT.Address = testutil.RandomAddr()
 
-		mockHost = mocks2.NewMockHost(ctrl)
 		keepers = mocks.NewMockKeepers(ctrl)
 		dhtKeepers = mocks.NewMockDHTKeeper(ctrl)
 
@@ -71,7 +70,7 @@ var _ = Describe("Server", func() {
 
 	Describe(".Bootstrap", func() {
 		BeforeEach(func() {
-			dhtA = makePeer(cfg, mockHost, keepers)
+			_, dhtA = makePeer(ctrl, cfg, keepers)
 		})
 
 		When("no bootstrap address exist", func() {
@@ -104,7 +103,7 @@ var _ = Describe("Server", func() {
 
 		When("a reachable address exist", func() {
 			BeforeEach(func() {
-				dhtB = makePeer(cfg2, mockHost, keepers)
+				_, dhtB = makePeer(ctrl, cfg2, keepers)
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 			})
 
@@ -121,7 +120,7 @@ var _ = Describe("Server", func() {
 
 	When(".Peers", func() {
 		BeforeEach(func() {
-			dhtA = makePeer(cfg, mockHost, keepers)
+			_, dhtA = makePeer(ctrl, cfg, keepers)
 		})
 
 		When("not connected to any peers", func() {
@@ -138,12 +137,11 @@ var _ = Describe("Server", func() {
 
 		When("connected to a peer", func() {
 			BeforeEach(func() {
-				dhtB = makePeer(cfg2, mockHost, keepers)
+				_, dhtB = makePeer(ctrl, cfg2, keepers)
 
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 				err = dhtA.Bootstrap()
 				Expect(err).To(BeNil())
-				time.Sleep(10 * time.Millisecond)
 			})
 
 			It("should return 1 peer", func() {
@@ -154,8 +152,8 @@ var _ = Describe("Server", func() {
 
 	Describe(".Store", func() {
 		BeforeEach(func() {
-			dhtA = makePeer(cfg, mockHost, keepers)
-			dhtB = makePeer(cfg2, mockHost, keepers)
+			_, dhtA = makePeer(ctrl, cfg, keepers)
+			_, dhtB = makePeer(ctrl, cfg2, keepers)
 
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
@@ -182,16 +180,12 @@ var _ = Describe("Server", func() {
 
 	Describe(".Lookup", func() {
 		BeforeEach(func() {
-			// Peer A
-			dhtA = makePeer(cfg, mockHost, keepers)
-
-			// Peer B
-			dhtB = makePeer(cfg2, mockHost, keepers)
+			_, dhtA = makePeer(ctrl, cfg, keepers)
+			_, dhtB = makePeer(ctrl, cfg2, keepers)
 
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
-			time.Sleep(10 * time.Millisecond)
 		})
 
 		When("key is not found", func() {
@@ -238,23 +232,20 @@ var _ = Describe("Server", func() {
 		var key = []byte("key")
 
 		BeforeEach(func() {
-			// Peer A
-			dhtA = makePeer(cfg, mockHost, keepers)
-
-			// Peer B
-			dhtB = makePeer(cfg2, mockHost, keepers)
+			_, dhtA = makePeer(ctrl, cfg, keepers)
+			_, dhtB = makePeer(ctrl, cfg2, keepers)
 
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
-			time.Sleep(10 * time.Millisecond)
 		})
 
 		When("a peer announces a key", func() {
 			BeforeEach(func() {
 				dhtKeepers.EXPECT().AddToAnnounceList(key, "repo1", announcer.ObjTypeAny, gomock.Any())
 				dhtA.Announce(announcer.ObjTypeAny, "repo1", key, nil)
-				dhtA.Start()
+				err := dhtA.Start()
+				Expect(err).To(BeNil())
 				time.Sleep(1 * time.Millisecond)
 			})
 
@@ -267,7 +258,8 @@ var _ = Describe("Server", func() {
 				Expect(err).To(BeNil())
 				Expect(addrs).To(HaveLen(1))
 				Expect(addrs[0].ID.Pretty()).To(Equal(dhtA.Host().ID().Pretty()))
-				Expect(addrs[0].Addrs).To(BeEmpty())
+				Expect(addrs[0].Addrs).To(HaveLen(1))
+				Expect(addrs[0].Addrs[0].String()).To(Equal(dhtA.Host().Addrs()[0].String()))
 
 				addrs, err = dhtB.GetProviders(context.Background(), key)
 				Expect(err).To(BeNil())
@@ -280,19 +272,19 @@ var _ = Describe("Server", func() {
 	})
 })
 
-func makePeer(cfg *config.AppConfig, mockHost *mocks2.MockHost, keepers core.Keepers) *server.Server {
+func makePeer(ctrl *gomock.Controller, cfg *config.AppConfig, keepers core.Keepers) (*mocks2.MockHost, *server.Server) {
 	cfg.DHT.Address = testutil.RandomAddr()
 	host, err := net.New(context.Background(), cfg)
 	Expect(err).To(BeNil())
-	mockHost.EXPECT().Get().Return(host.Get())
-	mockHost.EXPECT().ID().Return(peer.ID("peer-id"))
-	mockHost.EXPECT().Addrs().Return(host.Get().Addrs())
+	mockHost := mocks2.NewMockHost(ctrl)
+	mockHost.EXPECT().Get().Return(host.Get()).AnyTimes()
+	mockHost.EXPECT().ID().Return(peer.ID(util.RandString(5))).AnyTimes()
+	mockHost.EXPECT().Addrs().Return(host.Get().Addrs()).AnyTimes()
 	svr, err := server.New(context.Background(), mockHost, keepers, cfg)
 	Expect(err).To(BeNil())
 	svr.DHT().Validator.(record.NamespacedValidator)[dht2.ObjectNamespace] = okValidator{}
-	return svr
+	return mockHost, svr
 }
-
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Server Suite")

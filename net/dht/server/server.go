@@ -140,7 +140,7 @@ func (dht *Server) Bootstrap() (err error) {
 		}
 
 		dht.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
-		ctx, cn := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		if err = dht.host.Connect(ctx, *info); err != nil {
 			dht.log.Error("Failed to connect to peer", "PeerID", info.ID.Pretty(), "Err", err.Error())
 			cn()
@@ -214,18 +214,6 @@ func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInf
 	peers, err := dht.dht.FindProviders(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-
-	// For providers whose addresses are not included, find their address(es) from the
-	// peer store and attach it to them.
-	// Note: We are doing this here because the DHT logic does not add them when
-	// it should have. (remove once fixed in go-libp2p-kad-dht)
-	for i, prov := range peers {
-		if len(prov.Addrs) == 0 {
-			pi := dht.host.Peerstore().PeerInfo(prov.ID)
-			prov.Addrs = pi.Addrs
-			peers[i] = prov
-		}
 	}
 
 	return peers, nil

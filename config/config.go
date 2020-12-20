@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	// cfg = EmptyAppConfig()
+	cfg = EmptyAppConfig()
 
 	// itr is used to interrupt subscribed components
 	itr = util.Interrupt(make(chan struct{}))
@@ -83,7 +83,7 @@ var (
 
 // GetConfig get the app config
 func GetConfig() *AppConfig {
-	return nil
+	return cfg
 }
 
 // GetInterrupt returns the component interrupt channel

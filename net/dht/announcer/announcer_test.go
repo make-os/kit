@@ -19,6 +19,7 @@ import (
 	"github.com/make-os/kit/net/dht/server"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -36,7 +37,6 @@ var _ = Describe("Announcer", func() {
 	var dhtB *server.Server
 	var ann *announcer.Announcer
 	var mockDHTKeeper *mocks.MockDHTKeeper
-	var mockHost *mocks2.MockHost
 	var mockObjects *testutil.MockObjects
 
 	BeforeEach(func() {
@@ -45,7 +45,6 @@ var _ = Describe("Announcer", func() {
 		Expect(err).To(BeNil())
 
 		cfg.DHT.Address = testutil.RandomAddr()
-		mockHost = mocks2.NewMockHost(ctrl)
 
 		cfg2, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
@@ -54,7 +53,7 @@ var _ = Describe("Announcer", func() {
 		mockObjects = testutil.Mocks(ctrl)
 		mockDHTKeeper = mockObjects.DHTKeeper
 
-		dhtA = makePeer(cfg, mockHost, nil)
+		_, dhtA = makePeer(ctrl, cfg, nil)
 		ann = announcer.New(cfg, dhtA.DHT(), mockObjects.Logic)
 	})
 
@@ -123,7 +122,7 @@ var _ = Describe("Announcer", func() {
 		When("announcement is successful", func() {
 			task := &announcer.Task{Key: key, RepoName: "repo1", Type: 1, Done: func(err error) {}}
 			BeforeEach(func() {
-				dhtB = makePeer(cfg2, mockHost, nil)
+				_, dhtB := makePeer(ctrl, cfg2, nil)
 				cfg.DHT.BootstrapPeers = dhtB.Addr()
 				err = dhtA.Bootstrap()
 				Expect(err).To(BeNil())
@@ -228,17 +227,18 @@ var _ = Describe("Session", func() {
 	})
 })
 
-func makePeer(cfg *config.AppConfig, mockHost *mocks2.MockHost, keepers core.Keepers) *server.Server {
+func makePeer(ctrl *gomock.Controller, cfg *config.AppConfig, keepers core.Keepers) (*mocks2.MockHost, *server.Server) {
 	cfg.DHT.Address = testutil.RandomAddr()
 	host, err := net.New(context.Background(), cfg)
 	Expect(err).To(BeNil())
-	mockHost.EXPECT().Get().Return(host.Get())
-	mockHost.EXPECT().ID().Return(peer.ID("peer-id"))
-	mockHost.EXPECT().Addrs().Return(host.Get().Addrs())
+	mockHost := mocks2.NewMockHost(ctrl)
+	mockHost.EXPECT().Get().Return(host.Get()).AnyTimes()
+	mockHost.EXPECT().ID().Return(peer.ID(util.RandString(5))).AnyTimes()
+	mockHost.EXPECT().Addrs().Return(host.Get().Addrs()).AnyTimes()
 	svr, err := server.New(context.Background(), mockHost, keepers, cfg)
 	Expect(err).To(BeNil())
 	svr.DHT().Validator.(record.NamespacedValidator)[dht2.ObjectNamespace] = okValidator{}
-	return svr
+	return mockHost, svr
 }
 
 type okValidator struct{ err error }
