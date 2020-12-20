@@ -197,6 +197,7 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
 
 	if chain != nil {
 		chain.Config(cfg, tmcfg)
+		return
 	}
 
 	log.Fatalf("network version (%s) is unknown", netVersion)

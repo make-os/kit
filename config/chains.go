@@ -8,8 +8,10 @@ import (
 )
 
 // networks stores known networks information
-var networks = map[string]Info{
-	cast.ToString(TestnetV1.GetVersion()): TestnetV1,
+var networks = map[string]Info{}
+
+func init() {
+	networks[cast.ToString(TestnetV1.GetVersion())] = TestnetV1
 }
 
 // Get finds a chain's info  by version
