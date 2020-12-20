@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/data"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
@@ -140,6 +141,7 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 
 // IsTendermintInitialized checks if node is initialized
 func IsTendermintInitialized(tmcfg *config.Config) bool {
+	pp.Println(tmcfg.PrivValidatorKeyFile())
 	return tmos.FileExists(tmcfg.PrivValidatorKeyFile())
 }
 
@@ -205,27 +207,29 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
 
 func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 
-	// Populate viper from environment variables
 	viper.SetEnvPrefix(AppEnvPrefix)
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	dataDir := viper.GetString("home")
-
-	// Set mode to production if unset
+	// Set mode
 	if cfg.Node.Mode == 0 {
 		cfg.Node.Mode = ModeProd
-
-		// On dev mode detected.
-		devDataDirPrefix := viper.GetString("home.prefix")
-		if devDataDirPrefix != "" || viper.GetBool("dev") {
+		if viper.GetBool("dev") {
 			cfg.Node.Mode = ModeDev
-			var err error
-			dataDir, err = homedir.Expand(path.Join("~", "."+AppName+"_"+devDataDirPrefix))
-			if err != nil {
-				log.Fatalf("Failed to get home directory: %s", err)
-			}
 		}
+	}
+
+	// Get home directory ID and set mode to Dev if user provided a home.id value
+	homeID := viper.GetString("home.id")
+	if homeID != "" {
+		cfg.Node.Mode = ModeDev
+		homeID = fmt.Sprintf("_%s", homeID)
+	}
+
+	// Construct data directory
+	dataDir, err := homedir.Expand(path.Join("~", "."+AppName+homeID))
+	if err != nil {
+		log.Fatalf("Failed to get home directory: %s", err)
 	}
 
 	// Create the data directory and keystore directory

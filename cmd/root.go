@@ -223,7 +223,7 @@ func init() {
 
 	// Register flags
 	RootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
-	RootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
+	RootCmd.PersistentFlags().String("home.id", "", "Adds a prefix to the home directory in dev mode")
 	RootCmd.PersistentFlags().String("gitpath", "git", "Set path to git executable")
 	RootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	RootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
@@ -245,7 +245,7 @@ func init() {
 	_ = viper.BindPFlag("net.version", RootCmd.PersistentFlags().Lookup("net"))
 	_ = viper.BindPFlag("dev", RootCmd.PersistentFlags().Lookup("dev"))
 	_ = viper.BindPFlag("home", RootCmd.PersistentFlags().Lookup("home"))
-	_ = viper.BindPFlag("home.prefix", RootCmd.PersistentFlags().Lookup("home.prefix"))
+	_ = viper.BindPFlag("home.id", RootCmd.PersistentFlags().Lookup("home.id"))
 	_ = viper.BindPFlag("no-log", RootCmd.PersistentFlags().Lookup("no-log"))
 	_ = viper.BindPFlag("loglevel", RootCmd.PersistentFlags().Lookup("loglevel"))
 	_ = viper.BindPFlag("no-colors", RootCmd.PersistentFlags().Lookup("no-colors"))
