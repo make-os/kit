@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/data"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/util"
@@ -141,7 +140,6 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 
 // IsTendermintInitialized checks if node is initialized
 func IsTendermintInitialized(tmcfg *config.Config) bool {
-	pp.Println(tmcfg.PrivValidatorKeyFile())
 	return tmos.FileExists(tmcfg.PrivValidatorKeyFile())
 }
 
