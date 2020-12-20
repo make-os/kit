@@ -51,9 +51,7 @@ require (
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
 	github.com/libp2p/go-libp2p v0.12.0
 	github.com/libp2p/go-libp2p-core v0.7.0
-	github.com/libp2p/go-libp2p-discovery v0.5.0
 	github.com/libp2p/go-libp2p-kad-dht v0.11.1
-	github.com/libp2p/go-libp2p-pubsub v0.4.0
 	github.com/libp2p/go-libp2p-record v0.1.3
 	github.com/libp2p/go-sockaddr v0.1.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
@@ -86,7 +84,6 @@ require (
 	github.com/stretchr/objx v0.2.0
 	github.com/stretchr/testify v1.6.1
 	github.com/tebeka/strftime v0.1.3 // indirect
-	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.34.0
 	github.com/tendermint/tm-db v0.6.3
 	github.com/thoas/go-funk v0.4.0

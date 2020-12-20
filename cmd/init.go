@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -26,19 +25,9 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var cdc = amino.NewCodec()
-
 func genNodeKey(filePath string, pk ed25519.PrivKey) (*p2p.NodeKey, error) {
-	nodeKey := &p2p.NodeKey{
-		PrivKey: pk,
-	}
-
-	jsonBytes, err := cdc.MarshalJSON(nodeKey)
-	if err != nil {
-		return nil, err
-	}
-	err = ioutil.WriteFile(filePath, jsonBytes, 0600)
-	if err != nil {
+	nodeKey := &p2p.NodeKey{PrivKey: pk}
+	if err := nodeKey.SaveAs(filePath); err != nil {
 		return nil, err
 	}
 	return nodeKey, nil

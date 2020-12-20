@@ -323,7 +323,7 @@ func (sv *Server) Start() error {
 	sv.srv = &http.Server{Addr: sv.addr, Handler: sv.mux}
 
 	go func() {
-		if err := sv.srv.ListenAndServe(); err != nil {
+		if err := sv.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			sv.log.Error("Failed to serve remote server", "Err", err)
 		}
 		sv.wg.Done()
