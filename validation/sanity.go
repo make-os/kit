@@ -155,7 +155,7 @@ func CheckTxCoinTransfer(tx *txns.TxCoinTransfer, index int) error {
 // CheckTxTicketPurchase performs sanity checks on TxTicketPurchase
 func CheckTxTicketPurchase(tx *txns.TxTicketPurchase, index int) error {
 
-	if tx.Type != txns.TxTypeValidatorTicket && tx.Type != txns.TxTypeHostTicket {
+	if tx.Type != txns.TxTypeHostTicket {
 		return feI(index, "type", "type is invalid")
 	}
 
