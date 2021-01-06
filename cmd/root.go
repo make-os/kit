@@ -183,7 +183,7 @@ var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		repo, _ := common.GetRepoAndClient(cfg, "")
+		repo, _ := common.GetRepoAndClient(cmd, cfg, "")
 
 		if isAskPassRequest(args) {
 			if err := repocmd.AskPassCmd(repo, args, os.Stdout); err != nil {

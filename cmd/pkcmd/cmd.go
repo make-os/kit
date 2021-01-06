@@ -45,7 +45,7 @@ var PushKeyRegCmd = &cobra.Command{
 		scopes, _ := cmd.Flags().GetStringSlice("scopes")
 		feeCap, _ := cmd.Flags().GetFloat64("feeCap")
 
-		_, client := common.GetRepoAndClient(cfg, "")
+		_, client := common.GetRepoAndClient(cmd, cfg, "")
 		if err := RegisterCmd(cfg, &RegisterArgs{
 			Target:              target,
 			TargetPass:          targetPass,

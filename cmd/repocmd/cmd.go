@@ -56,7 +56,7 @@ var repoCreateCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		configPath, _ := cmd.Flags().GetString("config")
 
-		_, client := common.GetRepoAndClient(cfg, "")
+		_, client := common.GetRepoAndClient(cmd, cfg, "")
 		if err := CreateCmd(cfg, &CreateArgs{
 			Name:                args[0],
 			Fee:                 fee,
@@ -136,7 +136,7 @@ var repoVoteCmd = &cobra.Command{
 			proposalID = "MR" + mrID
 		}
 
-		_, client := common.GetRepoAndClient(cfg, "")
+		_, client := common.GetRepoAndClient(cmd, cfg, "")
 		if err := VoteCmd(cfg, &VoteArgs{
 			RepoName:            repoName,
 			ProposalID:          proposalID,
@@ -196,7 +196,7 @@ var repoConfigCmd = &cobra.Command{
 			}
 		}
 
-		targetRepo, client := common.GetRepoAndClient(cfg, targetRepoDir)
+		targetRepo, client := common.GetRepoAndClient(cmd, cfg, targetRepoDir)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -300,7 +300,7 @@ var repoHookCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		isPostCommit, _ := cmd.Flags().GetBool("post-commit")
 
-		targetRepo, client := common.GetRepoAndClient(cfg, "")
+		targetRepo, client := common.GetRepoAndClient(cmd, cfg, "")
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -373,11 +373,8 @@ var repoInitCmd = &cobra.Command{
 		fmt.Println(colorfmt.YellowStringf("Step 3:"), "Configured repository")
 		repoConfigCmd.Run(cmd, args)
 
-		fmt.Printf(`
-
-Success! Created a new repository %s:
+		fmt.Printf(`Success! Created a new repository %s:
 Enter the repository by typing:
-
   `+colorfmt.CyanString("cd "+args[0])+`
 
 Inside that repository, you can run the following commands:

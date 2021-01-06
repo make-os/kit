@@ -19,11 +19,13 @@ import (
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/rpc/client"
 	types2 "github.com/make-os/kit/rpc/types"
+	api2 "github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/util/api"
 	"github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
@@ -191,16 +193,27 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client)
 	s.Prefix = " "
 	s.Start()
 	lastStatus := ""
+
+	var err error
+	var resp *api2.ResultTx
+	attempts := 0
 	for {
-		time.Sleep(1 * time.Second)
-		resp, err := api.GetTransaction(hash, rpcClient)
-		if err != nil {
-			s.Stop()
+		attempts += 1
+		if attempts == 3 {
 			return err
 		}
+
+		time.Sleep(1 * time.Second)
+		resp, err = api.GetTransaction(hash, rpcClient)
+		if err != nil {
+			s.Stop()
+			continue
+		}
+
 		if lastStatus == resp.Status {
 			continue
 		}
+
 		lastStatus = resp.Status
 		if resp.Status == types3.TxStatusInMempool {
 			s.Suffix = colorfmt.YellowStringf(" In mempool")
@@ -218,7 +231,7 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client)
 // GetRPCClient returns an RPC client. If target repo is provided,
 // the RPC server information will be extracted from one of the remote URLs.
 // The target remote is set via viper's "remote.name" or "--remote" root flag.
-func GetRPCClient(targetRepo remotetypes.LocalRepo) (*client.RPCClient, error) {
+func GetRPCClient(cmd *cobra.Command, targetRepo remotetypes.LocalRepo) (*client.RPCClient, error) {
 	remoteName := viper.GetString("remote.name")
 	rpcAddress := viper.GetString("remote.address")
 	rpcUser := viper.GetString("rpc.user")
@@ -228,8 +241,9 @@ func GetRPCClient(targetRepo remotetypes.LocalRepo) (*client.RPCClient, error) {
 	var err error
 	var host, port string
 
-	// If a target repo is provided, get the URL from the specified remote
-	if targetRepo != nil {
+	// If a target repo is provided and --remote.address flag is unset,
+	// get the rpc address from the specified repo remote.
+	if targetRepo != nil && !cmd.Flags().Changed("remote.address") {
 		h, p, ok := GetRemoteAddrFromRepo(targetRepo, remoteName)
 		if ok {
 			host, port = h, cast.ToString(p)
@@ -272,7 +286,7 @@ func GetRemoteAddrFromRepo(repo remotetypes.LocalRepo, remoteName string) (strin
 
 // GetRepoAndClient opens a the repository on the current working directory
 // and returns an RPC client.
-func GetRepoAndClient(cfg *config.AppConfig, repoDir string) (remotetypes.LocalRepo, types2.Client) {
+func GetRepoAndClient(cmd *cobra.Command, cfg *config.AppConfig, repoDir string) (remotetypes.LocalRepo, types2.Client) {
 
 	var err error
 	var targetRepo remotetypes.LocalRepo
@@ -283,7 +297,7 @@ func GetRepoAndClient(cfg *config.AppConfig, repoDir string) (remotetypes.LocalR
 		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
 	}
 
-	rpcClient, err := GetRPCClient(targetRepo)
+	rpcClient, err := GetRPCClient(cmd, targetRepo)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

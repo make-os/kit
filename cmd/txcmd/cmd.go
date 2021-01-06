@@ -38,7 +38,7 @@ var txGetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		status, _ := cmd.Flags().GetBool("status")
 
-		_, client := common.GetRepoAndClient(cfg, "")
+		_, client := common.GetRepoAndClient(cmd, cfg, "")
 		if err := GetCmd(&GetArgs{
 			Hash:           args[0],
 			RPCClient:      client,
