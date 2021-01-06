@@ -80,7 +80,6 @@ var _ = Describe("Validation", func() {
 			{&types.Note{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
 			{&types.Note{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
 			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
 			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now}, "field:accountNonce, msg:account nonce must be greater than zero"},
 			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1}, "field:nodePubKey, msg:push node public key is required"},
 			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1, CreatorPubKey: nodePubKey}, "field:nodeSig, msg:push node signature is required"},

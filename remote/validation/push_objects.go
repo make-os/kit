@@ -2,7 +2,6 @@ package validation
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -239,9 +238,6 @@ func CheckPushNoteSanity(note pptyp.PushNote) error {
 
 	if note.GetTimestamp() == 0 {
 		return util.FieldError("timestamp", "timestamp is required")
-	}
-	if note.GetTimestamp() > time.Now().Unix() {
-		return util.FieldError("timestamp", "timestamp cannot be a future time")
 	}
 
 	if note.GetPusherAccountNonce() == 0 {
