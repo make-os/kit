@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,17 +13,15 @@ import (
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
+	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/storage"
-	"gopkg.in/yaml.v2"
-
-	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var ErrNotAnAncestor = fmt.Errorf("not an ancestor")
@@ -430,7 +429,7 @@ func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 		defer f.Close()
 	}
 
-	return yaml.NewEncoder(f).Encode(cfg)
+	return json.NewEncoder(f).Encode(cfg)
 }
 
 // GetLocalConfig returns the repo's 'repocfg' config object.
@@ -448,7 +447,7 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 	}
 
 	var cfg = types.EmptyLocalConfig()
-	if err := yaml.Unmarshal(bz, cfg); err != nil {
+	if err := json.Unmarshal(bz, cfg); err != nil {
 		return nil, err
 	}
 

@@ -146,7 +146,7 @@ type LocalRepo interface {
 }
 
 type LocalConfig struct {
-	Tokens map[string][]string `yaml:",flow"`
+	Tokens map[string][]string `json:"tokens"`
 }
 
 // EmptyLocalConfig returns an instance of LocalConfig with fields initialized to zero values.
