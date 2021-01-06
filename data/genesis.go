@@ -4,7 +4,7 @@ const GenesisData = `[
     {
         "type": "account",
         "address": "os1qfrysysaawvjlgfz5ecqv569adkkw7sxudy36u",
-        "balance": "1000000"
+        "balance": "100000000"
     },
     {
         "type": "repo",
