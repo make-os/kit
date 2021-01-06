@@ -66,6 +66,6 @@ var TestnetV1 = &ChainInfo{
 		"48GKXaSLgJ5ox2C1jDshFGtD6Y4Zhd1doxK6iTDp3KCSZjzdWKt",
 	},
 	Configurator: func(cfg *AppConfig, tmc *tmcfg.Config) {
-		tmc.Consensus.CreateEmptyBlocksInterval = 60 * time.Second
+		tmc.Consensus.CreateEmptyBlocksInterval = 10 * time.Minute
 	},
 }
