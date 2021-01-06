@@ -224,10 +224,14 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 		homeID = fmt.Sprintf("_%s", homeID)
 	}
 
-	// Construct data directory
-	dataDir, err := homedir.Expand(path.Join("~", "."+AppName+homeID))
-	if err != nil {
-		log.Fatalf("Failed to get home directory: %s", err)
+	// Construct data directory, if not set in config
+	dataDir := cfg.dataDir
+	if dataDir == "" {
+		var err error
+		dataDir, err = homedir.Expand(path.Join("~", "."+AppName+homeID))
+		if err != nil {
+			log.Fatalf("Failed to get home directory: %s", err)
+		}
 	}
 
 	// Create the data directory and keystore directory

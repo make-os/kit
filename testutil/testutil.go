@@ -47,12 +47,14 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	var tmcfg = tmconfig.DefaultConfig()
 	cfg = config.EmptyAppConfig()
 	cfg.Node.Mode = config.ModeTest
+	cfg.SetDataDir(dataDir)
+	tmcfg.SetRoot(path.Join(dataDir, viper.GetString("net.version")))
 	config.Configure(cfg, tmcfg, true)
 
 	// Initialize the directory
 	commands.SetConfig(tmcfg)
 	tmconfig.EnsureRoot(tmcfg.RootDir)
-	commands.InitFilesCmd.RunE(nil, nil)
+	_ = commands.InitFilesCmd.RunE(nil, nil)
 	cfg.LoadKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile())
 
 	// Replace logger with Noop logger
