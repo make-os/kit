@@ -12,6 +12,7 @@ var networks = map[string]Info{}
 
 func init() {
 	networks[cast.ToString(TestnetV1.GetVersion())] = TestnetV1
+	networks[cast.ToString(Dev.GetVersion())] = Dev
 }
 
 // Get finds a chain's info  by version
@@ -52,6 +53,17 @@ func (ci *ChainInfo) GetName() string {
 // GetVersion returns the chain's numeric version
 func (ci *ChainInfo) GetVersion() int {
 	return ci.NetVersion
+}
+
+// Dev contains configurations for development
+var Dev = &ChainInfo{
+	Name:        "dev",
+	NetVersion:  1000,
+	GenesisTime: 1595700581,
+	Validators:  []string{},
+	Configurator: func(cfg *AppConfig, tmc *tmcfg.Config) {
+		tmc.Consensus.CreateEmptyBlocksInterval = 1 * time.Minute
+	},
 }
 
 // TestnetV1 contains configurations for testnet v1 chain

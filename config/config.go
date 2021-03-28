@@ -194,19 +194,18 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
 	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !cfg.IsDev()
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
-	netVersion := viper.GetString("net.version")
-	chain := Get(netVersion)
 
 	if cfg.IsTest() {
 		return
 	}
 
+	// Check if there is a pre-defined chain configurer for the version.
+	// If yes, use it to apply configurations, otherwise, return
+	netVersion := viper.GetString("net.version")
+	chain := Get(netVersion)
 	if chain != nil {
 		chain.Config(cfg, tmcfg)
-		return
 	}
-
-	log.Fatalf("network version (%s) is unknown", netVersion)
 }
 
 func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
