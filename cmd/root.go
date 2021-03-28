@@ -254,4 +254,5 @@ func init() {
 	_ = viper.BindPFlag("remote.address", RootCmd.PersistentFlags().Lookup("remote.address"))
 	_ = viper.BindPFlag("rpc.https", RootCmd.PersistentFlags().Lookup("rpc.https"))
 	_ = viper.BindPFlag("remote.name", RootCmd.PersistentFlags().Lookup("remote"))
+	_ = viper.BindEnv("node.ignoreSeeds")
 }
