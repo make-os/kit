@@ -29,7 +29,7 @@ func (a *RepoAPI) getRepo(params interface{}) (resp *rpc.Response) {
 	name := obj.Get("name").Str()
 	opts := modulestypes.GetOptions{}
 	opts.Height = cast.ToUint64(obj.Get("height").Inter())
-	opts.NoProposals = obj.Get("noProposals").Bool()
+	opts.Select = cast.ToStringSlice(obj.Get("select").InterSlice())
 	return rpc.Success(a.mods.Repo.Get(name, opts))
 }
 

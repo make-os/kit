@@ -13,7 +13,6 @@ import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
-	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
@@ -242,12 +241,12 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 // RETURN <state.Repository>
 func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {
 	var blockHeight uint64
-	var noProposals bool
+	var selectors []string
 	var err error
 
 	if len(opts) > 0 {
 		opt := opts[0]
-		noProposals = opt.NoProposals
+		selectors = opt.Select
 		if opt.Height != nil {
 			blockHeight, err = cast.ToUint64E(opt.Height)
 			if err != nil {
@@ -258,8 +257,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 
 	if m.IsAttached() {
 		resp, err := m.Client.Repo().Get(name, &api.GetRepoOpts{
-			NoProposals: noProposals,
-			Height:      blockHeight,
+			Height: blockHeight,
 		})
 		if err != nil {
 			panic(err)
@@ -287,16 +285,18 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		}
 	}
 
-	var repo *state.Repository
-	if !noProposals {
-		repo = m.logic.RepoKeeper().Get(name, blockHeight)
-	} else {
-		repo = m.logic.RepoKeeper().GetNoPopulate(name, blockHeight)
-		repo.Proposals = state.RepoProposals{}
-	}
+	repo := m.logic.RepoKeeper().Get(name, blockHeight)
 
 	if repo.IsNil() {
 		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
+	}
+
+	if len(selectors) > 0 {
+		selected, err := Select(util.MustToJSON(repo), selectors...)
+		if err != nil {
+			panic(se(400, StatusCodeInvalidParam, "select", err.Error()))
+		}
+		return selected
 	}
 
 	return util.ToMap(repo)

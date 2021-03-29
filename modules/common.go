@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/fatih/structs"
@@ -15,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -234,4 +237,30 @@ func Normalize(res interface{}, ignoreFields ...string) interface{} {
 	}
 
 	return util.Map(m)
+}
+
+// Select selects fields and their value from the given JSON string using dot notation.
+func Select(json string, selectors ...string) (map[string]interface{}, error) {
+	out := map[string]interface{}{}
+	for i, selector := range selectors {
+		match, _ := regexp.MatchString("(?i)^[a-z0-9/_.-]+([.][a-z0-9/_.-]+)*?$", selector)
+		if !match {
+			return nil, fmt.Errorf("selector at index=%d is malformed", i)
+		}
+
+		res := gjson.Get(json, selector)
+		selectorParts := strings.Split(selector, ".")
+		var m = out
+		for i, part := range selectorParts {
+			if len(selectorParts) == (i + 1) {
+				m[part] = res.Value()
+				continue
+			}
+			if _, ok := m[part]; !ok {
+				m[part] = map[string]interface{}{}
+			}
+			m = m[part].(map[string]interface{})
+		}
+	}
+	return out, nil
 }

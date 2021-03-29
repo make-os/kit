@@ -138,8 +138,8 @@ type TicketModule interface {
 }
 
 type GetOptions struct {
-	Height      interface{} `json:"height"`
-	NoProposals bool        `json:"noProps"`
+	Height interface{} `json:"height"`
+	Select []string    `json:"select"`
 }
 
 type RepoModule interface {

@@ -244,15 +244,6 @@ var _ = Describe("RepoModule", func() {
 			})
 		})
 
-		It("should request for repo with proposals when noProposal=false", func() {
-			repo := state.BareRepository()
-			repo.Balance = "100"
-			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
-			res := m.Get("repo1", types.GetOptions{Height: 0, NoProposals: false})
-			Expect(res).ToNot(BeNil())
-			Expect(res["balance"]).To(Equal(util.String("100")))
-		})
-
 		It("should panic if in attach mode and RPC client method returns error", func() {
 			mockClient := mocks2.NewMockClient(ctrl)
 			mockRepoClient := mocks2.NewMockRepo(ctrl)
@@ -278,13 +269,24 @@ var _ = Describe("RepoModule", func() {
 			})
 		})
 
-		It("should request for repo without proposals (using GetNoPopulate) when noProposal=true", func() {
+		It("should return repo when it exist", func() {
 			repo := state.BareRepository()
 			repo.Balance = "100"
-			mockRepoKeeper.EXPECT().GetNoPopulate("repo1", uint64(0)).Return(repo)
-			res := m.Get("repo1", types.GetOptions{Height: 0, NoProposals: true})
+			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+			res := m.Get("repo1", types.GetOptions{Height: 0})
 			Expect(res).ToNot(BeNil())
 			Expect(res["balance"]).To(Equal(util.String("100")))
+		})
+
+		It("should return repo and selected fields when it exist", func() {
+			repo := state.BareRepository()
+			repo.Balance = "100"
+			repo.CreatedAt = 1000000
+			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+			res := m.Get("repo1", types.GetOptions{Height: 0, Select: []string{"createdAt"}})
+			Expect(res).ToNot(BeNil())
+			Expect(res["createdAt"]).To(Equal("1000000"))
+			Expect(res).NotTo(HaveKey("balance"))
 		})
 
 		It("should panic when repo does not exist", func() {

@@ -68,6 +68,16 @@ func ToObject(bs []byte, dest interface{}) error {
 	return msgpack.NewDecoder(bytes.NewBuffer(bs)).Decode(dest)
 }
 
+// MustToJSON converts the give obj to valid JSON.
+// Panics if unsuccessful.
+func MustToJSON(obj interface{}) string {
+	res, err := json.Marshal(obj)
+	if err != nil {
+		panic(err)
+	}
+	return string(res)
+}
+
 // RandString is like RandBytes but returns string
 func RandString(n int) string {
 	return string(RandBytes(n))

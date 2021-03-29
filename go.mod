@@ -87,6 +87,7 @@ require (
 	github.com/tendermint/tendermint v0.34.0
 	github.com/tendermint/tm-db v0.6.3
 	github.com/thoas/go-funk v0.4.0
+	github.com/tidwall/gjson v1.7.4
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	go.dedis.ch/kyber/v3 v3.0.11

@@ -295,4 +295,45 @@ var _ = Describe("Common", func() {
 			})
 		}
 	})
+
+	Describe(".Select", func() {
+		It("should select correctly from a 1-level JSON string", func() {
+			m := map[string]interface{}{"age": 100}
+			out, err := Select(util.MustToJSON(m), "age")
+			Expect(err).To(BeNil())
+			Expect(out).To(Equal(map[string]interface{}{
+				"age": float64(100),
+			}))
+		})
+
+		It("should select correctly from a 2-level JSON string", func() {
+			m := map[string]interface{}{"person": map[string]interface{}{"age": 100, "gender": "f"}}
+			out, err := Select(util.MustToJSON(m), "person.age")
+			Expect(err).To(BeNil())
+			Expect(out).To(Equal(map[string]interface{}{
+				"person": map[string]interface{}{
+					"age": float64(100),
+				},
+			}))
+		})
+
+		It("should select correctly from a 2-level JSON string with 2 selectors", func() {
+			m := map[string]interface{}{"person": map[string]interface{}{"age": 100, "gender": "f"}}
+			out, err := Select(util.MustToJSON(m), "person.age", "person.gender")
+			Expect(err).To(BeNil())
+			Expect(out).To(Equal(map[string]interface{}{
+				"person": map[string]interface{}{
+					"age":    float64(100),
+					"gender": "f",
+				},
+			}))
+		})
+
+		It("should return error if selector format is malformed", func() {
+			m := map[string]interface{}{"person": map[string]interface{}{"age": 100, "gender": "f"}}
+			_, err := Select(util.MustToJSON(m), "person.age", "person*gender")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("selector at index=1 is malformed"))
+		})
+	})
 })
