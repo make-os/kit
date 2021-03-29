@@ -390,6 +390,8 @@ func (h *BasicHandler) HandlePushNote(note types.PushNote) (err error) {
 		return err
 	}
 
+	h.log.Debug("Added push note to push pool", "TxID", note.ID())
+
 	// Announce the pushed objects (note and endorsement)
 	// Broadcast the push note if announcement succeeded without a failure.
 	h.HandleAnnouncement(func(errCount int) {
