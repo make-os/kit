@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
@@ -421,12 +422,12 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxTicketPurchase", func() {
+	Describe(".CheckTxTicketPurchase (Host Ticket)", func() {
 		var tx *txns.TxTicketPurchase
 		BeforeEach(func() {
-			tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
+			tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 			tx.Fee = "1"
-			tx.Value = "1"
+			tx.Value = util.String(params.MinHostStake.String())
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -460,55 +461,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:value, msg:value must be a positive number"))
 			})
 
-			It("has no nonce", func() {
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
-			})
-
-			It("has type of TxTypeHostTicket and BLS public key is unset", func() {
+			It("has no BLS public key", func() {
 				params.MinHostStake = decimal.NewFromFloat(5)
 				tx.Value = "10"
 				tx.Nonce = 1
@@ -519,12 +472,71 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key is required"))
 			})
 
-			It("has type of TxTypeHostTicket and BLS public key has invalid length", func() {
+			It("has no nonce", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
+			})
+
+			It("has invalid fee", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				tx.Nonce = 1
+				tx.Fee = "invalid"
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
+			})
+
+			It("has no timestamp", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				tx.Nonce = 1
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
+			})
+
+			It("has no public key", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
+			})
+
+			It("has no signature", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
+			})
+
+			It("has invalid signature", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+				tx.Sig = []byte("invalid")
+				err := validation.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
+			})
+
+			It("has BLS public key has invalid length", func() {
 				params.MinHostStake = decimal.NewFromFloat(5)
 				tx.Value = "10"
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.Type = txns.TxTypeHostTicket
 				tx.BLSPubKey = util.RandBytes(32)
 				err := validation.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -534,6 +546,8 @@ var _ = Describe("TxValidator", func() {
 
 		When("it has no error", func() {
 			It("should return no error", func() {
+				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
+				tx.BLSPubKey = pk.Bytes()
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
