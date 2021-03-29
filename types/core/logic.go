@@ -76,19 +76,16 @@ type BalanceAccount interface {
 // AccountKeeper describes an interface for accessing account data
 type AccountKeeper interface {
 	// Get returns an account by address.
-	//
-	// ARGS:
-	// address: The address of the account
-	// blockNum: The target block to query (Optional. Default: latest)
-	//
-	// CONTRACT: It returns an empty Account if no account is found.
+	//  ARGS:
+	//  - address: The address of the account
+	//  - blockNum: The target block to query (Optional. Default: latest)
+	//  CONTRACT: It returns an empty Account if no account is found.
 	Get(address identifier.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
-	//
-	// ARGS:
-	// address: The address of the account to update
-	// udp: The updated account object to replace the existing object.
+	//  ARGS:
+	//  - address: The address of the account to update
+	//  - udp: The updated account object to replace the existing object.
 	Update(address identifier.Address, upd *state.Account)
 }
 
@@ -197,23 +194,22 @@ type EndingProposals struct {
 // NamespaceKeeper describes an interface for accessing namespace data
 type NamespaceKeeper interface {
 	// Get finds a namespace by name.
-	// ARGS:
-	// name: The name of the namespace to find.
-	// blockNum: The target block to query (Optional. Default: latest)
-	//
-	// CONTRACT: It returns an empty Namespace if no matching namespace is found.
+	//  ARGS:
+	//  - name: The name of the namespace to find.
+	//  - blockNum: The target block to query (Optional. Default: latest)
+	//  CONTRACT: It returns an empty Namespace if no matching namespace is found.
 	Get(name string, blockNum ...uint64) *state.Namespace
 
 	// GetTarget looks up the target of a full namespace path
-	// ARGS:
-	// path: The path to look up.
-	// blockNum: The target block to query (Optional. Default: latest)
+	//  ARGS:
+	//  - path: The path to look up.
+	//  - blockNum: The target block to query (Optional. Default: latest)
 	GetTarget(path string, blockNum ...uint64) (string, error)
 
 	// Update sets a new object at the given name.
-	// ARGS:
-	// name: The name of the namespace to update
-	// udp: The updated namespace object to replace the existing object.
+	//  ARGS:
+	//  - name: The name of the namespace to update
+	//  - udp: The updated namespace object to replace the existing object.
 	Update(name string, upd *state.Namespace)
 }
 
@@ -221,31 +217,26 @@ type NamespaceKeeper interface {
 type PushKeyKeeper interface {
 
 	// Update sets a new value for the given public key id
-	//
-	// ARGS:
-	// pushKeyID: The public key unique ID
-	// udp: The updated object to replace the existing object.
+	//  ARGS:
+	//  - pushKeyID: The public key unique ID
+	//  - udp: The updated object to replace the existing object.
 	Update(pushKeyID string, upd *state.PushKey) error
 
 	// Get finds and returns a push key
-	//
-	// ARGS:
-	// pushKeyID: The unique ID of the public key
-	// blockNum: The target block to query (Optional. Default: latest)
-	//
-	// CONTRACT: It returns an empty Account if no account is found.
+	//  ARGS:
+	//  - pushKeyID: The unique ID of the public key
+	//  - blockNum: The target block to query (Optional. Default: latest)
+	//  CONTRACT: It returns an empty Account if no account is found.
 	Get(pushKeyID string, blockNum ...uint64) *state.PushKey
 
 	// GetByAddress returns all public keys associated with the given address
-	//
-	// ARGS:
-	// address: The target address
+	//  ARGS:
+	//  - address: The target address
 	GetByAddress(address string) (pushKeys []string)
 
 	// Remove removes a push key by id
-	//
-	// ARGS:
-	// pushKeyID: The public key unique ID
+	//  ARGS:
+	//  - pushKeyID: The public key unique ID
 	Remove(pushKeyID string) bool
 }
 

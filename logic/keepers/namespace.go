@@ -21,11 +21,10 @@ func NewNamespaceKeeper(state *tree.SafeTree) *NamespaceKeeper {
 }
 
 // Get finds a namespace by name.
-// ARGS:
-// name: The name of the namespace to find.
-// blockNum: The target block to query (Optional. Default: latest)
-//
-// CONTRACT: It returns an empty Namespace if no matching namespace is found.
+//  ARGS:
+//  - name: The name of the namespace to find.
+//  - blockNum: The target block to query (Optional. Default: latest)
+//  CONTRACT: It returns an empty Namespace if no matching namespace is found.
 func (a *NamespaceKeeper) Get(name string, blockNum ...uint64) *state.Namespace {
 
 	// Get version is provided
@@ -59,9 +58,9 @@ func (a *NamespaceKeeper) Get(name string, blockNum ...uint64) *state.Namespace 
 }
 
 // GetTarget looks up the target of a full namespace path
-// ARGS:
-// path: The path to look up.
-// blockNum: The target block to query (Optional. Default: latest)
+//  ARGS:
+//  - path: The path to look up.
+//  - blockNum: The target block to query (Optional. Default: latest)
 func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, error) {
 
 	// Get version is provided
@@ -90,9 +89,9 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 }
 
 // Update sets a new object at the given name.
-// ARGS:
-// name: The name of the namespace to update
-// udp: The updated namespace object to replace the existing object.
+//  ARGS:
+//  - name: The name of the namespace to update
+//  - udp: The updated namespace object to replace the existing object.
 func (a *NamespaceKeeper) Update(name string, upd *state.Namespace) {
 	a.state.Set(MakeNamespaceKey(name), upd.Bytes())
 }
