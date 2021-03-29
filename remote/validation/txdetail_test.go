@@ -13,6 +13,7 @@ import (
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util/crypto"
 	"github.com/mr-tron/base58"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -182,7 +183,7 @@ var _ = Describe("TxDetail", func() {
 			pk.Scopes = []string{"r/repo1"}
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(state.BareNamespace())
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(detail.RepoNamespace)).Return(state.BareNamespace())
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
@@ -210,7 +211,7 @@ var _ = Describe("TxDetail", func() {
 
 			ns := state.BareNamespace()
 			ns.Domains["domain"] = "r/something"
-			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(detail.RepoNamespace)).Return(ns)
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
@@ -226,7 +227,7 @@ var _ = Describe("TxDetail", func() {
 
 			ns := state.BareNamespace()
 			ns.Domains["domain"] = "r/real-repo"
-			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+			mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(detail.RepoNamespace)).Return(ns)
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
@@ -324,7 +325,7 @@ var _ = Describe("TxDetail", func() {
 
 					ns := state.BareNamespace()
 					ns.Owner = "os1abc"
-					mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash(detail.RepoNamespace)).Return(ns)
 
 					err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 					Expect(err).ToNot(BeNil())

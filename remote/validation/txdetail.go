@@ -85,7 +85,7 @@ func CheckTxDetailConsistency(txd *types.TxDetail, keepers core.Keepers, index i
 	var ns = state.BareNamespace()
 	var repoName = txd.RepoName
 	if txd.RepoNamespace != "" {
-		ns = keepers.NamespaceKeeper().Get(txd.RepoNamespace)
+		ns = keepers.NamespaceKeeper().Get(crypto2.MakeNamespaceHash(txd.RepoNamespace))
 		if ns.IsNil() {
 			return fe(index, "namespace", fmt.Sprintf("namespace (%s) is unknown", txd.RepoNamespace))
 		}
