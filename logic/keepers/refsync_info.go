@@ -40,7 +40,7 @@ func (t *RepoSyncInfoKeeper) Track(targets string, height ...uint64) error {
 	var final []string
 	for _, target := range strings.Split(targets, ",") {
 		target = strings.TrimSpace(target)
-		if identifier.IsUserURI(target) {
+		if identifier.IsUserNamespaceURI(target) {
 			nsName := identifier.GetNamespace(target)
 			nsDomain := identifier.GetDomain(target)
 			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))
@@ -122,7 +122,7 @@ func (t *RepoSyncInfoKeeper) UnTrack(targets string) error {
 	var final []string
 	for _, target := range strings.Split(targets, ",") {
 		target = strings.TrimSpace(target)
-		if identifier.IsUserURI(target) {
+		if identifier.IsUserNamespaceURI(target) {
 			nsName := identifier.GetNamespace(target)
 			nsDomain := identifier.GetDomain(target)
 			ns := NewNamespaceKeeper(t.state).Get(crypto.MakeNamespaceHash(nsName))

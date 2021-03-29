@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -15,6 +16,8 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/identifier"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
 )
@@ -262,6 +265,26 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 			panic(err)
 		}
 		return util.ToMap(resp)
+	}
+
+	if identifier.IsFullNamespaceURI(name) {
+		nsName := identifier.GetNamespace(name)
+		if nsName == identifier.NativeNamespaceRepoChar {
+			name = identifier.GetDomain(name)
+		} else {
+			ns := m.logic.NamespaceKeeper().Get(crypto.MakeNamespaceHash(nsName))
+			if ns.IsNil() {
+				panic(se(404, StatusCodeInvalidParam, "name", "namespace not found"))
+			}
+			name = ns.Domains.Get(identifier.GetDomain(name))
+			if name == "" {
+				panic(se(404, StatusCodeInvalidParam, "name", "namespace domain not found"))
+			}
+			if !strings.HasPrefix(name, identifier.NativeNamespaceRepo) {
+				panic(se(404, StatusCodeInvalidParam, "name", "namespace domain target is not a repository"))
+			}
+			name = identifier.GetDomain(name)
+		}
 	}
 
 	var repo *state.Repository

@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
@@ -28,7 +29,8 @@ var _ = Describe("RepoModule", func() {
 	var mockRepoSrv *mocks.MockRemoteServer
 	var mockMempoolReactor *mocks.MockMempoolReactor
 	var mockRepoKeeper *mocks.MockRepoKeeper
-	var MockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
+	var mockNSKeeper *mocks.MockNamespaceKeeper
+	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -37,11 +39,13 @@ var _ = Describe("RepoModule", func() {
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
-		MockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
+		mockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
+		mockNSKeeper = mocks.NewMockNamespaceKeeper(ctrl)
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
 		mockLogic.EXPECT().RepoKeeper().Return(mockRepoKeeper).AnyTimes()
 		mockLogic.EXPECT().GetRemoteServer().Return(mockRepoSrv).AnyTimes()
-		mockLogic.EXPECT().RepoSyncInfoKeeper().Return(MockRepoSyncInfoKeeper).AnyTimes()
+		mockLogic.EXPECT().RepoSyncInfoKeeper().Return(mockRepoSyncInfoKeeper).AnyTimes()
+		mockLogic.EXPECT().NamespaceKeeper().Return(mockNSKeeper).AnyTimes()
 		m = modules.NewRepoModule(mockService, mockRepoSrv, mockLogic)
 	})
 
@@ -291,6 +295,61 @@ var _ = Describe("RepoModule", func() {
 				m.Get("repo1")
 			})
 		})
+
+		When("full namespace URI is provided", func() {
+			When("uri=r/repo1", func() {
+				It("should attempt to get repo1", func() {
+					repo := state.BareRepository()
+					repo.Balance = "100"
+					mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+					res := m.Get("r/repo1")
+					Expect(res).ToNot(BeNil())
+					Expect(res["balance"]).To(Equal(util.String("100")))
+				})
+			})
+
+			When("uri=ns1/repo1", func() {
+				It("should panic if namespace=ns1 is unknown", func() {
+					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(state.BareNamespace())
+					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace not found", Field: "name"}
+					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+						m.Get("ns1/repo1")
+					})
+				})
+
+				It("should panic if domain=repo1 does not exist in the namespace", func() {
+					ns := state.BareNamespace()
+					ns.Domains["something"] = "r/target"
+					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
+					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain not found", Field: "name"}
+					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+						m.Get("ns1/repo1")
+					})
+				})
+
+				It("should panic if domain=repo1 points does not point to a native repo URI", func() {
+					ns := state.BareNamespace()
+					ns.Domains["repo1"] = "a/target"
+					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
+					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain target is not a repository", Field: "name"}
+					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+						m.Get("ns1/repo1")
+					})
+				})
+
+				It("should successfully return repo if domain and target are valid", func() {
+					repo := state.BareRepository()
+					repo.Balance = "100"
+					mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+					ns := state.BareNamespace()
+					ns.Domains["repo1"] = "r/repo1"
+					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
+					res := m.Get("ns1/repo1")
+					Expect(res).ToNot(BeNil())
+					Expect(res["balance"]).To(Equal(util.String("100")))
+				})
+			})
+		})
 	})
 
 	Describe(".Update", func() {
@@ -465,7 +524,7 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".Track", func() {
 		It("should panic if unable to add repo", func() {
-			MockRepoSyncInfoKeeper.EXPECT().Track("repo1", []uint64{100}).Return(fmt.Errorf("error"))
+			mockRepoSyncInfoKeeper.EXPECT().Track("repo1", []uint64{100}).Return(fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Track("repo1", 100)
@@ -473,7 +532,7 @@ var _ = Describe("RepoModule", func() {
 		})
 
 		It("should not panic if able to add repo", func() {
-			MockRepoSyncInfoKeeper.EXPECT().Track("repo1", []uint64{100}).Return(nil)
+			mockRepoSyncInfoKeeper.EXPECT().Track("repo1", []uint64{100}).Return(nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.Track("repo1", 100)
 			})
@@ -482,7 +541,7 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".UnTrack", func() {
 		It("should panic if unable to untrack repo", func() {
-			MockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1").Return(fmt.Errorf("error"))
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1").Return(fmt.Errorf("error"))
 			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnTrack("repo1")
@@ -490,7 +549,7 @@ var _ = Describe("RepoModule", func() {
 		})
 
 		It("should not panic if able to untrack repo", func() {
-			MockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1").Return(nil)
+			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1").Return(nil)
 			assert.NotPanics(GinkgoT(), func() {
 				m.UnTrack("repo1")
 			})
@@ -502,7 +561,7 @@ var _ = Describe("RepoModule", func() {
 			tracked := map[string]*core.TrackedRepo{
 				"repo1": {UpdatedAt: 10},
 			}
-			MockRepoSyncInfoKeeper.EXPECT().Tracked().Return(tracked)
+			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(tracked)
 			res := m.GetTracked()
 			Expect(res).To(Equal(util.Map(util.ToBasicMap(tracked))))
 		})

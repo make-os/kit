@@ -31,12 +31,12 @@ var _ = Describe("Address", func() {
 		})
 	})
 
-	Describe(".IsWholeURI", func() {
+	Describe(".IsFullNamespaceURI", func() {
 		It("should return expected result", func() {
-			Expect(IsWholeURI("r/domain")).To(BeTrue())
-			Expect(IsWholeURI("ns1/domain")).To(BeTrue())
-			Expect(IsWholeURI("ns1/")).To(BeFalse())
-			Expect(IsWholeURI("ns1")).To(BeFalse())
+			Expect(IsFullNamespaceURI("r/domain")).To(BeTrue())
+			Expect(IsFullNamespaceURI("ns1/domain")).To(BeTrue())
+			Expect(IsFullNamespaceURI("ns1/")).To(BeFalse())
+			Expect(IsFullNamespaceURI("ns1")).To(BeFalse())
 		})
 	})
 
@@ -52,25 +52,25 @@ var _ = Describe("Address", func() {
 		})
 	})
 
-	Describe(".IsUserURI", func() {
+	Describe(".IsUserNamespaceURI", func() {
 		It("should return false when address is not a non-default namespaced URI", func() {
-			Expect(IsUserURI("abcde")).To(BeFalse())
-			Expect(IsUserURI("r/abcde")).To(BeFalse())
-			Expect(IsUserURI("a/abcde")).To(BeFalse())
-			Expect(IsUserURI("z/abcde")).To(BeFalse())
-			Expect(IsUserURI("namespace/abcde")).To(BeTrue())
-			Expect(IsUserURI("namespace/")).To(BeTrue())
+			Expect(IsUserNamespaceURI("abcde")).To(BeFalse())
+			Expect(IsUserNamespaceURI("r/abcde")).To(BeFalse())
+			Expect(IsUserNamespaceURI("a/abcde")).To(BeFalse())
+			Expect(IsUserNamespaceURI("z/abcde")).To(BeFalse())
+			Expect(IsUserNamespaceURI("namespace/abcde")).To(BeTrue())
+			Expect(IsUserNamespaceURI("namespace/")).To(BeTrue())
 		})
 	})
 
-	Describe(".IsNamespace", func() {
+	Describe(".IsNamespaceURI", func() {
 		It("should return false when address is a namespaced URI", func() {
-			Expect(IsNamespace("abcde")).To(BeFalse())
-			Expect(IsNamespace("r/abcde")).To(BeTrue())
-			Expect(IsNamespace("a/abcde")).To(BeTrue())
-			Expect(IsNamespace("z/abcde")).To(BeFalse())
-			Expect(IsNamespace("namespace/abcde")).To(BeTrue())
-			Expect(IsNamespace("namespace/")).To(BeTrue())
+			Expect(IsNamespaceURI("abcde")).To(BeFalse())
+			Expect(IsNamespaceURI("r/abcde")).To(BeTrue())
+			Expect(IsNamespaceURI("a/abcde")).To(BeTrue())
+			Expect(IsNamespaceURI("z/abcde")).To(BeFalse())
+			Expect(IsNamespaceURI("namespace/abcde")).To(BeTrue())
+			Expect(IsNamespaceURI("namespace/")).To(BeTrue())
 		})
 	})
 })

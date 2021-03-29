@@ -167,7 +167,7 @@ func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, _ core.PushKey
 func IsBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromParams *state.Namespace) bool {
 	blocked := true
 	for _, scope := range scopes {
-		if identifier.IsNamespace(scope) {
+		if identifier.IsNamespaceURI(scope) {
 			ns, domain, _ := util.SplitNamespaceDomain(scope)
 
 			// If scope is r/repo-name, make sure tx info namespace is unset and repo name is 'repo-name'.
