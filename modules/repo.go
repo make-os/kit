@@ -241,7 +241,7 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 //
 // opts <map>: fetch options
 //  - opts.height: Query a specific block
-//  - opts.noProps: When true, the result will not include proposals
+//  - opts.select: Provide a list of dot-notated fields to be returned.
 //
 // RETURN <state.Repository>
 func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {

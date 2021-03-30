@@ -287,17 +287,6 @@ var _ = Describe("RepoModule", func() {
 			Expect(res["balance"]).To(Equal(util.String("100")))
 		})
 
-		It("should return repo and selected fields when it exist", func() {
-			repo := state.BareRepository()
-			repo.Balance = "100"
-			repo.CreatedAt = 1000000
-			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
-			res := m.Get("repo1", types.GetOptions{Height: 0, Select: []string{"createdAt"}})
-			Expect(res).ToNot(BeNil())
-			Expect(res["createdAt"]).To(Equal("1000000"))
-			Expect(res).NotTo(HaveKey("balance"))
-		})
-
 		It("should panic when repo does not exist", func() {
 			repo := state.BareRepository()
 			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
@@ -358,6 +347,32 @@ var _ = Describe("RepoModule", func() {
 					res := m.Get("ns1/repo1")
 					Expect(res).ToNot(BeNil())
 					Expect(res["balance"]).To(Equal(util.String("100")))
+				})
+			})
+		})
+
+		When("selector is provided", func() {
+			It("should return repo and selected fields when it exist", func() {
+				repo := state.BareRepository()
+				repo.Balance = "100"
+				repo.CreatedAt = 1000000
+				mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+				res := m.Get("repo1", types.GetOptions{Height: 0, Select: []string{"createdAt"}})
+				Expect(res).ToNot(BeNil())
+				Expect(res["createdAt"]).To(Equal("1000000"))
+				Expect(res).NotTo(HaveKey("balance"))
+			})
+
+			It("should panic when a selector is malformed", func() {
+				repo := state.BareRepository()
+				repo.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
+				ns := state.BareNamespace()
+				ns.Domains["repo1"] = "r/repo1"
+				mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
+				err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "selector at index=0 is malformed", Field: "select"}
+				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+					m.Get("ns1/repo1", types.GetOptions{Select: []string{"some*key"}})
 				})
 			})
 		})
