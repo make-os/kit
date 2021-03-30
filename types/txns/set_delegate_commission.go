@@ -92,9 +92,9 @@ func (tx *TxSetDelegateCommission) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
-// ToBasicMap returns a map equivalent of the transaction
+// ToJSONMap returns a map equivalent of the transaction
 func (tx *TxSetDelegateCommission) ToMap() map[string]interface{} {
-	m := util.ToBasicMap(tx)
+	m := util.ToJSONMap(tx)
 	return m
 }
 

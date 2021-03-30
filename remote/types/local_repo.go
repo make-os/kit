@@ -144,16 +144,17 @@ type LocalRepo interface {
 	// GetRepoConfig returns the 'repocfg' config object
 	GetRepoConfig() (*LocalConfig, error)
 
+	// ListPath returns a list of entries in a repository's path
 	ListPath(ref, path string) (res []ListPathValue, err error)
 }
 
 type ListPathValue struct {
-	Name      string
-	Hash      string
-	IsDir     bool
-	Size      int64
-	IsBinary  bool
-	UpdatedAt time.Time
+	Name      string `json:"name"`
+	Hash      string `json:"hash"`
+	IsDir     bool   `json:"isDir"`
+	Size      int64  `json:"size"`
+	IsBinary  bool   `json:"isBinary"`
+	UpdatedAt int64  `json:"updatedAt"`
 }
 
 type LocalConfig struct {
@@ -200,6 +201,7 @@ type GitModule interface {
 	RefFetch(args RefFetchArgs) error
 	GC(pruneExpire ...string) error
 	Size() (size float64, err error)
+	GetPathUpdateTime(path string) (time.Time, error)
 }
 
 // Commit represents a Commit.

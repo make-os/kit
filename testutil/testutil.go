@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	path "path/filepath"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +12,7 @@ import (
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/storage"
 	"github.com/phayes/freeport"
+	"github.com/pkg/errors"
 	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -59,6 +61,12 @@ func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 
 	// Replace logger with Noop logger
 	cfg.G().Log = logger.NewLogrusNoOp()
+
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find git executable")
+	}
+	cfg.Node.GitBinPath = gitPath
 
 	return cfg, err
 }

@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/remote/plumbing"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -550,4 +552,27 @@ func (gm *GitModule) Size() (size float64, err error) {
 	}
 
 	return
+}
+
+// GetPathUpdateTime returns the time a path was updated
+func (gm *GitModule) GetPathUpdateTime(path string) (time.Time, error) {
+	args := []string{"--no-pager", "log", "-1", "--format=%ad", "--date=iso", "--", path}
+	cmd := exec.Command(gm.gitBinPath, args...)
+	cmd.Dir = gm.path
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return time.Time{}, errors.Wrap(err, string(out))
+	}
+
+	outStr := strings.TrimSpace(string(out))
+	if len(outStr) == 0 {
+		return time.Time{}, fmt.Errorf("path not found")
+	}
+
+	t, err := dateparse.ParseAny(strings.TrimSpace(string(out)))
+	if err != nil {
+		return time.Time{}, errors.Wrap(err, "failed to parse time")
+	}
+
+	return t, nil
 }

@@ -99,7 +99,7 @@ var _ = Describe("NodeModule", func() {
 			bi := &state.BlockInfo{Height: 100}
 			mockSysKeeper.EXPECT().GetBlockInfo(int64(1)).Return(bi, nil)
 			res := m.GetBlockInfo("1")
-			Expect(res).To(Equal(util.Map(util.ToBasicMap(bi))))
+			Expect(res).To(Equal(util.Map(util.ToJSONMap(bi))))
 		})
 	})
 

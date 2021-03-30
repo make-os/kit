@@ -228,6 +228,21 @@ func (mr *MockGitModuleMockRecorder) GetMergeCommits(arg0 interface{}, arg1 ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockGitModule)(nil).GetMergeCommits), varargs...)
 }
 
+// GetPathUpdateTime mocks base method
+func (m *MockGitModule) GetPathUpdateTime(arg0 string) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPathUpdateTime", arg0)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPathUpdateTime indicates an expected call of GetPathUpdateTime
+func (mr *MockGitModuleMockRecorder) GetPathUpdateTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathUpdateTime", reflect.TypeOf((*MockGitModule)(nil).GetPathUpdateTime), arg0)
+}
+
 // GetRecentCommitHash mocks base method
 func (m *MockGitModule) GetRecentCommitHash() (string, error) {
 	m.ctrl.T.Helper()
@@ -866,6 +881,21 @@ func (m *MockLocalRepo) GetPath() string {
 func (mr *MockLocalRepoMockRecorder) GetPath() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockLocalRepo)(nil).GetPath))
+}
+
+// GetPathUpdateTime mocks base method
+func (m *MockLocalRepo) GetPathUpdateTime(arg0 string) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPathUpdateTime", arg0)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPathUpdateTime indicates an expected call of GetPathUpdateTime
+func (mr *MockLocalRepoMockRecorder) GetPathUpdateTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathUpdateTime", reflect.TypeOf((*MockLocalRepo)(nil).GetPathUpdateTime), arg0)
 }
 
 // GetRecentCommitHash mocks base method

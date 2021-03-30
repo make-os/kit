@@ -2,11 +2,12 @@ package modules
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/k0kubun/pp"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/ed25519"
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
@@ -55,7 +56,7 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
-		{Name: "listPath", Value: m.ListPath, Description: "List files and directories in a repository's path"},
+		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository's path"},
 	}
 }
 
@@ -468,25 +469,44 @@ func (m *RepoModule) UnTrack(names string) {
 
 // GetTracked returns the tracked repositories
 func (m *RepoModule) GetTracked() util.Map {
-	return util.ToBasicMap(m.logic.RepoSyncInfoKeeper().Tracked())
+	return util.ToJSONMap(m.logic.RepoSyncInfoKeeper().Tracked())
 }
 
-func (m *RepoModule) ListPath(repoName, path string) {
+// ListPath returns a list of entries in a repository's path
+//  - name: The name of the target repository.
+//  - path: The file or directory path to list
+//  - revision: The revision that will be queried (default: HEAD).
+func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map {
 
-	if repoName == "" {
+	if name == "" {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), repoName)
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
 	repo, err := repo2.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
 	}
 
-	items, err := repo.ListPath("HEAD", path)
-	if err != nil {
-		panic(se(500, StatusCodeInvalidParam, "name", err.Error()))
+	if strings.HasPrefix(path, "."+string(os.PathSeparator)) {
+		path = path[2:]
 	}
 
-	pp.Println(items)
+	var rev = "HEAD"
+	if len(revision) > 0 {
+		rev = revision[0]
+	}
+
+	items, err := repo.ListPath(rev, path)
+	if err != nil {
+		if err == repo2.ErrPathNotFound {
+			panic(se(404, StatusCodePathNotFound, "path", err.Error()))
+		}
+		if err == plumbing.ErrReferenceNotFound {
+			panic(se(404, StatusCodeReferenceNotFound, "revision", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.StructSliceToMap(items)
 }

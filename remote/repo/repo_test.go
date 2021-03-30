@@ -8,16 +8,15 @@ import (
 	"time"
 
 	config2 "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
 	rr "github.com/make-os/kit/remote/repo"
-	"github.com/make-os/kit/remote/types"
-	state2 "github.com/make-os/kit/types/state"
-
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/make-os/kit/config"
 	testutil2 "github.com/make-os/kit/remote/testutil"
+	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
+	state2 "github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,7 +27,7 @@ func TestRepo(t *testing.T) {
 	RunSpecs(t, "RepoContext Suite")
 }
 
-var _ = Describe("Repo", func() {
+var _ = FDescribe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, repoName string
@@ -355,6 +354,48 @@ var _ = Describe("Repo", func() {
 			Expect(ancestors).To(HaveLen(1))
 			Expect(ancestors[0].Hash.String()).To(Equal(c2))
 			Expect(ancestors[0].Hash.String()).To(Equal(c2))
+		})
+	})
+
+	Describe(".ListPath", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return [/a, air, file.txt, x.exe] when path is empty or '.'", func() {
+			for _, path := range []string{"", "."} {
+				res, err := r.ListPath("HEAD", path)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(4))
+				Expect(res[0].Name).To(Equal("a"))
+				Expect(res[1].Name).To(Equal("air"))
+				Expect(res[2].Name).To(Equal("file.txt"))
+				Expect(res[3].Name).To(Equal("x.exe"))
+			}
+		})
+
+		It("should return [/b, /c, file2.txt] when path is 'a'", func() {
+			res, err := r.ListPath("HEAD", "a")
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(3))
+			Expect(res[0].Name).To(Equal("b"))
+			Expect(res[0].IsDir).To(BeTrue())
+			Expect(res[0].IsBinary).To(BeFalse())
+			Expect(res[0].UpdatedAt).ToNot(BeZero())
+			Expect(res[1].Name).To(Equal("c"))
+			Expect(res[2].Name).To(Equal("file2.txt"))
+			Expect(res[2].IsDir).To(BeFalse())
+		})
+
+		It("should return [air] when path is 'air'", func() {
+			res, err := r.ListPath("HEAD", "air")
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(1))
+			Expect(res[0].Name).To(Equal("air"))
+			Expect(res[0].IsDir).To(BeFalse())
+			Expect(res[0].IsBinary).To(BeTrue())
+			Expect(res[0].UpdatedAt).ToNot(BeZero())
 		})
 	})
 })

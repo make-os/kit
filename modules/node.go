@@ -161,7 +161,7 @@ func (m *NodeModule) GetBlockInfo(height string) util.Map {
 		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	return util.ToBasicMap(res)
+	return util.ToJSONMap(res)
 }
 
 // GetValidators returns validators of a given block

@@ -31,8 +31,6 @@ var _ = Describe("SignTag", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockRepo = mocks.NewMockLocalRepo(ctrl)
 		key = ed25519.NewKeyFromIntSeed(1)
-		_ = mockRepo
-		_ = key
 	})
 
 	AfterEach(func() {

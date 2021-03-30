@@ -242,7 +242,7 @@ func (pt *Note) GetValue() util.String {
 // ToMap returns the map equivalent of the note
 func (pt *Note) ToMap() map[string]interface{} {
 	pt.TargetRepo = nil
-	return util.ToBasicMap(pt)
+	return util.ToJSONMap(pt)
 }
 
 // EndorsedReference describes the current state of a reference endorsed by a host

@@ -11,7 +11,7 @@ replace (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
-	github.com/Workiva/go-datastructures v1.0.52
+	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1
@@ -34,7 +34,6 @@ require (
 	github.com/go-openapi/strfmt v0.19.11 // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1
-	github.com/gogs/git-module v1.1.4
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.4.3
 	github.com/google/go-cmp v0.5.2
@@ -85,7 +84,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/objx v0.2.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/tendermint/tendermint v0.34.0
 	github.com/tendermint/tm-db v0.6.3

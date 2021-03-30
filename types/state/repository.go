@@ -221,7 +221,7 @@ func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 // Clone clones c
 func (c *RepoConfig) Clone() *RepoConfig {
 	var clone = BareRepoConfig()
-	m := util.ToBasicMap(c)
+	m := util.ToJSONMap(c)
 	_ = mapstructure.Decode(m, &clone)
 	return clone
 }
@@ -248,7 +248,7 @@ func (c *RepoConfig) IsNil() bool {
 
 // ToBasicMap converts the object to a basic map with all custom types stripped.
 func (c *RepoConfig) ToBasicMap() map[string]interface{} {
-	return util.ToBasicMap(c)
+	return util.ToJSONMap(c)
 }
 
 // ToMap converts the object to a map

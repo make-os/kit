@@ -25,7 +25,10 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var ErrNotAnAncestor = fmt.Errorf("not an ancestor")
+var (
+	ErrNotAnAncestor = fmt.Errorf("not an ancestor")
+	ErrPathNotFound  = fmt.Errorf("path not found")
+)
 
 // Get opens a local repository and returns a handle.
 func Get(path string) (types.LocalRepo, error) {
@@ -432,19 +435,6 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 	return cfg, nil
 }
 
-// GetPathUpdateTime returns the time a path was updated
-func (r *Repo) GetPathUpdateTime(path string) (time.Time, error) {
-	iter, err := r.Log(&git.LogOptions{FileName: &path, Order: git.LogOrderCommitterTime})
-	if err != nil {
-		return time.Time{}, err
-	}
-	recent, err := iter.Next()
-	if err != nil {
-		return time.Time{}, err
-	}
-	return recent.Committer.When.UTC(), nil
-}
-
 // ListPath lists entries in a given path on the given reference.
 func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error) {
 
@@ -471,6 +461,9 @@ func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error)
 
 	targetEntry, err = tree.FindEntry(path)
 	if err != nil {
+		if err == object.ErrEntryNotFound {
+			return nil, ErrPathNotFound
+		}
 		return nil, err
 	} else if targetEntry.Mode == filemode.Dir {
 		tree, _ = tree.Tree(path)
@@ -480,7 +473,7 @@ handleEntry:
 	processEntry := func(entry object.TreeEntry, tree *object.Tree) {
 		item := types.ListPathValue{}
 		item.Name = entry.Name
-		item.IsDir = true
+		item.IsDir = entry.Mode == filemode.Dir
 		item.Hash = entry.Hash.String()
 		if entry.Mode != filemode.Dir {
 			var file *object.File
@@ -488,13 +481,23 @@ handleEntry:
 			if err != nil {
 				return
 			}
-			item.Size = file.Size
 			item.IsBinary, _ = file.IsBinary()
-			item.IsDir = false
-			item.UpdatedAt, _ = r.GetPathUpdateTime(file.Name)
+			item.Size = file.Size
+
+			fullPath := filepath.Join(path, file.Name)
+			if targetEntry.Mode != filemode.Dir {
+				fullPath = file.Name
+			}
+
+			t, _ := r.GetPathUpdateTime(fullPath)
+			if !t.IsZero() {
+				item.UpdatedAt = t.Unix()
+			}
 		} else {
-			// pp.Println(r.GetPathUpdateTime(entry.Name))
-			// item.UpdatedAt, _ = r.GetPathUpdateTime(entry.Name)
+			t, _ := r.GetPathUpdateTime(filepath.Join(path, entry.Name))
+			if !t.IsZero() {
+				item.UpdatedAt = t.Unix()
+			}
 		}
 		res = append(res, item)
 	}
@@ -504,7 +507,7 @@ handleEntry:
 		for _, entry := range tree.Entries {
 			processEntry(entry, tree)
 		}
-	case filemode.Regular:
+	case filemode.Regular, filemode.Executable:
 		processEntry(*targetEntry, tree)
 	}
 

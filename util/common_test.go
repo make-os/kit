@@ -219,7 +219,7 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".ToBasicMap", func() {
+	Describe(".ToJSONMap", func() {
 
 		type testStruct struct {
 			Name string
@@ -233,7 +233,7 @@ var _ = Describe("Common", func() {
 
 	})
 
-	Describe(".ToBasicMap", func() {
+	Describe(".ToJSONMap", func() {
 
 		type testStruct struct {
 			Name string
@@ -243,7 +243,7 @@ var _ = Describe("Common", func() {
 		It("should return correct map equivalent", func() {
 			s := testStruct{Name: "odion", Age: 100}
 			expected := map[string]interface{}{"Name": "odion", "Age": float64(100)}
-			Expect(ToBasicMap(s)).To(Equal(expected))
+			Expect(ToJSONMap(s)).To(Equal(expected))
 
 			nonBasicExpected := map[string]interface{}{"Name": "odion", "Age": CustomInt(100)}
 			Expect(ToMap(s)).To(Equal(nonBasicExpected))

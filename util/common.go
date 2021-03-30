@@ -239,9 +239,9 @@ func StructSliceToMap(s interface{}, tagName ...string) []Map {
 	}
 }
 
-// ToBasicMap converts s to a map stripping out custom types.
-// Panics if s cannot be (un)marshalled by encoding/json package.
-func ToBasicMap(s interface{}) (m map[string]interface{}) {
+// ToJSONMap converts s to json and then back to map.
+// Panics if json encoding operation fails.
+func ToJSONMap(s interface{}) (m map[string]interface{}) {
 	bz, err := json.Marshal(s)
 	if err != nil {
 		panic(err)
@@ -252,7 +252,7 @@ func ToBasicMap(s interface{}) (m map[string]interface{}) {
 	return
 }
 
-// ToBasicMap converts s to a map.
+// ToMap converts a struct to a map.
 // If tagName is not provided, 'json' tag is used as a default.
 func ToMap(s interface{}, tagName ...string) map[string]interface{} {
 	st := structs.New(s)

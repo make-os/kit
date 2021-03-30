@@ -143,7 +143,7 @@ var _ = Describe("TxModule", func() {
 				Expect(res).To(HaveKey("status"))
 				Expect(res["status"]).To(Equal(types2.TxStatusInPushpool))
 				Expect(res).To(HaveKey("data"))
-				Expect(res["data"]).To(Equal(util.ToBasicMap(note)))
+				Expect(res["data"]).To(Equal(util.ToJSONMap(note)))
 			})
 		})
 

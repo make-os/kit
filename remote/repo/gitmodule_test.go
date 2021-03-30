@@ -555,4 +555,37 @@ var _ = Describe("GitModule", func() {
 			Expect(size).To(Equal(float64(4096)))
 		})
 	})
+
+	Describe(".GetPathUpdateTime", func() {
+		BeforeEach(func() {
+			r = repo.NewGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should get expected time", func() {
+			t, err := r.GetPathUpdateTime("a")
+			Expect(err).To(BeNil())
+			Expect(t.Unix()).To(Equal(int64(1617047557)))
+
+			t, err = r.GetPathUpdateTime("a/b")
+			Expect(err).To(BeNil())
+			Expect(t.Unix()).To(Equal(int64(1617042580)))
+
+			t, err = r.GetPathUpdateTime("a/b/file3.txt")
+			Expect(err).To(BeNil())
+			Expect(t.Unix()).To(Equal(int64(1617042580)))
+
+			t, err = r.GetPathUpdateTime("x.exe")
+			Expect(err).To(BeNil())
+			Expect(t.Unix()).To(Equal(int64(1617053884)))
+		})
+
+		When("path is unknown", func() {
+			It("should get expected time", func() {
+				_, err := r.GetPathUpdateTime("unknown")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("path not found"))
+			})
+		})
+	})
 })

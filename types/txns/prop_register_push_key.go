@@ -118,9 +118,9 @@ func (tx *TxRepoProposalRegisterPushKey) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
-// ToBasicMap returns a map equivalent of the transaction
+// ToJSONMap returns a map equivalent of the transaction
 func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
-	return util.ToBasicMap(tx)
+	return util.ToJSONMap(tx)
 }
 
 // FromMap populates fields from a map.

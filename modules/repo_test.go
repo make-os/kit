@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	mocks2 "github.com/make-os/kit/mocks/rpc"
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
@@ -25,6 +27,7 @@ import (
 var _ = Describe("RepoModule", func() {
 	var m *modules.RepoModule
 	var ctrl *gomock.Controller
+	var cfg *config.AppConfig
 	var mockService *mocks.MockService
 	var mockLogic *mocks.MockLogic
 	var mockRepoSrv *mocks.MockRemoteServer
@@ -34,6 +37,10 @@ var _ = Describe("RepoModule", func() {
 	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 
 	BeforeEach(func() {
+		var err error
+		cfg, err = testutil.SetTestCfg()
+		Expect(err).To(BeNil())
+
 		ctrl = gomock.NewController(GinkgoT())
 		mockService = mocks.NewMockService(ctrl)
 		mockRepoSrv = mocks.NewMockRemoteServer(ctrl)
@@ -42,6 +49,7 @@ var _ = Describe("RepoModule", func() {
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
 		mockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
 		mockNSKeeper = mocks.NewMockNamespaceKeeper(ctrl)
+		mockLogic.EXPECT().Config().Return(cfg).AnyTimes()
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
 		mockLogic.EXPECT().RepoKeeper().Return(mockRepoKeeper).AnyTimes()
 		mockLogic.EXPECT().GetRemoteServer().Return(mockRepoSrv).AnyTimes()
@@ -67,7 +75,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Create", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Create(params)
 			})
@@ -144,7 +152,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".UpsertOwner", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"addresses": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpsertOwner(params)
 			})
@@ -193,7 +201,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Vote", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Vote(params)
 			})
@@ -239,7 +247,7 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".Get", func() {
 		It("should panic when height option field is not valid", func() {
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "unexpected type", Field: "opts.height"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "unexpected type", Field: "opts.height"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1", types.GetOptions{Height: struct{}{}})
 			})
@@ -314,7 +322,7 @@ var _ = Describe("RepoModule", func() {
 			When("uri=ns1/repo1", func() {
 				It("should panic if namespace=ns1 is unknown", func() {
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(state.BareNamespace())
-					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace not found", Field: "name"}
+					err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "namespace not found", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -324,7 +332,7 @@ var _ = Describe("RepoModule", func() {
 					ns := state.BareNamespace()
 					ns.Domains["something"] = "r/target"
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
-					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain not found", Field: "name"}
+					err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "namespace domain not found", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -334,7 +342,7 @@ var _ = Describe("RepoModule", func() {
 					ns := state.BareNamespace()
 					ns.Domains["repo1"] = "a/target"
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
-					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain target is not a repository", Field: "name"}
+					err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "namespace domain target is not a repository", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -358,7 +366,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Update", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"config": 123}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'config' expected a map, got 'int'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'config' expected a map, got 'int'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params)
 			})
@@ -405,7 +413,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".DepositProposalFee", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.DepositProposalFee(params)
 			})
@@ -451,7 +459,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".AddContributor", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.AddContributor(params)
 			})
@@ -566,7 +574,46 @@ var _ = Describe("RepoModule", func() {
 			}
 			mockRepoSyncInfoKeeper.EXPECT().Tracked().Return(tracked)
 			res := m.GetTracked()
-			Expect(res).To(Equal(util.Map(util.ToBasicMap(tracked))))
+			Expect(res).To(Equal(util.Map(util.ToJSONMap(tracked))))
+		})
+	})
+
+	Describe(".ListPath", func() {
+
+		It("should panic if repo name is not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListPath("", "")
+			})
+		})
+
+		It("should panic if repo does not exist", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListPath("unknown", "")
+			})
+		})
+
+		It("should return entries when successful", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			res := m.ListPath("repo1", "")
+			Expect(res).To(HaveLen(4))
+		})
+
+		It("should return error when path is unknown", func() {
+			err := &errors.ReqError{Code: modules.StatusCodePathNotFound, HttpCode: 404, Msg: "path not found", Field: "path"}
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListPath("repo1", "unknown")
+			})
+		})
+
+		It("should return error when revision is invalid", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeReferenceNotFound, HttpCode: 404, Msg: "reference not found", Field: "revision"}
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListPath("repo1", ".", "something")
+			})
 		})
 	})
 })
