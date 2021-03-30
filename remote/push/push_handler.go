@@ -19,6 +19,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
+	errors2 "github.com/make-os/kit/util/errors"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
@@ -365,7 +366,7 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) (err error) {
 			return err
 		}
 		if err = h.Server.CheckNote(note); err != nil {
-			if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+			if misErr, ok := err.(*errors2.BadFieldError).Data.(*validation.RefMismatchErr); ok {
 				h.HandleRefMismatch(note, misErr.Ref, misErr.MismatchNet)
 			}
 			return errors.Wrap(err, "failed push note validation")

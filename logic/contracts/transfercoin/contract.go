@@ -9,11 +9,12 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 )
 
 var (
-	fe = util.FieldError
+	fe = errors.FieldError
 )
 
 // Contract implements core.SystemContract. It is a system contract for handling credit and debit

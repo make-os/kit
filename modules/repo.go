@@ -2,12 +2,15 @@ package modules
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/crypto/ed25519"
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
+	repo2 "github.com/make-os/kit/remote/repo"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/api"
@@ -52,6 +55,7 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
+		{Name: "listPath", Value: m.ListPath, Description: "List files and directories in a repository's path"},
 	}
 }
 
@@ -465,4 +469,24 @@ func (m *RepoModule) UnTrack(names string) {
 // GetTracked returns the tracked repositories
 func (m *RepoModule) GetTracked() util.Map {
 	return util.ToBasicMap(m.logic.RepoSyncInfoKeeper().Tracked())
+}
+
+func (m *RepoModule) ListPath(repoName, path string) {
+
+	if repoName == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), repoName)
+	repo, err := repo2.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	items, err := repo.ListPath("HEAD", path)
+	if err != nil {
+		panic(se(500, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	pp.Println(items)
 }

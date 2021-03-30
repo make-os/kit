@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -70,7 +71,7 @@ var _ = Describe("Client", func() {
 
 		When("error contains a status error in string format", func() {
 			It("should format the string and return a ReqError object", func() {
-				se := util.ReqErr(500, "some_error", "field_a", "msg")
+				se := errors.ReqErr(500, "some_error", "field_a", "msg")
 				err := makeStatusErrorFromCallErr(500, fmt.Errorf(se.Error()))
 				Expect(err.HttpCode).To(Equal(500))
 				Expect(err.Msg).To(Equal("msg"))
@@ -114,7 +115,7 @@ var _ = Describe("PushKeyAPI", func() {
 			}
 			_, err := client.PushKey().GetOwner("pk1_abc", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -129,7 +130,7 @@ var _ = Describe("PushKeyAPI", func() {
 			}
 			_, err := client.PushKey().GetOwner("pk1_abc", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     "decode_error",
 				HttpCode: 500,
 				Msg:      "field:balance, msg:invalid value type: has int, wants string",
@@ -154,7 +155,7 @@ var _ = Describe("PushKeyAPI", func() {
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -186,7 +187,7 @@ var _ = Describe("PushKeyAPI", func() {
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -231,7 +232,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -263,7 +264,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -303,7 +304,7 @@ var _ = Describe("RepoAPI", func() {
 			}
 			_, err := client.Repo().Get("repo1", &api.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 500,
 				Msg:      "error",
@@ -318,9 +319,9 @@ var _ = Describe("RepoAPI", func() {
 			}
 			_, err := client.Repo().Get("repo1", &api.GetRepoOpts{Height: 100, NoProposals: true})
 			Expect(err).ToNot(BeNil())
-			Expect(err.(*util.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
-			Expect(err.(*util.ReqError).HttpCode).To(Equal(500))
-			Expect(err.(*util.ReqError).Msg).To(ContainSubstring("expected type 'util.String', got unconvertible type 'struct {}'"))
+			Expect(err.(*errors.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
+			Expect(err.(*errors.ReqError).HttpCode).To(Equal(500))
+			Expect(err.(*errors.ReqError).Msg).To(ContainSubstring("expected type 'util.String', got unconvertible type 'struct {}'"))
 		})
 
 		It("should return expected repo object on success", func() {
@@ -340,7 +341,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -384,7 +385,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey:    key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -408,7 +409,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -439,7 +440,7 @@ var _ = Describe("RepoAPI", func() {
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -479,7 +480,7 @@ var _ = Describe("RPCAPI", func() {
 			}
 			_, err := client.RPC().GetMethods()
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -494,7 +495,7 @@ var _ = Describe("RPCAPI", func() {
 			}
 			_, err := client.RPC().GetMethods()
 			Expect(err).ToNot(BeNil())
-			Expect(err.(*util.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
+			Expect(err.(*errors.ReqError).Code).To(Equal(ErrCodeDecodeFailed))
 		})
 
 		It("should return nil on success", func() {
@@ -532,7 +533,7 @@ var _ = Describe("TxAPI", func() {
 			})
 			_, err := client.Tx().Send(map[string]interface{}{})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -559,7 +560,7 @@ var _ = Describe("TxAPI", func() {
 			})
 			_, err := client.Tx().Get("0x123")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 500,
 				Msg:      "error",
@@ -605,7 +606,7 @@ var _ = Describe("UserAPI", func() {
 			})
 			_, err := client.User().Get("addr", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",
@@ -620,7 +621,7 @@ var _ = Describe("UserAPI", func() {
 			})
 			_, err := client.User().Get("addr", 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     "decode_error",
 				HttpCode: 500,
 				Msg:      "field:balance, msg:invalid value type: has int, wants string",
@@ -645,7 +646,7 @@ var _ = Describe("UserAPI", func() {
 				SigningKey: nil,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeBadParam,
 				HttpCode: 400,
 				Msg:      "signing key is required",
@@ -675,7 +676,7 @@ var _ = Describe("UserAPI", func() {
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(&util.ReqError{
+			Expect(err).To(Equal(&errors.ReqError{
 				Code:     ErrCodeUnexpected,
 				HttpCode: 0,
 				Msg:      "error",

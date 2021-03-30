@@ -6,9 +6,9 @@ import (
 
 	types2 "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/rpc/types"
-	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/api"
 	"github.com/make-os/kit/util/colorfmt"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/pkg/errors"
 )
@@ -36,7 +36,7 @@ func GetCmd(args *GetArgs) error {
 
 	data, err := args.GetTransaction(args.Hash, args.RPCClient)
 	if err != nil {
-		if reqErr, ok := errors.Cause(err).(*util.ReqError); ok && reqErr.HttpCode == 404 {
+		if reqErr, ok := errors.Cause(err).(*errors2.ReqError); ok && reqErr.HttpCode == 404 {
 			return fmt.Errorf("unknown transaction")
 		}
 		return errors.Wrap(err, "failed to get transaction")

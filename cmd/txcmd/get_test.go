@@ -10,7 +10,7 @@ import (
 	types2 "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types/api"
-	"github.com/make-os/kit/util"
+	errors2 "github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -50,7 +50,7 @@ var _ = Describe("TxCmd", func() {
 			args := &txcmd.GetArgs{Hash: "0x123"}
 			args.GetTransaction = func(hash string, rpcClient types.Client) (res *api.ResultTx, err error) {
 				Expect(hash).To(Equal(args.Hash))
-				reqErr := util.ReqErr(404, "not_found", "", "not found")
+				reqErr := errors2.ReqErr(404, "not_found", "", "not found")
 				return nil, errors.Wrap(reqErr, "error")
 			}
 			err := txcmd.GetCmd(args)

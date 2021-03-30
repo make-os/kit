@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/errors"
 	"github.com/robertkrimen/otto"
 )
 
@@ -119,7 +120,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) util.Map {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if ns.ExpiresAt.UInt64() <= uint64(bi.Height) {
@@ -148,7 +149,7 @@ func (m *NamespaceModule) GetTarget(uri string, height ...uint64) string {
 
 	target, err := m.logic.NamespaceKeeper().GetTarget(uri, blockHeight)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return target
@@ -177,7 +178,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 
 	var tx = txns.NewBareTxNamespaceRegister()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -189,7 +190,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -218,7 +219,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 
 	var tx = txns.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -230,7 +231,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{

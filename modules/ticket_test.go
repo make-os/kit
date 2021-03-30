@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
@@ -58,7 +59,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyValidatorTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params)
 			})
@@ -87,7 +88,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params, "", false)
 			})
@@ -106,7 +107,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyHostTicket()", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params)
 			})
@@ -145,7 +146,7 @@ var _ = Describe("TicketModule", func() {
 
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params, key, payloadOnly)
 			})
@@ -169,7 +170,7 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".GetValidatorTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
-			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "proposerPubKey"}
+			err := &errors.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "proposerPubKey"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetValidatorTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
@@ -182,7 +183,7 @@ var _ = Describe("TicketModule", func() {
 				SortByHeight: -1,
 				Active:       true,
 			}).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetValidatorTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
@@ -230,7 +231,7 @@ var _ = Describe("TicketModule", func() {
 
 	Describe(".GetHostTicketsByProposer", func() {
 		It("should panic when proposer public key is invalid", func() {
-			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetHostTicketsByProposer("prop_pub_key", map[string]interface{}{})
 			})
@@ -239,7 +240,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic when unable to get ticket by proposer public key", func() {
 			propPubKey := pk.PubKey().Base58()
 			mockTicketMgr.EXPECT().GetByProposer(txns.TxTypeHostTicket, pk.PubKey().MustBytes32(), types.QueryOptions{Limit: 0, SortByHeight: -1}).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetHostTicketsByProposer(propPubKey, map[string]interface{}{})
 			})
@@ -268,7 +269,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".GetTopValidators", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopValidators(0).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetTopValidators()
 			})
@@ -294,7 +295,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".GetTopHosts()", func() {
 		It("should panic when unable to get top validators", func() {
 			mockTicketMgr.EXPECT().GetTopHosts(0).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetTopHosts()
 			})
@@ -320,7 +321,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".GetStats", func() {
 		It("should panic when unable to get all tickets value", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStats()
 			})
@@ -336,7 +337,7 @@ var _ = Describe("TicketModule", func() {
 
 		It("should panic when proposer public key is invalid", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
-			err := &util.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_proposer_pub_key", HttpCode: 400, Msg: "invalid format: version and/or checksum bytes missing", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStats("invalid_pub_key")
 			})
@@ -345,7 +346,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic when unable to get value of non-delegated tickets of proposer public key", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStats(pk.PubKey().Base58())
 			})
@@ -355,7 +356,7 @@ var _ = Describe("TicketModule", func() {
 			mockTicketMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(123.44), nil)
 			mockTicketMgr.EXPECT().ValueOfNonDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(230), nil)
 			mockTicketMgr.EXPECT().ValueOfDelegatedTickets(pk.PubKey().MustBytes32(), uint64(0)).Return(float64(0), fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStats(pk.PubKey().Base58())
 			})
@@ -398,7 +399,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".UnbondHostTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"hash": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'hash': source data must be an array or slice, got int", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'hash': source data must be an array or slice, got int", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnbondHostTicket(params)
 			})
@@ -423,7 +424,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"value": "100"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnbondHostTicket(params, "", false)
 			})

@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -26,7 +27,7 @@ import (
 var (
 	ErrPushTokenRequired = fmt.Errorf("push token must be provided")
 	ErrMalformedToken    = fmt.Errorf("malformed token")
-	fe                   = util.FieldErrorWithIndex
+	fe                   = errors2.FieldErrorWithIndex
 )
 
 // AuthenticatorFunc describes a function for performing authentication.

@@ -37,7 +37,7 @@ var _ = Describe("Reactor", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err := repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		_, err := repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockObjects := testutil.Mocks(ctrl)

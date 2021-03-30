@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 )
 
 // RPCAPI provides access to the rpc server-related methods
@@ -19,7 +20,7 @@ func (c *RPCAPI) GetMethods() ([]rpc.MethodInfo, error) {
 
 	var r []rpc.MethodInfo
 	if err := util.DecodeMap(resp["methods"], &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil

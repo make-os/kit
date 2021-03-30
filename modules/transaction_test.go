@@ -17,6 +17,7 @@ import (
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
@@ -84,7 +85,7 @@ var _ = Describe("TxModule", func() {
 		})
 
 		It("should panic if transaction hash is not valid", func() {
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "invalid transaction hash", Field: "hash"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "invalid transaction hash", Field: "hash"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("000_invalid_hash")
 			})
@@ -94,7 +95,7 @@ var _ = Describe("TxModule", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			hash := tx.GetHash()
 			mockService.EXPECT().GetTx(gomock.Any(), hash.Bytes(), cfg.IsLightNode()).Return(nil, nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get(hash.String())
 			})
@@ -159,7 +160,7 @@ var _ = Describe("TxModule", func() {
 				mockRemoteSrv.EXPECT().GetPushPool().Return(mockPushPool)
 				mockPushPool.EXPECT().Get(hash.HexStr()).Return(nil)
 
-				err := &util.ReqError{Code: "tx_not_found", HttpCode: 404, Msg: "transaction not found", Field: "hash"}
+				err := &errors.ReqError{Code: "tx_not_found", HttpCode: 404, Msg: "transaction not found", Field: "hash"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.Get(hash.HexStr())
 				})
@@ -197,7 +198,7 @@ var _ = Describe("TxModule", func() {
 
 		It("should panic if unable to decoded parameter", func() {
 			params := map[string]interface{}{"type": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(params)
 			})
@@ -206,7 +207,7 @@ var _ = Describe("TxModule", func() {
 		It("should panic when unable to add tx to mempool", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(tx.ToMap())
 			})
@@ -214,9 +215,9 @@ var _ = Describe("TxModule", func() {
 
 		It("should panic when unable to add tx to pool due to badFieldError", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
-			bfe := util.FieldError("field", "error")
+			bfe := errors.FieldError("field", "error")
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, bfe)
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: "field"}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: "field"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(tx.ToMap())
 			})

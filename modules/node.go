@@ -10,6 +10,7 @@ import (
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 	tmEd25519 "github.com/tendermint/tendermint/crypto/ed25519"
 
@@ -110,12 +111,12 @@ func (m *NodeModule) GetBlock(height string) util.Map {
 
 	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.service.GetBlock(context2.Background(), &blockHeight)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.ToMap(res)
@@ -134,7 +135,7 @@ func (m *NodeModule) GetHeight() string {
 
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 	return cast.ToString(bi.Height.Int64())
 }
@@ -152,12 +153,12 @@ func (m *NodeModule) GetBlockInfo(height string) util.Map {
 
 	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return util.ToBasicMap(res)
@@ -184,12 +185,12 @@ func (m *NodeModule) GetValidators(height string) (res []util.Map) {
 
 	blockHeight, err := strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().Get(blockHeight)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	var vList []util.Map
@@ -219,7 +220,7 @@ func (m *NodeModule) IsSyncing() bool {
 
 	syncing, err := m.service.IsSyncing(context2.Background())
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return syncing

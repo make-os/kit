@@ -11,6 +11,7 @@ import (
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util/errors"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/make-os/kit/util"
@@ -91,13 +92,13 @@ func (m *TxModule) Get(hash string) util.Map {
 
 	bz, err := util.FromHex(hash)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
 	// Check tx in transaction
 	tx, _, err := m.service.GetTx(context.Background(), bz, m.logic.Config().IsLightNode())
 	if err != nil && err != types.ErrTxNotFound {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	} else if tx != nil {
 		return map[string]interface{}{"status": modulestypes.TxStatusInBlock, "data": util.ToMap(tx)}
 	}
@@ -112,7 +113,7 @@ func (m *TxModule) Get(hash string) util.Map {
 		return map[string]interface{}{"status": modulestypes.TxStatusInPushpool, "data": note.ToMap()}
 	}
 
-	panic(util.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
+	panic(errors.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 }
 
 // sendPayload sends an already signed transaction object to the network
@@ -134,13 +135,13 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		se := util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error())
-		if bfe := util.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
+		se := errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error())
+		if bfe := errors.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
 			se.Msg = bfe.Msg
 			se.Field = bfe.Field
 		}

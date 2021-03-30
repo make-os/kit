@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
@@ -155,7 +156,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
@@ -180,7 +181,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -207,7 +208,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 	if err := tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Derive BLS public key
@@ -239,7 +240,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -279,12 +280,12 @@ func (m *TicketModule) GetValidatorTicketsByProposer(proposerPubKey string, quer
 
 	pk, err := ed25519.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "proposerPubKey", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidProposerPubKey, "proposerPubKey", err.Error()))
 	}
 
 	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qo)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
@@ -327,12 +328,12 @@ func (m *TicketModule) GetHostTicketsByProposer(proposerPubKey string, queryOpts
 
 	pk, err := ed25519.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
 	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qo)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
@@ -356,7 +357,7 @@ func (m *TicketModule) GetTopValidators(limit ...int) []util.Map {
 
 	tickets, err := m.ticketmgr.GetTopValidators(n)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
@@ -379,7 +380,7 @@ func (m *TicketModule) GetTopHosts(limit ...int) []util.Map {
 
 	tickets, err := m.ticketmgr.GetTopHosts(n)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	if len(tickets) == 0 {
@@ -409,7 +410,7 @@ func (m *TicketModule) GetStats(proPubKey ...string) (result util.Map) {
 	// Get value of all tickets
 	res["all"], err = m.ticketmgr.ValueOfAllTickets(0)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	// Return if no proposer public key was specified.
@@ -420,19 +421,19 @@ func (m *TicketModule) GetStats(proPubKey ...string) (result util.Map) {
 	// At this point, we need to get stats for the given proposer public key.
 	pk, err := ed25519.PubKeyFromBase58(proPubKey[0])
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
 	// Get value of non-delegated tickets belonging to the public key
 	valNonDel, err = m.ticketmgr.ValueOfNonDelegatedTickets(pk.MustBytes32(), 0)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	// Get value of delegated tickets belonging to the public key
 	valDel, err = m.ticketmgr.ValueOfDelegatedTickets(pk.MustBytes32(), 0)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	res["nonDelegated"] = valNonDel
@@ -482,7 +483,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options .
 
 	var tx = txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	if retPayload, _ := finalizeTx(tx, m.logic, nil, options...); retPayload {
@@ -491,7 +492,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{}, options .
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{

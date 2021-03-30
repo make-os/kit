@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 )
 
@@ -30,7 +31,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*api.ResultA
 
 	r := &api.ResultAccount{Account: state.BareAccount()}
 	if err = r.Account.FromMap(out); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil
@@ -40,7 +41,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*api.ResultA
 func (pk *PushKeyAPI) Register(body *api.BodyRegisterPushKey) (*api.ResultRegisterPushKey, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareTxRegisterPushKey()
@@ -69,7 +70,7 @@ func (pk *PushKeyAPI) Register(body *api.BodyRegisterPushKey) (*api.ResultRegist
 
 	var r api.ResultRegisterPushKey
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

@@ -31,7 +31,7 @@ var _ = Describe("plumbing.Revert", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = r.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = r.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

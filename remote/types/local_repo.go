@@ -13,7 +13,7 @@ import (
 
 // LocalRepo represents a local git repository on disk
 type LocalRepo interface {
-	LiteGit
+	GitModule
 
 	// GetName returns the name of the repo
 	GetName() string
@@ -143,6 +143,17 @@ type LocalRepo interface {
 
 	// GetRepoConfig returns the 'repocfg' config object
 	GetRepoConfig() (*LocalConfig, error)
+
+	ListPath(ref, path string) (res []ListPathValue, err error)
+}
+
+type ListPathValue struct {
+	Name      string
+	Hash      string
+	IsDir     bool
+	Size      int64
+	IsBinary  bool
+	UpdatedAt time.Time
 }
 
 type LocalConfig struct {
@@ -162,7 +173,7 @@ type RefFetchArgs struct {
 	Verbose   bool
 }
 
-type LiteGit interface {
+type GitModule interface {
 	RefDelete(refname string) error
 	RefUpdate(refname, commitHash string) error
 	TagDelete(tagname string) error

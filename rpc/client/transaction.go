@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 )
 
 // TxAPI provides access to the transaction-related RPC methods
@@ -19,7 +20,7 @@ func (t *TxAPI) Send(data map[string]interface{}) (*api.ResultHash, error) {
 
 	var result api.ResultHash
 	if err = util.DecodeMap(out, &result); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &result, nil
@@ -34,7 +35,7 @@ func (t *TxAPI) Get(hash string) (*api.ResultTx, error) {
 
 	var r api.ResultTx
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

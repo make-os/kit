@@ -6,12 +6,12 @@ import (
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
-	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 
 	"github.com/make-os/kit/crypto/ed25519"
 )
 
-var feI = util.FieldErrorWithIndex
+var feI = errors.FieldErrorWithIndex
 
 // ValidateTxFunc represents a function for validating a transaction
 type ValidateTxFunc func(tx types.BaseTx, i int, logic core.Logic) error

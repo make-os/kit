@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
@@ -66,7 +67,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Create", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Create(params)
 			})
@@ -123,7 +124,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "repo1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Create(params, "", false)
 			})
@@ -143,7 +144,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".UpsertOwner", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"addresses": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpsertOwner(params)
 			})
@@ -173,7 +174,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"addresses": []string{"addr1"}}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpsertOwner(params, "", false)
 			})
@@ -192,7 +193,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Vote", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Vote(params)
 			})
@@ -220,7 +221,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"name": "repo1"}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Vote(params, "", false)
 			})
@@ -238,7 +239,7 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".Get", func() {
 		It("should panic when height option field is not valid", func() {
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "unexpected type", Field: "opts.height"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "unexpected type", Field: "opts.height"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1", types.GetOptions{Height: struct{}{}})
 			})
@@ -292,7 +293,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic when repo does not exist", func() {
 			repo := state.BareRepository()
 			mockRepoKeeper.EXPECT().Get("repo1", uint64(0)).Return(repo)
-			err := &util.ReqError{Code: "repo_not_found", HttpCode: 404, Msg: "repo not found", Field: "name"}
+			err := &errors.ReqError{Code: "repo_not_found", HttpCode: 404, Msg: "repo not found", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1")
 			})
@@ -313,7 +314,7 @@ var _ = Describe("RepoModule", func() {
 			When("uri=ns1/repo1", func() {
 				It("should panic if namespace=ns1 is unknown", func() {
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(state.BareNamespace())
-					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace not found", Field: "name"}
+					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace not found", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -323,7 +324,7 @@ var _ = Describe("RepoModule", func() {
 					ns := state.BareNamespace()
 					ns.Domains["something"] = "r/target"
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
-					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain not found", Field: "name"}
+					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain not found", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -333,7 +334,7 @@ var _ = Describe("RepoModule", func() {
 					ns := state.BareNamespace()
 					ns.Domains["repo1"] = "a/target"
 					mockNSKeeper.EXPECT().Get(crypto.MakeNamespaceHash("ns1")).Return(ns)
-					err := &util.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain target is not a repository", Field: "name"}
+					err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "namespace domain target is not a repository", Field: "name"}
 					assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 						m.Get("ns1/repo1")
 					})
@@ -357,7 +358,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Update", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"config": 123}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'config' expected a map, got 'int'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'config' expected a map, got 'int'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params)
 			})
@@ -385,7 +386,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params, "", false)
 			})
@@ -404,7 +405,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".DepositProposalFee", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.DepositProposalFee(params)
 			})
@@ -431,7 +432,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.DepositProposalFee(params, "", false)
 			})
@@ -450,7 +451,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".AddContributor", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.AddContributor(params)
 			})
@@ -508,7 +509,7 @@ var _ = Describe("RepoModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"id": 1}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.AddContributor(params, "", false)
 			})
@@ -527,7 +528,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Track", func() {
 		It("should panic if unable to add repo", func() {
 			mockRepoSyncInfoKeeper.EXPECT().Track("repo1", []uint64{100}).Return(fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Track("repo1", 100)
 			})
@@ -544,7 +545,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".UnTrack", func() {
 		It("should panic if unable to untrack repo", func() {
 			mockRepoSyncInfoKeeper.EXPECT().UnTrack("repo1").Return(fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UnTrack("repo1")
 			})

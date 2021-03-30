@@ -18,6 +18,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	config2 "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -41,12 +42,12 @@ func Get(path string) (types.LocalRepo, error) {
 // GetLocalRepoFunc describes a function for getting a local repository handle
 type GetLocalRepoFunc func(gitBinPath, path string) (types.LocalRepo, error)
 
-func GetWithLiteGit(gitBinPath, path string) (types.LocalRepo, error) {
+func GetWithGitModule(gitBinPath, path string) (types.LocalRepo, error) {
 	r, err := Get(path)
 	if err != nil {
 		return nil, err
 	}
-	r.(*Repo).LiteGit = NewLiteGit(gitBinPath, path)
+	r.(*Repo).GitModule = NewGitModule(gitBinPath, path)
 	return r, nil
 }
 
@@ -60,7 +61,7 @@ func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
 
 	// Since we expect the working directory to be a git working tree,
 	// we need to get a repo instance to verify it
-	repo, err := GetWithLiteGit(gitBinDir, wd)
+	repo, err := GetWithGitModule(gitBinDir, wd)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open repository")
 	} else if repoCfg, _ := repo.Config(); repoCfg.Core.IsBare {
@@ -70,36 +71,9 @@ func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
 	return repo, nil
 }
 
-type InitRepositoryFunc func(name string, rootDir string, gitBinPath string) error
-
-// InitRepository creates a bare git repository
-func InitRepository(name, rootDir, gitBinPath string) error {
-
-	// Create the repository
-	path := filepath.Join(rootDir, name)
-	_, err := git.PlainInit(path, true)
-	if err != nil {
-		return errors.Wrap(err, "failed to create repo")
-	}
-
-	// Set config options
-	options := [][]string{
-		{"gc.auto", "0"},
-	}
-	for _, opt := range options {
-		_, err = ExecGitCmd(gitBinPath, path, append([]string{"config"}, opt...)...)
-		if err != nil {
-			return errors.Wrap(err, "failed to set config")
-		}
-	}
-
-	return err
-}
-
-// Repo provides functions for accessing and modifying
-// a repository loaded by the remote server.
+// Repo provides functions for accessing and modifying a local repository.
 type Repo struct {
-	*LiteGit
+	*GitModule
 	*git.Repository
 	Path          string
 	NamespaceName string
@@ -167,8 +141,8 @@ func (r *Repo) SetPath(path string) {
 }
 
 // GetGitConfigOption finds and returns git config option value
-func (lg *Repo) GetGitConfigOption(path string) string {
-	cfg, _ := lg.Config()
+func (r *Repo) GetGitConfigOption(path string) string {
+	cfg, _ := r.Config()
 	if cfg == nil {
 		return ""
 	}
@@ -456,4 +430,83 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 	}
 
 	return cfg, nil
+}
+
+// GetPathUpdateTime returns the time a path was updated
+func (r *Repo) GetPathUpdateTime(path string) (time.Time, error) {
+	iter, err := r.Log(&git.LogOptions{FileName: &path, Order: git.LogOrderCommitterTime})
+	if err != nil {
+		return time.Time{}, err
+	}
+	recent, err := iter.Next()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return recent.Committer.When.UTC(), nil
+}
+
+// ListPath lists entries in a given path on the given reference.
+func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error) {
+
+	reference, err := r.Reference(plumbing.ReferenceName(ref), true)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.CommitObject(reference.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	var targetEntry *object.TreeEntry
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, err
+	}
+	if path == "." || path == "" {
+		targetEntry = &object.TreeEntry{Mode: filemode.Dir}
+		goto handleEntry
+	}
+
+	targetEntry, err = tree.FindEntry(path)
+	if err != nil {
+		return nil, err
+	} else if targetEntry.Mode == filemode.Dir {
+		tree, _ = tree.Tree(path)
+	}
+
+handleEntry:
+	processEntry := func(entry object.TreeEntry, tree *object.Tree) {
+		item := types.ListPathValue{}
+		item.Name = entry.Name
+		item.IsDir = true
+		item.Hash = entry.Hash.String()
+		if entry.Mode != filemode.Dir {
+			var file *object.File
+			file, err = tree.File(entry.Name)
+			if err != nil {
+				return
+			}
+			item.Size = file.Size
+			item.IsBinary, _ = file.IsBinary()
+			item.IsDir = false
+			item.UpdatedAt, _ = r.GetPathUpdateTime(file.Name)
+		} else {
+			// pp.Println(r.GetPathUpdateTime(entry.Name))
+			// item.UpdatedAt, _ = r.GetPathUpdateTime(entry.Name)
+		}
+		res = append(res, item)
+	}
+
+	switch targetEntry.Mode {
+	case filemode.Dir:
+		for _, entry := range tree.Entries {
+			processEntry(entry, tree)
+		}
+	case filemode.Regular:
+		processEntry(*targetEntry, tree)
+	}
+
+	return
 }

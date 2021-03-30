@@ -16,11 +16,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Gitops", func() {
+var _ = Describe("GitModule", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var r *repo.LiteGit
+	var r *repo.GitModule
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -32,7 +32,7 @@ var _ = Describe("Gitops", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		r = repo.NewLiteGit(cfg.Node.GitBinPath, path)
+		r = repo.NewGitModule(cfg.Node.GitBinPath, path)
 	})
 
 	AfterEach(func() {

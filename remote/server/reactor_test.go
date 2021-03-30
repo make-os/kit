@@ -29,6 +29,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/p2p"
@@ -64,7 +65,7 @@ var _ = Describe("Reactor", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockObjects := testutil.Mocks(ctrl)
@@ -347,7 +348,7 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
-					return util.FieldErrorWithIndex(-1, "", "error")
+					return errors.FieldErrorWithIndex(-1, "", "error")
 				}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
@@ -376,7 +377,7 @@ var _ = Describe("Reactor", func() {
 				}
 				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
 					mmErr := &validation.RefMismatchErr{MismatchLocal: true, Ref: "ref/heads/master"}
-					return util.FieldErrorWithIndex(-1, "", "error", mmErr)
+					return errors.FieldErrorWithIndex(-1, "", "error", mmErr)
 				}
 				svr.tryScheduleReSync = func(note types.PushNote, ref string, fresh bool) error {
 					reSyncScheduled = true

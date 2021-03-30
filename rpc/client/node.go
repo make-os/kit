@@ -4,6 +4,7 @@ import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -22,7 +23,7 @@ func (c *ChainAPI) GetBlock(height uint64) (*api.ResultBlock, error) {
 
 	var r = api.ResultBlock{ResultBlock: &core_types.ResultBlock{}}
 	if err = util.DecodeWithJSON(resp, r.ResultBlock); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -46,7 +47,7 @@ func (c *ChainAPI) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 
 	var r = api.ResultBlockInfo{BlockInfo: &state.BlockInfo{}}
 	if err = util.DecodeWithJSON(resp, r.BlockInfo); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -61,7 +62,7 @@ func (c *ChainAPI) GetValidators(height uint64) ([]*api.ResultValidator, error) 
 
 	var r = []*api.ResultValidator{}
 	if err = util.DecodeMap(resp["validators"], &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 )
 
@@ -19,7 +20,7 @@ type RepoAPI struct {
 func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	// Create a TxRepoCreate object and fill it with args
@@ -38,7 +39,7 @@ func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, statusCode, err := c.c.call("repo_create", tx.ToMap())
@@ -48,7 +49,7 @@ func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error
 
 	var r api.ResultCreateRepo
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -69,7 +70,7 @@ func (c *RepoAPI) Get(name string, opts ...*api.GetRepoOpts) (*api.ResultReposit
 
 	var r = api.ResultRepository{Repository: state.BareRepository()}
 	if err := util.DecodeMap(resp, r.Repository); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -79,7 +80,7 @@ func (c *RepoAPI) Get(name string, opts ...*api.GetRepoOpts) (*api.ResultReposit
 func (c *RepoAPI) AddContributors(body *api.BodyAddRepoContribs) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareRepoProposalRegisterPushKey()
@@ -103,7 +104,7 @@ func (c *RepoAPI) AddContributors(body *api.BodyAddRepoContribs) (*api.ResultHas
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, statusCode, err := c.c.call("repo_addContributor", tx.ToMap())
@@ -113,7 +114,7 @@ func (c *RepoAPI) AddContributors(body *api.BodyAddRepoContribs) (*api.ResultHas
 
 	var r api.ResultHash
 	if err := util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -123,7 +124,7 @@ func (c *RepoAPI) AddContributors(body *api.BodyAddRepoContribs) (*api.ResultHas
 func (c *RepoAPI) VoteProposal(body *api.BodyRepoVote) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareRepoProposalVote()
@@ -138,7 +139,7 @@ func (c *RepoAPI) VoteProposal(body *api.BodyRepoVote) (*api.ResultHash, error) 
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, statusCode, err := c.c.call("repo_vote", tx.ToMap())
@@ -148,7 +149,7 @@ func (c *RepoAPI) VoteProposal(body *api.BodyRepoVote) (*api.ResultHash, error) 
 
 	var r api.ResultHash
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

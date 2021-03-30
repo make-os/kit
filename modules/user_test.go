@@ -20,6 +20,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -76,7 +77,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetKeys()", func() {
 		It("should panic when unable to get a list of local accounts", func() {
 			mockKeystore.EXPECT().List().Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetKeys()
 			})
@@ -93,7 +94,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetKey", func() {
 		It("should panic when address is not provided", func() {
-			err := &util.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
+			err := &errors.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPrivKey("", "pass")
 			})
@@ -101,7 +102,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic when no key match the given address", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPrivKey("addr1", "pass")
 			})
@@ -109,7 +110,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic when unable to fetch key matching the given address", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPrivKey("addr1", "pass")
 			})
@@ -121,7 +122,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
+				err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetPrivKey("addr1", "pass")
 				})
@@ -145,7 +146,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
-				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
+				err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetPrivKey("addr1")
 				})
@@ -166,7 +167,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetPublicKey", func() {
 		It("should panic when address is not provided", func() {
-			err := &util.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
+			err := &errors.ReqError{Code: "addr_required", HttpCode: 400, Msg: "address is required", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPublicKey("", "pass")
 			})
@@ -174,7 +175,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic when no key match the given address", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, types2.ErrAccountUnknown)
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPublicKey("addr1", "pass")
 			})
@@ -182,7 +183,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic when unable to fetch key matching the given address", func() {
 			mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPublicKey("addr1", "pass")
 			})
@@ -194,7 +195,7 @@ var _ = Describe("UserModule", func() {
 				mockKey.EXPECT().IsUnprotected().Return(true)
 				mockKey.EXPECT().Unlock(keystore.DefaultPassphrase).Return(fmt.Errorf("unlock error"))
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
-				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
+				err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetPublicKey("addr1", "pass")
 				})
@@ -218,7 +219,7 @@ var _ = Describe("UserModule", func() {
 				mockKeystore.EXPECT().GetByIndexOrAddress("addr1").Return(mockKey, nil)
 				mockKeystore.EXPECT().AskForPasswordOnce().Return("passphrase", nil)
 				mockKey.EXPECT().Unlock("passphrase").Return(fmt.Errorf("unlock error"))
-				err := &util.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
+				err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "unlock error", Field: "passphrase"}
 				assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 					m.GetPublicKey("addr1")
 				})
@@ -240,7 +241,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetNonce", func() {
 		It("should panic when account does not exist", func() {
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetNonce("addr1")
 			})
@@ -282,7 +283,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should panic when account does not exist", func() {
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccount("addr1")
 			})
@@ -322,7 +323,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetAvailableBalance", func() {
 		It("should panic when account does not exist", func() {
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAvailableBalance("addr1")
 			})
@@ -351,7 +352,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".GetStakedBalance()", func() {
 		It("should panic when account does not exist", func() {
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
-			err := &util.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStakedBalance("addr1")
 			})
@@ -412,7 +413,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".SetCommission", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"commission": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'commission' expected type 'util.String', got unconvertible type 'struct {}'", Field: ""}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'commission' expected type 'util.String', got unconvertible type 'struct {}'", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SetCommission(params)
 			})
@@ -438,7 +439,7 @@ var _ = Describe("UserModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			params := map[string]interface{}{"commission": 90.2}
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SetCommission(params, "", false)
 			})
@@ -457,7 +458,7 @@ var _ = Describe("UserModule", func() {
 	Describe(".SendCoin()", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"type": struct{}{}}
-			err := &util.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendCoin(params)
 			})
@@ -511,7 +512,7 @@ var _ = Describe("UserModule", func() {
 			tx := txns.NewCoinTransferTx(1, pk.Addr(), pk, "1", "1", time.Now().Unix())
 			params := tx.ToMap()
 			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
-			err := &util.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendCoin(params, "", false)
 			})

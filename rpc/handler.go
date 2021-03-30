@@ -13,6 +13,7 @@ import (
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/pkg/errors"
 )
 
@@ -154,7 +155,7 @@ func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response
 		// Check if a ReqError is the cause, then, we use the information
 		// in the ReqError to create a good error response, otherwise we return
 		// a less useful 500 error
-		se := &util.ReqError{}
+		se := &errors2.ReqError{}
 		cause := errors.Cause(err)
 		if goerrors.As(cause, &se) {
 			respCode = se.HttpCode

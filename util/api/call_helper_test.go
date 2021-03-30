@@ -9,7 +9,7 @@ import (
 	"github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/state"
-	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -39,7 +39,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when rpc client failed", func() {
-			rpcClientErr := util.ReqErr(400, "100", "field", "error")
+			rpcClientErr := errors.ReqErr(400, "100", "field", "error")
 			rpcPkClient.EXPECT().GetOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient)
 			Expect(err).ToNot(BeNil())
@@ -61,7 +61,7 @@ var _ = Describe("ClientUtils", func() {
 		})
 
 		It("should return err when rpc client failed", func() {
-			rpcClientErr := util.ReqErr(400, "100", "field", "error")
+			rpcClientErr := errors.ReqErr(400, "100", "field", "error")
 			rpcUserClient.EXPECT().Get("address1").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfAccount("address1", rpcClient)
 			Expect(err).ToNot(BeNil())

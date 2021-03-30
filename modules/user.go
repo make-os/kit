@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	address2 "github.com/make-os/kit/util/identifier"
 	"github.com/spf13/cast"
 
@@ -163,7 +164,7 @@ func (m *UserModule) GetKeys() []string {
 
 	accounts, err := m.keystore.List()
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	var resp []string
@@ -185,16 +186,16 @@ func (m *UserModule) GetKeys() []string {
 func (m *UserModule) getKey(address string, passphrase string) *ed25519.Key {
 
 	if address == "" {
-		panic(util.ReqErr(400, StatusCodeAddressRequire, "address", "address is required"))
+		panic(errors.ReqErr(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
 	// Get the address
 	acct, err := m.keystore.GetByIndexOrAddress(address)
 	if err != nil {
 		if err != at.ErrAccountUnknown {
-			panic(util.ReqErr(500, StatusCodeServerErr, "address", err.Error()))
+			panic(errors.ReqErr(500, StatusCodeServerErr, "address", err.Error()))
 		}
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", err.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", err.Error()))
 	}
 
 	if acct.IsUnprotected() {
@@ -206,9 +207,9 @@ unlock:
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(passphrase); err != nil {
 		if err == at.ErrInvalidPassphrase {
-			panic(util.ReqErr(401, StatusCodeInvalidPass, "passphrase", err.Error()))
+			panic(errors.ReqErr(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
-		panic(util.ReqErr(500, StatusCodeServerErr, "passphrase", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "passphrase", err.Error()))
 	}
 
 	return acct.GetKey()
@@ -288,7 +289,7 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	return cast.ToString(acct.Nonce.UInt64())
@@ -309,7 +310,7 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	if len(acct.Stakes) == 0 {
@@ -334,12 +335,12 @@ func (m *UserModule) GetAvailableBalance(address string, height ...uint64) strin
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return acct.GetAvailableBalance(uint64(curBlockInfo.Height)).String()
@@ -360,12 +361,12 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 
 	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	return acct.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
@@ -428,7 +429,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 
 	var tx = txns.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
 	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
@@ -451,7 +452,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -479,7 +480,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 
 	var tx = txns.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
@@ -503,7 +504,7 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{

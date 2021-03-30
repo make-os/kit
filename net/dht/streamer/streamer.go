@@ -64,7 +64,7 @@ func NewStreamer(dht dht3.DHT, cfg *config.AppConfig) *BasicObjectStreamer {
 		log:              cfg.G().Log.Module("object-streamer"),
 		gitBinPath:       cfg.Node.GitBinPath,
 		tracker:          providertracker.New(),
-		RepoGetter:       repo.GetWithLiteGit,
+		RepoGetter:       repo.GetWithGitModule,
 		PackObject:       plumbing.PackObject,
 		PackObjectGetter: plumbing.GetObjectFromPack,
 	}

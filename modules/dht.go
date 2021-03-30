@@ -15,6 +15,7 @@ import (
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -115,7 +116,7 @@ func (m *DHTModule) Store(key string, val string) {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 	if err := m.dht.Store(ctx, dht2.MakeKey(key), []byte(val)); err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 }
 
@@ -136,7 +137,7 @@ func (m *DHTModule) Lookup(key string) string {
 	defer cn()
 	bz, err := m.dht.Lookup(ctx, dht2.MakeKey(key))
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	return base64.StdEncoding.EncodeToString(bz)
 }
@@ -181,7 +182,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []util.Map) {
 	} else {
 		key, err = util.FromHex(hash)
 		if err != nil {
-			panic(util.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
+			panic(errors.ReqErr(400, StatusCodeInvalidParam, "hash", "invalid object key"))
 		}
 	}
 
@@ -189,7 +190,7 @@ func (m *DHTModule) GetRepoObjectProviders(hash string) (res []util.Map) {
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, key)
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 
 	for _, p := range peers {
@@ -227,7 +228,7 @@ func (m *DHTModule) GetProviders(key string) (res []util.Map) {
 	defer cn()
 	peers, err := m.dht.GetProviders(ctx, []byte(key))
 	if err != nil {
-		panic(util.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
+		panic(errors.ReqErr(500, StatusCodeServerErr, "key", err.Error()))
 	}
 	for _, p := range peers {
 		var address []string

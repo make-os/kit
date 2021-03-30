@@ -56,7 +56,7 @@ var _ = Describe("Validation", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 		mockKeepers = mocks.NewMockKeepers(ctrl)
 	})

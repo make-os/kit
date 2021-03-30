@@ -9,6 +9,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	crypto2 "github.com/make-os/kit/util/crypto"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
 
@@ -99,7 +100,7 @@ func checkCommon(tx types.BaseTx, index int) error {
 	txSize = decimal.NewFromFloat(float64(tx.GetEcoSize()))
 	baseFee = params.FeePerByte.Mul(txSize)
 	if tx.GetFee().Decimal().LessThan(baseFee) {
-		return util.FieldErrorWithIndex(index, "fee",
+		return errors2.FieldErrorWithIndex(index, "fee",
 			fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
 	}
 

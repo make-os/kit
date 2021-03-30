@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 )
 
 // Timeout is the max duration for connection and read attempt
@@ -145,7 +146,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, 500, util.ReqErr(500, ErrCodeConnect, "", err.Error())
+		return nil, 500, errors.ReqErr(500, ErrCodeConnect, "", err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -167,25 +168,25 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 }
 
 // makeClientStatusErr creates a ReqError representing a client error
-func makeClientStatusErr(msg string, args ...interface{}) *util.ReqError {
-	return util.ReqErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
+func makeClientStatusErr(msg string, args ...interface{}) *errors.ReqError {
+	return errors.ReqErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
 // makeStatusErrorFromCallErr converts error containing a JSON marshalled
 // status error to ReqError. If error does not contain a JSON object,
 // an ErrCodeUnexpected status error including the error message is returned.
-func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.ReqError {
+func makeStatusErrorFromCallErr(callStatusCode int, err error) *errors.ReqError {
 	if err == nil {
 		return nil
 	}
 
 	// For non-json error, return an ErrCodeUnexpected status error
 	if !govalidator.IsJSON(err.Error()) {
-		se := util.ReqErrorFromStr(err.Error())
+		se := errors.ReqErrorFromStr(err.Error())
 		if se.IsSet() {
 			return se
 		}
-		return util.ReqErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
+		return errors.ReqErr(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 
 	var errResp rpc.Response
@@ -196,5 +197,5 @@ func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.ReqError {
 		data = errResp.Err.Data.(string)
 	}
 
-	return util.ReqErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
+	return errors.ReqErr(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
 }

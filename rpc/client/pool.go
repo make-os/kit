@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 )
 
@@ -20,7 +21,7 @@ func (d *PoolAPI) GetSize() (*api.ResultPoolSize, error) {
 
 	var r api.ResultPoolSize
 	if err := util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

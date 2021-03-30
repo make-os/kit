@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -328,7 +329,7 @@ var _ = Describe("RPC", func() {
 
 		When("target method panicked with a ReqError", func() {
 			It("should return error message=ReqError.Msg, status=ReqError.HttpCode, code=ReqError.Code, data=ReqError.Field", func() {
-				err := util.ReqErr(400, "some_code", "some_field", "field is bad")
+				err := errors.ReqErr(400, "some_code", "some_field", "field is bad")
 				rpc.apiSet.Add(MethodInfo{
 					Name:      "add",
 					Namespace: "math",

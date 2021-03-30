@@ -408,7 +408,7 @@ var _ = Describe("RefSync", func() {
 		var repo types2.LocalRepo
 
 		BeforeEach(func() {
-			repo, err = repo3.GetWithLiteGit(cfg.Node.GitBinPath, path)
+			repo, err = repo3.GetWithGitModule(cfg.Node.GitBinPath, path)
 			Expect(err).To(BeNil())
 		})
 

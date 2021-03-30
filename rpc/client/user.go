@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 )
 
@@ -30,7 +31,7 @@ func (u *UserAPI) Get(address string, blockHeight ...uint64) (*api.ResultAccount
 
 	r := &api.ResultAccount{Account: state.BareAccount()}
 	if err = r.Account.FromMap(resp); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil
@@ -40,7 +41,7 @@ func (u *UserAPI) Get(address string, blockHeight ...uint64) (*api.ResultAccount
 func (u *UserAPI) Send(body *api.BodySendCoin) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareTxCoinTransfer()
@@ -55,7 +56,7 @@ func (u *UserAPI) Send(body *api.BodySendCoin) (*api.ResultHash, error) {
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, status, err := u.c.call("user_send", tx.ToMap())
@@ -65,7 +66,7 @@ func (u *UserAPI) Send(body *api.BodySendCoin) (*api.ResultHash, error) {
 
 	var r api.ResultHash
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -142,7 +143,7 @@ func (u *UserAPI) GetValidator(includePrivKey bool) (*api.ResultValidatorInfo, e
 
 	var r api.ResultValidatorInfo
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -170,7 +171,7 @@ func (u *UserAPI) GetPublicKey(address string, passphrase string) (string, error
 func (u *UserAPI) SetCommission(body *api.BodySetCommission) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareTxSetDelegateCommission()
@@ -183,7 +184,7 @@ func (u *UserAPI) SetCommission(body *api.BodySetCommission) (*api.ResultHash, e
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, status, err := u.c.call("user_setCommission", tx.ToMap())
@@ -193,7 +194,7 @@ func (u *UserAPI) SetCommission(body *api.BodySetCommission) (*api.ResultHash, e
 
 	var r api.ResultHash
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

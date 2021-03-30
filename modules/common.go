@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/util"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
@@ -33,7 +34,7 @@ const (
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 
-var se = util.ReqErr
+var se = errors2.ReqErr
 
 // parseOptions parse module options
 // If only 1 option, and it is a boolean = payload only instruction.

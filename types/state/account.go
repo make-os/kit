@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/make-os/kit/util/errors"
 	"github.com/stretchr/objx"
 
 	"github.com/make-os/kit/util"
@@ -46,7 +47,7 @@ func (a *Account) FromMap(m map[string]interface{}) error {
 		if bal.IsStr() {
 			a.Balance = util.String(bal.Str())
 		} else {
-			return util.FieldError("balance",
+			return errors.FieldError("balance",
 				fmt.Sprintf("invalid value type: has %T, wants string", bal.Inter()))
 		}
 	}
@@ -56,14 +57,14 @@ func (a *Account) FromMap(m map[string]interface{}) error {
 		if nonce.IsStr() {
 			a.Nonce, err = util.ParseUint(nonce.Str(), 10, 64)
 			if err != nil {
-				return util.FieldError("nonce", "failed to convert to uint64")
+				return errors.FieldError("nonce", "failed to convert to uint64")
 			}
 		} else if nonce.IsFloat64() {
 			a.Nonce = util.UInt64(nonce.Float64())
 		} else if nonce.IsInt64() {
 			a.Nonce = util.UInt64(nonce.Int64())
 		} else {
-			return util.FieldError("nonce",
+			return errors.FieldError("nonce",
 				fmt.Sprintf("invalid value type: has %T, wants string", nonce.Inter()))
 		}
 	}
@@ -73,12 +74,12 @@ func (a *Account) FromMap(m map[string]interface{}) error {
 		if delCom.IsStr() {
 			a.DelegatorCommission, err = strconv.ParseFloat(delCom.Str(), 64)
 			if err != nil {
-				return util.FieldError("delegatorCommission", "failed to convert to uint64")
+				return errors.FieldError("delegatorCommission", "failed to convert to uint64")
 			}
 		} else if delCom.IsFloat64() {
 			a.DelegatorCommission = delCom.Float64()
 		} else {
-			return util.FieldError("delegatorCommission",
+			return errors.FieldError("delegatorCommission",
 				fmt.Sprintf("invalid value type: has %T, wants string", delCom.Inter()))
 		}
 	}

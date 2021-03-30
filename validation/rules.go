@@ -5,6 +5,7 @@ import (
 
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
 )
@@ -60,10 +61,10 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		dVal, _err := decimal.NewFromString(val.(util.String).String())
 		if _err != nil {
-			return util.FieldErrorWithIndex(index, field, "invalid number; must be numeric")
+			return errors.FieldErrorWithIndex(index, field, "invalid number; must be numeric")
 		}
 		if dVal.LessThan(decimal.Zero) {
-			return util.FieldErrorWithIndex(index, field, "negative figure not allowed")
+			return errors.FieldErrorWithIndex(index, field, "negative figure not allowed")
 		}
 		return nil
 	}
@@ -74,7 +75,7 @@ var validObjectNameRule = func(field string, index int) func(interface{}) error 
 		name := val.(string)
 		err := identifier.IsValidResourceName(name)
 		if err != nil {
-			return util.FieldErrorWithIndex(index, field, err.Error())
+			return errors.FieldErrorWithIndex(index, field, err.Error())
 		}
 		return nil
 	}
@@ -83,7 +84,7 @@ var validObjectNameRule = func(field string, index int) func(interface{}) error 
 var validTimestampRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		if time.Unix(val.(int64), 0).After(time.Now()) {
-			return util.FieldErrorWithIndex(index, field, "timestamp cannot be a future time")
+			return errors.FieldErrorWithIndex(index, field, "timestamp cannot be a future time")
 		}
 		return nil
 	}

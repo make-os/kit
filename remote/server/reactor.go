@@ -23,6 +23,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/thoas/go-funk"
@@ -182,7 +183,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// Set the target repository object
 	note.TargetRepo = &rr.Repo{
 		Repository:    repo,
-		LiteGit:       rr.NewLiteGit(sv.gitBinPath, repoPath),
+		GitModule:     rr.NewGitModule(sv.gitBinPath, repoPath),
 		Path:          repoPath,
 		NamespaceName: note.Namespace,
 		State:         repoState,
@@ -193,7 +194,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	// If we get an error about a pushed reference and local/network reference hash mismatch,
 	// we need to determine whether to schedule the local reference for a resynchronization.
 	if err := sv.checkPushNote(&note, sv.logic); err != nil {
-		if misErr, ok := err.(*util.BadFieldError).Data.(*validation.RefMismatchErr); ok {
+		if misErr, ok := err.(*errors2.BadFieldError).Data.(*validation.RefMismatchErr); ok {
 			_ = sv.tryScheduleReSync(&note, misErr.Ref, misErr.MismatchNet)
 		}
 		return errors.Wrap(err, "failed push note validation")

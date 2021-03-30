@@ -8,6 +8,7 @@ import (
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )
@@ -21,7 +22,7 @@ type TicketAPI struct {
 func (t *TicketAPI) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
@@ -35,7 +36,7 @@ func (t *TicketAPI) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, status, err := t.c.call("ticket_buy", tx.ToMap())
@@ -45,7 +46,7 @@ func (t *TicketAPI) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	var r api.ResultHash
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil
@@ -55,7 +56,7 @@ func (t *TicketAPI) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	if body.SigningKey == nil {
-		return nil, util.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
+		return nil, errors.ReqErr(400, ErrCodeBadParam, "signingKey", "signing key is required")
 	}
 
 	tx := txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
@@ -75,7 +76,7 @@ func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 	var err error
 	tx.Sig, err = tx.Sign(body.SigningKey.PrivKey().Base58())
 	if err != nil {
-		return nil, util.ReqErr(400, ErrCodeClient, "privkey", err.Error())
+		return nil, errors.ReqErr(400, ErrCodeClient, "privkey", err.Error())
 	}
 
 	resp, status, err := t.c.call("ticket_buyHost", tx.ToMap())
@@ -85,7 +86,7 @@ func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	var r api.ResultHash
 	if err = util.DecodeMap(resp, &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return &r, nil

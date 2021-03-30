@@ -341,7 +341,7 @@ func (sv *Server) GetLogic() core.Logic {
 
 // GetRepo get a local repository
 func (sv *Server) GetRepo(name string) (remotetypes.LocalRepo, error) {
-	repo, err := rr.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
+	repo, err := rr.GetWithGitModule(sv.gitBinPath, sv.getRepoPath(name))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get local repo")
 	}
@@ -471,7 +471,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		PolEnforcer: polEnforcer,
 		Repo: &rr.Repo{
 			Repository:    repo.(*rr.Repo).Repository,
-			LiteGit:       repo.(*rr.Repo).LiteGit,
+			GitModule:     repo.(*rr.Repo).GitModule,
 			Path:          repo.GetPath(),
 			State:         repoState,
 			NamespaceName: namespaceName,

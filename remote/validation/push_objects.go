@@ -14,8 +14,8 @@ import (
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
-	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
@@ -180,14 +180,14 @@ func GetTxDetailsFromNote(note pptyp.PushNote, targetRefs ...string) (details []
 func CheckPushNoteSanity(note pptyp.PushNote) error {
 
 	if note.GetRepoName() == "" {
-		return util.FieldError("repo", "repo name is required")
+		return errors2.FieldError("repo", "repo name is required")
 	}
 	if identifier.IsValidResourceName(note.GetRepoName()) != nil {
-		return util.FieldError("repo", "repo name is not valid")
+		return errors2.FieldError("repo", "repo name is not valid")
 	}
 
 	if note.GetNamespace() != "" && identifier.IsValidResourceName(note.GetNamespace()) != nil {
-		return util.FieldError("namespace", "namespace is not valid")
+		return errors2.FieldError("namespace", "namespace is not valid")
 	}
 
 	for i, ref := range note.GetPushedReferences() {
@@ -230,35 +230,35 @@ func CheckPushNoteSanity(note pptyp.PushNote) error {
 	}
 
 	if len(note.GetPusherKeyID()) == 0 {
-		return util.FieldError("pusherKeyId", "push key id is required")
+		return errors2.FieldError("pusherKeyId", "push key id is required")
 	}
 	if len(note.GetPusherKeyID()) != 20 {
-		return util.FieldError("pusherKeyId", "push key id is not valid")
+		return errors2.FieldError("pusherKeyId", "push key id is not valid")
 	}
 
 	if note.GetTimestamp() == 0 {
-		return util.FieldError("timestamp", "timestamp is required")
+		return errors2.FieldError("timestamp", "timestamp is required")
 	}
 
 	if note.GetPusherAccountNonce() == 0 {
-		return util.FieldError("accountNonce", "account nonce must be greater than zero")
+		return errors2.FieldError("accountNonce", "account nonce must be greater than zero")
 	}
 
 	if note.GetCreatorPubKey().IsEmpty() {
-		return util.FieldError("nodePubKey", "push node public key is required")
+		return errors2.FieldError("nodePubKey", "push node public key is required")
 	}
 
 	pk, err := ed25519.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
 	if err != nil {
-		return util.FieldError("nodePubKey", "push node public key is not valid")
+		return errors2.FieldError("nodePubKey", "push node public key is not valid")
 	}
 
 	if len(note.GetNodeSignature()) == 0 {
-		return util.FieldError("nodeSig", "push node signature is required")
+		return errors2.FieldError("nodeSig", "push node signature is required")
 	}
 
 	if ok, err := pk.Verify(note.BytesNoSig(), note.GetNodeSignature()); err != nil || !ok {
-		return util.FieldError("nodeSig", "failed to verify signature")
+		return errors2.FieldError("nodeSig", "failed to verify signature")
 	}
 
 	return nil
@@ -277,17 +277,17 @@ func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", note.GetRepoName())
-		return util.FieldError("repo", msg)
+		return errors2.FieldError("repo", msg)
 	}
 
 	// If namespace is provide, ensure it exists
 	if note.GetNamespace() != "" {
 		ns := logic.NamespaceKeeper().Get(crypto2.MakeNamespaceHash(note.GetNamespace()))
 		if ns.IsNil() {
-			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
+			return errors2.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}
 		if !funk.ContainsString(funk.Values(ns.Domains).([]string), identifier.NativeNamespaceRepo+note.GetRepoName()) {
-			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.GetNamespace()))
+			return errors2.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.GetNamespace()))
 		}
 	}
 
@@ -295,22 +295,22 @@ func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 	pushKey := logic.PushKeyKeeper().Get(ed25519.BytesToPushKeyID(note.GetPusherKeyID()))
 	if pushKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", note.GetPusherKeyID())
-		return util.FieldError("pusherKeyId", msg)
+		return errors2.FieldError("pusherKeyId", msg)
 	}
 
 	// Ensure the push key linked address matches the pusher address
 	if pushKey.Address != note.GetPusherAddress() {
-		return util.FieldError("pusherAddr", "push key does not belong to pusher")
+		return errors2.FieldError("pusherAddr", "push key does not belong to pusher")
 	}
 
 	// Ensure next pusher account nonce matches the note's account nonce
 	pusherAcct := logic.AccountKeeper().Get(note.GetPusherAddress())
 	if pusherAcct.IsNil() {
-		return util.FieldError("pusherAddr", "pusher account not found")
+		return errors2.FieldError("pusherAddr", "pusher account not found")
 	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce.UInt64()+1 {
 		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'",
 			note.GetPusherAccountNonce(), pusherAcct.Nonce+1)
-		return util.FieldError("accountNonce", msg)
+		return errors2.FieldError("accountNonce", msg)
 	}
 
 	// Check each references against the state

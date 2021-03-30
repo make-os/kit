@@ -1,4 +1,4 @@
-package util
+package errors
 
 import (
 	"fmt"
@@ -116,7 +116,7 @@ func (s *ReqError) Error() string {
 	return strings.Join(msgParts, ", ")
 }
 
-func (s *ReqError) Is(target error) bool {
+func IsReqError(target error) bool {
 	_, ok := target.(*ReqError)
 	return ok
 }

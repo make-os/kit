@@ -14,6 +14,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/spf13/cast"
 
@@ -127,7 +128,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 
 	var tx = txns.NewBareTxRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	printPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
@@ -152,7 +153,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	pk := ed25519.MustPubKeyFromBytes(tx.PublicKey.Bytes())
@@ -187,7 +188,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = false
 
@@ -198,7 +199,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -227,7 +228,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = true
 	tx.FeeCap = ""
@@ -241,7 +242,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return map[string]interface{}{
@@ -259,7 +260,7 @@ func (m *PushKeyModule) Unregister(params map[string]interface{}, options ...int
 func (m *PushKeyModule) Find(address string, height ...uint64) util.Map {
 
 	if address == "" {
-		panic(util.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
 	h := uint64(0)
@@ -269,7 +270,7 @@ func (m *PushKeyModule) Find(address string, height ...uint64) util.Map {
 
 	o := m.logic.PushKeyKeeper().Get(address, h)
 	if o.IsNil() {
-		panic(util.ReqErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
 	return util.ToMap(o)
@@ -310,7 +311,7 @@ func (m *PushKeyModule) GetAccountOfOwner(address string, height ...uint64) util
 	pushKey := m.Find(address, height...)
 	acct := m.logic.AccountKeeper().Get(pushKey["address"].(identifier.Address), h)
 	if acct.IsNil() {
-		panic(util.ReqErr(404, StatusCodeAccountNotFound, "address", types.ErrAccountUnknown.Error()))
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", types.ErrAccountUnknown.Error()))
 	}
 
 	return util.ToMap(acct)

@@ -46,7 +46,7 @@ var _ = Describe("Repo", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		r, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

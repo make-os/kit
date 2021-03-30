@@ -11,6 +11,7 @@ replace (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
+	github.com/Workiva/go-datastructures v1.0.52
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1
@@ -29,9 +30,11 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
+	github.com/go-git/go-git/v5 v5.3.0 // indirect
 	github.com/go-openapi/strfmt v0.19.11 // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1
+	github.com/gogs/git-module v1.1.4
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.4.3
 	github.com/google/go-cmp v0.5.2
@@ -39,7 +42,7 @@ require (
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c
-	github.com/imdario/mergo v0.3.9
+	github.com/imdario/mergo v0.3.12
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
@@ -91,7 +94,7 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	go.dedis.ch/kyber/v3 v3.0.11
-	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/tools v0.0.0-20200908211811-12e1bf57a112 // indirect
 	google.golang.org/appengine v1.6.6 // indirect

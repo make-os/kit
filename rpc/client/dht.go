@@ -5,6 +5,7 @@ import (
 
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 )
 
@@ -31,7 +32,7 @@ func (d *DHTAPI) GetProviders(key string) ([]*api.ResultDHTProvider, error) {
 
 	var r = []*api.ResultDHTProvider{}
 	if err = util.DecodeMap(resp["providers"], &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil
@@ -55,7 +56,7 @@ func (d *DHTAPI) GetRepoObjectProviders(hash string) ([]*api.ResultDHTProvider, 
 
 	var r = []*api.ResultDHTProvider{}
 	if err = util.DecodeMap(resp["providers"], &r); err != nil {
-		return nil, util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return r, nil
@@ -79,7 +80,7 @@ func (d *DHTAPI) Lookup(key string) (string, error) {
 
 	bz, err := base64.StdEncoding.DecodeString(cast.ToString(resp["value"]))
 	if err != nil {
-		return "", util.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
+		return "", errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return string(bz), nil

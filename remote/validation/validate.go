@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	fe                             = util.FieldErrorWithIndex
+	fe                             = errors2.FieldErrorWithIndex
 	ErrPushedAndSignedHeadMismatch = fmt.Errorf("pushed object hash differs from signed reference hash")
 )
 

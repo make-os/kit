@@ -13,6 +13,7 @@ import (
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -57,7 +58,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *types3.Sig
 	if args.MergeID != "" {
 		err = validation.CheckMergeProposalID(args.MergeID, -1)
 		if err != nil {
-			return fmt.Errorf(err.(*util.BadFieldError).Msg)
+			return fmt.Errorf(err.(*errors.BadFieldError).Msg)
 		}
 	}
 

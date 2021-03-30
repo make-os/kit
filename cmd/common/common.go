@@ -294,7 +294,7 @@ func GetRepoAndClient(cmd *cobra.Command, cfg *config.AppConfig, repoDir string)
 	if repoDir == "" {
 		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
 	} else {
-		targetRepo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, repoDir)
+		targetRepo, err = rr.GetWithGitModule(cfg.Node.GitBinPath, repoDir)
 	}
 
 	rpcClient, err := GetRPCClient(cmd, targetRepo)
