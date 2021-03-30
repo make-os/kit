@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	config2 "github.com/go-git/go-git/v5/config"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/config"
@@ -21,7 +22,6 @@ import (
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 type Remote struct {
@@ -157,7 +157,7 @@ func ConfigCmd(_ *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) erro
 
 	// Add user-defined remotes
 	for _, remote := range args.Remotes {
-		gitCfg.Remotes[remote.Name] = &gogitcfg.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
+		gitCfg.Remotes[remote.Name] = &config2.RemoteConfig{Name: remote.Name, URLs: strings.Split(remote.URL, ",")}
 	}
 
 	// If no remote was set, add default remote pointing to the local remote.
@@ -167,7 +167,7 @@ func ConfigCmd(_ *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) erro
 			defaultAddr = "127.0.0.1" + defaultAddr
 		}
 		url := fmt.Sprintf("http://%s/r/%s", defaultAddr, repo.GetName())
-		gitCfg.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
+		gitCfg.Remotes["origin"] = &config2.RemoteConfig{Name: "origin", URLs: []string{url}}
 	}
 
 	// Add core.askPass if allowed

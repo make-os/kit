@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"sync"
 
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
+	packfile2 "github.com/go-git/go-git/v5/plumbing/format/packfile"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/config"
 	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/net/dht/announcer"
@@ -23,9 +26,6 @@ import (
 	"github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
-	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
-	packfile2 "gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (

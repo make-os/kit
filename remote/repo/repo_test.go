@@ -7,20 +7,20 @@ import (
 	"testing"
 	"time"
 
+	config2 "github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/crypto/ed25519"
 	rr "github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/remote/types"
 	state2 "github.com/make-os/kit/types/state"
-	config2 "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/config"
 	testutil2 "github.com/make-os/kit/remote/testutil"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func TestRepo(t *testing.T) {

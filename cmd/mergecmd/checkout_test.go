@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/mergecmd"
 	"github.com/make-os/kit/config"
@@ -14,7 +15,6 @@ import (
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var _ = Describe("MergeReqCheckoutCmd", func() {

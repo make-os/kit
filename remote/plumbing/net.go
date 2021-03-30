@@ -1,8 +1,8 @@
 package plumbing
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/sideband"
 	"github.com/make-os/kit/util/colorfmt"
-	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
 
 // SidebandErr creates a sideband error message

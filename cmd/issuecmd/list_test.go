@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/issuecmd"
 	"github.com/make-os/kit/config"
@@ -18,7 +19,6 @@ import (
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var _ = Describe("IssueList", func() {

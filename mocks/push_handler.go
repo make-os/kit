@@ -5,11 +5,11 @@
 package mocks
 
 import (
+	pktline "github.com/go-git/go-git/v5/plumbing/format/pktline"
+	packp "github.com/go-git/go-git/v5/plumbing/protocol/packp"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/make-os/kit/remote/push/types"
 	util "github.com/make-os/kit/util"
-	pktline "gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
-	packp "gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 	io "io"
 	reflect "reflect"
 )

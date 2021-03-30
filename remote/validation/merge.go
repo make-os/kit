@@ -3,11 +3,11 @@ package validation
 import (
 	"fmt"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 type MergeComplianceCheckFunc func(

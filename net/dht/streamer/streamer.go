@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	plumb "github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -22,8 +24,6 @@ import (
 	"github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	plumb "gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (

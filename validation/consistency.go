@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
@@ -19,7 +20,6 @@ import (
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer

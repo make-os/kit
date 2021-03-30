@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	gogitcfg "github.com/go-git/go-git/v5/config"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -25,7 +26,6 @@ import (
 	"github.com/mr-tron/base58"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {

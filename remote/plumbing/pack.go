@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/format/packfile"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
 	io2 "github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	config2 "github.com/go-git/go-git/v5/config"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
@@ -16,7 +17,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/thoas/go-funk"
-	config2 "gopkg.in/src-d/go-git.v4/config"
 )
 
 var _ = Describe("ConfigCmd", func() {

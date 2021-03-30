@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
@@ -21,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // RefMismatchErr describe a reference mismatch error

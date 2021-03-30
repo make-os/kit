@@ -3,10 +3,10 @@ package plumbing
 import (
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // Obj implements Item. It represents a repository item.

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/common"
 	types3 "github.com/make-os/kit/cmd/signcmd/types"
@@ -18,7 +19,6 @@ import (
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func TestSignCmd(t *testing.T) {

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	fmtcfg "github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/make-os/kit/cmd/common"
 	types3 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
@@ -16,8 +18,6 @@ import (
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	fmtcfg "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 )
 
 type HookArgs struct {

@@ -13,9 +13,9 @@ import (
 	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/cmd/signcmd"
@@ -20,7 +21,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 var (

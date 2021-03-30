@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/go-git/go-git/v5/config"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/remote/policy"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -21,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4/config"
 )
 
 var (

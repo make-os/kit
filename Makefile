@@ -65,7 +65,7 @@ join-gitsrc-prod: testnet-v1-init
 	docker logs -f makeos --tail=1000
 
 genmocks:
-	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/kit/remote/types LiteGit,LocalRepo,Commit
+	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/kit/remote/types GitModule,LocalRepo,Commit
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks
 	mockgen -source=storage/types/types.go -destination=storage/mocks/types.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks

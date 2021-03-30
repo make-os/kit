@@ -6,13 +6,13 @@ import (
 	"io"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 type MergeRequestListArgs struct {

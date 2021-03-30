@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/remote/plumbing"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 type InitRepositoryFunc func(name string, rootDir string, gitBinPath string) error

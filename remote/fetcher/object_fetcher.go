@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/config"
 	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push/types"
 	io2 "github.com/make-os/kit/util/io"
-	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // ObjectFetcher describes a module for fetching git objects from a given DHT service.

@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/remote/push"
 	types2 "github.com/make-os/kit/remote/push/types"
 	repo3 "github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
 	"github.com/make-os/kit/remote/types"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/testutil"

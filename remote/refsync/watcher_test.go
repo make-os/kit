@@ -3,6 +3,7 @@ package refsync
 import (
 	"fmt"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
@@ -18,7 +19,6 @@ import (
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4"
 
 	. "github.com/onsi/gomega"
 )

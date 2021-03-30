@@ -5,43 +5,43 @@
 package mocks
 
 import (
+	config "github.com/go-git/go-git/v5/config"
+	plumbing "github.com/go-git/go-git/v5/plumbing"
+	object "github.com/go-git/go-git/v5/plumbing/object"
+	storer "github.com/go-git/go-git/v5/plumbing/storer"
+	storage "github.com/go-git/go-git/v5/storage"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/make-os/kit/remote/types"
 	state "github.com/make-os/kit/types/state"
-	config "gopkg.in/src-d/go-git.v4/config"
-	plumbing "gopkg.in/src-d/go-git.v4/plumbing"
-	object "gopkg.in/src-d/go-git.v4/plumbing/object"
-	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
-	storage "gopkg.in/src-d/go-git.v4/storage"
 	reflect "reflect"
 	time "time"
 )
 
-// MockLiteGit is a mock of GitModule interface
-type MockLiteGit struct {
+// MockGitModule is a mock of GitModule interface
+type MockGitModule struct {
 	ctrl     *gomock.Controller
-	recorder *MockLiteGitMockRecorder
+	recorder *MockGitModuleMockRecorder
 }
 
-// MockLiteGitMockRecorder is the mock recorder for MockLiteGit
-type MockLiteGitMockRecorder struct {
-	mock *MockLiteGit
+// MockGitModuleMockRecorder is the mock recorder for MockGitModule
+type MockGitModuleMockRecorder struct {
+	mock *MockGitModule
 }
 
-// NewMockLiteGit creates a new mock instance
-func NewMockLiteGit(ctrl *gomock.Controller) *MockLiteGit {
-	mock := &MockLiteGit{ctrl: ctrl}
-	mock.recorder = &MockLiteGitMockRecorder{mock}
+// NewMockGitModule creates a new mock instance
+func NewMockGitModule(ctrl *gomock.Controller) *MockGitModule {
+	mock := &MockGitModule{ctrl: ctrl}
+	mock.recorder = &MockGitModuleMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockLiteGit) EXPECT() *MockLiteGitMockRecorder {
+func (m *MockGitModule) EXPECT() *MockGitModuleMockRecorder {
 	return m.recorder
 }
 
 // AddEntryToNote mocks base method
-func (m *MockLiteGit) AddEntryToNote(arg0, arg1, arg2 string, arg3 ...string) error {
+func (m *MockGitModule) AddEntryToNote(arg0, arg1, arg2 string, arg3 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -53,14 +53,14 @@ func (m *MockLiteGit) AddEntryToNote(arg0, arg1, arg2 string, arg3 ...string) er
 }
 
 // AddEntryToNote indicates an expected call of AddEntryToNote
-func (mr *MockLiteGitMockRecorder) AddEntryToNote(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) AddEntryToNote(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockLiteGit)(nil).AddEntryToNote), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockGitModule)(nil).AddEntryToNote), varargs...)
 }
 
 // AmendRecentCommitWithMsg mocks base method
-func (m *MockLiteGit) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
+func (m *MockGitModule) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -72,14 +72,14 @@ func (m *MockLiteGit) AmendRecentCommitWithMsg(arg0, arg1 string, arg2 ...string
 }
 
 // AmendRecentCommitWithMsg indicates an expected call of AmendRecentCommitWithMsg
-func (mr *MockLiteGitMockRecorder) AmendRecentCommitWithMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) AmendRecentCommitWithMsg(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockLiteGit)(nil).AmendRecentCommitWithMsg), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendRecentCommitWithMsg", reflect.TypeOf((*MockGitModule)(nil).AmendRecentCommitWithMsg), varargs...)
 }
 
 // Checkout mocks base method
-func (m *MockLiteGit) Checkout(arg0 string, arg1, arg2 bool) error {
+func (m *MockGitModule) Checkout(arg0 string, arg1, arg2 bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkout", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -87,13 +87,13 @@ func (m *MockLiteGit) Checkout(arg0 string, arg1, arg2 bool) error {
 }
 
 // Checkout indicates an expected call of Checkout
-func (mr *MockLiteGitMockRecorder) Checkout(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) Checkout(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLiteGit)(nil).Checkout), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockGitModule)(nil).Checkout), arg0, arg1, arg2)
 }
 
 // CreateBlob mocks base method
-func (m *MockLiteGit) CreateBlob(arg0 string) (string, error) {
+func (m *MockGitModule) CreateBlob(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateBlob", arg0)
 	ret0, _ := ret[0].(string)
@@ -102,13 +102,13 @@ func (m *MockLiteGit) CreateBlob(arg0 string) (string, error) {
 }
 
 // CreateBlob indicates an expected call of CreateBlob
-func (mr *MockLiteGitMockRecorder) CreateBlob(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) CreateBlob(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockLiteGit)(nil).CreateBlob), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockGitModule)(nil).CreateBlob), arg0)
 }
 
 // CreateEmptyCommit mocks base method
-func (m *MockLiteGit) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error {
+func (m *MockGitModule) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -120,14 +120,14 @@ func (m *MockLiteGit) CreateEmptyCommit(arg0, arg1 string, arg2 ...string) error
 }
 
 // CreateEmptyCommit indicates an expected call of CreateEmptyCommit
-func (mr *MockLiteGitMockRecorder) CreateEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) CreateEmptyCommit(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmptyCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateEmptyCommit), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmptyCommit", reflect.TypeOf((*MockGitModule)(nil).CreateEmptyCommit), varargs...)
 }
 
 // CreateSingleFileCommit mocks base method
-func (m *MockLiteGit) CreateSingleFileCommit(arg0, arg1, arg2, arg3 string) (string, error) {
+func (m *MockGitModule) CreateSingleFileCommit(arg0, arg1, arg2, arg3 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSingleFileCommit", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(string)
@@ -136,13 +136,13 @@ func (m *MockLiteGit) CreateSingleFileCommit(arg0, arg1, arg2, arg3 string) (str
 }
 
 // CreateSingleFileCommit indicates an expected call of CreateSingleFileCommit
-func (mr *MockLiteGitMockRecorder) CreateSingleFileCommit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) CreateSingleFileCommit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateSingleFileCommit), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockGitModule)(nil).CreateSingleFileCommit), arg0, arg1, arg2, arg3)
 }
 
 // CreateTagWithMsg mocks base method
-func (m *MockLiteGit) CreateTagWithMsg(arg0 []string, arg1, arg2 string, arg3 ...string) error {
+func (m *MockGitModule) CreateTagWithMsg(arg0 []string, arg1, arg2 string, arg3 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -154,14 +154,14 @@ func (m *MockLiteGit) CreateTagWithMsg(arg0 []string, arg1, arg2 string, arg3 ..
 }
 
 // CreateTagWithMsg indicates an expected call of CreateTagWithMsg
-func (mr *MockLiteGitMockRecorder) CreateTagWithMsg(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) CreateTagWithMsg(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockLiteGit)(nil).CreateTagWithMsg), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockGitModule)(nil).CreateTagWithMsg), varargs...)
 }
 
 // ExpandShortHash mocks base method
-func (m *MockLiteGit) ExpandShortHash(arg0 string) (string, error) {
+func (m *MockGitModule) ExpandShortHash(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExpandShortHash", arg0)
 	ret0, _ := ret[0].(string)
@@ -170,13 +170,13 @@ func (m *MockLiteGit) ExpandShortHash(arg0 string) (string, error) {
 }
 
 // ExpandShortHash indicates an expected call of ExpandShortHash
-func (mr *MockLiteGitMockRecorder) ExpandShortHash(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) ExpandShortHash(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLiteGit)(nil).ExpandShortHash), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockGitModule)(nil).ExpandShortHash), arg0)
 }
 
 // GC mocks base method
-func (m *MockLiteGit) GC(arg0 ...string) error {
+func (m *MockGitModule) GC(arg0 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
@@ -188,13 +188,13 @@ func (m *MockLiteGit) GC(arg0 ...string) error {
 }
 
 // GC indicates an expected call of GC
-func (mr *MockLiteGitMockRecorder) GC(arg0 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GC(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockLiteGit)(nil).GC), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockGitModule)(nil).GC), arg0...)
 }
 
 // GetHEAD mocks base method
-func (m *MockLiteGit) GetHEAD(arg0 bool) (string, error) {
+func (m *MockGitModule) GetHEAD(arg0 bool) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHEAD", arg0)
 	ret0, _ := ret[0].(string)
@@ -203,13 +203,13 @@ func (m *MockLiteGit) GetHEAD(arg0 bool) (string, error) {
 }
 
 // GetHEAD indicates an expected call of GetHEAD
-func (mr *MockLiteGitMockRecorder) GetHEAD(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GetHEAD(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHEAD", reflect.TypeOf((*MockLiteGit)(nil).GetHEAD), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHEAD", reflect.TypeOf((*MockGitModule)(nil).GetHEAD), arg0)
 }
 
 // GetMergeCommits mocks base method
-func (m *MockLiteGit) GetMergeCommits(arg0 string, arg1 ...string) ([]string, error) {
+func (m *MockGitModule) GetMergeCommits(arg0 string, arg1 ...string) ([]string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -222,14 +222,14 @@ func (m *MockLiteGit) GetMergeCommits(arg0 string, arg1 ...string) ([]string, er
 }
 
 // GetMergeCommits indicates an expected call of GetMergeCommits
-func (mr *MockLiteGitMockRecorder) GetMergeCommits(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GetMergeCommits(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockLiteGit)(nil).GetMergeCommits), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockGitModule)(nil).GetMergeCommits), varargs...)
 }
 
 // GetRecentCommitHash mocks base method
-func (m *MockLiteGit) GetRecentCommitHash() (string, error) {
+func (m *MockGitModule) GetRecentCommitHash() (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRecentCommitHash")
 	ret0, _ := ret[0].(string)
@@ -238,13 +238,13 @@ func (m *MockLiteGit) GetRecentCommitHash() (string, error) {
 }
 
 // GetRecentCommitHash indicates an expected call of GetRecentCommitHash
-func (mr *MockLiteGitMockRecorder) GetRecentCommitHash() *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GetRecentCommitHash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommitHash", reflect.TypeOf((*MockLiteGit)(nil).GetRecentCommitHash))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommitHash", reflect.TypeOf((*MockGitModule)(nil).GetRecentCommitHash))
 }
 
 // GetRefCommits mocks base method
-func (m *MockLiteGit) GetRefCommits(arg0 string, arg1 bool) ([]string, error) {
+func (m *MockGitModule) GetRefCommits(arg0 string, arg1 bool) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRefCommits", arg0, arg1)
 	ret0, _ := ret[0].([]string)
@@ -253,13 +253,13 @@ func (m *MockLiteGit) GetRefCommits(arg0 string, arg1 bool) ([]string, error) {
 }
 
 // GetRefCommits indicates an expected call of GetRefCommits
-func (mr *MockLiteGitMockRecorder) GetRefCommits(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GetRefCommits(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefCommits", reflect.TypeOf((*MockLiteGit)(nil).GetRefCommits), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefCommits", reflect.TypeOf((*MockGitModule)(nil).GetRefCommits), arg0, arg1)
 }
 
 // GetRefRootCommit mocks base method
-func (m *MockLiteGit) GetRefRootCommit(arg0 string) (string, error) {
+func (m *MockGitModule) GetRefRootCommit(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRefRootCommit", arg0)
 	ret0, _ := ret[0].(string)
@@ -268,13 +268,13 @@ func (m *MockLiteGit) GetRefRootCommit(arg0 string) (string, error) {
 }
 
 // GetRefRootCommit indicates an expected call of GetRefRootCommit
-func (mr *MockLiteGitMockRecorder) GetRefRootCommit(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) GetRefRootCommit(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefRootCommit", reflect.TypeOf((*MockLiteGit)(nil).GetRefRootCommit), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefRootCommit", reflect.TypeOf((*MockGitModule)(nil).GetRefRootCommit), arg0)
 }
 
 // HasMergeCommits mocks base method
-func (m *MockLiteGit) HasMergeCommits(arg0 string, arg1 ...string) (bool, error) {
+func (m *MockGitModule) HasMergeCommits(arg0 string, arg1 ...string) (bool, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
@@ -287,14 +287,14 @@ func (m *MockLiteGit) HasMergeCommits(arg0 string, arg1 ...string) (bool, error)
 }
 
 // HasMergeCommits indicates an expected call of HasMergeCommits
-func (mr *MockLiteGitMockRecorder) HasMergeCommits(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) HasMergeCommits(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMergeCommits", reflect.TypeOf((*MockLiteGit)(nil).HasMergeCommits), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMergeCommits", reflect.TypeOf((*MockGitModule)(nil).HasMergeCommits), varargs...)
 }
 
 // ListTreeObjects mocks base method
-func (m *MockLiteGit) ListTreeObjects(arg0 string, arg1 bool, arg2 ...string) (map[string]string, error) {
+func (m *MockGitModule) ListTreeObjects(arg0 string, arg1 bool, arg2 ...string) (map[string]string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -307,14 +307,14 @@ func (m *MockLiteGit) ListTreeObjects(arg0 string, arg1 bool, arg2 ...string) (m
 }
 
 // ListTreeObjects indicates an expected call of ListTreeObjects
-func (mr *MockLiteGitMockRecorder) ListTreeObjects(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) ListTreeObjects(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjects", reflect.TypeOf((*MockLiteGit)(nil).ListTreeObjects), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjects", reflect.TypeOf((*MockGitModule)(nil).ListTreeObjects), varargs...)
 }
 
 // ListTreeObjectsSlice mocks base method
-func (m *MockLiteGit) ListTreeObjectsSlice(arg0 string, arg1, arg2 bool, arg3 ...string) ([]string, error) {
+func (m *MockGitModule) ListTreeObjectsSlice(arg0 string, arg1, arg2 bool, arg3 ...string) ([]string, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -327,14 +327,14 @@ func (m *MockLiteGit) ListTreeObjectsSlice(arg0 string, arg1, arg2 bool, arg3 ..
 }
 
 // ListTreeObjectsSlice indicates an expected call of ListTreeObjectsSlice
-func (mr *MockLiteGitMockRecorder) ListTreeObjectsSlice(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) ListTreeObjectsSlice(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockLiteGit)(nil).ListTreeObjectsSlice), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockGitModule)(nil).ListTreeObjectsSlice), varargs...)
 }
 
 // NumCommits mocks base method
-func (m *MockLiteGit) NumCommits(arg0 string, arg1 bool) (int, error) {
+func (m *MockGitModule) NumCommits(arg0 string, arg1 bool) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NumCommits", arg0, arg1)
 	ret0, _ := ret[0].(int)
@@ -343,13 +343,13 @@ func (m *MockLiteGit) NumCommits(arg0 string, arg1 bool) (int, error) {
 }
 
 // NumCommits indicates an expected call of NumCommits
-func (mr *MockLiteGitMockRecorder) NumCommits(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) NumCommits(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockLiteGit)(nil).NumCommits), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockGitModule)(nil).NumCommits), arg0, arg1)
 }
 
 // RefDelete mocks base method
-func (m *MockLiteGit) RefDelete(arg0 string) error {
+func (m *MockGitModule) RefDelete(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefDelete", arg0)
 	ret0, _ := ret[0].(error)
@@ -357,13 +357,13 @@ func (m *MockLiteGit) RefDelete(arg0 string) error {
 }
 
 // RefDelete indicates an expected call of RefDelete
-func (mr *MockLiteGitMockRecorder) RefDelete(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) RefDelete(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefDelete", reflect.TypeOf((*MockLiteGit)(nil).RefDelete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefDelete", reflect.TypeOf((*MockGitModule)(nil).RefDelete), arg0)
 }
 
 // RefFetch mocks base method
-func (m *MockLiteGit) RefFetch(arg0 types.RefFetchArgs) error {
+func (m *MockGitModule) RefFetch(arg0 types.RefFetchArgs) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefFetch", arg0)
 	ret0, _ := ret[0].(error)
@@ -371,13 +371,13 @@ func (m *MockLiteGit) RefFetch(arg0 types.RefFetchArgs) error {
 }
 
 // RefFetch indicates an expected call of RefFetch
-func (mr *MockLiteGitMockRecorder) RefFetch(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) RefFetch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefFetch", reflect.TypeOf((*MockLiteGit)(nil).RefFetch), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefFetch", reflect.TypeOf((*MockGitModule)(nil).RefFetch), arg0)
 }
 
 // RefGet mocks base method
-func (m *MockLiteGit) RefGet(arg0 string) (string, error) {
+func (m *MockGitModule) RefGet(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefGet", arg0)
 	ret0, _ := ret[0].(string)
@@ -386,13 +386,13 @@ func (m *MockLiteGit) RefGet(arg0 string) (string, error) {
 }
 
 // RefGet indicates an expected call of RefGet
-func (mr *MockLiteGitMockRecorder) RefGet(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) RefGet(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockLiteGit)(nil).RefGet), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockGitModule)(nil).RefGet), arg0)
 }
 
 // RefUpdate mocks base method
-func (m *MockLiteGit) RefUpdate(arg0, arg1 string) error {
+func (m *MockGitModule) RefUpdate(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefUpdate", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -400,13 +400,13 @@ func (m *MockLiteGit) RefUpdate(arg0, arg1 string) error {
 }
 
 // RefUpdate indicates an expected call of RefUpdate
-func (mr *MockLiteGitMockRecorder) RefUpdate(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) RefUpdate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefUpdate", reflect.TypeOf((*MockLiteGit)(nil).RefUpdate), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefUpdate", reflect.TypeOf((*MockGitModule)(nil).RefUpdate), arg0, arg1)
 }
 
 // RemoveEntryFromNote mocks base method
-func (m *MockLiteGit) RemoveEntryFromNote(arg0, arg1 string, arg2 ...string) error {
+func (m *MockGitModule) RemoveEntryFromNote(arg0, arg1 string, arg2 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -418,14 +418,14 @@ func (m *MockLiteGit) RemoveEntryFromNote(arg0, arg1 string, arg2 ...string) err
 }
 
 // RemoveEntryFromNote indicates an expected call of RemoveEntryFromNote
-func (mr *MockLiteGitMockRecorder) RemoveEntryFromNote(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) RemoveEntryFromNote(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockLiteGit)(nil).RemoveEntryFromNote), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockGitModule)(nil).RemoveEntryFromNote), varargs...)
 }
 
 // Size mocks base method
-func (m *MockLiteGit) Size() (float64, error) {
+func (m *MockGitModule) Size() (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Size")
 	ret0, _ := ret[0].(float64)
@@ -434,13 +434,13 @@ func (m *MockLiteGit) Size() (float64, error) {
 }
 
 // Size indicates an expected call of Size
-func (mr *MockLiteGitMockRecorder) Size() *gomock.Call {
+func (mr *MockGitModuleMockRecorder) Size() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockLiteGit)(nil).Size))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockGitModule)(nil).Size))
 }
 
 // TagDelete mocks base method
-func (m *MockLiteGit) TagDelete(arg0 string) error {
+func (m *MockGitModule) TagDelete(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TagDelete", arg0)
 	ret0, _ := ret[0].(error)
@@ -448,13 +448,13 @@ func (m *MockLiteGit) TagDelete(arg0 string) error {
 }
 
 // TagDelete indicates an expected call of TagDelete
-func (mr *MockLiteGitMockRecorder) TagDelete(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) TagDelete(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockLiteGit)(nil).TagDelete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockGitModule)(nil).TagDelete), arg0)
 }
 
 // Var mocks base method
-func (m *MockLiteGit) Var(arg0 string) (string, error) {
+func (m *MockGitModule) Var(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Var", arg0)
 	ret0, _ := ret[0].(string)
@@ -463,9 +463,9 @@ func (m *MockLiteGit) Var(arg0 string) (string, error) {
 }
 
 // Var indicates an expected call of Var
-func (mr *MockLiteGitMockRecorder) Var(arg0 interface{}) *gomock.Call {
+func (mr *MockGitModuleMockRecorder) Var(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockLiteGit)(nil).Var), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockGitModule)(nil).Var), arg0)
 }
 
 // MockLocalRepo is a mock of LocalRepo interface
@@ -1080,6 +1080,21 @@ func (m *MockLocalRepo) IsContributor(arg0 string) bool {
 func (mr *MockLocalRepoMockRecorder) IsContributor(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContributor", reflect.TypeOf((*MockLocalRepo)(nil).IsContributor), arg0)
+}
+
+// ListPath mocks base method
+func (m *MockLocalRepo) ListPath(arg0, arg1 string) ([]types.ListPathValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPath", arg0, arg1)
+	ret0, _ := ret[0].([]types.ListPathValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPath indicates an expected call of ListPath
+func (mr *MockLocalRepoMockRecorder) ListPath(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPath", reflect.TypeOf((*MockLocalRepo)(nil).ListPath), arg0, arg1)
 }
 
 // ListTreeObjects mocks base method

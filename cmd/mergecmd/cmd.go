@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
@@ -15,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-	plumb "gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var (
@@ -130,7 +130,7 @@ var mergeReqCreateCmd = &cobra.Command{
 
 		// If base branch is unset, use current HEAD
 		if baseBranch == "" {
-			baseBranch = plumb.ReferenceName(head).Short()
+			baseBranch = plumbing2.ReferenceName(head).Short()
 		}
 
 		// If base hash is unset, use current hash of base branch

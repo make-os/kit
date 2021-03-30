@@ -6,12 +6,12 @@ package mocks
 
 import (
 	context "context"
+	object "github.com/go-git/go-git/v5/plumbing/object"
 	gomock "github.com/golang/mock/gomock"
 	network "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/make-os/kit/net/dht"
 	io "github.com/make-os/kit/util/io"
-	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	reflect "reflect"
 )
 

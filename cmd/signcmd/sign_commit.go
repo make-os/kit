@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
 	types3 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
@@ -16,7 +17,6 @@ import (
 	"github.com/make-os/kit/util/errors"
 	errors2 "github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")

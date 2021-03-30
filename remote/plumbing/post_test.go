@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
@@ -19,8 +21,6 @@ import (
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var _ = Describe("Post", func() {

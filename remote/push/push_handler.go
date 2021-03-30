@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	plumb "github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/format/pktline"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
 	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/plumbing"
@@ -20,9 +23,6 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	errors2 "github.com/make-os/kit/util/errors"
-	plumb "gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
-	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/pkg/errors"

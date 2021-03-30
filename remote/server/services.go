@@ -13,13 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"
 	"github.com/make-os/kit/remote/push"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
 
 // RequestContext describes a request from the git remote server

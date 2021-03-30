@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/jinzhu/copier"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
@@ -17,9 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var (

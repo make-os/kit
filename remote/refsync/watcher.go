@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/node/services"
 	"github.com/make-os/kit/pkgs/cache"
@@ -18,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 // Watcher watches tracked repositories for new updates that have not been synchronized.

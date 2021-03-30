@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/keystore"
@@ -27,7 +28,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
 var (

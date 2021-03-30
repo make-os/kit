@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
@@ -15,8 +17,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/yaml.v2"
 )
 

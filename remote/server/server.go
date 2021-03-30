@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
 	dht2 "github.com/make-os/kit/net/dht"
@@ -35,8 +37,6 @@ import (
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
 
 const (

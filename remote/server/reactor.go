@@ -7,6 +7,10 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/go-git/go-git/v5"
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
+	packfile2 "github.com/go-git/go-git/v5/plumbing/format/packfile"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/net/dht/announcer"
@@ -27,10 +31,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/thoas/go-funk"
-	"gopkg.in/src-d/go-git.v4"
-	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
-	packfile2 "gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 // Receive implements Reactor

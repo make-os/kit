@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
@@ -15,7 +16,6 @@ import (
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // MergeRequestReadArgs contains arguments used by MergeRequestReadCmd function

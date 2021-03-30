@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	gogitcfg "github.com/go-git/go-git/v5/config"
+	fmtcfg "github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/mock/gomock"
 	types2 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
@@ -14,8 +16,6 @@ import (
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	gogitcfg "gopkg.in/src-d/go-git.v4/config"
-	fmtcfg "gopkg.in/src-d/go-git.v4/plumbing/format/config"
 )
 
 var _ = Describe(".HookCmd", func() {

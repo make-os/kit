@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/remote/repo"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 // InitRepository creates a bare git repository

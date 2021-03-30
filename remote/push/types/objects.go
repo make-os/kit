@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
@@ -10,7 +11,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/vmihailenco/msgpack"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // PushNote implements types.PushNote

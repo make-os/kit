@@ -1,9 +1,9 @@
 package repo
 
 import (
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/remote/types"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 // WrappedCommit wraps a go-git commit to ensure it conforms to types.WrappedCommit
