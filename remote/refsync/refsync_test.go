@@ -52,7 +52,6 @@ var _ = Describe("RefSync", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockFetcher = mocks.NewMockObjectFetcher(ctrl)
 		mockKeepers = mocks.NewMockKeepers(ctrl)

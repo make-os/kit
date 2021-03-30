@@ -63,7 +63,6 @@ var _ = Describe("BasicObjectStreamer", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockHost = mocks.NewMockHost(ctrl)
 		mockDHT = mocks.NewMockDHT(ctrl)

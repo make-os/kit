@@ -31,7 +31,6 @@ var _ = Describe("Merge", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		mockObjs := testutil.Mocks(ctrl)
 		mockLogic = mockObjs.Logic

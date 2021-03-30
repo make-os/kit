@@ -37,7 +37,6 @@ var _ = Describe("BasicObjectRequester", func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		log = cfg.G().Log
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockHost = mocks.NewMockHost(ctrl)
 	})

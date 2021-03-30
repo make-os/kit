@@ -35,7 +35,6 @@ var _ = Describe("ObjectFetcher", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockObjStreamer = mocks.NewMockStreamer(ctrl)

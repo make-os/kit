@@ -25,7 +25,6 @@ var _ = Describe("GitModule", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 	})
 
 	BeforeEach(func() {

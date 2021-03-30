@@ -47,7 +47,6 @@ var _ = Describe("Validation", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = ed25519.NewKeyFromIntSeed(1)
 		testTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}

@@ -34,7 +34,6 @@ var _ = Describe("TxDetail", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = ed25519.NewKeyFromIntSeed(1)
 		privKey2 = ed25519.NewKeyFromIntSeed(2)

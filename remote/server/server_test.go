@@ -44,7 +44,6 @@ var _ = Describe("Server", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 
 		mockObjects = testutil.Mocks(ctrl)

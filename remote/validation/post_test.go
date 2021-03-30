@@ -37,7 +37,6 @@ var _ = Describe("Validation", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		commit = mocks.NewMockCommit(ctrl)
 		mockRepo = mocks.NewMockLocalRepo(ctrl)

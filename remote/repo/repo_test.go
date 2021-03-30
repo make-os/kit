@@ -27,7 +27,7 @@ func TestRepo(t *testing.T) {
 	RunSpecs(t, "RepoContext Suite")
 }
 
-var _ = FDescribe("Repo", func() {
+var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, repoName string
@@ -37,7 +37,6 @@ var _ = FDescribe("Repo", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		cfg.Node.GitBinPath = "/usr/bin/git"
 		key = ed25519.NewKeyFromIntSeed(1)
 	})
 
