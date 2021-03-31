@@ -3,6 +3,7 @@ package repo
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -548,4 +549,24 @@ func (r *Repo) GetFileLines(ref, path string) (res []string, err error) {
 	}
 
 	return file.Lines()
+}
+
+// GetBranches returns a list of branches
+func (r *Repo) GetBranches() (branches []string, err error) {
+	itr, err := r.Branches()
+	if err != nil {
+		return nil, err
+	}
+	for {
+		var ref *plumbing.Reference
+		ref, err = itr.Next()
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			break
+		}
+		branches = append(branches, ref.Name().Short())
+	}
+	return
 }

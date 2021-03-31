@@ -662,5 +662,33 @@ var _ = Describe("RepoModule", func() {
 				m.GetFileLines("repo1", "a")
 			})
 		})
+
+		It("should return lines of a file", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			lines := m.GetFileLines("repo1", "file.txt")
+			Expect(lines).To(Equal([]string{"Hello World", "Hello Friend"}))
+		})
+	})
+
+	Describe(".GetBranches", func() {
+		It("should panic if repo name is not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetBranches("")
+			})
+		})
+
+		It("should panic if repo does not exist", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetBranches("unknown")
+			})
+		})
+
+		It("should return expected branch(es)", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			lines := m.GetBranches("repo1")
+			Expect(lines).To(Equal([]string{"master"}))
+		})
 	})
 })

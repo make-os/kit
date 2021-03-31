@@ -441,4 +441,17 @@ var _ = Describe("Repo", func() {
 			Expect(err).To(MatchError(rr.ErrPathNotAFile))
 		})
 	})
+
+	Describe(".GetBranches", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return expected branches", func() {
+			branches, err := r.GetBranches()
+			Expect(err).To(BeNil())
+			Expect(branches).To(Equal([]string{"master"}))
+		})
+	})
 })

@@ -59,6 +59,7 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository"},
 		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
+		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
 	}
 }
 
@@ -556,4 +557,28 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 	}
 
 	return lines
+}
+
+// GetBranches returns the list of branches
+//  - name: The name of the target repository.
+func (m *RepoModule) GetBranches(name string) []string {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	branches, err := r.GetBranches()
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return branches
 }
