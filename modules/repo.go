@@ -60,6 +60,7 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository"},
 		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
 		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
+		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
 	}
 }
 
@@ -581,4 +582,36 @@ func (m *RepoModule) GetBranches(name string) []string {
 	}
 
 	return branches
+}
+
+// GetLatestBranchCommit returns the latest commit of a branch in a repository.
+//  - name: The name of the target repository.
+//  - branch: The name of the branch.
+func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if branch == "" {
+		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	c, err := r.GetLatestCommit(branch)
+	if err != nil {
+		if err == plumbing.ErrReferenceNotFound {
+			panic(se(404, StatusCodeBranchNotFound, "branch", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.ToMap(c)
 }

@@ -616,16 +616,16 @@ var _ = Describe("RepoModule", func() {
 		})
 
 		It("should return error when path is unknown", func() {
-			err := &errors.ReqError{Code: modules.StatusCodePathNotFound, HttpCode: 404, Msg: "path not found", Field: "path"}
 			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: modules.StatusCodePathNotFound, HttpCode: 404, Msg: "path not found", Field: "path"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListPath("repo1", "unknown")
 			})
 		})
 
 		It("should return error when revision is invalid", func() {
-			err := &errors.ReqError{Code: modules.StatusCodeReferenceNotFound, HttpCode: 404, Msg: "reference not found", Field: "revision"}
 			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: modules.StatusCodeReferenceNotFound, HttpCode: 404, Msg: "reference not found", Field: "revision"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListPath("repo1", ".", "something")
 			})
@@ -648,16 +648,16 @@ var _ = Describe("RepoModule", func() {
 		})
 
 		It("should panic if file path does not exist", func() {
-			err := &errors.ReqError{Code: "path_not_found", HttpCode: 404, Msg: "path not found", Field: "file"}
 			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "path_not_found", HttpCode: 404, Msg: "path not found", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetFileLines("repo1", "unknown")
 			})
 		})
 
 		It("should panic if file path is not a file", func() {
-			err := &errors.ReqError{Code: "path_not_file", HttpCode: 400, Msg: "path is not a file", Field: "file"}
 			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "path_not_file", HttpCode: 400, Msg: "path is not a file", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetFileLines("repo1", "a")
 			})
@@ -689,6 +689,43 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			lines := m.GetBranches("repo1")
 			Expect(lines).To(Equal([]string{"master"}))
+		})
+	})
+
+	Describe(".GetLatestBranchCommit", func() {
+		It("should panic if repo name is not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetLatestBranchCommit("", "")
+			})
+		})
+
+		It("should panic if branch name is not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "branch name is required", Field: "branch"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetLatestBranchCommit("repo", "")
+			})
+		})
+
+		It("should panic if repo does not exist", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetLatestBranchCommit("unknown", "branch")
+			})
+		})
+
+		It("should panic if branch does not exist", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "branch_not_found", HttpCode: 404, Msg: "reference not found", Field: "branch"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetLatestBranchCommit("repo1", "unknown")
+			})
+		})
+
+		It("should be successful if branch is known", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			bc := m.GetLatestBranchCommit("repo1", "master")
+			Expect(bc).ToNot(BeEmpty())
 		})
 	})
 })

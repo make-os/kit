@@ -28,6 +28,7 @@ const (
 	StatusCodePathNotFound          = "path_not_found"
 	StatusCodePathNotAFile          = "path_not_file"
 	StatusCodeReferenceNotFound     = "reference_not_found"
+	StatusCodeBranchNotFound        = "branch_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 

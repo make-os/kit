@@ -454,4 +454,35 @@ var _ = Describe("Repo", func() {
 			Expect(branches).To(Equal([]string{"master"}))
 		})
 	})
+
+	Describe(".GetLatestCommit", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return a commit when branch is valid", func() {
+			bc, err := r.GetLatestCommit("refs/heads/master")
+			Expect(err).To(BeNil())
+			Expect(bc).ToNot(BeNil())
+		})
+
+		It("should return a commit even when branch name is short", func() {
+			bc, err := r.GetLatestCommit("master")
+			Expect(err).To(BeNil())
+			Expect(bc).ToNot(BeNil())
+		})
+
+		It("should return an error if branch is unknown", func() {
+			_, err := r.GetLatestCommit("unknown")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return an error if branch is not branch reference", func() {
+			_, err := r.GetLatestCommit("refs/tags/v1")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+	})
 })

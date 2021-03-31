@@ -570,3 +570,41 @@ func (r *Repo) GetBranches() (branches []string, err error) {
 	}
 	return
 }
+
+// GetBranchCommit returns the recent commit of a branch
+func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
+
+	branch = strings.ToLower(branch)
+	var refname = plumbing.ReferenceName("refs/heads/" + branch)
+	if strings.HasPrefix(branch, "refs/heads/") {
+		refname = plumbing.ReferenceName(branch)
+	}
+
+	ref, err := r.Reference(refname, true)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.CommitObject(ref.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	bc := &types.BranchCommit{Message: commit.Message, Hash: commit.Hash.String()}
+	if commit.Committer != (object.Signature{}) {
+		bc.Committer = &types.CommitSignatory{
+			Name:      commit.Committer.Name,
+			Email:     commit.Committer.Email,
+			Timestamp: commit.Committer.When.Unix(),
+		}
+	}
+	if commit.Author != (object.Signature{}) {
+		bc.Author = &types.CommitSignatory{
+			Name:      commit.Author.Name,
+			Email:     commit.Author.Email,
+			Timestamp: commit.Author.When.Unix(),
+		}
+	}
+
+	return bc, nil
+}

@@ -152,6 +152,22 @@ type LocalRepo interface {
 
 	// GetBranches returns a list of branches
 	GetBranches() (branches []string, err error)
+
+	// GetBranchCommit returns information about last commit of a branch
+	GetLatestCommit(branch string) (*BranchCommit, error)
+}
+
+type CommitSignatory struct {
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+type BranchCommit struct {
+	Committer *CommitSignatory `json:"committer"`
+	Author    *CommitSignatory `json:"author"`
+	Message   string           `json:"message"`
+	Hash      string           `json:"hash"`
 }
 
 type ListPathValue struct {
