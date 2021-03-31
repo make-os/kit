@@ -397,4 +397,48 @@ var _ = Describe("Repo", func() {
 			Expect(res[0].UpdatedAt).ToNot(BeZero())
 		})
 	})
+
+	Describe(".GetFileLines", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error when reference is unknown", func() {
+			_, err := r.GetFileLines("unknown", "a")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return expected lines when path is 'file.txt'", func() {
+			lines, err := r.GetFileLines("HEAD", "file.txt")
+			Expect(err).To(BeNil())
+			Expect(lines).To(HaveLen(2))
+			Expect(lines).To(Equal([]string{
+				"Hello World",
+				"Hello Friend",
+			}))
+		})
+
+		It("should return expected lines when path is 'a/b/file3.txt'", func() {
+			lines, err := r.GetFileLines("HEAD", "a/b/file3.txt")
+			Expect(err).To(BeNil())
+			Expect(lines).To(HaveLen(1))
+			Expect(lines).To(Equal([]string{
+				"File 3",
+			}))
+		})
+
+		It("should return 'path not found' error when path is unknown", func() {
+			_, err := r.GetFileLines("HEAD", "unknown")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(rr.ErrPathNotFound))
+		})
+
+		It("should return 'path is not a file' error when path is not a file", func() {
+			_, err := r.GetFileLines("HEAD", "a")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(rr.ErrPathNotAFile))
+		})
+	})
 })

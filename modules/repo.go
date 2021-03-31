@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/ed25519"
-	modulestypes "github.com/make-os/kit/modules/types"
+	modtypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
-	repo2 "github.com/make-os/kit/remote/repo"
-	types2 "github.com/make-os/kit/rpc/types"
+	"github.com/make-os/kit/remote/repo"
+	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/constants"
@@ -27,15 +28,15 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	modulestypes.ModuleCommon
+	modtypes.ModuleCommon
 	logic   core.Logic
 	service services.Service
 	repoSrv core.RemoteServer
 }
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
-func NewAttachableRepoModule(client types2.Client) *RepoModule {
-	return &RepoModule{ModuleCommon: modulestypes.ModuleCommon{Client: client}}
+func NewAttachableRepoModule(client rpctypes.Client) *RepoModule {
+	return &RepoModule{ModuleCommon: modtypes.ModuleCommon{Client: client}}
 }
 
 // NewRepoModule creates an instance of RepoModule
@@ -44,8 +45,8 @@ func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic co
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *RepoModule) methods() []*modulestypes.VMMember {
-	return []*modulestypes.VMMember{
+func (m *RepoModule) methods() []*modtypes.VMMember {
+	return []*modtypes.VMMember{
 		{Name: "create", Value: m.Create, Description: "Create a git repository on the network"},
 		{Name: "get", Value: m.Get, Description: "Get and return a repository"},
 		{Name: "update", Value: m.Update, Description: "Update a repository"},
@@ -56,13 +57,14 @@ func (m *RepoModule) methods() []*modulestypes.VMMember {
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
-		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository's path"},
+		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository"},
+		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
 	}
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *RepoModule) globals() []*modulestypes.VMMember {
-	return []*modulestypes.VMMember{}
+func (m *RepoModule) globals() []*modtypes.VMMember {
+	return []*modtypes.VMMember{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -244,7 +246,7 @@ func (m *RepoModule) Vote(params map[string]interface{}, options ...interface{})
 //  - opts.select: Provide a list of dot-notated fields to be returned.
 //
 // RETURN <state.Repository>
-func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {
+func (m *RepoModule) Get(name string, opts ...modtypes.GetOptions) util.Map {
 	var blockHeight uint64
 	var selectors []string
 	var err error
@@ -483,8 +485,11 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 	}
 
 	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
-	repo, err := repo2.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
 		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
 	}
 
@@ -497,9 +502,9 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 		rev = revision[0]
 	}
 
-	items, err := repo.ListPath(rev, path)
+	items, err := r.ListPath(rev, path)
 	if err != nil {
-		if err == repo2.ErrPathNotFound {
+		if err == repo.ErrPathNotFound {
 			panic(se(404, StatusCodePathNotFound, "path", err.Error()))
 		}
 		if err == plumbing.ErrReferenceNotFound {
@@ -509,4 +514,46 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 	}
 
 	return util.StructSliceToMap(items)
+}
+
+// GetFileLines returns the lines of a file in a repository.
+//  - name: The name of the target repository.
+//  - file: The file path.
+//  - revision: The revision that will be queried (default: HEAD).
+func (m *RepoModule) GetFileLines(name, file string, revision ...string) []string {
+
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	if strings.HasPrefix(file, "."+string(os.PathSeparator)) {
+		file = file[2:]
+	}
+
+	var rev = "HEAD"
+	if len(revision) > 0 {
+		rev = revision[0]
+	}
+
+	lines, err := r.GetFileLines(rev, file)
+	if err != nil {
+		if err == repo.ErrPathNotFound {
+			panic(se(404, StatusCodePathNotFound, "file", err.Error()))
+		}
+		if err == repo.ErrPathNotAFile {
+			panic(se(400, StatusCodePathNotAFile, "file", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "file", err.Error()))
+	}
+
+	return lines
 }

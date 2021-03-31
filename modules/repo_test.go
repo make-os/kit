@@ -603,7 +603,7 @@ var _ = Describe("RepoModule", func() {
 		})
 
 		It("should panic if repo does not exist", func() {
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repository does not exist", Field: "name"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListPath("unknown", "")
 			})
@@ -628,6 +628,38 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListPath("repo1", ".", "something")
+			})
+		})
+	})
+
+	Describe(".GetFileLines", func() {
+		It("should panic if repo name is not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetFileLines("", "")
+			})
+		})
+
+		It("should panic if repo does not exist", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetFileLines("unknown", "")
+			})
+		})
+
+		It("should panic if file path does not exist", func() {
+			err := &errors.ReqError{Code: "path_not_found", HttpCode: 404, Msg: "path not found", Field: "file"}
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetFileLines("repo1", "unknown")
+			})
+		})
+
+		It("should panic if file path is not a file", func() {
+			err := &errors.ReqError{Code: "path_not_file", HttpCode: 400, Msg: "path is not a file", Field: "file"}
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetFileLines("repo1", "a")
 			})
 		})
 	})

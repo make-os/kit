@@ -22,14 +22,6 @@ func TestModules(t *testing.T) {
 	RunSpecs(t, "Modules Suite")
 }
 
-type TestCase struct {
-	Desc           string
-	Obj            interface{}
-	Expected       interface{}
-	FieldsToIgnore []string
-	ShouldPanic    bool
-}
-
 var _ = Describe("Common", func() {
 	var ctrl *gomock.Controller
 	var mockKeepers *mocks.MockKeepers

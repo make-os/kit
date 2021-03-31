@@ -28,6 +28,7 @@ import (
 var (
 	ErrNotAnAncestor = fmt.Errorf("not an ancestor")
 	ErrPathNotFound  = fmt.Errorf("path not found")
+	ErrPathNotAFile  = fmt.Errorf("path is not a file")
 )
 
 // Get opens a local repository and returns a handle.
@@ -512,4 +513,39 @@ handleEntry:
 	}
 
 	return
+}
+
+// GetFileLines returns the lines of a file
+func (r *Repo) GetFileLines(ref, path string) (res []string, err error) {
+	reference, err := r.Reference(plumbing.ReferenceName(ref), true)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.CommitObject(reference.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, err
+	}
+
+	targetEntry, err := tree.FindEntry(path)
+	if err != nil {
+		if err == object.ErrEntryNotFound {
+			return nil, ErrPathNotFound
+		}
+		return nil, err
+	} else if targetEntry.Mode == filemode.Dir {
+		return nil, ErrPathNotAFile
+	}
+
+	file, err := tree.TreeEntryFile(targetEntry)
+	if err != nil {
+		return nil, err
+	}
+
+	return file.Lines()
 }

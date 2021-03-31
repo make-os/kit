@@ -26,6 +26,7 @@ const (
 	StatusCodePushKeyNotFound       = "push_key_not_found"
 	StatusCodeRepoNotFound          = "repo_not_found"
 	StatusCodePathNotFound          = "path_not_found"
+	StatusCodePathNotAFile          = "path_not_file"
 	StatusCodeReferenceNotFound     = "reference_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )

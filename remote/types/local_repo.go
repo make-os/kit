@@ -146,6 +146,9 @@ type LocalRepo interface {
 
 	// ListPath returns a list of entries in a repository's path
 	ListPath(ref, path string) (res []ListPathValue, err error)
+
+	// GetFileLines returns the lines of a file
+	GetFileLines(ref, path string) (res []string, err error)
 }
 
 type ListPathValue struct {
