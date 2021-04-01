@@ -26,7 +26,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*api.ResultA
 
 	out, statusCode, err := pk.c.call("pk_getOwner", util.Map{"id": addr, "height": height})
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	r := &api.ResultAccount{Account: state.BareAccount()}
@@ -65,7 +65,7 @@ func (pk *PushKeyAPI) Register(body *api.BodyRegisterPushKey) (*api.ResultRegist
 	// call RPC method: repo_create
 	resp, statusCode, err := pk.c.call("pk_register", tx.ToMap())
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r api.ResultRegisterPushKey

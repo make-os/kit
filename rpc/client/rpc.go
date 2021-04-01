@@ -15,7 +15,7 @@ type RPCAPI struct {
 func (c *RPCAPI) GetMethods() ([]rpc.MethodInfo, error) {
 	resp, statusCode, err := c.c.call("rpc_methods", nil)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r []rpc.MethodInfo

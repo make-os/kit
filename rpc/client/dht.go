@@ -18,7 +18,7 @@ type DHTAPI struct {
 func (d *DHTAPI) GetPeers() ([]string, error) {
 	resp, statusCode, err := d.c.call("dht_getPeers", nil)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 	return cast.ToStringSlice(resp["peers"]), nil
 }
@@ -27,7 +27,7 @@ func (d *DHTAPI) GetPeers() ([]string, error) {
 func (d *DHTAPI) GetProviders(key string) ([]*api.ResultDHTProvider, error) {
 	resp, statusCode, err := d.c.call("dht_getProviders", key)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r = []*api.ResultDHTProvider{}
@@ -42,7 +42,7 @@ func (d *DHTAPI) GetProviders(key string) ([]*api.ResultDHTProvider, error) {
 func (d *DHTAPI) Announce(key string) error {
 	_, statusCode, err := d.c.call("dht_announce", key)
 	if err != nil {
-		return makeStatusErrorFromCallErr(statusCode, err)
+		return makeReqErrFromCallErr(statusCode, err)
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func (d *DHTAPI) Announce(key string) error {
 func (d *DHTAPI) GetRepoObjectProviders(hash string) ([]*api.ResultDHTProvider, error) {
 	resp, statusCode, err := d.c.call("dht_getRepoObjectProviders", hash)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r = []*api.ResultDHTProvider{}
@@ -66,7 +66,7 @@ func (d *DHTAPI) GetRepoObjectProviders(hash string) ([]*api.ResultDHTProvider, 
 func (d *DHTAPI) Store(key, value string) error {
 	_, statusCode, err := d.c.call("dht_store", util.Map{"key": key, "value": value})
 	if err != nil {
-		return makeStatusErrorFromCallErr(statusCode, err)
+		return makeReqErrFromCallErr(statusCode, err)
 	}
 	return nil
 }
@@ -75,7 +75,7 @@ func (d *DHTAPI) Store(key, value string) error {
 func (d *DHTAPI) Lookup(key string) (string, error) {
 	resp, statusCode, err := d.c.call("dht_lookup", key)
 	if err != nil {
-		return "", makeStatusErrorFromCallErr(statusCode, err)
+		return "", makeReqErrFromCallErr(statusCode, err)
 	}
 
 	bz, err := base64.StdEncoding.DecodeString(cast.ToString(resp["value"]))

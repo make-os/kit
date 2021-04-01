@@ -48,9 +48,9 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe(".makeClientStatusErr", func() {
+	Describe(".makeClientReqErr", func() {
 		It("should return a ReqErr that describes a client error", func() {
-			err := makeClientStatusErr("something bad on client: code %d", 11)
+			err := makeClientReqErr("something bad on client: code %d", 11)
 			Expect(err.Field).To(Equal(""))
 			Expect(err.Code).To(Equal("client_error"))
 			Expect(err.HttpCode).To(Equal(0))
@@ -58,10 +58,10 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe(".makeStatusErrorFromCallErr", func() {
+	Describe(".makeReqErrFromCallErr", func() {
 		When("error does not contain a json object string", func() {
 			It("should create unexpected_error", func() {
-				err := makeStatusErrorFromCallErr(500, fmt.Errorf("some bad error"))
+				err := makeReqErrFromCallErr(500, fmt.Errorf("some bad error"))
 				Expect(err.HttpCode).To(Equal(500))
 				Expect(err.Msg).To(Equal("some bad error"))
 				Expect(err.Code).To(Equal(ErrCodeUnexpected))
@@ -72,7 +72,7 @@ var _ = Describe("Client", func() {
 		When("error contains a status error in string format", func() {
 			It("should format the string and return a ReqError object", func() {
 				se := errors.ReqErr(500, "some_error", "field_a", "msg")
-				err := makeStatusErrorFromCallErr(500, fmt.Errorf(se.Error()))
+				err := makeReqErrFromCallErr(500, fmt.Errorf(se.Error()))
 				Expect(err.HttpCode).To(Equal(500))
 				Expect(err.Msg).To(Equal("msg"))
 				Expect(err.Code).To(Equal("some_error"))
@@ -83,7 +83,7 @@ var _ = Describe("Client", func() {
 		When("status code is not 0 and error is json encoding of rpc.Response", func() {
 			It("should return ReqErr populated with values from the encoded rpc.Response", func() {
 				err := rpc.Response{Err: &rpc.Err{Code: "bad_code", Message: "we have a problem", Data: "bad_field"}}
-				se := makeStatusErrorFromCallErr(500, fmt.Errorf(`%s`, err.ToJSON()))
+				se := makeReqErrFromCallErr(500, fmt.Errorf(`%s`, err.ToJSON()))
 				Expect(se.Code).To(Equal("bad_code"))
 				Expect(se.HttpCode).To(Equal(500))
 				Expect(se.Msg).To(Equal("we have a problem"))

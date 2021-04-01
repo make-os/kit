@@ -18,7 +18,7 @@ type ChainAPI struct {
 func (c *ChainAPI) GetBlock(height uint64) (*api.ResultBlock, error) {
 	resp, statusCode, err := c.c.call("node_getBlock", height)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r = api.ResultBlock{ResultBlock: &core_types.ResultBlock{}}
@@ -33,7 +33,7 @@ func (c *ChainAPI) GetBlock(height uint64) (*api.ResultBlock, error) {
 func (c *ChainAPI) GetHeight() (uint64, error) {
 	resp, statusCode, err := c.c.call("node_getHeight", nil)
 	if err != nil {
-		return 0, makeStatusErrorFromCallErr(statusCode, err)
+		return 0, makeReqErrFromCallErr(statusCode, err)
 	}
 	return cast.ToUint64(resp["height"]), nil
 }
@@ -42,7 +42,7 @@ func (c *ChainAPI) GetHeight() (uint64, error) {
 func (c *ChainAPI) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 	resp, statusCode, err := c.c.call("node_getBlockInfo", height)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r = api.ResultBlockInfo{BlockInfo: &state.BlockInfo{}}
@@ -57,7 +57,7 @@ func (c *ChainAPI) GetBlockInfo(height uint64) (*api.ResultBlockInfo, error) {
 func (c *ChainAPI) GetValidators(height uint64) ([]*api.ResultValidator, error) {
 	resp, statusCode, err := c.c.call("node_getValidators", height)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r = []*api.ResultValidator{}
@@ -72,7 +72,7 @@ func (c *ChainAPI) GetValidators(height uint64) ([]*api.ResultValidator, error) 
 func (c *ChainAPI) IsSyncing() (bool, error) {
 	resp, statusCode, err := c.c.call("node_isSyncing", nil)
 	if err != nil {
-		return false, makeStatusErrorFromCallErr(statusCode, err)
+		return false, makeReqErrFromCallErr(statusCode, err)
 	}
 	return cast.ToBool(resp["syncing"]), nil
 }

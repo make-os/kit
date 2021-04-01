@@ -41,7 +41,7 @@ func (t *TicketAPI) Buy(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	resp, status, err := t.c.call("ticket_buy", tx.ToMap())
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r api.ResultHash
@@ -81,7 +81,7 @@ func (t *TicketAPI) BuyHost(body *api.BodyBuyTicket) (*api.ResultHash, error) {
 
 	resp, status, err := t.c.call("ticket_buyHost", tx.ToMap())
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r api.ResultHash
@@ -98,7 +98,7 @@ func (t *TicketAPI) List(body *api.BodyTicketQuery) (res []*api.ResultTicket, er
 	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": util.ToMap(body.QueryOption)}
 	resp, status, err := t.c.call("ticket_list", q)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r = objx.New(map[string]interface{}(resp))
@@ -129,7 +129,7 @@ func (t *TicketAPI) ListHost(body *api.BodyTicketQuery) (res []*api.ResultTicket
 	q := util.Map{"proposer": body.ProposerPubKey, "queryOpts": util.ToMap(body.QueryOption)}
 	resp, status, err := t.c.call("ticket_listHost", q)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r = objx.New(map[string]interface{}(resp))

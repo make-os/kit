@@ -16,7 +16,7 @@ type PoolAPI struct {
 func (d *PoolAPI) GetSize() (*api.ResultPoolSize, error) {
 	resp, statusCode, err := d.c.call("pool_getSize", nil)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r api.ResultPoolSize
@@ -31,7 +31,7 @@ func (d *PoolAPI) GetSize() (*api.ResultPoolSize, error) {
 func (d *PoolAPI) GetPushPoolSize() (int, error) {
 	resp, statusCode, err := d.c.call("pool_getPushPoolSize", nil)
 	if err != nil {
-		return 0, makeStatusErrorFromCallErr(statusCode, err)
+		return 0, makeReqErrFromCallErr(statusCode, err)
 	}
 	return cast.ToInt(resp["size"]), nil
 }

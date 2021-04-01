@@ -167,20 +167,19 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	return m, resp.StatusCode, nil
 }
 
-// makeClientStatusErr creates a ReqError representing a client error
-func makeClientStatusErr(msg string, args ...interface{}) *errors.ReqError {
+// makeClientReqErr creates a ReqError representing a client error
+func makeClientReqErr(msg string, args ...interface{}) *errors.ReqError {
 	return errors.ReqErr(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
-// makeStatusErrorFromCallErr converts error containing a JSON marshalled
-// status error to ReqError. If error does not contain a JSON object,
-// an ErrCodeUnexpected status error including the error message is returned.
-func makeStatusErrorFromCallErr(callStatusCode int, err error) *errors.ReqError {
+// makeReqErrFromCallErr converts a json-encoded error to ReqError.
+// If err does not contain a JSON body, an ErrCodeUnexpected ReqError that includes
+// the error message is returned.
+func makeReqErrFromCallErr(callStatusCode int, err error) *errors.ReqError {
 	if err == nil {
 		return nil
 	}
 
-	// For non-json error, return an ErrCodeUnexpected status error
 	if !govalidator.IsJSON(err.Error()) {
 		se := errors.ReqErrorFromStr(err.Error())
 		if se.IsSet() {

@@ -15,7 +15,7 @@ type TxAPI struct {
 func (t *TxAPI) Send(data map[string]interface{}) (*api.ResultHash, error) {
 	out, statusCode, err := t.c.call("tx_sendPayload", data)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var result api.ResultHash
@@ -30,7 +30,7 @@ func (t *TxAPI) Send(data map[string]interface{}) (*api.ResultHash, error) {
 func (t *TxAPI) Get(hash string) (*api.ResultTx, error) {
 	resp, statusCode, err := t.c.call("tx_get", hash)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(statusCode, err)
+		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
 	var r api.ResultTx

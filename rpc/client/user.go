@@ -26,7 +26,7 @@ func (u *UserAPI) Get(address string, blockHeight ...uint64) (*api.ResultAccount
 
 	resp, status, err := u.c.call("user_get", util.Map{"address": address, "height": height})
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	r := &api.ResultAccount{Account: state.BareAccount()}
@@ -61,7 +61,7 @@ func (u *UserAPI) Send(body *api.BodySendCoin) (*api.ResultHash, error) {
 
 	resp, status, err := u.c.call("user_send", tx.ToMap())
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r api.ResultHash
@@ -82,7 +82,7 @@ func (u *UserAPI) GetNonce(address string, blockHeight ...uint64) (uint64, error
 
 	resp, status, err := u.c.call("user_getNonce", util.Map{"address": address, "height": height})
 	if err != nil {
-		return 0, makeStatusErrorFromCallErr(status, err)
+		return 0, makeReqErrFromCallErr(status, err)
 	}
 
 	return cast.ToUint64(resp["nonce"]), nil
@@ -93,7 +93,7 @@ func (u *UserAPI) GetKeys() ([]string, error) {
 
 	resp, status, err := u.c.call("user_getKeys", nil)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	return cast.ToStringSlice(resp["addresses"]), nil
@@ -109,7 +109,7 @@ func (u *UserAPI) GetBalance(address string, blockHeight ...uint64) (float64, er
 
 	resp, status, err := u.c.call("user_getBalance", util.Map{"address": address, "height": height})
 	if err != nil {
-		return 0, makeStatusErrorFromCallErr(status, err)
+		return 0, makeReqErrFromCallErr(status, err)
 	}
 
 	return cast.ToFloat64(resp["balance"]), nil
@@ -127,7 +127,7 @@ func (u *UserAPI) GetStakedBalance(address string, blockHeight ...uint64) (float
 		"address": address,
 		"height":  height})
 	if err != nil {
-		return 0, makeStatusErrorFromCallErr(status, err)
+		return 0, makeReqErrFromCallErr(status, err)
 	}
 
 	return cast.ToFloat64(resp["balance"]), nil
@@ -138,7 +138,7 @@ func (u *UserAPI) GetValidator(includePrivKey bool) (*api.ResultValidatorInfo, e
 
 	resp, status, err := u.c.call("user_getValidator", includePrivKey)
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r api.ResultValidatorInfo
@@ -153,7 +153,7 @@ func (u *UserAPI) GetValidator(includePrivKey bool) (*api.ResultValidatorInfo, e
 func (u *UserAPI) GetPrivateKey(address string, passphrase string) (string, error) {
 	resp, status, err := u.c.call("user_getPrivKey", util.Map{"address": address, "passphrase": passphrase})
 	if err != nil {
-		return "", makeStatusErrorFromCallErr(status, err)
+		return "", makeReqErrFromCallErr(status, err)
 	}
 	return cast.ToString(resp["privkey"]), nil
 }
@@ -162,7 +162,7 @@ func (u *UserAPI) GetPrivateKey(address string, passphrase string) (string, erro
 func (u *UserAPI) GetPublicKey(address string, passphrase string) (string, error) {
 	resp, status, err := u.c.call("user_getPubKey", util.Map{"address": address, "passphrase": passphrase})
 	if err != nil {
-		return "", makeStatusErrorFromCallErr(status, err)
+		return "", makeReqErrFromCallErr(status, err)
 	}
 	return cast.ToString(resp["pubkey"]), nil
 }
@@ -189,7 +189,7 @@ func (u *UserAPI) SetCommission(body *api.BodySetCommission) (*api.ResultHash, e
 
 	resp, status, err := u.c.call("user_setCommission", tx.ToMap())
 	if err != nil {
-		return nil, makeStatusErrorFromCallErr(status, err)
+		return nil, makeReqErrFromCallErr(status, err)
 	}
 
 	var r api.ResultHash
