@@ -57,10 +57,11 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
-		{Name: "ls", Value: m.ListPath, Description: "List files and directories in a repository"},
-		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
-		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
-		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
+		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
+		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file"},
+		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches"},
+		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch"},
+		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits of a branch"},
 	}
 }
 
@@ -294,21 +295,21 @@ func (m *RepoModule) Get(name string, opts ...modtypes.GetOptions) util.Map {
 		}
 	}
 
-	repo := m.logic.RepoKeeper().Get(name, blockHeight)
+	r := m.logic.RepoKeeper().Get(name, blockHeight)
 
-	if repo.IsNil() {
+	if r.IsNil() {
 		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 
 	if len(selectors) > 0 {
-		selected, err := Select(util.MustToJSON(repo), selectors...)
+		selected, err := Select(util.MustToJSON(r), selectors...)
 		if err != nil {
 			panic(se(400, StatusCodeInvalidParam, "select", err.Error()))
 		}
 		return selected
 	}
 
-	return util.ToMap(repo)
+	return util.ToMap(r)
 }
 
 // Update creates a proposal to update a repository
@@ -614,4 +615,42 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 	}
 
 	return util.ToMap(c)
+}
+
+// GetCommits returns commits of a branch.
+//  - name: The name of the target repository.
+//  - branch: The target branch.
+//  - limit: The number of commit to return. 0 means all.
+func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if branch == "" {
+		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	limit_ := 0
+	if len(limit) > 0 {
+		limit_ = limit[0]
+	}
+
+	commits, err := r.GetCommits(branch, limit_)
+	if err != nil {
+		if err == plumbing.ErrReferenceNotFound {
+			panic(se(404, StatusCodeBranchNotFound, "branch", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.StructSliceToMap(commits)
 }

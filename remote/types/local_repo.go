@@ -155,6 +155,11 @@ type LocalRepo interface {
 
 	// GetBranchCommit returns information about last commit of a branch
 	GetLatestCommit(branch string) (*BranchCommit, error)
+
+	// GetCommits returns commits of a branch.
+	//  - branch: The target branch.
+	//  - limit: The number of commit to return. 0 means all.
+	GetCommits(branch string, limit int) (res []*BranchCommit, err error)
 }
 
 type CommitSignatory struct {
@@ -164,10 +169,11 @@ type CommitSignatory struct {
 }
 
 type BranchCommit struct {
-	Committer *CommitSignatory `json:"committer"`
-	Author    *CommitSignatory `json:"author"`
-	Message   string           `json:"message"`
-	Hash      string           `json:"hash"`
+	Committer    *CommitSignatory `json:"committer"`
+	Author       *CommitSignatory `json:"author"`
+	Message      string           `json:"message"`
+	Hash         string           `json:"hash"`
+	ParentHashes []string         `json:"parents"`
 }
 
 type ListPathValue struct {

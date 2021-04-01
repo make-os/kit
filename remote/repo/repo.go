@@ -606,5 +606,71 @@ func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 		}
 	}
 
+	for _, parent := range commit.ParentHashes {
+		bc.ParentHashes = append(bc.ParentHashes, parent.String())
+	}
+
 	return bc, nil
+}
+
+// GetCommits returns commits of a branch
+//  - branch: The target branch.
+//  - limit: The number of commit to return. 0 means all.
+func (r *Repo) GetCommits(branch string, limit int) (res []*types.BranchCommit, err error) {
+
+	branch = strings.ToLower(branch)
+	var refname = plumbing.ReferenceName("refs/heads/" + branch)
+	if strings.HasPrefix(branch, "refs/heads/") {
+		refname = plumbing.ReferenceName(branch)
+	}
+
+	ref, err := r.Reference(refname, true)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.CommitObject(ref.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[plumbing.Hash]bool)
+	itr := object.NewCommitIterCTime(commit, seen, nil)
+	for {
+		next, err := itr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		bc := &types.BranchCommit{Message: next.Message, Hash: next.Hash.String()}
+		if next.Committer != (object.Signature{}) {
+			bc.Committer = &types.CommitSignatory{
+				Name:      next.Committer.Name,
+				Email:     next.Committer.Email,
+				Timestamp: next.Committer.When.Unix(),
+			}
+		}
+		if next.Author != (object.Signature{}) {
+			bc.Author = &types.CommitSignatory{
+				Name:      next.Author.Name,
+				Email:     next.Author.Email,
+				Timestamp: next.Author.When.Unix(),
+			}
+		}
+
+		for _, parent := range next.ParentHashes {
+			bc.ParentHashes = append(bc.ParentHashes, parent.String())
+		}
+
+		res = append(res, bc)
+
+		if limit > 0 && len(res) == limit {
+			break
+		}
+	}
+
+	return
 }

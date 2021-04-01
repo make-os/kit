@@ -461,18 +461,6 @@ var _ = Describe("Repo", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should return a commit when branch is valid", func() {
-			bc, err := r.GetLatestCommit("refs/heads/master")
-			Expect(err).To(BeNil())
-			Expect(bc).ToNot(BeNil())
-		})
-
-		It("should return a commit even when branch name is short", func() {
-			bc, err := r.GetLatestCommit("master")
-			Expect(err).To(BeNil())
-			Expect(bc).ToNot(BeNil())
-		})
-
 		It("should return an error if branch is unknown", func() {
 			_, err := r.GetLatestCommit("unknown")
 			Expect(err).ToNot(BeNil())
@@ -483,6 +471,63 @@ var _ = Describe("Repo", func() {
 			_, err := r.GetLatestCommit("refs/tags/v1")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return a commit even when branch name is short", func() {
+			bc, err := r.GetLatestCommit("master")
+			Expect(err).To(BeNil())
+			Expect(bc).ToNot(BeNil())
+			Expect(bc.Hash).To(Equal("aef606780a3f857fdd7fe8270efa547f118bef5f"))
+		})
+
+		It("should return a commit when branch is valid", func() {
+			bc, err := r.GetLatestCommit("refs/heads/master")
+			Expect(err).To(BeNil())
+			Expect(bc).ToNot(BeNil())
+			Expect(bc.Hash).To(Equal("aef606780a3f857fdd7fe8270efa547f118bef5f"))
+		})
+	})
+
+	Describe(".GetCommits", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo2")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return an error if branch is unknown", func() {
+			_, err := r.GetCommits("unknown", 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return an error if branch is not branch reference", func() {
+			_, err := r.GetCommits("refs/tags/v1", 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrReferenceNotFound))
+		})
+
+		It("should return a commits even when branch name is short", func() {
+			commits, err := r.GetCommits("master", 0)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(11))
+			Expect(commits[0].Hash).To(Equal("bc2d3657cad5fb7a3ed2f4f9b178c38587ba2fc6"))
+			Expect(commits[10].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
+		})
+
+		It("should return a commits even when branch name is short", func() {
+			commits, err := r.GetCommits("refs/heads/master", 0)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(11))
+			Expect(commits[0].Hash).To(Equal("bc2d3657cad5fb7a3ed2f4f9b178c38587ba2fc6"))
+			Expect(commits[10].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
+		})
+
+		It("should return limited number if commits when limit is > 0", func() {
+			commits, err := r.GetCommits("master", 3)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(3))
+			Expect(commits[0].Hash).To(Equal("bc2d3657cad5fb7a3ed2f4f9b178c38587ba2fc6"))
+			Expect(commits[2].Hash).To(Equal("d6a23829e6787f8d16bd61effad57b88b500167a"))
 		})
 	})
 })
