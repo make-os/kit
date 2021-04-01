@@ -530,4 +530,32 @@ var _ = Describe("Repo", func() {
 			Expect(commits[2].Hash).To(Equal("d6a23829e6787f8d16bd61effad57b88b500167a"))
 		})
 	})
+
+	Describe(".GetCommitAncestors", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return an error if commit is not unknown", func() {
+			_, err := r.GetCommitAncestors("bad_hash", 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(plumbing.ErrObjectNotFound))
+		})
+
+		It("should return ancestors even when commit exists and has ancestors", func() {
+			commits, err := r.GetCommitAncestors("aef606780a3f857fdd7fe8270efa547f118bef5f", 0)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(5))
+			Expect(commits[0].Hash).To(Equal("c28e295ca030fa4ac9537f9f583f6b4b48be302b"))
+			Expect(commits[4].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
+		})
+
+		It("should return limited ancestors even when limit is > 0", func() {
+			commits, err := r.GetCommitAncestors("aef606780a3f857fdd7fe8270efa547f118bef5f", 1)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(1))
+			Expect(commits[0].Hash).To(Equal("c28e295ca030fa4ac9537f9f583f6b4b48be302b"))
+		})
+	})
 })
