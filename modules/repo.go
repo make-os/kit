@@ -57,11 +57,14 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
+
+		// Repository query methods.
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
 		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file"},
 		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches"},
 		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch"},
 		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits of a branch"},
+		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
 	}
 }
 
@@ -609,7 +612,7 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 	c, err := r.GetLatestCommit(branch)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
-			panic(se(404, StatusCodeBranchNotFound, "branch", err.Error()))
+			panic(se(404, StatusCodeBranchNotFound, "branch", "branch does not exist"))
 		}
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
@@ -647,7 +650,44 @@ func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
 	commits, err := r.GetCommits(branch, limit_)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
-			panic(se(404, StatusCodeBranchNotFound, "branch", err.Error()))
+			panic(se(404, StatusCodeBranchNotFound, "branch", "branch does not exist"))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.StructSliceToMap(commits)
+}
+
+// GetCommitAncestors returns ancestors of a commit with the given hash.
+//  - commitHash: The hash of the commit.
+//  - limit: The number of commit to return. 0 means all.
+func (m *RepoModule) GetCommitAncestors(name, commitHash string, limit ...int) []util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if commitHash == "" {
+		panic(se(400, StatusCodeInvalidParam, "commitHash", "commit hash is required"))
+	}
+
+	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	limit_ := 0
+	if len(limit) > 0 {
+		limit_ = limit[0]
+	}
+
+	commits, err := r.GetCommitAncestors(commitHash, limit_)
+	if err != nil {
+		if err == plumbing.ErrObjectNotFound {
+			panic(se(404, StatusCodeCommitNotFound, "commitHash", "commit does not exist"))
 		}
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}

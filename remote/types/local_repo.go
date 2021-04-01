@@ -160,6 +160,11 @@ type LocalRepo interface {
 	//  - branch: The target branch.
 	//  - limit: The number of commit to return. 0 means all.
 	GetCommits(branch string, limit int) (res []*BranchCommit, err error)
+
+	// GetCommitAncestors returns ancestors of a commit with the given hash.
+	//  - commitHash: The hash of the commit.
+	//  - limit: The number of commit to return. 0 means all.
+	GetCommitAncestors(commitHash string, limit int) (res []*BranchCommit, err error)
 }
 
 type CommitSignatory struct {

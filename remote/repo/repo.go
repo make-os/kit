@@ -674,3 +674,57 @@ func (r *Repo) GetCommits(branch string, limit int) (res []*types.BranchCommit, 
 
 	return
 }
+
+// GetCommitAncestors returns ancestors of a commit with the given hash.
+//  - commitHash: The hash of the commit.
+//  - limit: The number of commit to return. 0 means all.
+func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.BranchCommit, err error) {
+	commit, err := r.CommitObject(plumbing.NewHash(commitHash))
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[plumbing.Hash]bool)
+	itr := object.NewCommitIterCTime(commit, seen, nil)
+	for {
+		next, err := itr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		if next.Hash.String() == commitHash {
+			continue
+		}
+
+		bc := &types.BranchCommit{Message: next.Message, Hash: next.Hash.String()}
+		if next.Committer != (object.Signature{}) {
+			bc.Committer = &types.CommitSignatory{
+				Name:      next.Committer.Name,
+				Email:     next.Committer.Email,
+				Timestamp: next.Committer.When.Unix(),
+			}
+		}
+		if next.Author != (object.Signature{}) {
+			bc.Author = &types.CommitSignatory{
+				Name:      next.Author.Name,
+				Email:     next.Author.Email,
+				Timestamp: next.Author.When.Unix(),
+			}
+		}
+
+		for _, parent := range next.ParentHashes {
+			bc.ParentHashes = append(bc.ParentHashes, parent.String())
+		}
+
+		res = append(res, bc)
+
+		if limit > 0 && len(res) == limit {
+			break
+		}
+	}
+
+	return
+}

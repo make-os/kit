@@ -29,6 +29,7 @@ const (
 	StatusCodePathNotAFile          = "path_not_file"
 	StatusCodeReferenceNotFound     = "reference_not_found"
 	StatusCodeBranchNotFound        = "branch_not_found"
+	StatusCodeCommitNotFound        = "commit_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )
 
