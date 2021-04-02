@@ -154,6 +154,12 @@ type RepoModule interface {
 	Track(names string, height ...uint64)
 	UnTrack(names string)
 	GetTracked() util.Map
+	ListPath(name, path string, revision ...string) []util.Map
+	GetFileLines(name, file string, revision ...string) []string
+	GetBranches(name string) []string
+	GetLatestBranchCommit(name, branch string) util.Map
+	GetCommits(name, branch string, limit ...int) []util.Map
+	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
 }
 type NamespaceModule interface {
 	Module

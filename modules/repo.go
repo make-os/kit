@@ -60,10 +60,10 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 
 		// Repository query methods.
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
-		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file"},
-		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches"},
-		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch"},
-		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits of a branch"},
+		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
+		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
+		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
+		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits in a branch of a repository"},
 		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
 	}
 }
@@ -530,6 +530,10 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 
 	if name == "" {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if file == "" {
+		panic(se(400, StatusCodeInvalidParam, "file", "file path is required"))
 	}
 
 	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)

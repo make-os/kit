@@ -4,6 +4,7 @@ import (
 	modulestypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/util"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 )
@@ -76,6 +77,67 @@ func (a *RepoAPI) tracked(interface{}) (resp *rpc.Response) {
 	return rpc.Success(a.mods.Repo.GetTracked())
 }
 
+// ls list files and directories of a repository
+func (a *RepoAPI) ls(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	var revision []string
+	if rev := m.Get("revision").Str(); rev != "" {
+		revision = []string{rev}
+	}
+	return rpc.Success(util.Map{
+		"entries": a.mods.Repo.ListPath(m.Get("name").Str(), m.Get("path").Str(), revision...),
+	})
+}
+
+// getFileLines gets the lines of a file in a repository
+func (a *RepoAPI) getFileLines(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	var revision []string
+	if rev := m.Get("revision").Str(); rev != "" {
+		revision = []string{rev}
+	}
+	return rpc.Success(util.Map{
+		"lines": a.mods.Repo.GetFileLines(m.Get("name").Str(), m.Get("file").Str(), revision...),
+	})
+}
+
+// getBranches returns a list of branches in a repository
+func (a *RepoAPI) getBranches(name interface{}) (resp *rpc.Response) {
+	return rpc.Success(util.Map{"branches": a.mods.Repo.GetBranches(cast.ToString(name))})
+}
+
+// getLatestCommit gets the latest commit of a branch in a repository
+func (a *RepoAPI) getLatestCommit(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	return rpc.Success(util.Map{
+		"commits": a.mods.Repo.GetLatestBranchCommit(m.Get("name").Str(), m.Get("branch").Str()),
+	})
+}
+
+// getCommits gets a list of commits of a branch in a repository
+func (a *RepoAPI) getCommits(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	var limit []int
+	if l := m.Get("limit").Float64(); l > 0 {
+		limit = []int{int(l)}
+	}
+	return rpc.Success(util.Map{
+		"commits": a.mods.Repo.GetCommits(m.Get("name").Str(), m.Get("branch").Str(), limit...),
+	})
+}
+
+// getAncestors gets ancestors of a commit in a repository
+func (a *RepoAPI) getAncestors(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	var limit []int
+	if l := m.Get("limit").Float64(); l > 0 {
+		limit = []int{int(l)}
+	}
+	return rpc.Success(util.Map{
+		"commits": a.mods.Repo.GetCommitAncestors(m.Get("name").Str(), m.Get("commitHash").Str(), limit...),
+	})
+}
+
 // APIs returns all API handlers
 func (a *RepoAPI) APIs() rpc.APISet {
 	ns := constants.NamespaceRepo
@@ -90,5 +152,11 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "track", Namespace: ns, Func: a.track, Description: "Track one or more repositories", Private: true},
 		{Name: "untrack", Namespace: ns, Func: a.untrack, Description: "Untrack one or more repositories", Private: true},
 		{Name: "tracked", Namespace: ns, Func: a.tracked, Description: "Get all tracked repositories", Private: true},
+		{Name: "ls", Namespace: ns, Func: a.ls, Description: "List files and directories of a repository", Private: false},
+		{Name: "getLines", Namespace: ns, Func: a.getFileLines, Description: "Gets the lines of a file in a repository", Private: false},
+		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Description: "Gets a list of branches in a repository", Private: false},
+		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Description: "Gets the latest commit of a branch in a repository", Private: false},
+		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Description: "Gets a list of commits in a branch of a repository", Private: false},
+		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Description: "Get ancestors of a commit in a repository", Private: false},
 	}
 }
