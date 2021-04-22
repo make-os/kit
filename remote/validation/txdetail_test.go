@@ -68,7 +68,7 @@ var _ = Describe("TxDetail", func() {
 			pk.PubKey = privKey.PubKey().ToPublicKey()
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 8
 			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
@@ -240,7 +240,7 @@ var _ = Describe("TxDetail", func() {
 			pk.Address = privKey.Addr()
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 10
 			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
@@ -257,7 +257,7 @@ var _ = Describe("TxDetail", func() {
 				pk.Address = privKey.Addr()
 				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 8
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
@@ -275,7 +275,7 @@ var _ = Describe("TxDetail", func() {
 				pk.Address = privKey.Addr()
 				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 8
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
@@ -295,12 +295,12 @@ var _ = Describe("TxDetail", func() {
 				pk.Address = privKey.Addr()
 				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 8
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
 				repoState := state.BareRepository()
-				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: txns.MergeRequestProposalAction, Creator: privKey2.Addr().String()}
+				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: txns.TxTypeMergeRequestProposalAction, Creator: privKey2.Addr().String()}
 				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
@@ -344,7 +344,7 @@ var _ = Describe("TxDetail", func() {
 			pk.PubKey = ed25519.BytesToPublicKey([]byte("bad key"))
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 8
 			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
@@ -364,7 +364,7 @@ var _ = Describe("TxDetail", func() {
 			pk.PubKey = privKey.PubKey().ToPublicKey()
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
 
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 8
 			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 

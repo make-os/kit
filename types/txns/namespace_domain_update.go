@@ -95,7 +95,7 @@ func (tx *TxNamespaceDomainUpdate) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
-// ToJSONMap returns a map equivalent of the transaction
+// ToMap returns a map equivalent of the transaction
 func (tx *TxNamespaceDomainUpdate) ToMap() map[string]interface{} {
 	return util.ToJSONMap(tx)
 }

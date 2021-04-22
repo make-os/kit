@@ -332,6 +332,11 @@ func (i *Int64) Int64() int64 {
 	return int64(*i)
 }
 
+// UInt64 casts and returns uint64
+func (i *Int64) UInt64() uint64 {
+	return uint64(*i)
+}
+
 // Set sets the value
 func (i *Int64) Set(v int64) {
 	*i = Int64(v)
@@ -383,9 +388,13 @@ func (s String) SS() string {
 	return string(s)
 }
 
-// Decimal returns the decimal representation of the string.
+// Decimal returns the decimal representation of the numeric string.
+// If s is empty, '0' is assumed.
 // Panics if string failed to be converted to decimal.
 func (s String) Decimal() decimal.Decimal {
+	if s == "" {
+		return decimal.Zero
+	}
 	return StrToDec(s.String())
 }
 

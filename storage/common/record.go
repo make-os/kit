@@ -24,7 +24,8 @@ func (r *Record) IsEmpty() bool {
 	return len(r.Key) == 0 && len(r.Value) == 0
 }
 
-// Scan marshals the value into dest
+// Scan decodes the value into dest.
+// The record value must be msgpack encoded (e.g created using util.ToBytes)
 func (r *Record) Scan(dest interface{}) error {
 	return util.ToObject(r.Value, &dest)
 }

@@ -51,6 +51,7 @@ var (
 
 	// NumBlocksPerEpoch is the number of blocks in an epoch
 	NumBlocksPerEpoch = 5
+	// NumBlocksPerEpoch = 1800
 
 	// NumBlocksToEffectValChange is the number of block tendermint uses to
 	// effect validation change.

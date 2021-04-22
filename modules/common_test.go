@@ -111,7 +111,7 @@ var _ = Describe("Common", func() {
 
 		It("should panic if account keeper returns empty account", func() {
 			key := ed25519.NewKeyFromIntSeed(1)
-			mockAcctKeeper.EXPECT().Get(key.Addr()).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(key.Addr()).Return(state.NewBareAccount())
 			tx := txns.NewBareTxCoinTransfer()
 			Expect(func() {
 				finalizeTx(tx, mockKeepers, nil, key.PrivKey().Base58())

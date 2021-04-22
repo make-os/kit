@@ -57,7 +57,7 @@ import (
 	nm "github.com/tendermint/tendermint/node"
 )
 
-// RPCServer represents the client
+// Node represents the client
 type Node struct {
 	ctx context.Context
 
@@ -331,7 +331,17 @@ func (n *Node) configureInterfaces() {
 	extMgr := extensions.NewManager(n.cfg)
 
 	// Create module hub
-	n.modules = modules.New(n.cfg, n.acctMgr, n.service, n.logic, n.mempoolReactor, n.ticketMgr, n.dht, extMgr, n.remoteServer)
+	n.modules = modules.New(
+		n.cfg,
+		n.acctMgr,
+		n.service,
+		n.logic,
+		n.mempoolReactor,
+		n.ticketMgr,
+		n.dht,
+		extMgr,
+		n.remoteServer,
+	)
 
 	// Register JSON RPC methods
 	if n.remoteServer != nil {

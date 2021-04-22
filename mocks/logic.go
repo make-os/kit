@@ -179,6 +179,50 @@ func (mr *MockSystemKeeperMockRecorder) GetHelmRepo() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmRepo", reflect.TypeOf((*MockSystemKeeper)(nil).GetHelmRepo))
 }
 
+// GetCurrentEpoch mocks base method
+func (m *MockSystemKeeper) GetCurrentEpoch() (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpoch")
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentEpoch indicates an expected call of GetCurrentEpoch
+func (mr *MockSystemKeeperMockRecorder) GetCurrentEpoch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentEpoch))
+}
+
+// GetEpochAt mocks base method
+func (m *MockSystemKeeper) GetEpochAt(height int64) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEpochAt", height)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetEpochAt indicates an expected call of GetEpochAt
+func (mr *MockSystemKeeperMockRecorder) GetEpochAt(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochAt", reflect.TypeOf((*MockSystemKeeper)(nil).GetEpochAt), height)
+}
+
+// GetCurrentEpochStartBlock mocks base method
+func (m *MockSystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpochStartBlock")
+	ret0, _ := ret[0].(*state.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentEpochStartBlock indicates an expected call of GetCurrentEpochStartBlock
+func (mr *MockSystemKeeperMockRecorder) GetCurrentEpochStartBlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpochStartBlock", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentEpochStartBlock))
+}
+
 // MockBalanceAccount is a mock of BalanceAccount interface
 type MockBalanceAccount struct {
 	ctrl     *gomock.Controller
@@ -1050,6 +1094,20 @@ func (mr *MockAtomicLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockAtomicLogic)(nil).OnEndBlock), block)
 }
 
+// ApplyProposals mocks base method
+func (m *MockAtomicLogic) ApplyProposals(block *state.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyProposals", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyProposals indicates an expected call of ApplyProposals
+func (mr *MockAtomicLogicMockRecorder) ApplyProposals(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyProposals", reflect.TypeOf((*MockAtomicLogic)(nil).ApplyProposals), block)
+}
+
 // GetDBTx mocks base method
 func (m *MockAtomicLogic) GetDBTx() types.Tx {
 	m.ctrl.T.Helper()
@@ -1413,6 +1471,20 @@ func (m *MockLogic) OnEndBlock(block *state.BlockInfo) error {
 func (mr *MockLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockLogic)(nil).OnEndBlock), block)
+}
+
+// ApplyProposals mocks base method
+func (m *MockLogic) ApplyProposals(block *state.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyProposals", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyProposals indicates an expected call of ApplyProposals
+func (mr *MockLogicMockRecorder) ApplyProposals(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyProposals", reflect.TypeOf((*MockLogic)(nil).ApplyProposals), block)
 }
 
 // MockKeepers is a mock of Keepers interface

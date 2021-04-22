@@ -382,7 +382,7 @@ func (r *Repository) SetBalance(bal string) {
 }
 
 // Clean implements types.BalanceAccount
-func (r *Repository) Clean(chainHeight uint64) {}
+func (r *Repository) Clean(_ uint64) {}
 
 // AddOwner adds an owner
 func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
@@ -411,7 +411,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 		r.Config,
 		r.Contributors,
 		r.CreatedAt,
-		r.UpdatedAt)
+		r.UpdatedAt,
+	)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -424,7 +425,8 @@ func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&r.Config,
 		&r.Contributors,
 		&r.CreatedAt,
-		&r.UpdatedAt)
+		&r.UpdatedAt,
+	)
 	return err
 }
 

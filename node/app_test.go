@@ -28,8 +28,6 @@ import (
 
 	"github.com/make-os/kit/ticket"
 
-	l "github.com/make-os/kit/logic"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -58,7 +56,6 @@ var _ = Describe("App", func() {
 	var stateTreeDB db.DB
 	var err error
 	var cfg *config.AppConfig
-	var logic *l.Logic
 	var app *App
 	var ticketmgr *ticket.Manager
 	var ctrl *gomock.Controller
@@ -69,11 +66,10 @@ var _ = Describe("App", func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		c, stateTreeDB = testutil.GetDB()
-		logic = l.New(c, stateTreeDB, cfg)
-		app = NewApp(cfg, c, logic, ticketmgr)
 
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.Mocks(ctrl)
+		app = NewApp(cfg, c, mockLogic.AtomicLogic, ticketmgr)
 	})
 
 	AfterEach(func() {
@@ -90,7 +86,6 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.AtomicLogic.EXPECT().ApplyGenesisState(gomock.Any()).Return(nil)
 				mockLogic.Validator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("bad thing"))
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should panic", func() {
@@ -106,7 +101,6 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().ApplyGenesisState(gomock.Any()).Return(nil)
 				mockLogic.StateTree.EXPECT().Version().Return(int64(1))
 				mockLogic.Validator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should return an empty response", func() {
@@ -172,7 +166,6 @@ var _ = Describe("App", func() {
 				app.ticketMgr = mockTicketMgr
 
 				mockLogic.ValidatorKeeper.EXPECT().Get(gomock.Any()).Return(map[util.Bytes32]*core.Validator{}, nil)
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should add the two validators to the response object", func() {
@@ -201,7 +194,6 @@ var _ = Describe("App", func() {
 					pubKey: {PubKey: util.StrToBytes32("pub_key")},
 				}, nil)
 
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should add existing validator but change power to zero (0)", func() {
@@ -237,7 +229,6 @@ var _ = Describe("App", func() {
 				app.ticketMgr = mockTicketMgr
 
 				mockLogic.ValidatorKeeper.EXPECT().Get(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should return error", func() {
@@ -253,7 +244,6 @@ var _ = Describe("App", func() {
 		When("getting last block info and error is returned and it is not ErrBlockInfoNotFound", func() {
 			BeforeEach(func() {
 				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("something bad"))
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should panic", func() {
@@ -272,7 +262,6 @@ var _ = Describe("App", func() {
 					AppHash: []byte("app_hash"),
 					Height:  util.Int64(height),
 				}, nil)
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should not panic", func() {
@@ -285,7 +274,6 @@ var _ = Describe("App", func() {
 		When("last block information is returned", func() {
 			BeforeEach(func() {
 				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, keepers.ErrBlockInfoNotFound)
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should not panic", func() {
@@ -354,7 +342,6 @@ var _ = Describe("App", func() {
 				req := abcitypes.RequestBeginBlock{}
 				req.Header.ProposerAddress = pv.GetAddress().Bytes()
 
-				app.logic = mockLogic.AtomicLogic
 				app.BeginBlock(req)
 			})
 
@@ -423,7 +410,6 @@ var _ = Describe("App", func() {
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
-				app.logic = mockLogic.AtomicLogic
 				app.DeliverTx(req)
 			})
 
@@ -438,7 +424,6 @@ var _ = Describe("App", func() {
 				tx := txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
-				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
@@ -451,12 +436,11 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				app.curBlock.Height = 10
+				app.proposedBlock.Height = 10
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToHexBytes("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
-				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
@@ -466,7 +450,7 @@ var _ = Describe("App", func() {
 		})
 	})
 
-	Describe(".postExecChecks", func() {
+	Describe(".postExec", func() {
 		When("tx is TxRepoCreate", func() {
 			var tx *txns.TxRepoCreate
 
@@ -474,7 +458,7 @@ var _ = Describe("App", func() {
 				tx = txns.NewBareTxRepoCreate()
 				tx.Name = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo name to new repo index", func() {
@@ -495,7 +479,7 @@ var _ = Describe("App", func() {
 				tx = txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo name to new repo index", func() {
@@ -519,7 +503,7 @@ var _ = Describe("App", func() {
 					{MergeProposalID: "0001"},
 				}
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo and proposal id to closable proposals", func() {
@@ -541,11 +525,10 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-				app.curBlock.Height = 10
+				app.proposedBlock.Height = 10
 				app.heightToSaveNewValidators = 10
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should panic", func() {
@@ -563,7 +546,6 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
-				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should return expected app hash", func() {
@@ -580,9 +562,8 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToHexBytes("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateExpireBy(util.StrToHexBytes("ticket_hash"), uint64(app.curBlock.Height))
+				mockLogic.TicketManager.EXPECT().UpdateExpireBy(util.StrToHexBytes("ticket_hash"), uint64(app.proposedBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
-				app.logic = mockLogic.AtomicLogic
 
 			})
 
@@ -612,7 +593,6 @@ var _ = Describe("App", func() {
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
 				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
 
-				app.logic = mockLogic.AtomicLogic
 				app.ticketMgr = mockLogic.TicketManager
 			})
 
@@ -636,7 +616,6 @@ var _ = Describe("App", func() {
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
 				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
 
-				app.logic = mockLogic.AtomicLogic
 				app.ticketMgr = mockLogic.TicketManager
 			})
 
@@ -661,7 +640,6 @@ var _ = Describe("App", func() {
 		})
 
 		It("should create all repositories if no repo is being tracked", func() {
-			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
@@ -670,7 +648,6 @@ var _ = Describe("App", func() {
 		})
 
 		It("should create only repositories that are being tracked when there the node tracks repos", func() {
-			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1", "repo2"}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
@@ -678,7 +655,6 @@ var _ = Describe("App", func() {
 		})
 
 		It("should panic if unable to create repository", func() {
-			app.logic = mockLogic.AtomicLogic
 			app.newRepos = []string{"repo1"}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1").Return(fmt.Errorf("error"))
@@ -698,8 +674,39 @@ var _ = Describe("App", func() {
 			evt := <-cfg.G().Bus.On(core.EvtTxPushProcessed)
 			Expect(evt.Args).To(HaveLen(3))
 			Expect(evt.Args[0]).To(Equal(tx))
-			Expect(evt.Args[1]).To(Equal(app.curBlock.Height.Int64()))
+			Expect(evt.Args[1]).To(Equal(app.proposedBlock.Height.Int64()))
 			Expect(evt.Args[2]).To(Equal(0))
+		})
+	})
+
+	Describe(".trackAndBroadcastEpochChange", func() {
+		It("should return error when unable to get current epoch", func() {
+			mockLogic.SysKeeper.EXPECT().GetCurrentEpoch().Return(int64(0), fmt.Errorf("error"))
+			err := app.trackAndBroadcastEpochChange()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should not emit any event if current epoch is set for the first time", func() {
+			mockLogic.SysKeeper.EXPECT().GetCurrentEpoch().Return(int64(1), nil)
+			Expect(app.curEpoch).To(Equal(int64(0)))
+			err := app.trackAndBroadcastEpochChange()
+			Expect(err).To(BeNil())
+			Expect(app.curEpoch).To(Equal(int64(1)))
+		})
+
+		It("should emit EvtNewEpoch event if current epoch is non-zero and new epoch does not match", func() {
+			mockLogic.SysKeeper.EXPECT().GetCurrentEpoch().Return(int64(2), nil)
+			app.curEpoch = 1
+			ch := cfg.G().Bus.Once(core.EvtNewEpoch)
+			err := app.trackAndBroadcastEpochChange()
+			Expect(err).To(BeNil())
+			Expect(app.curEpoch).To(Equal(int64(2)))
+			evt := <-ch
+			Expect(evt).ToNot(BeNil())
+			Expect(evt.Topic).To(Equal(core.EvtNewEpoch))
+			Expect(evt.Args).To(HaveLen(1))
+			Expect(evt.Args[0]).To(Equal(int64(2)))
 		})
 	})
 })

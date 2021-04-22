@@ -240,7 +240,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetNonce", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.NewBareAccount())
 			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetNonce("addr1")
@@ -248,7 +248,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return account nonce on success", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 100
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			nonce := m.GetNonce("addr1")
@@ -282,7 +282,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.NewBareAccount())
 			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccount("addr1")
@@ -290,7 +290,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return account on success", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100.22"
 			acct.Nonce = 100
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
@@ -303,7 +303,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return account with stakes info if account has a non-empty stakes field", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100.22"
 			acct.Nonce = 100
 			acct.Stakes.Add(state.StakeTypeHost, "10", 1000)
@@ -322,7 +322,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetAvailableBalance", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.NewBareAccount())
 			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAvailableBalance("addr1")
@@ -330,7 +330,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return 100 when balance is 100 and no staked balance", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100"
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
@@ -339,7 +339,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return 90 when balance is 100 and staked balance is 10", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
@@ -351,7 +351,7 @@ var _ = Describe("UserModule", func() {
 
 	Describe(".GetStakedBalance()", func() {
 		It("should panic when account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.NewBareAccount())
 			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetStakedBalance("addr1")
@@ -359,7 +359,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return 0 when no staked balance", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100"
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
@@ -368,7 +368,7 @@ var _ = Describe("UserModule", func() {
 		})
 
 		It("should return 10 when staked balance is 10", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100"
 			acct.Stakes.Add(state.StakeTypeHost, "10", 0)
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
@@ -528,5 +528,4 @@ var _ = Describe("UserModule", func() {
 			Expect(res["hash"]).To(Equal(hash))
 		})
 	})
-
 })

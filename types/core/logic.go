@@ -47,6 +47,11 @@ type AnnounceListEntry struct {
 	NextTime int64  `json:"nextTime" msgpack:"nextTime"`
 }
 
+type NodeWork struct {
+	Nonce uint64 `json:"nonce"`
+	Epoch int64  `json:"epoch"`
+}
+
 // SystemKeeper describes an interface for accessing system data
 type SystemKeeper interface {
 
@@ -64,6 +69,15 @@ type SystemKeeper interface {
 
 	// GetHelmRepo gets the governing repository of the network
 	GetHelmRepo() (string, error)
+
+	// GetCurrentEpoch returns the current epoch
+	GetCurrentEpoch() (int64, error)
+
+	// GetEpochAt returns the epoch of a given height
+	GetEpochAt(height int64) int64
+
+	// GetCurrentEpochStartBlock GetEpochStartBlock returns the block info of the first block of an epoch
+	GetCurrentEpochStartBlock() (*state.BlockInfo, error)
 }
 
 // BalanceAccount represents an account that maintains currency balance
@@ -285,7 +299,7 @@ type Logic interface {
 	// StateTree manages the app state tree
 	StateTree() tree.Tree
 
-	// WriteGenesisState initializes the app state with initial data
+	// ApplyGenesisState WriteGenesisState initializes the app state with initial data
 	ApplyGenesisState(state json.RawMessage) error
 
 	// SetTicketManager sets the ticket manager
@@ -323,6 +337,9 @@ type Logic interface {
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
 	OnEndBlock(block *state.BlockInfo) error
+
+	// ApplyProposals applies proposals ending at the given block.
+	ApplyProposals(block *state.BlockInfo) error
 }
 
 // Keepers describes modules for accessing the state and storage

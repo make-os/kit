@@ -28,21 +28,21 @@ func Get(version string) Info {
 type Info interface {
 	GetVersion() int
 	GetName() string
-	Config(cfg *AppConfig, tmc *tmcfg.Config)
+	Configure(cfg *AppConfig, tmc *tmcfg.Config)
 }
 
 // ChainInfo implements Info
 type ChainInfo struct {
-	NetVersion   int
-	GenesisTime  uint64
-	Validators   []string
-	Name         string
-	Configurator func(cfg *AppConfig, tmcfg *tmcfg.Config)
+	NetVersion  int
+	GenesisTime uint64
+	Validators  []string
+	Name        string
+	Configurer  func(cfg *AppConfig, tmcfg *tmcfg.Config)
 }
 
-// Config updates the given config objects
-func (ci *ChainInfo) Config(cfg *AppConfig, tmcfg *tmcfg.Config) {
-	ci.Configurator(cfg, tmcfg)
+// Configure updates the given config objects
+func (ci *ChainInfo) Configure(cfg *AppConfig, tmcfg *tmcfg.Config) {
+	ci.Configurer(cfg, tmcfg)
 }
 
 // GetName returns the name of the name
@@ -61,8 +61,9 @@ var Dev = &ChainInfo{
 	NetVersion:  1000,
 	GenesisTime: 1595700581,
 	Validators:  []string{},
-	Configurator: func(cfg *AppConfig, tmc *tmcfg.Config) {
-		tmc.Consensus.CreateEmptyBlocksInterval = 1 * time.Minute
+	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
+		tmc.Consensus.CreateEmptyBlocksInterval = 5 * time.Second
+		// tmc.Consensus.CreateEmptyBlocksInterval = 1 * time.Minute
 	},
 }
 
@@ -77,7 +78,7 @@ var TestnetV1 = &ChainInfo{
 		"48pFW5Yd5BLm4EVUJW8g9oG1BkNQz4wp2saLB8XmkvMRwRAB2FH",
 		"48GKXaSLgJ5ox2C1jDshFGtD6Y4Zhd1doxK6iTDp3KCSZjzdWKt",
 	},
-	Configurator: func(cfg *AppConfig, tmc *tmcfg.Config) {
+	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
 		tmc.Consensus.CreateEmptyBlocksInterval = 10 * time.Minute
 	},
 }

@@ -6,6 +6,7 @@ replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
 	github.com/btcsuite/btcutil => github.com/make-os/btcutil v1.0.3-0.20201208011646-272219d09635
 	github.com/imdario/mergo => github.com/ncodes/mergo v0.3.10-0.20200627182710-b10b58df675a
+	github.com/phoreproject/go-x11 => github.com/make-os/go-x11 v0.0.0-20190107235645-df0f52b15c3a
 	github.com/tendermint/tendermint => github.com/make-os/tendermint v0.34.0-rc4.0.20201212174221-93c4161d9329
 )
 
@@ -70,6 +71,7 @@ require (
 	github.com/onsi/gomega v1.10.1
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
+	github.com/phoreproject/go-x11 v0.0.0-00010101000000-000000000000
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.5.0
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect

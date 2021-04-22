@@ -83,7 +83,7 @@ func (tp *Pool) HasByHash(hash string) bool {
 	return tp.container.HasByHash(hash)
 }
 
-// Get iterates over the transactions and invokes iteratee for
+// Find Get iterates over the transactions and invokes iteratee for
 // each transaction. The iteratee is invoked the transaction as the
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.

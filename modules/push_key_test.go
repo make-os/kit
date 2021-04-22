@@ -300,7 +300,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should panic when unable to get push key owner account", func() {
-			mockAccountKeeper.EXPECT().Get(key.Addr(), uint64(1)).Return(state.BareAccount())
+			mockAccountKeeper.EXPECT().Get(key.Addr(), uint64(1)).Return(state.NewBareAccount())
 			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetAccountOfOwner(key.PushAddr().String(), 1)
@@ -325,7 +325,7 @@ var _ = Describe("PushKeyModule", func() {
 		})
 
 		It("should return account on success", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Balance = "100"
 			mockAccountKeeper.EXPECT().Get(key.Addr(), uint64(1)).Return(acct)
 			res := m.GetAccountOfOwner(key.PushAddr().String(), 1)

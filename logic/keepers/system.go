@@ -9,10 +9,14 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/epoch"
+	"github.com/pkg/errors"
 )
 
-// ErrBlockInfoNotFound means the block info was not found
-var ErrBlockInfoNotFound = fmt.Errorf("block info not found")
+var (
+	// ErrBlockInfoNotFound means the block info was not found
+	ErrBlockInfoNotFound = fmt.Errorf("block info not found")
+)
 
 // SystemKeeper stores system information such as
 // app states, commit history and more.
@@ -30,7 +34,7 @@ func NewSystemKeeper(db storagetypes.Tx) *SystemKeeper {
 
 // SaveBlockInfo saves a committed block information.
 // Indexes the saved block info for faster future retrieval so
-// that GetLastBlockInfo will not refetch
+// that GetLastBlockInfo will not re-fetched
 func (s *SystemKeeper) SaveBlockInfo(info *state.BlockInfo) error {
 	data := util.ToBytes(info)
 	record := common.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
@@ -105,4 +109,34 @@ func (s *SystemKeeper) GetHelmRepo() (string, error) {
 		return "", err
 	}
 	return string(record.Value), nil
+}
+
+// GetCurrentEpoch returns the current epoch
+func (s *SystemKeeper) GetCurrentEpoch() (int64, error) {
+	curBlock, err := s.GetLastBlockInfo()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get last block info")
+	}
+	return s.GetEpochAt(curBlock.Height.Int64()), nil
+}
+
+// GetEpochAt returns the epoch of a given height
+func (s *SystemKeeper) GetEpochAt(height int64) int64 {
+	return epoch.GetEpochAt(height)
+}
+
+// GetCurrentEpochStartBlock GetEpochStartBlock returns the block info of the first block of an epoch
+func (s *SystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
+	curEpoch, err := s.GetCurrentEpoch()
+	if err != nil {
+		return nil, err
+	}
+
+	startHeight := epoch.GetFirstInEpoch(curEpoch)
+	bi, err := s.GetBlockInfo(startHeight)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get first block info")
+	}
+
+	return bi, nil
 }

@@ -18,8 +18,8 @@ const (
 	StakeTypeHost      = "s"
 )
 
-// BareAccount returns an empty account
-func BareAccount() *Account {
+// NewBareAccount returns an empty account
+func NewBareAccount() *Account {
 	return &Account{
 		Balance: "0",
 		Nonce:   0,
@@ -99,7 +99,7 @@ func (a *Account) SetBalance(bal string) {
 
 // IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
-	return util.IsZeroString(a.Balance.String()) && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
+	return a.Balance.IsZero() && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
 		a.DelegatorCommission == float64(0)
 }
 
@@ -164,10 +164,10 @@ type StakeInfo struct {
 // AccountStakes holds staked balances
 type AccountStakes map[string]*StakeInfo
 
-// Register adds a staked balance
-// stakeType: The unique stake identifier
-// value: The value staked
-// unbondHeight: The height where the stake is unbonded
+// Add Register adds a staked balance
+//  - stakeType: The unique stake identifier
+//  - value: The value staked
+//  - unbondHeight: The height where the stake is unbonded
 // Returns the full stake name
 func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight uint64) string {
 	var key string

@@ -67,7 +67,7 @@ var _ = Describe("Contract", func() {
 		When("ticket is unknown", func() {
 			var err error
 			BeforeEach(func() {
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				logic.AccountKeeper().Update(sender.Addr(), acct)
 
 				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(0)).Return(acct)
@@ -92,7 +92,7 @@ var _ = Describe("Contract", func() {
 			BeforeEach(func() {
 				params.NumBlocksInHostThawPeriod = 200
 
-				acct = state.BareAccount()
+				acct = state.NewBareAccount()
 				acct.Balance = "1000"
 				acct.Stakes.Add(state.StakeTypeHost, "100", 0)
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)

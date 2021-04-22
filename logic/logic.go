@@ -293,7 +293,7 @@ func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 
 		// Create account
 		if ga.Type == config.GenDataTypeAccount {
-			newAcct := state.BareAccount()
+			newAcct := state.NewBareAccount()
 			newAcct.Balance = util.String(ga.Balance)
 			l.accountKeeper.Update(identifier.Address(ga.Address), newAcct)
 		}
@@ -326,14 +326,18 @@ func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
 func (l *Logic) OnEndBlock(block *state.BlockInfo) error {
+	if err := l.ApplyProposals(block); err != nil {
+		return err
+	}
+	return nil
+}
 
+// ApplyProposals applies proposals ending at the given block.
+func (l *Logic) ApplyProposals(block *state.BlockInfo) error {
 	repoKeeper := l.RepoKeeper()
 	nextChainHeight := uint64(block.Height)
 
-	// Get proposals ending at the given height
 	endingProps := repoKeeper.GetProposalsEndingAt(nextChainHeight)
-
-	// Attempt to apply and close the proposal
 	for _, ep := range endingProps {
 		repo := repoKeeper.Get(ep.RepoName)
 		if repo.IsNil() {

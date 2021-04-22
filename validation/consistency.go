@@ -173,7 +173,7 @@ func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.L
 }
 
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
-func CheckTxSetDelegateCommissionConsistency(tx *txns.TxSetDelegateCommission, index int, logic core.Logic) error {
+func CheckTxSetDelegateCommissionConsistency(tx *txns.TxSetDelegateCommission, _ int, logic core.Logic) error {
 	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey,
 		"0",
@@ -210,7 +210,7 @@ func CheckTxRegisterPushKeyConsistency(
 	return nil
 }
 
-// CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
+// CheckTxUpDelPushKeyConsistency CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
 func CheckTxUpDelPushKeyConsistency(
 	tx *txns.TxUpDelPushKey,
 	index int,
@@ -249,7 +249,7 @@ func CheckTxUpDelPushKeyConsistency(
 
 // CheckTxPushConsistency performs consistency checks on TxPush.
 // EXPECTS: sanity check using CheckTxPush to have been performed.
-func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error {
+func CheckTxPushConsistency(tx *txns.TxPush, _ int, logic core.Logic) error {
 
 	repoState := logic.RepoKeeper().Get(tx.Note.GetRepoName())
 	if repoState.IsNil() {

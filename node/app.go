@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
+	"github.com/make-os/kit/util/epoch"
 	"github.com/make-os/kit/validation"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -43,7 +44,7 @@ type App struct {
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validation.ValidateTxFunc
-	curBlock                  *state.BlockInfo
+	proposedBlock             *state.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
@@ -57,6 +58,7 @@ type App struct {
 	repoPropTxs               []*txns.TxRepoProposalVote
 	newRepos                  []string
 	closedMergeProps          []*mergeProposalInfo
+	curEpoch                  int64
 }
 
 // NewApp creates an instance of App
@@ -66,13 +68,13 @@ func NewApp(
 	logic core.AtomicLogic,
 	ticketMgr tickettypes.TicketManager) *App {
 	return &App{
-		db:         db,
-		logic:      logic,
-		cfg:        cfg,
-		curBlock:   &state.BlockInfo{},
-		log:        cfg.G().Log.Module("app"),
-		ticketMgr:  ticketMgr,
-		validateTx: validation.ValidateTx,
+		db:            db,
+		logic:         logic,
+		cfg:           cfg,
+		proposedBlock: &state.BlockInfo{},
+		log:           cfg.G().Log.Module("app"),
+		ticketMgr:     ticketMgr,
+		validateTx:    validation.ValidateTx,
 	}
 }
 
@@ -158,13 +160,13 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	a.curBlock.Time.Set(req.GetHeader().Time.Unix())
-	a.curBlock.Height.Set(req.GetHeader().Height)
-	a.curBlock.Hash = req.GetHash()
-	a.curBlock.LastAppHash = req.GetHeader().AppHash
-	a.curBlock.ProposerAddress = req.GetHeader().ProposerAddress
+	a.proposedBlock.Time.Set(req.GetHeader().Time.Unix())
+	a.proposedBlock.Height.Set(req.GetHeader().Height)
+	a.proposedBlock.Hash = req.GetHash()
+	a.proposedBlock.LastAppHash = req.GetHeader().AppHash
+	a.proposedBlock.ProposerAddress = req.GetHeader().ProposerAddress
 
-	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curBlock.ProposerAddress) {
+	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.proposedBlock.ProposerAddress) {
 		a.isCurrentBlockProposer = true
 	}
 
@@ -198,17 +200,8 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	return nil
 }
 
-// postExecChecks performs some checks that reacts to the
-// result from executing a transaction.
-func (a *App) postExecChecks(
-	tx types.BaseTx,
-	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
-
-	if !resp.IsOK() {
-		a.log.Error("Transaction execution failed", "Err", resp.Log)
-		return resp
-	}
-
+// postExec initiates events based on specific, successfully processed transactions
+func (a *App) postExec(tx types.BaseTx, resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 	switch o := tx.(type) {
 	case *txns.TxTicketPurchase:
 		if o.Is(txns.TxTypeValidatorTicket) {
@@ -271,19 +264,137 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	// Execute the transaction (does not commit the state changes yet)
 	resp := a.logic.ExecTx(&core.ExecArgs{
 		Tx:          tx,
-		ChainHeight: uint64(a.curBlock.Height - 1),
+		ChainHeight: uint64(a.proposedBlock.Height - 1),
 		ValidateTx:  validation.ValidateTx,
 	})
 
+	if !resp.IsOK() {
+		a.log.Error("Transaction execution failed", "Err", resp.Log)
+		return resp
+	}
+
 	// Perform post-execution checks
-	return *a.postExecChecks(tx, &resp)
+	return *a.postExec(tx, &resp)
+}
+
+// EndBlock indicates the end of a block.
+// Note: Any error from operations in here should panic to stop the block from
+// being committed.
+func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
+	resp := abcitypes.ResponseEndBlock{}
+
+	if err := a.updateValidators(req.Height, &resp); err != nil {
+		panic(errors.Wrap(err, "failed to update validators"))
+	}
+
+	if err := a.logic.OnEndBlock(a.proposedBlock); err != nil {
+		panic(errors.Wrap(err, "logic.OnEndBlock"))
+	}
+
+	if err := a.trackAndBroadcastEpochChange(); err != nil {
+		panic(errors.Wrap(err, "failed to track epoch change"))
+	}
+
+	return resp
+}
+
+// Commit persist the application state.
+// It must return a merkle root hash of the application state.
+func (a *App) Commit() abcitypes.ResponseCommit {
+	defer a.reset()
+
+	// Construct a new block information object
+	bi := &state.BlockInfo{
+		Height:          a.proposedBlock.Height,
+		Hash:            a.proposedBlock.Hash,
+		LastAppHash:     a.proposedBlock.LastAppHash,
+		ProposerAddress: a.proposedBlock.ProposerAddress,
+		AppHash:         a.logic.StateTree().WorkingHash(),
+		Time:            a.proposedBlock.Time,
+	}
+
+	// Save the block information
+	if err := a.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
+		a.commitPanic(errors.Wrap(err, "failed to save block information"))
+	}
+
+	// Index tickets we have collected so far.
+	a.indexTickets()
+
+	// Update the current validators record if the current block
+	// height is the height where the last validator update will take effect.
+	// Tendermint effects validator updates after 2 blocks; We need to index
+	// the validators to the real height when the validators were selected (2 blocks ago)
+	if a.proposedBlock.Height.Int64() == a.heightToSaveNewValidators {
+		a.indexValidators()
+		a.log.Info("Indexed new validators for the new epoch", "Height", a.proposedBlock.Height)
+	}
+
+	// Index the un-indexed txs
+	a.broadcastTx()
+
+	// Index proposal votes
+	a.indexProposalVotes()
+
+	// Set the expire height for each host stake unbond request
+	a.expireHostTickets()
+
+	// Create new repositories
+	_ = a.createGitRepositories()
+
+	// Mark all merge proposals as closed.
+	a.markMergeProposalAsClosed()
+
+	// Update difficulty
+	a.updateDifficulty(a.proposedBlock)
+
+	// Commit all state changes
+	if err := a.logic.Commit(); err != nil {
+		a.commitPanic(errors.Wrap(err, "failed to commit"))
+	}
+
+	return abcitypes.ResponseCommit{
+		Data: bi.AppHash,
+	}
+}
+
+// commitPanic cleans up resources, rollback logic tx and panic
+func (a *App) commitPanic(err error) {
+	a.logic.Discard()
+	panic(err)
+}
+
+// reset cached values
+func (a *App) reset() {
+	a.unIdxValidatorTickets = []*ticketInfo{}
+	a.unIdxHostTickets = []*ticketInfo{}
+	a.unbondHostReqs = []util.HexBytes{}
+	a.txIndex = 0
+	a.isCurrentBlockProposer = false
+	a.okTxs = []blockTx{}
+	a.repoPropTxs = []*txns.TxRepoProposalVote{}
+	a.newRepos = []string{}
+	a.closedMergeProps = []*mergeProposalInfo{}
+
+	// Only reset heightToSaveNewValidators if the current height is
+	// same as it to avoid not triggering saving of new validators at the target height.
+	if a.proposedBlock.Height.Int64() == a.heightToSaveNewValidators {
+		a.heightToSaveNewValidators = 0
+	}
+
+	a.proposedBlock = &state.BlockInfo{}
+}
+
+// Query for data from the application.
+func (a *App) Query(abcitypes.RequestQuery) abcitypes.ResponseQuery {
+	return abcitypes.ResponseQuery{Code: 0}
 }
 
 // updateValidators updates the validators of the chain.
 func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
 
 	// If it is not time to update validators, do nothing.
-	if !params.IsBeforeEndOfEpoch(curHeight) {
+	if !epoch.IsBeforeEndOfEpochOfHeight(curHeight) {
 		return nil
 	}
 
@@ -342,116 +453,9 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	return nil
 }
 
-// EndBlock indicates the end of a block.
-// Note: Any error from operations in here should panic to stop the block from
-// being committed.
-func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	resp := abcitypes.ResponseEndBlock{}
-
-	// Update validators
-	if err := a.updateValidators(req.Height, &resp); err != nil {
-		panic(errors.Wrap(err, "failed to update validators"))
-	}
-
-	if err := a.logic.OnEndBlock(a.curBlock); err != nil {
-		panic(errors.Wrap(err, "logic.OnEndBlock"))
-	}
-
-	return resp
-}
-
-// Commit persist the application state.
-// It must return a merkle root hash of the application state.
-func (a *App) Commit() abcitypes.ResponseCommit {
-	defer a.reset()
-
-	// Construct a new block information object
-	bi := &state.BlockInfo{
-		Height:          a.curBlock.Height,
-		Hash:            a.curBlock.Hash,
-		LastAppHash:     a.curBlock.LastAppHash,
-		ProposerAddress: a.curBlock.ProposerAddress,
-		AppHash:         a.logic.StateTree().WorkingHash(),
-		Time:            a.curBlock.Time,
-	}
-
-	// Save the block information
-	if err := a.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
-		a.commitPanic(errors.Wrap(err, "failed to save block information"))
-	}
-
-	// Index tickets we have collected so far.
-	a.indexTickets()
-
-	// Update the current validators record if the current block
-	// height is the height where the last validator update will take effect.
-	// Tendermint effects validator updates after 2 blocks; We need to index
-	// the validators to the real height when the validators were selected (2 blocks ago)
-	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
-		a.indexValidators()
-		a.log.Info("Indexed new validators for the new epoch", "Height", a.curBlock.Height)
-	}
-
-	// Index the un-indexed txs
-	a.broadcastTx()
-
-	// Index proposal votes
-	a.indexProposalVotes()
-
-	// Set the expire height for each host stake unbond request
-	a.expireHostTickets()
-
-	// Create new repositories
-	_ = a.createGitRepositories()
-
-	// Mark all merge proposals as closed.
-	a.markMergeProposalAsClosed()
-
-	// Commit all state changes
-	if err := a.logic.Commit(); err != nil {
-		a.commitPanic(errors.Wrap(err, "failed to commit"))
-	}
-
-	return abcitypes.ResponseCommit{
-		Data: bi.AppHash,
-	}
-}
-
-// commitPanic cleans up resources, rollback logic tx and panic
-func (a *App) commitPanic(err error) {
-	a.logic.Discard()
-	panic(err)
-}
-
-// reset cached values
-func (a *App) reset() {
-	a.unIdxValidatorTickets = []*ticketInfo{}
-	a.unIdxHostTickets = []*ticketInfo{}
-	a.unbondHostReqs = []util.HexBytes{}
-	a.txIndex = 0
-	a.isCurrentBlockProposer = false
-	a.okTxs = []blockTx{}
-	a.repoPropTxs = []*txns.TxRepoProposalVote{}
-	a.newRepos = []string{}
-	a.closedMergeProps = []*mergeProposalInfo{}
-
-	// Only reset heightToSaveNewValidators if the current height is
-	// same as it to avoid not triggering saving of new validators at the target height.
-	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
-		a.heightToSaveNewValidators = 0
-	}
-
-	a.curBlock = &state.BlockInfo{}
-}
-
-// Query for data from the application.
-func (a *App) Query(abcitypes.RequestQuery) abcitypes.ResponseQuery {
-	return abcitypes.ResponseQuery{Code: 0}
-}
-
 // indexValidators indexes new validators
 func (a *App) indexValidators() {
-	if err := a.logic.ValidatorKeeper().Index(a.curBlock.Height.Int64(), a.unsavedValidators); err != nil {
+	if err := a.logic.ValidatorKeeper().Index(a.proposedBlock.Height.Int64(), a.unsavedValidators); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to update current validators"))
 	}
 }
@@ -494,7 +498,9 @@ func (a *App) markMergeProposalAsClosed() {
 // expireHostTickets sets the expiry height of unbonded host tickets
 func (a *App) expireHostTickets() {
 	for _, ticketHash := range a.unbondHostReqs {
-		_ = a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
+		if err := a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.proposedBlock.Height)); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to expiire host tickets"))
+		}
 	}
 }
 
@@ -512,33 +518,63 @@ func (a *App) indexProposalVotes() {
 func (a *App) broadcastTx() {
 	for _, btx := range a.okTxs {
 		if btx.tx.Is(txns.TxTypePush) {
-			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
+			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.proposedBlock.Height.Int64(), btx.index)
 		}
 	}
+}
+
+// trackAndBroadcastEpochChange tracks current epoch and will
+// broadcast EvtNewEpoch if there is a change in epoch
+func (a *App) trackAndBroadcastEpochChange() error {
+	curEpoch, err := a.logic.SysKeeper().GetCurrentEpoch()
+	if err != nil {
+		return err
+	}
+
+	if a.curEpoch == 0 {
+		a.curEpoch = curEpoch
+		return nil
+	}
+
+	if a.curEpoch != curEpoch {
+		a.cfg.G().Bus.Emit(core.EvtNewEpoch, curEpoch)
+		a.curEpoch = curEpoch
+	}
+
+	return nil
 }
 
 // indexTickets indexes new validator and host tickets
 func (a *App) indexTickets() {
 	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
-		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curBlock.Height),
+		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.proposedBlock.Height),
 			ticket.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
 }
 
-func (a *App) ListSnapshots(snapshots abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {
+// updateDifficulty will update the difficulty at the end of the current epoch.
+func (a *App) updateDifficulty(block *state.BlockInfo) {
+	isEpochEnding := epoch.GetLastHeightInEpochOfHeight(block.Height.Int64()) == block.Height.Int64()
+	if !isEpochEnding {
+		return
+	}
+	return
+}
+
+func (a *App) ListSnapshots(_ abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {
 	panic("implement me")
 }
 
-func (a *App) OfferSnapshot(snapshot abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
+func (a *App) OfferSnapshot(_ abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
 	panic("implement me")
 }
 
-func (a *App) LoadSnapshotChunk(chunk abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
+func (a *App) LoadSnapshotChunk(_ abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
 	panic("implement me")
 }
 
-func (a *App) ApplySnapshotChunk(chunk abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
+func (a *App) ApplySnapshotChunk(_ abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
 	panic("implement me")
 }

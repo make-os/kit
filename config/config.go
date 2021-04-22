@@ -204,7 +204,7 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
 	netVersion := viper.GetString("net.version")
 	chain := Get(netVersion)
 	if chain != nil {
-		chain.Config(cfg, tmcfg)
+		chain.Configure(cfg, tmcfg)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/util/epoch"
 	"github.com/make-os/kit/util/errors"
 	"github.com/spf13/cast"
 	tmEd25519 "github.com/tendermint/tendermint/crypto/ed25519"
@@ -47,31 +48,13 @@ func (m *NodeModule) globals() []*types.VMMember {
 // methods are functions exposed in the special namespace of this module.
 func (m *NodeModule) methods() []*types.VMMember {
 	return []*types.VMMember{
-		{
-			Name:        "getBlock",
-			Value:       m.GetBlock,
-			Description: "Get full block data at a given height",
-		},
-		{
-			Name:        "getHeight",
-			Value:       m.GetHeight,
-			Description: "Get the current chain height",
-		},
-		{
-			Name:        "getBlockInfo",
-			Value:       m.GetBlockInfo,
-			Description: "Get summarized block information at a given height",
-		},
-		{
-			Name:        "getValidators",
-			Value:       m.GetValidators,
-			Description: "Get validators at a given height",
-		},
-		{
-			Name:        "isSyncing",
-			Value:       m.IsSyncing,
-			Description: "Check if the node is synchronizing with peers",
-		},
+		{Name: "getBlock", Value: m.GetBlock, Description: "Get full block data at a given height"},
+		{Name: "getCurHeight", Value: m.GetCurHeight, Description: "Get the current chain height"},
+		{Name: "getBlockInfo", Value: m.GetBlockInfo, Description: "Get summarized block information at a given height"},
+		{Name: "getValidators", Value: m.GetValidators, Description: "Get validators at a given height"},
+		{Name: "isSyncing", Value: m.IsSyncing, Description: "Check if the node is synchronizing with peers"},
+		{Name: "getCurEpoch", Value: m.GetCurrentEpoch, Description: "Get the current epoch"},
+		{Name: "getEpoch", Value: m.GetEpoch, Description: "Get the epoch of a block height"},
 	}
 }
 
@@ -123,7 +106,7 @@ func (m *NodeModule) GetBlock(height string) util.Map {
 }
 
 // GetHeight returns the current block height
-func (m *NodeModule) GetHeight() string {
+func (m *NodeModule) GetCurHeight() string {
 
 	if m.IsAttached() {
 		res, err := m.Client.Node().GetHeight()
@@ -224,4 +207,18 @@ func (m *NodeModule) IsSyncing() bool {
 	}
 
 	return syncing
+}
+
+// GetCurrentEpoch returns the current epoch
+func (m *NodeModule) GetCurrentEpoch() string {
+	curEpoch, err := m.keepers.SysKeeper().GetCurrentEpoch()
+	if err != nil {
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+	return cast.ToString(curEpoch)
+}
+
+// GetEpoch returns the epoch of a block height
+func (m *NodeModule) GetEpoch(height int64) string {
+	return cast.ToString(epoch.GetEpochAt(height))
 }

@@ -88,7 +88,7 @@ func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// lookup finds a namespace
+// Lookup finds a namespace
 //
 // ARGS:
 // name: The name of the namespace
@@ -155,7 +155,7 @@ func (m *NamespaceModule) GetTarget(uri string, height ...uint64) string {
 	return target
 }
 
-// register a new namespace
+// Register a new namespace
 //
 // ARGS:
 // params <map>
@@ -198,7 +198,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 	}
 }
 
-// updateDomain updates one or more domains of a namespace
+// UpdateDomain updates one or more domains of a namespace
 //
 // ARGS:
 // params <map>

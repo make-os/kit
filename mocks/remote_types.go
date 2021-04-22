@@ -748,6 +748,66 @@ func (mr *MockLocalRepoMockRecorder) GetAncestors(arg0, arg1, arg2 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAncestors", reflect.TypeOf((*MockLocalRepo)(nil).GetAncestors), arg0, arg1, arg2)
 }
 
+// GetBranches mocks base method
+func (m *MockLocalRepo) GetBranches() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBranches")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBranches indicates an expected call of GetBranches
+func (mr *MockLocalRepoMockRecorder) GetBranches() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranches", reflect.TypeOf((*MockLocalRepo)(nil).GetBranches))
+}
+
+// GetCommitAncestors mocks base method
+func (m *MockLocalRepo) GetCommitAncestors(arg0 string, arg1 int) ([]*types.BranchCommit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommitAncestors", arg0, arg1)
+	ret0, _ := ret[0].([]*types.BranchCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommitAncestors indicates an expected call of GetCommitAncestors
+func (mr *MockLocalRepoMockRecorder) GetCommitAncestors(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitAncestors", reflect.TypeOf((*MockLocalRepo)(nil).GetCommitAncestors), arg0, arg1)
+}
+
+// GetCommits mocks base method
+func (m *MockLocalRepo) GetCommits(arg0 string, arg1 int) ([]*types.BranchCommit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommits", arg0, arg1)
+	ret0, _ := ret[0].([]*types.BranchCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommits indicates an expected call of GetCommits
+func (mr *MockLocalRepoMockRecorder) GetCommits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockLocalRepo)(nil).GetCommits), arg0, arg1)
+}
+
+// GetFileLines mocks base method
+func (m *MockLocalRepo) GetFileLines(arg0, arg1 string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFileLines", arg0, arg1)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFileLines indicates an expected call of GetFileLines
+func (mr *MockLocalRepoMockRecorder) GetFileLines(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileLines", reflect.TypeOf((*MockLocalRepo)(nil).GetFileLines), arg0, arg1)
+}
+
 // GetGitConfigOption mocks base method
 func (m *MockLocalRepo) GetGitConfigOption(arg0 string) string {
 	m.ctrl.T.Helper()
@@ -775,6 +835,21 @@ func (m *MockLocalRepo) GetHEAD(arg0 bool) (string, error) {
 func (mr *MockLocalRepoMockRecorder) GetHEAD(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHEAD", reflect.TypeOf((*MockLocalRepo)(nil).GetHEAD), arg0)
+}
+
+// GetLatestCommit mocks base method
+func (m *MockLocalRepo) GetLatestCommit(arg0 string) (*types.BranchCommit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestCommit", arg0)
+	ret0, _ := ret[0].(*types.BranchCommit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestCommit indicates an expected call of GetLatestCommit
+func (mr *MockLocalRepoMockRecorder) GetLatestCommit(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestCommit", reflect.TypeOf((*MockLocalRepo)(nil).GetLatestCommit), arg0)
 }
 
 // GetMergeCommits mocks base method

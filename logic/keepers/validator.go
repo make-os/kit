@@ -7,6 +7,7 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/epoch"
 	"github.com/pkg/errors"
 )
 
@@ -24,16 +25,16 @@ func NewValidatorKeeper(db storagetypes.Tx) *ValidatorKeeper {
 func (v *ValidatorKeeper) getByHeight(height int64) (core.BlockValidators, error) {
 
 	// Get the height of the last block of the previous epoch
-	lastEpochEndBlockHeight := height - (height % int64(params.NumBlocksPerEpoch))
+	epochHeight := epoch.GetLastHeightInEpochOfHeight(height)
 
 get:
-	if lastEpochEndBlockHeight <= 0 {
-		lastEpochEndBlockHeight = 1
+	if epochHeight <= 0 {
+		epochHeight = 1
 	}
 
 	// Get the validator set attached to the height.
 	res := make(map[util.Bytes32]*core.Validator)
-	key := MakeBlockValidatorsKey(lastEpochEndBlockHeight)
+	key := MakeBlockValidatorsKey(epochHeight)
 	rec, err := v.db.Get(key)
 	if err != nil {
 		if err != storage.ErrRecordNotFound {
@@ -45,20 +46,18 @@ get:
 	// In this case, an older epoch validator set must have produced it, therefore we
 	// need to find the most recent epoch end block with an associated validator set.
 	if err == storage.ErrRecordNotFound {
-		nextEveBlock := lastEpochEndBlockHeight - int64(params.NumBlocksPerEpoch)
+		nextEveBlock := epochHeight - int64(params.NumBlocksPerEpoch)
 		if nextEveBlock >= 0 {
-			lastEpochEndBlockHeight = nextEveBlock
+			epochHeight = nextEveBlock
 			goto get
 		}
 		return res, nil
 	}
 
-	rec.Scan(&res)
-
-	return res, nil
+	return res, rec.Scan(&res)
 }
 
-// GetByHeight gets validators at the given height. If height is <= 0, the
+// Get gets validators at the given height. If height is <= 0, the
 // validator set of the highest height is returned.
 func (v *ValidatorKeeper) Get(height int64) (core.BlockValidators, error) {
 

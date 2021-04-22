@@ -64,6 +64,12 @@ func (pk PublicKey) MustAddress() identifier.Address {
 	return MustPubKeyFromBytes(pk.Bytes()).Addr()
 }
 
+// MustAddressRaw derives a raw address from the key.
+// Panics on failure.
+func (pk PublicKey) MustAddressRaw() []byte {
+	return MustPubKeyFromBytes(pk.Bytes()).AddrRaw()
+}
+
 // MustPushKeyAddress derives a push key address from the key.
 // Panics on failure.
 func (pk PublicKey) MustPushKeyAddress() identifier.Address {

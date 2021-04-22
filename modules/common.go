@@ -102,7 +102,7 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, 
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// If keepers are provider and nonce iss unset, compute next nonce of the
+	// If keepers are provider and nonce is unset, compute next nonce of the
 	// sending account by using the account using the keeper.
 	if tx.GetNonce() == 0 && key != nil && keepers != nil {
 		senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())

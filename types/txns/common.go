@@ -30,7 +30,7 @@ const (
 	TxTypeRepoProposalSendFee                                 // For native coin transfer to repo as proposal fee
 	TxTypeRepoProposalRegisterPushKey                         // For adding push keys to a repo
 	TxTypeUpDelPushKey                                        // For updating or deleting a push key
-	MergeRequestProposalAction                                // For identifying merge request proposal
+	TxTypeMergeRequestProposalAction                          // For identifying merge request proposal
 )
 
 // TxType implements some of BaseTx, it includes type information about a transaction

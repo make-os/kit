@@ -96,7 +96,7 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// create registers a git repository on the network
+// Create  registers a git repository on the network
 //
 // params <map>
 //  - name <string>: The name of the namespace

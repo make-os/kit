@@ -118,7 +118,7 @@ var _ = Describe("TicketModule", func() {
 			payloadOnly := true
 			params := map[string]interface{}{"delegate": pk.PubKey().Base58()}
 
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 100
 			mockAcctKeeper.EXPECT().Get(pk.Addr()).Return(acct)
 
@@ -140,7 +140,7 @@ var _ = Describe("TicketModule", func() {
 		It("should panic if unable to add tx to mempool", func() {
 			key := pk.PrivKey().Base58()
 			payloadOnly := false
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 100
 			mockAcctKeeper.EXPECT().Get(pk.Addr()).Return(acct)
 
@@ -155,7 +155,7 @@ var _ = Describe("TicketModule", func() {
 		It("should return tx hash on success", func() {
 			key := pk.PrivKey().Base58()
 			payloadOnly := false
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 100
 			mockAcctKeeper.EXPECT().Get(pk.Addr()).Return(acct)
 

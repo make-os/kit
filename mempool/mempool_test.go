@@ -45,7 +45,7 @@ var _ = Describe("Mempool", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockKeeper = mocks.NewMockLogic(ctrl)
 		mockAcctKeeper = mocks.NewMockAccountKeeper(ctrl)
-		mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+		mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 		mockKeeper.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 
 		mempool = NewMempool(cfg, mockKeeper)

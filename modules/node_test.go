@@ -7,14 +7,17 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/modules"
+	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
+	"github.com/stretchr/testify/assert"
 	core_types "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -72,15 +75,15 @@ var _ = Describe("NodeModule", func() {
 		})
 	})
 
-	Describe(".GetHeight", func() {
+	Describe(".GetCurHeight", func() {
 		It("should panic when unable to get last block info from system keeper", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-			Expect(func() { m.GetHeight() }).To(Panic())
+			Expect(func() { m.GetCurHeight() }).To(Panic())
 		})
 
 		It("should expected result on success", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
-			height := m.GetHeight()
+			height := m.GetCurHeight()
 			Expect(height).To(Equal("100"))
 		})
 	})
@@ -141,6 +144,30 @@ var _ = Describe("NodeModule", func() {
 				res := m.IsSyncing()
 				Expect(res).To(BeTrue())
 			}).ToNot(Panic())
+		})
+	})
+
+	Describe(".GetCurrentEpoch", func() {
+		It("should return error if unable to get current epoch", func() {
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(0), fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetCurrentEpoch()
+			})
+		})
+
+		It("should return epoch on success", func() {
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			res := m.GetCurrentEpoch()
+			Expect(res).To(Equal("10"))
+		})
+	})
+
+	Describe(".GetEpoch", func() {
+		It("should return expected epoch", func() {
+			params.NumBlocksPerEpoch = 5
+			Expect(m.GetEpoch(2)).To(Equal("1"))
+			Expect(m.GetEpoch(6)).To(Equal("2"))
 		})
 	})
 })

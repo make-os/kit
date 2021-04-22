@@ -80,15 +80,14 @@ func checkType(tx *txns.TxType, expected types.TxCode, index int) error {
 	return nil
 }
 
-func checkCommon(tx types.BaseTx, index int) error {
-
-	var baseFee, txSize decimal.Decimal
+func CheckCommon(tx types.BaseTx, index int) error {
 
 	if err := v.Validate(tx.GetNonce(),
 		v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
 		return err
 	}
 
+	var baseFee, txSize decimal.Decimal
 	if err := v.Validate(tx.GetFee(),
 		v.Required.Error(feI(index, "fee", "fee is required").Error()),
 		v.By(validValueRule("fee", index)),
@@ -96,12 +95,16 @@ func checkCommon(tx types.BaseTx, index int) error {
 		return err
 	}
 
-	// Fee must be at least equal to the base fee
-	txSize = decimal.NewFromFloat(float64(tx.GetEcoSize()))
-	baseFee = params.FeePerByte.Mul(txSize)
-	if tx.GetFee().Decimal().LessThan(baseFee) {
-		return errors2.FieldErrorWithIndex(index, "fee",
-			fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
+	var freeTx []types.TxCode // add tx type that should be excluded for paying fees
+	if !funk.Contains(freeTx, tx.GetType()) {
+
+		// Fee must be at least equal to the base fee
+		txSize = decimal.NewFromFloat(float64(tx.GetEcoSize()))
+		baseFee = params.FeePerByte.Mul(txSize)
+		if tx.GetFee().Decimal().LessThan(baseFee) {
+			return errors2.FieldErrorWithIndex(index, "fee",
+				fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
+		}
 	}
 
 	if err := v.Validate(tx.GetTimestamp(),
@@ -146,7 +149,7 @@ func CheckTxCoinTransfer(tx *txns.TxCoinTransfer, index int) error {
 		return err
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -188,7 +191,7 @@ func CheckTxTicketPurchase(tx *txns.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -206,7 +209,7 @@ func CheckTxUnbondTicket(tx *txns.TxTicketUnbond, index int) error {
 		return feI(index, "ticket", "ticket id is required")
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -309,7 +312,7 @@ func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
 		return err
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -343,7 +346,7 @@ func CheckTxRegisterPushKey(tx *txns.TxRegisterPushKey, index int) error {
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -387,7 +390,7 @@ func CheckTxUpDelPushKey(tx *txns.TxUpDelPushKey, index int) error {
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -416,7 +419,7 @@ func CheckTxSetDelegateCommission(tx *txns.TxSetDelegateCommission, index int) e
 		return feI(index, "commission", "commission rate cannot exceed 100 percent")
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -520,7 +523,7 @@ func CheckTxNamespaceAcquire(tx *txns.TxNamespaceRegister, index int) error {
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -547,7 +550,7 @@ func CheckTxNamespaceDomainUpdate(tx *txns.TxNamespaceDomainUpdate, index int) e
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -590,7 +593,7 @@ func CheckTxRepoProposalUpsertOwner(tx *txns.TxRepoProposalUpsertOwner, index in
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -618,7 +621,7 @@ func CheckTxVote(tx *txns.TxRepoProposalVote, index int) error {
 		return feI(index, "vote", "vote choice is unknown")
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -644,7 +647,7 @@ func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error
 		return err
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -729,7 +732,7 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 		return err
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 
@@ -806,7 +809,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 		}
 	}
 
-	if err := checkCommon(tx, index); err != nil {
+	if err := CheckCommon(tx, index); err != nil {
 		return err
 	}
 

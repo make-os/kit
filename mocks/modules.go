@@ -152,18 +152,18 @@ func (mr *MockNodeModuleMockRecorder) GetBlock(height interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockNodeModule)(nil).GetBlock), height)
 }
 
-// GetHeight mocks base method
-func (m *MockNodeModule) GetHeight() string {
+// GetCurHeight mocks base method
+func (m *MockNodeModule) GetCurHeight() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeight")
+	ret := m.ctrl.Call(m, "GetCurHeight")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetHeight indicates an expected call of GetHeight
-func (mr *MockNodeModuleMockRecorder) GetHeight() *gomock.Call {
+// GetCurHeight indicates an expected call of GetCurHeight
+func (mr *MockNodeModuleMockRecorder) GetCurHeight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeight", reflect.TypeOf((*MockNodeModule)(nil).GetHeight))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurHeight", reflect.TypeOf((*MockNodeModule)(nil).GetCurHeight))
 }
 
 // GetBlockInfo mocks base method
@@ -192,6 +192,34 @@ func (m *MockNodeModule) GetValidators(height string) []util.Map {
 func (mr *MockNodeModuleMockRecorder) GetValidators(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidators", reflect.TypeOf((*MockNodeModule)(nil).GetValidators), height)
+}
+
+// GetCurrentEpoch mocks base method
+func (m *MockNodeModule) GetCurrentEpoch() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpoch")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetCurrentEpoch indicates an expected call of GetCurrentEpoch
+func (mr *MockNodeModuleMockRecorder) GetCurrentEpoch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpoch", reflect.TypeOf((*MockNodeModule)(nil).GetCurrentEpoch))
+}
+
+// GetEpoch mocks base method
+func (m *MockNodeModule) GetEpoch(height int64) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEpoch", height)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetEpoch indicates an expected call of GetEpoch
+func (mr *MockNodeModuleMockRecorder) GetEpoch(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockNodeModule)(nil).GetEpoch), height)
 }
 
 // IsSyncing mocks base method
@@ -1303,6 +1331,110 @@ func (m *MockRepoModule) GetTracked() util.Map {
 func (mr *MockRepoModuleMockRecorder) GetTracked() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracked", reflect.TypeOf((*MockRepoModule)(nil).GetTracked))
+}
+
+// ListPath mocks base method
+func (m *MockRepoModule) ListPath(name, path string, revision ...string) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, path}
+	for _, a := range revision {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPath", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// ListPath indicates an expected call of ListPath
+func (mr *MockRepoModuleMockRecorder) ListPath(name, path interface{}, revision ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, path}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPath", reflect.TypeOf((*MockRepoModule)(nil).ListPath), varargs...)
+}
+
+// GetFileLines mocks base method
+func (m *MockRepoModule) GetFileLines(name, file string, revision ...string) []string {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, file}
+	for _, a := range revision {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFileLines", varargs...)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetFileLines indicates an expected call of GetFileLines
+func (mr *MockRepoModuleMockRecorder) GetFileLines(name, file interface{}, revision ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, file}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileLines", reflect.TypeOf((*MockRepoModule)(nil).GetFileLines), varargs...)
+}
+
+// GetBranches mocks base method
+func (m *MockRepoModule) GetBranches(name string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBranches", name)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetBranches indicates an expected call of GetBranches
+func (mr *MockRepoModuleMockRecorder) GetBranches(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranches", reflect.TypeOf((*MockRepoModule)(nil).GetBranches), name)
+}
+
+// GetLatestBranchCommit mocks base method
+func (m *MockRepoModule) GetLatestBranchCommit(name, branch string) util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBranchCommit", name, branch)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetLatestBranchCommit indicates an expected call of GetLatestBranchCommit
+func (mr *MockRepoModuleMockRecorder) GetLatestBranchCommit(name, branch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBranchCommit", reflect.TypeOf((*MockRepoModule)(nil).GetLatestBranchCommit), name, branch)
+}
+
+// GetCommits mocks base method
+func (m *MockRepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, branch}
+	for _, a := range limit {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCommits", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// GetCommits indicates an expected call of GetCommits
+func (mr *MockRepoModuleMockRecorder) GetCommits(name, branch interface{}, limit ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, branch}, limit...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockRepoModule)(nil).GetCommits), varargs...)
+}
+
+// GetCommitAncestors mocks base method
+func (m *MockRepoModule) GetCommitAncestors(name, commitHash string, limit ...int) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, commitHash}
+	for _, a := range limit {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCommitAncestors", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// GetCommitAncestors indicates an expected call of GetCommitAncestors
+func (mr *MockRepoModuleMockRecorder) GetCommitAncestors(name, commitHash interface{}, limit ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, commitHash}, limit...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitAncestors", reflect.TypeOf((*MockRepoModule)(nil).GetCommitAncestors), varargs...)
 }
 
 // MockNamespaceModule is a mock of NamespaceModule interface
