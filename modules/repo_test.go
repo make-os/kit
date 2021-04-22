@@ -647,14 +647,14 @@ var _ = Describe("RepoModule", func() {
 			})
 		})
 
-		FIt("should panic if repo does not exist", func() {
+		It("should panic if repo does not exist", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetFileLines("unknown", "a/b")
 			})
 		})
 
-		FIt("should panic if file path was not provided", func() {
+		It("should panic if file path was not provided", func() {
 			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "file path is required", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetFileLines("repo1", "")

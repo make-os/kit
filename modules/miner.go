@@ -97,3 +97,7 @@ func (m *MinerModule) IsRunning() bool {
 func (m *MinerModule) GetHashrate() float64 {
 	return m.miner.GetHashrate()
 }
+
+func (m *MinerModule) SubmitWork(epoch int64, nonce uint64) error {
+	return nil
+}
