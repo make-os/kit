@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/make-os/kit/storage"
@@ -30,7 +31,7 @@ func NewSystemKeeper(db storagetypes.Tx) *SystemKeeper {
 
 // SaveBlockInfo saves a committed block information.
 // Indexes the saved block info for faster future retrieval so
-// that GetLastBlockInfo will not refetch
+// that GetLastBlockInfo will not re-fetched
 func (s *SystemKeeper) SaveBlockInfo(info *state.BlockInfo) error {
 	data := util.ToBytes(info)
 	record := common.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
@@ -105,4 +106,9 @@ func (s *SystemKeeper) GetHelmRepo() (string, error) {
 		return "", err
 	}
 	return string(record.Value), nil
+}
+
+// GetCurrentDifficulty returns the current network difficulty
+func (s *SystemKeeper) GetCurrentDifficulty() *big.Int {
+	return new(big.Int).SetInt64(1000000)
 }

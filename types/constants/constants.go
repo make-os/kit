@@ -16,6 +16,7 @@ const (
 	NamespaceDev         = "dev"
 	NamespaceTicket      = "ticket"
 	NamespaceHost        = "host"
+	NamespaceMiner       = "miner"
 )
 
 // Proposal action data keys

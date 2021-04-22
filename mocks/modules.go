@@ -1305,6 +1305,110 @@ func (mr *MockRepoModuleMockRecorder) GetTracked() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracked", reflect.TypeOf((*MockRepoModule)(nil).GetTracked))
 }
 
+// ListPath mocks base method
+func (m *MockRepoModule) ListPath(name, path string, revision ...string) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, path}
+	for _, a := range revision {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPath", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// ListPath indicates an expected call of ListPath
+func (mr *MockRepoModuleMockRecorder) ListPath(name, path interface{}, revision ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, path}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPath", reflect.TypeOf((*MockRepoModule)(nil).ListPath), varargs...)
+}
+
+// GetFileLines mocks base method
+func (m *MockRepoModule) GetFileLines(name, file string, revision ...string) []string {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, file}
+	for _, a := range revision {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFileLines", varargs...)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetFileLines indicates an expected call of GetFileLines
+func (mr *MockRepoModuleMockRecorder) GetFileLines(name, file interface{}, revision ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, file}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileLines", reflect.TypeOf((*MockRepoModule)(nil).GetFileLines), varargs...)
+}
+
+// GetBranches mocks base method
+func (m *MockRepoModule) GetBranches(name string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBranches", name)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetBranches indicates an expected call of GetBranches
+func (mr *MockRepoModuleMockRecorder) GetBranches(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranches", reflect.TypeOf((*MockRepoModule)(nil).GetBranches), name)
+}
+
+// GetLatestBranchCommit mocks base method
+func (m *MockRepoModule) GetLatestBranchCommit(name, branch string) util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBranchCommit", name, branch)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetLatestBranchCommit indicates an expected call of GetLatestBranchCommit
+func (mr *MockRepoModuleMockRecorder) GetLatestBranchCommit(name, branch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBranchCommit", reflect.TypeOf((*MockRepoModule)(nil).GetLatestBranchCommit), name, branch)
+}
+
+// GetCommits mocks base method
+func (m *MockRepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, branch}
+	for _, a := range limit {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCommits", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// GetCommits indicates an expected call of GetCommits
+func (mr *MockRepoModuleMockRecorder) GetCommits(name, branch interface{}, limit ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, branch}, limit...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockRepoModule)(nil).GetCommits), varargs...)
+}
+
+// GetCommitAncestors mocks base method
+func (m *MockRepoModule) GetCommitAncestors(name, commitHash string, limit ...int) []util.Map {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, commitHash}
+	for _, a := range limit {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCommitAncestors", varargs...)
+	ret0, _ := ret[0].([]util.Map)
+	return ret0
+}
+
+// GetCommitAncestors indicates an expected call of GetCommitAncestors
+func (mr *MockRepoModuleMockRecorder) GetCommitAncestors(name, commitHash interface{}, limit ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, commitHash}, limit...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitAncestors", reflect.TypeOf((*MockRepoModule)(nil).GetCommitAncestors), varargs...)
+}
+
 // MockNamespaceModule is a mock of NamespaceModule interface
 type MockNamespaceModule struct {
 	ctrl     *gomock.Controller
@@ -1533,6 +1637,101 @@ func (m *MockDHTModule) GetPeers() []string {
 func (mr *MockDHTModuleMockRecorder) GetPeers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPeers", reflect.TypeOf((*MockDHTModule)(nil).GetPeers))
+}
+
+// MockMinerModule is a mock of MinerModule interface
+type MockMinerModule struct {
+	ctrl     *gomock.Controller
+	recorder *MockMinerModuleMockRecorder
+}
+
+// MockMinerModuleMockRecorder is the mock recorder for MockMinerModule
+type MockMinerModuleMockRecorder struct {
+	mock *MockMinerModule
+}
+
+// NewMockMinerModule creates a new mock instance
+func NewMockMinerModule(ctrl *gomock.Controller) *MockMinerModule {
+	mock := &MockMinerModule{ctrl: ctrl}
+	mock.recorder = &MockMinerModuleMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockMinerModule) EXPECT() *MockMinerModuleMockRecorder {
+	return m.recorder
+}
+
+// ConfigureVM mocks base method
+func (m *MockMinerModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
+	ret0, _ := ret[0].(prompt.Completer)
+	return ret0
+}
+
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockMinerModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockMinerModule)(nil).ConfigureVM), vm)
+}
+
+// Start mocks base method
+func (m *MockMinerModule) Start(scheduleStart ...bool) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range scheduleStart {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Start", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start
+func (mr *MockMinerModuleMockRecorder) Start(scheduleStart ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockMinerModule)(nil).Start), scheduleStart...)
+}
+
+// GetHashrate mocks base method
+func (m *MockMinerModule) GetHashrate() float64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHashrate")
+	ret0, _ := ret[0].(float64)
+	return ret0
+}
+
+// GetHashrate indicates an expected call of GetHashrate
+func (mr *MockMinerModuleMockRecorder) GetHashrate() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHashrate", reflect.TypeOf((*MockMinerModule)(nil).GetHashrate))
+}
+
+// IsRunning mocks base method
+func (m *MockMinerModule) IsRunning() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRunning")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRunning indicates an expected call of IsRunning
+func (mr *MockMinerModuleMockRecorder) IsRunning() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockMinerModule)(nil).IsRunning))
+}
+
+// Stop mocks base method
+func (m *MockMinerModule) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop
+func (mr *MockMinerModuleMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockMinerModule)(nil).Stop))
 }
 
 // MockExtManager is a mock of ExtManager interface

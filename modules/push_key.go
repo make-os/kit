@@ -42,37 +42,12 @@ func NewPushKeyModule(cfg *config.AppConfig, service services.Service, logic cor
 
 // methods are functions exposed in the special namespace of this module.
 func (m *PushKeyModule) methods() []*modulestypes.VMMember {
-	return []*modulestypes.VMMember{
-		{
-			Name:        "register",
-			Value:       m.Register,
-			Description: "Register a push key",
-		},
-		{
-			Name:        "unregister",
-			Value:       m.Unregister,
-			Description: "Remove a push key from the network",
-		},
-		{
-			Name:        "update",
-			Value:       m.Update,
-			Description: "Update a previously registered push key",
-		},
-		{
-			Name:        "find",
-			Value:       m.Find,
-			Description: "Find a push key",
-		},
-		{
-			Name:        "getByAddress",
-			Value:       m.GetByAddress,
-			Description: "Get push keys belonging to a user address",
-		},
-		{
-			Name:        "getOwner",
-			Value:       m.GetAccountOfOwner,
-			Description: "Get the account of a push key owner",
-		},
+	return []*modulestypes.VMMember{{Name: "register", Value: m.Register, Description: "Register a push key"},
+		{Name: "unregister", Value: m.Unregister, Description: "Remove a push key from the network"},
+		{Name: "update", Value: m.Update, Description: "Update a previously registered push key"},
+		{Name: "find", Value: m.Find, Description: "Find a push key"},
+		{Name: "getByAddress", Value: m.GetByAddress, Description: "Get push keys belonging to a user address"},
+		{Name: "getOwner", Value: m.GetAccountOfOwner, Description: "Get the account of a push key owner"},
 	}
 }
 

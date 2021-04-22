@@ -283,7 +283,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
 
 	// If it is not time to update validators, do nothing.
-	if !params.IsBeforeEndOfEpoch(curHeight) {
+	if !params.IsBeforeEndOfEpochOfHeight(curHeight) {
 		return nil
 	}
 

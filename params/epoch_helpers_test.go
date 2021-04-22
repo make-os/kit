@@ -8,9 +8,10 @@ import (
 )
 
 var _ = Describe("EpochHelpers", func() {
+	NumBlocksPerEpoch = 5
+
 	Describe(".GetEpochOfHeight", func() {
 		It("should get expected epoch", func() {
-			NumBlocksPerEpoch = 5
 			Expect(GetEpochOfHeight(1)).To(Equal(int64(1)))
 			Expect(GetEpochOfHeight(4)).To(Equal(int64(1)))
 			Expect(GetEpochOfHeight(5)).To(Equal(int64(1)))
@@ -21,85 +22,91 @@ var _ = Describe("EpochHelpers", func() {
 		})
 	})
 
-	Describe(".GetStartOfEpochOfHeight", func() {
+	Describe(".GetFirstInEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(GetStartOfEpochOfHeight(1)).To(Equal(int64(1)))
-			Expect(GetStartOfEpochOfHeight(4)).To(Equal(int64(1)))
-			Expect(GetStartOfEpochOfHeight(5)).To(Equal(int64(1)))
-			Expect(GetStartOfEpochOfHeight(6)).To(Equal(int64(6)))
-			Expect(GetStartOfEpochOfHeight(9)).To(Equal(int64(6)))
-			Expect(GetStartOfEpochOfHeight(10)).To(Equal(int64(6)))
-			Expect(GetStartOfEpochOfHeight(11)).To(Equal(int64(11)))
+			Expect(GetFirstInEpochOfHeight(1)).To(Equal(int64(1)))
+			Expect(GetFirstInEpochOfHeight(4)).To(Equal(int64(1)))
+			Expect(GetFirstInEpochOfHeight(5)).To(Equal(int64(1)))
+			Expect(GetFirstInEpochOfHeight(6)).To(Equal(int64(6)))
+			Expect(GetFirstInEpochOfHeight(9)).To(Equal(int64(6)))
+			Expect(GetFirstInEpochOfHeight(10)).To(Equal(int64(6)))
+			Expect(GetFirstInEpochOfHeight(11)).To(Equal(int64(11)))
 		})
 	})
 
-	Describe(".GetEndOfEpochOfHeight", func() {
+	Describe(".IsLastInEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(GetEndOfEpochOfHeight(1)).To(Equal(int64(5)))
-			Expect(GetEndOfEpochOfHeight(4)).To(Equal(int64(5)))
-			Expect(GetEndOfEpochOfHeight(5)).To(Equal(int64(5)))
-			Expect(GetEndOfEpochOfHeight(6)).To(Equal(int64(10)))
-			Expect(GetEndOfEpochOfHeight(9)).To(Equal(int64(10)))
-			Expect(GetEndOfEpochOfHeight(10)).To(Equal(int64(10)))
-			Expect(GetEndOfEpochOfHeight(11)).To(Equal(int64(15)))
+			Expect(IsLastInEpochOfHeight(1)).To(Equal(int64(5)))
+			Expect(IsLastInEpochOfHeight(4)).To(Equal(int64(5)))
+			Expect(IsLastInEpochOfHeight(5)).To(Equal(int64(5)))
+			Expect(IsLastInEpochOfHeight(6)).To(Equal(int64(10)))
+			Expect(IsLastInEpochOfHeight(9)).To(Equal(int64(10)))
+			Expect(IsLastInEpochOfHeight(10)).To(Equal(int64(10)))
+			Expect(IsLastInEpochOfHeight(11)).To(Equal(int64(15)))
 		})
 	})
 
-	Describe(".GetSeedHeightInEpochOfHeight", func() {
+	Describe(".IsLastInEpochOfHeight", func() {
+		It("should panic if epoch=0", func() {
+			Expect(func() { GetFirstInEpoch(0) }).To(Panic())
+		})
+
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(GetSeedHeightInEpochOfHeight(1)).To(Equal(int64(3)))
-			Expect(GetSeedHeightInEpochOfHeight(4)).To(Equal(int64(3)))
-			Expect(GetSeedHeightInEpochOfHeight(5)).To(Equal(int64(3)))
-			Expect(GetSeedHeightInEpochOfHeight(6)).To(Equal(int64(8)))
-			Expect(GetSeedHeightInEpochOfHeight(9)).To(Equal(int64(8)))
-			Expect(GetSeedHeightInEpochOfHeight(10)).To(Equal(int64(8)))
-			Expect(GetSeedHeightInEpochOfHeight(11)).To(Equal(int64(13)))
+			Expect(GetFirstInEpoch(1)).To(Equal(int64(1)))
+			Expect(GetFirstInEpoch(3)).To(Equal(int64(11)))
+			Expect(GetFirstInEpoch(2)).To(Equal(int64(6)))
+			Expect(GetFirstInEpoch(30)).To(Equal(int64(146)))
 		})
 	})
 
-	Describe(".GetEndOfParentEpochOfHeight", func() {
+	Describe(".GetSeedInEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(GetEndOfParentEpochOfHeight(1)).To(Equal(int64(0)))
-			Expect(GetEndOfParentEpochOfHeight(4)).To(Equal(int64(0)))
-			Expect(GetEndOfParentEpochOfHeight(5)).To(Equal(int64(0)))
-			Expect(GetEndOfParentEpochOfHeight(6)).To(Equal(int64(5)))
-			Expect(GetEndOfParentEpochOfHeight(9)).To(Equal(int64(5)))
-			Expect(GetEndOfParentEpochOfHeight(10)).To(Equal(int64(5)))
-			Expect(GetEndOfParentEpochOfHeight(11)).To(Equal(int64(10)))
+			Expect(GetSeedInEpochOfHeight(1)).To(Equal(int64(3)))
+			Expect(GetSeedInEpochOfHeight(4)).To(Equal(int64(3)))
+			Expect(GetSeedInEpochOfHeight(5)).To(Equal(int64(3)))
+			Expect(GetSeedInEpochOfHeight(6)).To(Equal(int64(8)))
+			Expect(GetSeedInEpochOfHeight(9)).To(Equal(int64(8)))
+			Expect(GetSeedInEpochOfHeight(10)).To(Equal(int64(8)))
+			Expect(GetSeedInEpochOfHeight(11)).To(Equal(int64(13)))
 		})
 	})
 
-	Describe(".IsStartOfEndOfEpochOfHeight", func() {
+	Describe(".GetLastInParentOfEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(IsStartOfEndOfEpochOfHeight(1)).To(BeFalse())
-			Expect(IsStartOfEndOfEpochOfHeight(3)).To(BeTrue())
-			Expect(IsStartOfEndOfEpochOfHeight(6)).To(BeFalse())
-			Expect(IsStartOfEndOfEpochOfHeight(8)).To(BeTrue())
+			Expect(GetLastInParentOfEpochOfHeight(1)).To(Equal(int64(0)))
+			Expect(GetLastInParentOfEpochOfHeight(4)).To(Equal(int64(0)))
+			Expect(GetLastInParentOfEpochOfHeight(5)).To(Equal(int64(0)))
+			Expect(GetLastInParentOfEpochOfHeight(6)).To(Equal(int64(5)))
+			Expect(GetLastInParentOfEpochOfHeight(9)).To(Equal(int64(5)))
+			Expect(GetLastInParentOfEpochOfHeight(10)).To(Equal(int64(5)))
+			Expect(GetLastInParentOfEpochOfHeight(11)).To(Equal(int64(10)))
 		})
 	})
 
-	Describe(".IsBeforeEndOfEpoch", func() {
+	Describe(".IsThirdToLastInEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(IsBeforeEndOfEpoch(3)).To(BeFalse())
-			Expect(IsBeforeEndOfEpoch(4)).To(BeTrue())
-			Expect(IsBeforeEndOfEpoch(8)).To(BeFalse())
-			Expect(IsBeforeEndOfEpoch(9)).To(BeTrue())
+			Expect(IsThirdToLastInEpochOfHeight(1)).To(BeFalse())
+			Expect(IsThirdToLastInEpochOfHeight(3)).To(BeTrue())
+			Expect(IsThirdToLastInEpochOfHeight(6)).To(BeFalse())
+			Expect(IsThirdToLastInEpochOfHeight(8)).To(BeTrue())
 		})
 	})
 
-	Describe(".IsEndOfEpoch", func() {
+	Describe(".IsBeforeEndOfEpochOfHeight", func() {
 		It("should get expected height", func() {
-			NumBlocksPerEpoch = 5
-			Expect(IsEndOfEpoch(4)).To(BeFalse())
-			Expect(IsEndOfEpoch(5)).To(BeTrue())
-			Expect(IsEndOfEpoch(9)).To(BeFalse())
-			Expect(IsEndOfEpoch(10)).To(BeTrue())
+			Expect(IsBeforeEndOfEpochOfHeight(3)).To(BeFalse())
+			Expect(IsBeforeEndOfEpochOfHeight(4)).To(BeTrue())
+			Expect(IsBeforeEndOfEpochOfHeight(8)).To(BeFalse())
+			Expect(IsBeforeEndOfEpochOfHeight(9)).To(BeTrue())
+		})
+	})
+
+	Describe(".IsEndOfEpochOfHeight", func() {
+		It("should get expected height", func() {
+			Expect(IsEndOfEpochOfHeight(4)).To(BeFalse())
+			Expect(IsEndOfEpochOfHeight(5)).To(BeTrue())
+			Expect(IsEndOfEpochOfHeight(9)).To(BeFalse())
+			Expect(IsEndOfEpochOfHeight(10)).To(BeTrue())
 		})
 	})
 })

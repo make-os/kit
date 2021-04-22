@@ -880,6 +880,8 @@ github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czP
 github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/make-os/btcutil v1.0.3-0.20201208011646-272219d09635 h1:JKKXW19muZruOOgXivHrOZvt29MMa8B+EVH3Md2QgrY=
 github.com/make-os/btcutil v1.0.3-0.20201208011646-272219d09635/go.mod h1:FloXmZYMSsyWjzw/SempWwQPkBp4drHEwBayFI+WD5g=
+github.com/make-os/go-x11 v0.0.0-20190107235645-df0f52b15c3a h1:udQ0fOivY+H6/bHKLtEf7+8Ge+AzkylZ3XAC85ssAwA=
+github.com/make-os/go-x11 v0.0.0-20190107235645-df0f52b15c3a/go.mod h1:9B1yDRyO4fMjb2ag2OfygpddTY86c4XoCIhrx8pZBeY=
 github.com/make-os/tendermint v0.34.0-rc4.0.20201212174221-93c4161d9329 h1:wVnaNtWHGY3/OTMFiqIPeRXsFtIkEmNIcidmLWLpEZM=
 github.com/make-os/tendermint v0.34.0-rc4.0.20201212174221-93c4161d9329/go.mod h1:2wtxGBf+j7zV3fYlXAj5gMxFW8gp+Qh0sRXyEdQ7wSk=
 github.com/markbates/inflect v1.0.0/go.mod h1:oTeZL2KHA7CUX6X+fovmK9OvIOFuqu0TwdQrZjLTh88=

@@ -31,12 +31,10 @@ type NodeService struct {
 // New creates an instance of NodeService.
 // The function panics if rpcAddr is an invalid address.
 func New(rpcAddr string) *NodeService {
-
 	c, err := http.New(rpcAddr, "/websocket")
 	if err != nil {
 		panic(c)
 	}
-
 	return &NodeService{
 		client: c,
 	}
@@ -47,13 +45,13 @@ func (s *NodeService) GetBlock(ctx context.Context, height *int64) (*core_types.
 	return s.client.Block(ctx, height)
 }
 
-// IsSyncing checks whether the node has caught up with the rest of its connected peers
+// IsSyncing checks whether the node has caught up with the network
 func (s *NodeService) IsSyncing(ctx context.Context) (bool, error) {
 	status, err := s.client.Status(ctx)
 	if err != nil {
 		return false, err
 	}
-	return !status.SyncInfo.CatchingUp, nil
+	return status.SyncInfo.CatchingUp, nil
 }
 
 // NetInfo returns network information

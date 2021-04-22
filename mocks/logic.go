@@ -17,6 +17,7 @@ import (
 	util "github.com/make-os/kit/util"
 	identifier "github.com/make-os/kit/util/identifier"
 	types2 "github.com/tendermint/tendermint/abci/types"
+	big "math/big"
 	reflect "reflect"
 )
 
@@ -177,6 +178,20 @@ func (m *MockSystemKeeper) GetHelmRepo() (string, error) {
 func (mr *MockSystemKeeperMockRecorder) GetHelmRepo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmRepo", reflect.TypeOf((*MockSystemKeeper)(nil).GetHelmRepo))
+}
+
+// GetCurrentDifficulty mocks base method
+func (m *MockSystemKeeper) GetCurrentDifficulty() *big.Int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentDifficulty")
+	ret0, _ := ret[0].(*big.Int)
+	return ret0
+}
+
+// GetCurrentDifficulty indicates an expected call of GetCurrentDifficulty
+func (mr *MockSystemKeeperMockRecorder) GetCurrentDifficulty() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentDifficulty", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentDifficulty))
 }
 
 // MockBalanceAccount is a mock of BalanceAccount interface

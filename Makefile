@@ -70,6 +70,7 @@ genmocks:
 	mockgen -source=storage/types/types.go -destination=storage/mocks/types.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks
+	mockgen -source=miner/interface.go -destination=mocks/miner.go -package mocks
 	mockgen -source=remote/push/types/objects.go -destination=mocks/pushpool.go -package mocks
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
 	mockgen -source=remote/fetcher/object_fetcher.go -destination=mocks/object_fetcher.go -package mocks

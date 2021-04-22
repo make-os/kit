@@ -47,31 +47,11 @@ func (m *NodeModule) globals() []*types.VMMember {
 // methods are functions exposed in the special namespace of this module.
 func (m *NodeModule) methods() []*types.VMMember {
 	return []*types.VMMember{
-		{
-			Name:        "getBlock",
-			Value:       m.GetBlock,
-			Description: "Get full block data at a given height",
-		},
-		{
-			Name:        "getHeight",
-			Value:       m.GetHeight,
-			Description: "Get the current chain height",
-		},
-		{
-			Name:        "getBlockInfo",
-			Value:       m.GetBlockInfo,
-			Description: "Get summarized block information at a given height",
-		},
-		{
-			Name:        "getValidators",
-			Value:       m.GetValidators,
-			Description: "Get validators at a given height",
-		},
-		{
-			Name:        "isSyncing",
-			Value:       m.IsSyncing,
-			Description: "Check if the node is synchronizing with peers",
-		},
+		{Name: "getBlock", Value: m.GetBlock, Description: "Get full block data at a given height"},
+		{Name: "getHeight", Value: m.GetHeight, Description: "Get the current chain height"},
+		{Name: "getBlockInfo", Value: m.GetBlockInfo, Description: "Get summarized block information at a given height"},
+		{Name: "getValidators", Value: m.GetValidators, Description: "Get validators at a given height"},
+		{Name: "isSyncing", Value: m.IsSyncing, Description: "Check if the node is synchronizing with peers"},
 	}
 }
 

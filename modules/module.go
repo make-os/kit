@@ -8,6 +8,7 @@ import (
 	"github.com/make-os/kit/extensions"
 	"github.com/make-os/kit/keystore"
 	"github.com/make-os/kit/mempool"
+	"github.com/make-os/kit/miner"
 	modulestypes "github.com/make-os/kit/modules/types"
 	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/node/services"
@@ -27,7 +28,7 @@ type Module struct {
 // New creates an instance of Module
 func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Service, logic core.Logic,
 	mempoolReactor *mempool.Reactor, ticketmgr types2.TicketManager, dht dht2.DHT,
-	extMgr *extensions.Manager, remoteSvr core.RemoteServer) *Module {
+	extMgr *extensions.Manager, remoteSvr core.RemoteServer, miner miner.Miner) *Module {
 
 	return &Module{
 		cfg: cfg,
@@ -45,6 +46,7 @@ func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Ser
 			RPC:     NewRPCModule(cfg),
 			Pool:    NewPoolModule(mempoolReactor, remoteSvr.GetPushPool()),
 			Dev:     NewDevModule(),
+			Miner:   NewMinerModule(cfg, miner),
 		},
 	}
 }

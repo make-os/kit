@@ -89,6 +89,16 @@ type RepoConfig struct {
 	UntrackAll bool `json:"untrackall" mapstructure:"untrackall"`
 }
 
+// MinerConfig contains miner parameters
+type MinerConfig struct {
+
+	// On indicates that the miner is allowed to run.
+	On bool `json:"on" mapstructure:"on"`
+
+	// Threads is the number of goroutines to running the mining algo.
+	Threads int `json:"threads" mapstructure:"threads"`
+}
+
 // VersionInfo describes the clients
 // components and runtime version information
 type VersionInfo struct {
@@ -187,6 +197,9 @@ type AppConfig struct {
 	// Mempool holds mempool configurations
 	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`
 
+	// Miner holds miner configurations
+	Miner *MinerConfig `json:"miner" mapstructure:"miner"`
+
 	// GenesisFileEntries includes the initial state objects
 	GenesisFileEntries []*GenDataEntry `json:"gendata" mapstructure:"gendata"`
 
@@ -225,6 +238,7 @@ func EmptyAppConfig() *AppConfig {
 		Net:                &NetConfig{},
 		Repo:               &RepoConfig{},
 		RPC:                &RPCConfig{},
+		Miner:              &MinerConfig{},
 		DHT:                &DHTConfig{},
 		Remote:             &RemoteConfig{},
 		Mempool:            &MempoolConfig{},

@@ -4,6 +4,7 @@ import (
 	context2 "context"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/make-os/kit/config"
@@ -70,6 +71,8 @@ func setStartFlags(cmd *cobra.Command) {
 	f.StringSliceP("repo.track", "t", []string{}, "Specify one or more repositories to track")
 	f.StringSliceP("repo.untrack", "u", []string{}, "Untrack one or more repositories")
 	f.BoolP("repo.untrackall", "x", false, "Untrack all previously tracked repositories")
+	f.Bool("miner.on", false, "Run the CPU miner")
+	f.Int("miner.threads", runtime.NumCPU(), "Run the CPU miners to run concurrently")
 
 	// Light node primary
 	f.Bool("node.light", false, "Run the node in light mode")

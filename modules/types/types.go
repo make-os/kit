@@ -47,6 +47,7 @@ type Modules struct {
 	ExtMgr  ExtManager
 	RPC     RPCModule
 	Dev     DevModule
+	Miner   MinerModule
 }
 
 // ConfigureVM applies all modules' VM configurations to the given VM.
@@ -177,6 +178,14 @@ type DHTModule interface {
 	GetRepoObjectProviders(key string) (res []util.Map)
 	GetProviders(key string) (res []util.Map)
 	GetPeers() []string
+}
+
+type MinerModule interface {
+	Module
+	Start(scheduleStart ...bool) error
+	GetHashrate() float64
+	IsRunning() bool
+	Stop()
 }
 
 type ExtManager interface {

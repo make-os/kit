@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/make-os/kit/miner"
 	modtypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/net"
 	dht2 "github.com/make-os/kit/net/dht"
@@ -57,7 +58,7 @@ import (
 	nm "github.com/tendermint/tendermint/node"
 )
 
-// RPCServer represents the client
+// Node represents the client
 type Node struct {
 	ctx context.Context
 
@@ -84,6 +85,7 @@ type Node struct {
 	dht            dht2.DHT
 	modules        modtypes.ModulesHub
 	remoteServer   core.RemoteServer
+	miner          miner.Miner
 
 	closeOnce *sync.Once
 }
@@ -222,6 +224,11 @@ func (n *Node) Start() error {
 		node.AddChannels([]byte{ch.ID})
 	}
 
+	n.miner = miner.NewMiner(n.cfg, n.logic, n.service)
+	if n.cfg.Miner.On {
+		n.miner.Start(true)
+	}
+
 	// Create node only in non-light mode
 	if !n.cfg.IsLightNode() {
 		n.tm, err = nm.NewNodeWithCustomMempool(
@@ -331,7 +338,18 @@ func (n *Node) configureInterfaces() {
 	extMgr := extensions.NewManager(n.cfg)
 
 	// Create module hub
-	n.modules = modules.New(n.cfg, n.acctMgr, n.service, n.logic, n.mempoolReactor, n.ticketMgr, n.dht, extMgr, n.remoteServer)
+	n.modules = modules.New(
+		n.cfg,
+		n.acctMgr,
+		n.service,
+		n.logic,
+		n.mempoolReactor,
+		n.ticketMgr,
+		n.dht,
+		extMgr,
+		n.remoteServer,
+		n.miner,
+	)
 
 	// Register JSON RPC methods
 	if n.remoteServer != nil {

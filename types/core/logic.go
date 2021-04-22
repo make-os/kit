@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"math/big"
 
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/pkgs/tree"
@@ -64,6 +65,9 @@ type SystemKeeper interface {
 
 	// GetHelmRepo gets the governing repository of the network
 	GetHelmRepo() (string, error)
+
+	// GetCurrentDifficulty returns the current network difficulty
+	GetCurrentDifficulty() *big.Int
 }
 
 // BalanceAccount represents an account that maintains currency balance

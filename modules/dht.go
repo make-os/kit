@@ -103,7 +103,7 @@ func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	return m.Completer
 }
 
-// store stores a value corresponding to the given key
+// Store store stores a value corresponding to the given key
 func (m *DHTModule) Store(key string, val string) {
 
 	if m.IsAttached() {
@@ -120,7 +120,7 @@ func (m *DHTModule) Store(key string, val string) {
 	}
 }
 
-// lookup finds a value for a given key
+// Lookup lookup finds a value for a given key
 //
 // RETURNS <base64 string>: The data stored on the key
 func (m *DHTModule) Lookup(key string) string {
@@ -243,7 +243,7 @@ func (m *DHTModule) GetProviders(key string) (res []util.Map) {
 	return
 }
 
-// getPeers returns a list of DHT peer IDs
+// GetPeers getPeers returns a list of DHT peer IDs
 func (m *DHTModule) GetPeers() (peers []string) {
 	if m.IsAttached() {
 		res, err := m.Client.DHT().GetPeers()
