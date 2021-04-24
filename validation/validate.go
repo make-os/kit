@@ -72,6 +72,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoProposalSendFee(o, index)
 	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKey(o, index)
+	case *txns.TxSubmitWork:
+		return CheckTxSubmitWork(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -113,6 +115,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
 	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKeyConsistency(o, index, logic)
+	case *txns.TxSubmitWork:
+		return CheckTxSubmitWorkConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

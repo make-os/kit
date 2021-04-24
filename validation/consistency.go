@@ -7,9 +7,11 @@ import (
 	plumbing2 "github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
+	"github.com/make-os/kit/miner"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/validation"
+	"github.com/make-os/kit/storage"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
@@ -210,7 +212,7 @@ func CheckTxRegisterPushKeyConsistency(
 	return nil
 }
 
-// CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
+// CheckTxUpDelPushKeyConsistency CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
 func CheckTxUpDelPushKeyConsistency(
 	tx *txns.TxUpDelPushKey,
 	index int,
@@ -635,6 +637,49 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 	_, err := CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// CheckTxSubmitWorkConsistency performs consistency checks on TxSubmitWork
+func CheckTxSubmitWorkConsistency(
+	tx *txns.TxSubmitWork,
+	index int,
+	logic core.Logic) error {
+
+	sk := logic.SysKeeper()
+
+	curEpoch, err := sk.GetCurrentEpoch()
+	if err != nil {
+		return errors.Wrap(err, "failed to get current epoch")
+	}
+
+	// ensure current epoch and work epoch match
+	if curEpoch != tx.Epoch {
+		return feI(index, "epoch", "epoch is in the future or past")
+	}
+
+	// Check if nonce has been seen in this epoch
+	err = sk.IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce)
+	if err == nil {
+		return feI(index, "wnonce", "work nonce has been seen before")
+	} else if err != storage.ErrRecordNotFound {
+		return errors.Wrap(err, "failed to check work nonce uniqueness")
+	}
+
+	// get the epoch's first block info
+	startBlock, err := sk.GetCurrentEpochStartBlock()
+	if err != nil {
+		return errors.Wrap(err, "failed to get start block of epoch")
+	}
+
+	// verify the work
+	ok, err := miner.VerifyWork(startBlock.Hash, tx.SenderPubKey.MustAddressRaw(), tx.WorkNonce, logic)
+	if err != nil {
+		return errors.Wrap(err, "failed to verify work")
+	} else if !ok {
+		return feI(index, "wnonce", "work nonce does not satisfy epoch target")
 	}
 
 	return nil

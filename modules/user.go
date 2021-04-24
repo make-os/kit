@@ -56,56 +56,17 @@ func NewUserModule(
 // methods are functions exposed in the special namespace of this module.
 func (m *UserModule) methods() []*types.VMMember {
 	return []*types.VMMember{
-		{
-			Name:        "getKeys",
-			Value:       m.GetKeys,
-			Description: "Get address of keys on the keystore",
-		},
-		{
-			Name:        "getPrivKey",
-			Value:       m.GetPrivKey,
-			Description: "Get the private key of a key (supports interactive mode)",
-		},
-		{
-			Name:        "getPubKey",
-			Value:       m.GetPublicKey,
-			Description: "Get the public key of an account (supports interactive mode)",
-		},
-		{
-			Name:        "getNonce",
-			Value:       m.GetNonce,
-			Description: "Get the nonce of an account",
-		},
-		{
-			Name:        "get",
-			Value:       m.GetAccount,
-			Description: "Get the account of a given address",
-		},
-		{
-			Name:        "getBalance",
-			Value:       m.GetAvailableBalance,
-			Description: "Get the spendable coin balance of an account",
-		},
-		{
-			Name:        "getStakedBalance",
-			Value:       m.GetStakedBalance,
-			Description: "Get the total staked coins of an account",
-		},
-		{
-			Name:        "getValidator",
-			Value:       m.GetValidator,
-			Description: "Get the validator information",
-		},
-		{
-			Name:        "setCommission",
-			Value:       m.SetCommission,
-			Description: "Set the percentage of reward to share with a delegator",
-		},
-		{
-			Name:        "send",
-			Value:       m.SendCoin,
-			Description: "Send coins to another user account or a repository",
-		},
+		{Name: "getKeys", Value: m.GetKeys, Description: "Get address of keys on the keystore"},
+		{Name: "getPrivKey", Value: m.GetPrivKey, Description: "Get the private key of a key (supports interactive mode)"},
+		{Name: "getPubKey", Value: m.GetPublicKey, Description: "Get the public key of an account (supports interactive mode)"},
+		{Name: "getNonce", Value: m.GetNonce, Description: "Get the nonce of an account"},
+		{Name: "get", Value: m.GetAccount, Description: "Get the account of a given address"},
+		{Name: "getBalance", Value: m.GetAvailableBalance, Description: "Get the spendable coin balance of an account"},
+		{Name: "getGasBalance", Value: m.GetGasBalance, Description: "Get the gas balance of an account"},
+		{Name: "getStakedBalance", Value: m.GetStakedBalance, Description: "Get the total staked coins of an account"},
+		{Name: "getValidator", Value: m.GetValidator, Description: "Get the validator information"},
+		{Name: "setCommission", Value: m.SetCommission, Description: "Set the percentage of reward to share with a delegator"},
+		{Name: "send", Value: m.SendCoin, Description: "Send coins to another user account or a repository"},
 	}
 }
 
@@ -346,7 +307,7 @@ func (m *UserModule) GetAvailableBalance(address string, height ...uint64) strin
 	return acct.GetAvailableBalance(uint64(curBlockInfo.Height)).String()
 }
 
-// getStakedBalance returns the total staked coins of an account
+// GetStakedBalance getStakedBalance returns the total staked coins of an account
 //  - address: The address corresponding the account
 //  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
@@ -372,7 +333,7 @@ func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 	return acct.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
 }
 
-// getPrivateValidator returns the address, public and private keys of the validator.
+// GetValidator getPrivateValidator returns the address, public and private keys of the validator.
 //
 //  - includePrivKey: Indicates that the private key of the validator should be included in the result
 //
@@ -410,7 +371,7 @@ func (m *UserModule) GetValidator(includePrivKey ...bool) util.Map {
 	return info
 }
 
-// setCommission sets the delegator commission for an account
+// SetCommission setCommission sets the delegator commission for an account
 //
 // params <map>
 //  - nonce <number|string>: The senders next account nonce
@@ -460,7 +421,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 	}
 }
 
-// sendCoin sends the native coin from a source account to a destination account.
+// SendCoin sendCoin sends the native coin from a source account to a destination account.
 //
 // params <map>
 //  - value 		<string>: 			The amount of coin to send
@@ -510,4 +471,16 @@ func (m *UserModule) SendCoin(params map[string]interface{}, options ...interfac
 	return map[string]interface{}{
 		"hash": hash,
 	}
+}
+
+// GetGasBalance returns the gas of an account.
+//  - address: The address corresponding the account
+//  - [height]: The target block height to query (default: latest)
+func (m *UserModule) GetGasBalance(address string, height ...uint64) string {
+	acct := m.logic.AccountKeeper().Get(address2.Address(address), height...)
+	if acct.IsNil() {
+		panic(errors.ReqErr(404, StatusCodeAccountNotFound, "address", at.ErrAccountUnknown.Error()))
+	}
+
+	return acct.GetGasBalance().String()
 }

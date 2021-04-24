@@ -20,6 +20,7 @@ const (
 	TagTrackedRepo             = "tr"
 	TagAnnouncementScheduleKey = "ak"
 	TagRepoRefLastSyncHeight   = "rrh"
+	TagPoWNonce                = "pwn"
 )
 
 // MakeRepoRefLastSyncHeightKey creates a key for storing a repo's reference last successful synchronized height.
@@ -124,4 +125,14 @@ func MakeAnnounceListKey(key []byte, announceTime int64) []byte {
 // MakeQueryAnnounceListKey creates a key for accessing all DHT key announcements entries.
 func MakeQueryAnnounceListKey() []byte {
 	return common.MakePrefix([]byte(TagAnnouncementScheduleKey))
+}
+
+// MakePoWResultKey creates a key for indexing proof of work nonce and epoch
+func MakePoWResultKey(epoch int64, nonce uint64) []byte {
+	return common.MakePrefix([]byte(TagPoWNonce), util.EncodeNumber(uint64(epoch)), util.EncodeNumber(nonce))
+}
+
+// MakeQueryPoWEpoch creates a key querying all proof of work nonces under an epoch
+func MakeQueryPoWEpoch(epoch int64) []byte {
+	return common.MakePrefix([]byte(TagPoWNonce), util.EncodeNumber(uint64(epoch)))
 }

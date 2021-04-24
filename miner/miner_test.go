@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	epoch2 "github.com/make-os/kit/util/epoch"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -148,8 +149,8 @@ var _ = Describe("Miner", func() {
 			params.NumBlocksPerEpoch = 2
 			curBlock := &state.BlockInfo{Height: 20}
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
-			epoch := params.GetEpochOfHeight(curBlock.Height.Int64())
-			mockSysKeeper.EXPECT().GetBlockInfo(params.GetFirstInEpoch(epoch)).Return(nil, fmt.Errorf("error"))
+			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
+			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(nil, fmt.Errorf("error"))
 			_, _, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get current epoch start block: error"))
@@ -162,9 +163,9 @@ var _ = Describe("Miner", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
 			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
 
-			epoch := params.GetEpochOfHeight(curBlock.Height.Int64())
+			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			epochStartBlock := &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
-			mockSysKeeper.EXPECT().GetBlockInfo(params.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
+			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
 
 			retEpoch, nonce, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).To(BeNil())
@@ -179,9 +180,9 @@ var _ = Describe("Miner", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
 			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000000000))
 
-			epoch := params.GetEpochOfHeight(curBlock.Height.Int64())
+			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			epochStartBlock := &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
-			mockSysKeeper.EXPECT().GetBlockInfo(params.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
+			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
 
 			go func() {
 				time.Sleep(10 * time.Millisecond)
@@ -192,6 +193,43 @@ var _ = Describe("Miner", func() {
 			Expect(err).To(BeNil())
 			Expect(retEpoch).To(BeZero())
 			Expect(nonce).To(BeZero())
+		})
+	})
+
+	Describe(".VerifyWork", func() {
+		var retEpoch int64
+		var nonce uint64
+		var minerAddr = util.RandBytes(20)
+		var epochStartBlock = &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
+
+		BeforeEach(func() {
+			stopCh := make(chan bool)
+			params.NumBlocksPerEpoch = 2
+			curBlock := &state.BlockInfo{Height: 20}
+			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+
+			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
+			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
+
+			retEpoch, nonce, err = mine(1, minerAddr, mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			Expect(err).To(BeNil())
+			Expect(epoch).To(Equal(retEpoch))
+			Expect(nonce).ToNot(BeZero())
+		})
+
+		It("should return true if nonce is valid for epoch", func() {
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce, mockKeepers)
+			Expect(err).To(BeNil())
+			Expect(good).To(BeTrue())
+		})
+
+		It("should return false if nonce is not valid for epoch", func() {
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce+1, mockKeepers)
+			Expect(err).To(BeNil())
+			Expect(good).To(BeFalse())
 		})
 	})
 })

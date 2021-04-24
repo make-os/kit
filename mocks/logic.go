@@ -194,6 +194,78 @@ func (mr *MockSystemKeeperMockRecorder) GetCurrentDifficulty() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentDifficulty", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentDifficulty))
 }
 
+// GetCurrentEpoch mocks base method
+func (m *MockSystemKeeper) GetCurrentEpoch() (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpoch")
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentEpoch indicates an expected call of GetCurrentEpoch
+func (mr *MockSystemKeeperMockRecorder) GetCurrentEpoch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentEpoch))
+}
+
+// GetEpochAt mocks base method
+func (m *MockSystemKeeper) GetEpochAt(height int64) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEpochAt", height)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetEpochAt indicates an expected call of GetEpochAt
+func (mr *MockSystemKeeperMockRecorder) GetEpochAt(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochAt", reflect.TypeOf((*MockSystemKeeper)(nil).GetEpochAt), height)
+}
+
+// GetCurrentEpochStartBlock mocks base method
+func (m *MockSystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpochStartBlock")
+	ret0, _ := ret[0].(*state.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCurrentEpochStartBlock indicates an expected call of GetCurrentEpochStartBlock
+func (mr *MockSystemKeeperMockRecorder) GetCurrentEpochStartBlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpochStartBlock", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentEpochStartBlock))
+}
+
+// RegisterWorkNonce mocks base method
+func (m *MockSystemKeeper) RegisterWorkNonce(epoch int64, nonce uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterWorkNonce", epoch, nonce)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterWorkNonce indicates an expected call of RegisterWorkNonce
+func (mr *MockSystemKeeperMockRecorder) RegisterWorkNonce(epoch, nonce interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterWorkNonce", reflect.TypeOf((*MockSystemKeeper)(nil).RegisterWorkNonce), epoch, nonce)
+}
+
+// IsWorkNonceRegistered mocks base method
+func (m *MockSystemKeeper) IsWorkNonceRegistered(epoch int64, nonce uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsWorkNonceRegistered", epoch, nonce)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsWorkNonceRegistered indicates an expected call of IsWorkNonceRegistered
+func (mr *MockSystemKeeperMockRecorder) IsWorkNonceRegistered(epoch, nonce interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWorkNonceRegistered", reflect.TypeOf((*MockSystemKeeper)(nil).IsWorkNonceRegistered), epoch, nonce)
+}
+
 // MockBalanceAccount is a mock of BalanceAccount interface
 type MockBalanceAccount struct {
 	ctrl     *gomock.Controller
@@ -241,6 +313,32 @@ func (m *MockBalanceAccount) SetBalance(bal string) {
 func (mr *MockBalanceAccountMockRecorder) SetBalance(bal interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBalance", reflect.TypeOf((*MockBalanceAccount)(nil).SetBalance), bal)
+}
+
+// GetGasBalance mocks base method
+func (m *MockBalanceAccount) GetGasBalance() util.String {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGasBalance")
+	ret0, _ := ret[0].(util.String)
+	return ret0
+}
+
+// GetGasBalance indicates an expected call of GetGasBalance
+func (mr *MockBalanceAccountMockRecorder) GetGasBalance() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGasBalance", reflect.TypeOf((*MockBalanceAccount)(nil).GetGasBalance))
+}
+
+// SetGasBalance mocks base method
+func (m *MockBalanceAccount) SetGasBalance(bal string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetGasBalance", bal)
+}
+
+// SetGasBalance indicates an expected call of SetGasBalance
+func (mr *MockBalanceAccountMockRecorder) SetGasBalance(bal interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGasBalance", reflect.TypeOf((*MockBalanceAccount)(nil).SetGasBalance), bal)
 }
 
 // Clean mocks base method

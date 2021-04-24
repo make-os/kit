@@ -170,60 +170,10 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				err := validation.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has low fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "0"
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:fee, msg:fee cannot be lower than the base price"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxCoinTransfer(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -327,55 +277,6 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
-
-			It("has low fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "0"
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:fee, msg:fee cannot be lower than the base price"))
-			})
-
-			It("has no nonce", func() {
-				tx.Nonce = 0
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxNamespaceAcquire(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
-			})
 		})
 
 		When("it has no error", func() {
@@ -472,75 +373,12 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key is required"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
 				tx.BLSPubKey = pk.Bytes()
 				err := validation.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
-				tx.BLSPubKey = pk.Bytes()
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
-				tx.BLSPubKey = pk.Bytes()
-				tx.Nonce = 1
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
-				tx.BLSPubKey = pk.Bytes()
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
-				tx.BLSPubKey = pk.Bytes()
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				_, pk := bdn.NewKeyFromSeed(util.RandBytes(32))
-				tx.BLSPubKey = pk.Bytes()
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
-			})
-
-			It("has BLS public key has invalid length", func() {
-				params.MinHostStake = decimal.NewFromFloat(5)
-				tx.Value = "10"
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.BLSPubKey = util.RandBytes(32)
-				err := validation.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key length is invalid"))
 			})
 		})
 
@@ -586,52 +424,10 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:ticket, msg:ticket id is required"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				err := validation.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxUnbondTicket(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxUnbondTicket(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxUnbondTicket(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxUnbondTicket(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxUnbondTicket(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -820,52 +616,10 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:governance.propVoter, msg:unknown value"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				err := validation.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxRepoCreate(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxRepoCreate(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxRepoCreate(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxRepoCreate(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxRepoCreate(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -941,52 +695,10 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:feeCap, msg:invalid number; must be numeric"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				err := validation.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxRegisterPushKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxRegisterPushKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxRegisterPushKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxRegisterPushKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxRegisterPushKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -1112,52 +824,10 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:commission, msg:commission rate cannot exceed 100 percent"))
 			})
 
-			It("has no nonce", func() {
+			It("failed common tx checks", func() {
 				err := validation.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
-			})
-
-			It("has invalid fee", func() {
-				tx.Nonce = 1
-				tx.Fee = "invalid"
-				err := validation.CheckTxSetDelegateCommission(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
-			})
-
-			It("has no timestamp", func() {
-				tx.Nonce = 1
-				err := validation.CheckTxSetDelegateCommission(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxSetDelegateCommission(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxSetDelegateCommission(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validation.CheckTxSetDelegateCommission(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -1775,6 +1445,89 @@ var _ = Describe("TxValidator", func() {
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:namespaceOnly, msg:value format is not valid"))
+		})
+	})
+
+	Describe(".CheckCommon", func() {
+		var tx *txns.TxSubmitWork
+		BeforeEach(func() {
+			tx = txns.NewBareTxSubmitWork()
+		})
+
+		It("has no nonce", func() {
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
+		})
+
+		It("has invalid fee", func() {
+			tx.Nonce = 1
+			tx.Fee = "invalid"
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
+		})
+
+		It("has no timestamp", func() {
+			tx.Nonce = 1
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
+		})
+
+		It("has no public key", func() {
+			tx.Nonce = 1
+			tx.Timestamp = time.Now().Unix()
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
+		})
+
+		It("has no signature", func() {
+			tx.Nonce = 1
+			tx.Timestamp = time.Now().Unix()
+			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
+		})
+
+		It("has invalid signature", func() {
+			tx.Nonce = 1
+			tx.Timestamp = time.Now().Unix()
+			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+			tx.Sig = []byte("invalid")
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
+		})
+	})
+
+	Describe(".CheckTxSubmitWork", func() {
+		var tx *txns.TxSubmitWork
+		BeforeEach(func() {
+			tx = txns.NewBareTxSubmitWork()
+		})
+
+		It("should return error if epoch is missing", func() {
+			err := validation.CheckTxSubmitWork(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:epoch, msg:epoch is required"))
+		})
+
+		It("should return error if epoch is missing", func() {
+			tx.Epoch = 100
+			err := validation.CheckTxSubmitWork(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:wnonce, msg:work nonce is required"))
+		})
+
+		It("failed common tx checks", func() {
+			tx.Epoch = 100
+			tx.WorkNonce = 1000
+			err := validation.CheckTxSubmitWork(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 		})
 	})
 })

@@ -14,10 +14,10 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/metrics/tick"
 	"github.com/make-os/kit/node/services"
-	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/util"
+	epochutil "github.com/make-os/kit/util/epoch"
 	"github.com/phoreproject/go-x11"
 	"github.com/pkg/errors"
 )
@@ -145,6 +145,7 @@ func (m *CPUMiner) Stop() {
 	m.log.Info("miner has stopped")
 	m.active = false
 	m.hashrate = tick.NewMovingAverage(hashrateMAWindow)
+	m.stopThreads = make(chan bool)
 }
 
 func (m *CPUMiner) run(id int) {
@@ -198,8 +199,8 @@ func mine(
 	}
 
 	// Get the start block of the current epoch
-	epoch = params.GetEpochOfHeight(curBlock.Height.Int64())
-	curEpochStartHeight := params.GetFirstInEpoch(epoch)
+	epoch = epochutil.GetEpochAt(curBlock.Height.Int64())
+	curEpochStartHeight := epochutil.GetFirstInEpoch(epoch)
 	epochStartBlock, err := sk.GetBlockInfo(curEpochStartHeight)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "failed to get current epoch start block")
@@ -246,6 +247,21 @@ func mine(
 	}
 
 	return 0, 0, nil
+}
+
+// VerifyWork checks whether a nonce is valid for the current epoch.
+//  - Returns true and nil if nonce is valid.
+//  - Returns false and nil if nonce is not valid.
+func VerifyWork(blockHash, minerAddr []byte, nonce uint64, keepers core.Keepers) (bool, error) {
+	result := make([]byte, 32)
+	x11.New().Hash(makeSeed(blockHash, minerAddr, nonce), result)
+
+	target := new(big.Int).Div(maxUint256, keepers.SysKeeper().GetCurrentDifficulty())
+	if new(big.Int).SetBytes(result).Cmp(target) > 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func makeSeed(blockHash, minerAddr []byte, nonce uint64) []byte {

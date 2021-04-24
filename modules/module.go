@@ -46,7 +46,7 @@ func New(cfg *config.AppConfig, acctmgr *keystore.Keystore, service services.Ser
 			RPC:     NewRPCModule(cfg),
 			Pool:    NewPoolModule(mempoolReactor, remoteSvr.GetPushPool()),
 			Dev:     NewDevModule(),
-			Miner:   NewMinerModule(cfg, miner),
+			Miner:   NewMinerModule(cfg, logic, miner),
 		},
 	}
 }

@@ -3,6 +3,7 @@ package params
 import (
 	"time"
 
+	"github.com/make-os/kit/util"
 	"github.com/shopspring/decimal"
 )
 
@@ -50,7 +51,7 @@ var (
 	MaxValTicketsPerBlock = 1
 
 	// NumBlocksPerEpoch is the number of blocks in an epoch
-	NumBlocksPerEpoch = 5
+	NumBlocksPerEpoch = 1800
 
 	// NumBlocksToEffectValChange is the number of block tendermint uses to
 	// effect validation change.
@@ -74,6 +75,9 @@ var (
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+
+	// GasReward is the unique of allocated for a valid pow nonce
+	GasReward = util.String("10000")
 )
 
 // Namespace config

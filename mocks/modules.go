@@ -152,18 +152,18 @@ func (mr *MockNodeModuleMockRecorder) GetBlock(height interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockNodeModule)(nil).GetBlock), height)
 }
 
-// GetHeight mocks base method
-func (m *MockNodeModule) GetHeight() string {
+// GetCurHeight mocks base method
+func (m *MockNodeModule) GetCurHeight() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeight")
+	ret := m.ctrl.Call(m, "GetCurHeight")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetHeight indicates an expected call of GetHeight
-func (mr *MockNodeModuleMockRecorder) GetHeight() *gomock.Call {
+// GetCurHeight indicates an expected call of GetCurHeight
+func (mr *MockNodeModuleMockRecorder) GetCurHeight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeight", reflect.TypeOf((*MockNodeModule)(nil).GetHeight))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurHeight", reflect.TypeOf((*MockNodeModule)(nil).GetCurHeight))
 }
 
 // GetBlockInfo mocks base method
@@ -192,6 +192,34 @@ func (m *MockNodeModule) GetValidators(height string) []util.Map {
 func (mr *MockNodeModuleMockRecorder) GetValidators(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidators", reflect.TypeOf((*MockNodeModule)(nil).GetValidators), height)
+}
+
+// GetCurrentEpoch mocks base method
+func (m *MockNodeModule) GetCurrentEpoch() util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentEpoch")
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetCurrentEpoch indicates an expected call of GetCurrentEpoch
+func (mr *MockNodeModuleMockRecorder) GetCurrentEpoch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentEpoch", reflect.TypeOf((*MockNodeModule)(nil).GetCurrentEpoch))
+}
+
+// GetEpoch mocks base method
+func (m *MockNodeModule) GetEpoch(height int64) util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEpoch", height)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetEpoch indicates an expected call of GetEpoch
+func (mr *MockNodeModuleMockRecorder) GetEpoch(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockNodeModule)(nil).GetEpoch), height)
 }
 
 // IsSyncing mocks base method

@@ -30,7 +30,8 @@ const (
 	TxTypeRepoProposalSendFee                                 // For native coin transfer to repo as proposal fee
 	TxTypeRepoProposalRegisterPushKey                         // For adding push keys to a repo
 	TxTypeUpDelPushKey                                        // For updating or deleting a push key
-	MergeRequestProposalAction                                // For identifying merge request proposal
+	TxTypeMergeRequestProposalAction                          // For identifying merge request proposal
+	TxTypeSubmitWork                                          // For submitting proof-of-work nonce
 )
 
 // TxType implements some of BaseTx, it includes type information about a transaction
@@ -310,6 +311,8 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 		tx = NewBareRepoProposalRegisterPushKey()
 	case TxTypeUpDelPushKey:
 		tx = NewBareTxUpDelPushKey()
+	case TxTypeSubmitWork:
+		tx = NewBareTxSubmitWork()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

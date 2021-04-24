@@ -3,6 +3,7 @@ package contracts
 import (
 	"github.com/make-os/kit/logic/contracts/createrepo"
 	"github.com/make-os/kit/logic/contracts/depositproposalfee"
+	"github.com/make-os/kit/logic/contracts/gasmaker"
 	"github.com/make-os/kit/logic/contracts/gitpush"
 	"github.com/make-os/kit/logic/contracts/purchaseticket"
 	"github.com/make-os/kit/logic/contracts/registernamespace"
@@ -36,6 +37,7 @@ func init() {
 		gitpush.NewContract(),
 		voteproposal.NewContract(),
 		depositproposalfee.NewContract(),
+		gasmaker.NewContract(),
 		upsertowner.NewContract(&SystemContracts),
 		updaterepo.NewContract(&SystemContracts),
 		registerrepopushkeys.NewContract(&SystemContracts),

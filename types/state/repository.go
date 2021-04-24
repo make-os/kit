@@ -334,6 +334,7 @@ func (rc *RepoContributors) Has(pushKeyID string) bool {
 func BareRepository() *Repository {
 	return &Repository{
 		Balance:      "0",
+		Gas:          "0",
 		References:   map[string]*Reference{},
 		Owners:       map[string]*RepoOwner{},
 		Proposals:    map[string]*RepoProposal{},
@@ -348,6 +349,9 @@ type Repository struct {
 
 	// Balance is the native coin balance
 	Balance util.String `json:"balance" msgpack:"balance" mapstructure:"balance"`
+
+	// Gas is the native gas token balance
+	Gas util.String `json:"gas" msgpack:"gas" mapstructure:"gas"`
 
 	// References contains the repository reference information
 	References References `json:"references" msgpack:"references" mapstructure:"references"`
@@ -376,6 +380,16 @@ func (r *Repository) GetBalance() util.String {
 	return r.Balance
 }
 
+// GetGasBalance implements types.BalanceAccount
+func (a *Repository) GetGasBalance() util.String {
+	return a.Gas
+}
+
+// SetGasBalance implements types.BalanceAccount
+func (a *Repository) SetGasBalance(bal string) {
+	a.Gas = util.String(bal)
+}
+
 // SetBalance implements types.BalanceAccount
 func (r *Repository) SetBalance(bal string) {
 	r.Balance = util.String(bal)
@@ -392,6 +406,7 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
 	return r.Balance.IsZero() &&
+		r.Gas.IsZero() &&
 		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
@@ -411,7 +426,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 		r.Config,
 		r.Contributors,
 		r.CreatedAt,
-		r.UpdatedAt)
+		r.UpdatedAt,
+		r.Gas)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -424,7 +440,8 @@ func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&r.Config,
 		&r.Contributors,
 		&r.CreatedAt,
-		&r.UpdatedAt)
+		&r.UpdatedAt,
+		&r.Gas)
 	return err
 }
 

@@ -2,9 +2,11 @@ package validation_test
 
 import (
 	"fmt"
+	"math/big"
 	"os"
 
 	"github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/storage"
 	storagetypes "github.com/make-os/kit/storage/types"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/constants"
@@ -1566,6 +1568,83 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err).ToNot(MatchError("field:namespace, msg:namespace not owned by the target repository"))
 			})
+		})
+	})
+
+	Describe(".CheckTxSubmitWorkConsistency", func() {
+		var tx *txns.TxSubmitWork
+		BeforeEach(func() {
+			tx = txns.NewBareTxSubmitWork()
+		})
+
+		It("should return error when unable to get current epoch", func() {
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(0), fmt.Errorf("error"))
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get current epoch: error"))
+		})
+
+		It("should return error if tx epoch is greater than current epoch", func() {
+			tx.Epoch = 11
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:epoch, msg:epoch is in the future or past"))
+		})
+
+		It("should return error if tx epoch is less than current epoch", func() {
+			tx.Epoch = 9
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:epoch, msg:epoch is in the future or past"))
+		})
+
+		It("should return error if epoch and nonce pair has been seen before", func() {
+			tx.Epoch = 10
+			tx.WorkNonce = 1000
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(nil)
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:wnonce, msg:work nonce has been seen before"))
+		})
+
+		It("should return error if unable to check epoch and nonce pair uniqueness", func() {
+			tx.Epoch = 10
+			tx.WorkNonce = 1000
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(fmt.Errorf("error"))
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to check work nonce uniqueness: error"))
+		})
+
+		It("should return error when unable to get current epoch start block", func() {
+			tx.Epoch = 10
+			tx.WorkNonce = 1000
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(storage.ErrRecordNotFound)
+			mockSysKeeper.EXPECT().GetCurrentEpochStartBlock().Return(nil, fmt.Errorf("error"))
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get start block of epoch: error"))
+		})
+
+		It("should return error when unable to verify epoch and work nonce pair", func() {
+			tx.Epoch = 10
+			tx.WorkNonce = 1000
+			tx.SenderPubKey = key.PubKey().ToPublicKey()
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(storage.ErrRecordNotFound)
+
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000))
+
+			epochStartBlock := &state.BlockInfo{Hash: util.RandBytes(32), Height: 2222}
+			mockSysKeeper.EXPECT().GetCurrentEpochStartBlock().Return(epochStartBlock, nil)
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:wnonce, msg:work nonce does not satisfy epoch target"))
 		})
 	})
 })

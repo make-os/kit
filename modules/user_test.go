@@ -298,6 +298,7 @@ var _ = Describe("UserModule", func() {
 			Expect(res).To(Equal(util.Map{
 				"balance":             util.String("100.22"),
 				"nonce":               util.UInt64(100),
+				"gas":                 util.String("0"),
 				"delegatorCommission": float64(0),
 			}))
 		})
@@ -312,6 +313,7 @@ var _ = Describe("UserModule", func() {
 			Expect(res).To(Equal(util.Map{
 				"balance":             util.String("100.22"),
 				"nonce":               util.UInt64(100),
+				"gas":                 util.String("0"),
 				"delegatorCommission": float64(0),
 				"stakes": map[string]interface{}{
 					"s0": map[string]interface{}{"value": util.String("10"), "unbondHeight": util.UInt64(1000)},
@@ -375,6 +377,24 @@ var _ = Describe("UserModule", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 100}, nil)
 			res := m.GetStakedBalance("addr1")
 			Expect(res).To(Equal("10"))
+		})
+	})
+
+	Describe(".GetGasBalance", func() {
+		It("should panic when account does not exist", func() {
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(state.BareAccount())
+			err := &errors.ReqError{Code: "account_not_found", HttpCode: 404, Msg: "account not found", Field: "address"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetGasBalance("addr1")
+			})
+		})
+
+		It("should return 100 when gas balance is 100", func() {
+			acct := state.BareAccount()
+			acct.Gas = "100"
+			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
+			res := m.GetGasBalance("addr1")
+			Expect(res).To(Equal("100"))
 		})
 	})
 

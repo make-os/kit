@@ -10,6 +10,8 @@ import (
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/epoch"
+	"github.com/pkg/errors"
 )
 
 // ErrBlockInfoNotFound means the block info was not found
@@ -111,4 +113,87 @@ func (s *SystemKeeper) GetHelmRepo() (string, error) {
 // GetCurrentDifficulty returns the current network difficulty
 func (s *SystemKeeper) GetCurrentDifficulty() *big.Int {
 	return new(big.Int).SetInt64(1000000)
+}
+
+// GetCurrentEpoch returns the current epoch
+func (s *SystemKeeper) GetCurrentEpoch() (int64, error) {
+	curBlock, err := s.GetLastBlockInfo()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get last block info")
+	}
+	return s.GetEpochAt(curBlock.Height.Int64()), nil
+}
+
+// GetEpochAt returns the epoch of a given height
+func (s *SystemKeeper) GetEpochAt(height int64) int64 {
+	return epoch.GetEpochAt(height)
+}
+
+// GetCurrentEpochStartBlock GetEpochStartBlock returns the block info of the first block of an epoch
+func (s *SystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
+	epoch, err := s.GetCurrentEpoch()
+	if err != nil {
+		return nil, err
+	}
+
+	startHeight := epoch.GetFirstInEpoch(epoch)
+	bi, err := s.GetBlockInfo(startHeight)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get first block info")
+	}
+
+	return bi, nil
+}
+
+// RegisterWorkNonce registers a proof of work nonce for the given epoch.
+//  - It will delete all registered nonces for epoch - 1.
+func (s *SystemKeeper) RegisterWorkNonce(epoch int64, nonce uint64) error {
+	if err := s.db.Del(MakeQueryPoWEpoch(epoch - 1)); err != nil {
+		return errors.Wrap(err, "failed to delete old epoch nonces")
+	}
+
+	// Get existing epoch nonce
+	key := MakeQueryPoWEpoch(epoch)
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return errors.Wrap(err, "failed to query epoch nonces")
+	}
+	var nonces = make(map[uint64]struct{})
+	if record != nil {
+		if err = record.Scan(&nonces); err != nil {
+			return errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	// Add new nonce to the record and update
+	nonces[nonce] = struct{}{}
+	if err := s.db.Put(common.NewFromKeyValue(key, util.ToBytes(nonces))); err != nil {
+		return errors.Wrap(err, "failed to update epoch")
+	}
+
+	return nil
+}
+
+// IsWorkNonceRegistered returns nil if a proof of work nonce has
+// been registered for the given epoch. Return storage.ErrRecordNotFound
+// if nonce is not registered.
+func (s *SystemKeeper) IsWorkNonceRegistered(epoch int64, nonce uint64) error {
+
+	key := MakeQueryPoWEpoch(epoch)
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return errors.Wrap(err, "failed to query epoch nonces")
+	}
+	var nonces = make(map[uint64]struct{})
+	if record != nil {
+		if err = record.Scan(&nonces); err != nil {
+			return errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	if _, ok := nonces[nonce]; !ok {
+		return storage.ErrRecordNotFound
+	}
+
+	return nil
 }

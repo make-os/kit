@@ -57,7 +57,7 @@ var _ = Describe("MergeRequestContract", func() {
 		It("should return true when able to execute tx type", func() {
 			data := &mergerequest.Data{}
 			ct := mergerequest.NewContract(data)
-			Expect(ct.CanExec(txns.MergeRequestProposalAction)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeMergeRequestProposalAction)).To(BeTrue())
 			Expect(ct.CanExec(txns.TxTypeRepoProposalSendFee)).To(BeFalse())
 		})
 	})

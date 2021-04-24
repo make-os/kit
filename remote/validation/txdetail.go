@@ -118,7 +118,7 @@ func CheckTxDetailConsistency(txd *types.TxDetail, keepers core.Keepers, index i
 		if mp == nil {
 			return fe(index, "mergeID", "merge proposal not found")
 		}
-		if mp.Action != txns.MergeRequestProposalAction {
+		if mp.Action != txns.TxTypeMergeRequestProposalAction {
 			return fe(index, "mergeID", "proposal is not a merge request")
 		}
 		if mp.Creator != pushKey.Address.String() {

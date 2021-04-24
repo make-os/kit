@@ -16,6 +16,7 @@ import (
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
+	"github.com/make-os/kit/util/epoch"
 	"github.com/make-os/kit/validation"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -283,7 +284,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
 
 	// If it is not time to update validators, do nothing.
-	if !params.IsBeforeEndOfEpochOfHeight(curHeight) {
+	if !epoch.IsBeforeEndOfEpochOfHeight(curHeight) {
 		return nil
 	}
 

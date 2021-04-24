@@ -10,6 +10,8 @@ import (
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,13 +25,18 @@ var _ = Describe("MinerModule", func() {
 	var m *modules.MinerModule
 	var ctrl *gomock.Controller
 	var mockMiner *mocks.MockMiner
+	var mockLogic *mocks.MockLogic
+	var mockMempoolReactor *mocks.MockMempoolReactor
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
 		mockMiner = mocks.NewMockMiner(ctrl)
-		m = modules.NewMinerModule(cfg, mockMiner)
+		mockLogic = mocks.NewMockLogic(ctrl)
+		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
+		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
+		m = modules.NewMinerModule(cfg, mockLogic, mockMiner)
 	})
 
 	AfterEach(func() {
@@ -83,6 +90,53 @@ var _ = Describe("MinerModule", func() {
 		It("should return hashrate", func() {
 			mockMiner.EXPECT().GetHashrate().Return(1000.0)
 			Expect(m.GetHashrate()).To(Equal(float64(1000)))
+		})
+	})
+
+	Describe(".SubmitWork", func() {
+		It("should panic when unable to decode params", func() {
+			params := map[string]interface{}{"epoch": struct{}{}}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'epoch' " +
+				"expected type 'int64', got unconvertible type 'struct {}'", Field: "params"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SubmitWork(params)
+			})
+		})
+
+		It("should return tx map equivalent if payloadOnly=true", func() {
+			key := ""
+			params := map[string]interface{}{"epoch": 1, "wnonce": 2}
+			res := m.SubmitWork(params, key, true)
+			Expect(res["epoch"]).To(Equal(float64(1)))
+			Expect(res["wnonce"]).To(Equal(float64(2)))
+			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeSubmitWork)))
+			Expect(res).To(And(
+				HaveKey("timestamp"),
+				HaveKey("nonce"),
+				HaveKey("type"),
+				HaveKey("senderPubKey"),
+				HaveKey("fee"),
+				HaveKey("sig"),
+			))
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
+			params := map[string]interface{}{"id": 1}
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.SubmitWork(params, "", false)
+			})
+		})
+
+		It("should return tx hash on success", func() {
+			params := map[string]interface{}{"id": 1}
+			hash := util.StrToHexBytes("tx_hash")
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
+			res := m.SubmitWork(params, "", false)
+			Expect(res).To(HaveKey("hash"))
+			Expect(res["hash"]).To(Equal(hash))
 		})
 	})
 })

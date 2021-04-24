@@ -300,7 +300,7 @@ var _ = Describe("TxDetail", func() {
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
 				repoState := state.BareRepository()
-				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: txns.MergeRequestProposalAction, Creator: privKey2.Addr().String()}
+				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: txns.TxTypeMergeRequestProposalAction, Creator: privKey2.Addr().String()}
 				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)

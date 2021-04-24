@@ -67,7 +67,7 @@ func NewContract(mergeData *Data) *Contract {
 }
 
 func (c *Contract) CanExec(typ types.TxCode) bool {
-	return typ == txns.MergeRequestProposalAction
+	return typ == txns.TxTypeMergeRequestProposalAction
 }
 
 // Init initialize the contract
@@ -86,7 +86,7 @@ func (c *Contract) Exec() error {
 	// Create new proposal if it does not exist already
 	if proposal == nil {
 		proposal = proposals.MakeProposal(c.data.CreatorAddress.String(), c.data.Repo, id, c.data.ProposerFee, c.chainHeight)
-		proposal.Action = txns.MergeRequestProposalAction
+		proposal.Action = txns.TxTypeMergeRequestProposalAction
 		proposal.ActionData = map[string]util.Bytes{
 			constants.ActionDataKeyBaseBranch:   []byte(c.data.BaseBranch),
 			constants.ActionDataKeyBaseHash:     []byte(c.data.BaseBranchHash),

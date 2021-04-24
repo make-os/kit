@@ -22,6 +22,7 @@ const (
 func BareAccount() *Account {
 	return &Account{
 		Balance: "0",
+		Gas:     "0",
 		Nonce:   0,
 		Stakes:  map[string]*StakeInfo{},
 	}
@@ -32,6 +33,7 @@ func BareAccount() *Account {
 type Account struct {
 	util.CodecUtil      `json:"-" msgpack:"-"`
 	Balance             util.String   `json:"balance" msgpack:"balance"`
+	Gas                 util.String   `json:"gas" msgpack:"gas"`
 	Nonce               util.UInt64   `json:"nonce" msgpack:"nonce"`
 	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
@@ -48,6 +50,16 @@ func (a *Account) FromMap(m map[string]interface{}) error {
 			a.Balance = util.String(bal.Str())
 		} else {
 			return errors.FieldError("balance",
+				fmt.Sprintf("invalid value type: has %T, wants string", bal.Inter()))
+		}
+	}
+
+	// Gas: expects string
+	if bal := o.Get("gas"); !bal.IsNil() {
+		if bal.IsStr() {
+			a.Gas = util.String(bal.Str())
+		} else {
+			return errors.FieldError("gas",
 				fmt.Sprintf("invalid value type: has %T, wants string", bal.Inter()))
 		}
 	}
@@ -92,14 +104,24 @@ func (a *Account) GetBalance() util.String {
 	return a.Balance
 }
 
+// GetGasBalance implements types.BalanceAccount
+func (a *Account) GetGasBalance() util.String {
+	return a.Gas
+}
+
 // SetBalance implements types.BalanceAccount
 func (a *Account) SetBalance(bal string) {
 	a.Balance = util.String(bal)
 }
 
+// SetGasBalance implements types.BalanceAccount
+func (a *Account) SetGasBalance(bal string) {
+	a.Gas = util.String(bal)
+}
+
 // IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
-	return util.IsZeroString(a.Balance.String()) && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
+	return a.Balance.IsZero() && a.Gas.IsZero() && a.Nonce.IsZero() && len(a.Stakes) == 0 &&
 		a.DelegatorCommission == float64(0)
 }
 
@@ -116,12 +138,13 @@ func (a *Account) EncodeMsgpack(enc *msgpack.Encoder) error {
 		a.Balance,
 		a.Nonce,
 		a.Stakes,
-		a.DelegatorCommission)
+		a.DelegatorCommission,
+		a.Gas)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (a *Account) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return a.DecodeMulti(dec, &a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission)
+	return a.DecodeMulti(dec, &a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission, &a.Gas)
 }
 
 // Bytes return the serialized equivalent of the account
@@ -164,10 +187,10 @@ type StakeInfo struct {
 // AccountStakes holds staked balances
 type AccountStakes map[string]*StakeInfo
 
-// Register adds a staked balance
-// stakeType: The unique stake identifier
-// value: The value staked
-// unbondHeight: The height where the stake is unbonded
+// Add Register adds a staked balance
+//  - stakeType: The unique stake identifier
+//  - value: The value staked
+//  - unbondHeight: The height where the stake is unbonded
 // Returns the full stake name
 func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight uint64) string {
 	var key string

@@ -26,7 +26,7 @@ func (c *ChainAPI) getBlock(params interface{}) (resp *rpc.Response) {
 // getHeight gets the current blockchain height
 func (c *ChainAPI) getHeight(interface{}) (resp *rpc.Response) {
 	return rpc.Success(util.Map{
-		"height": c.mods.Chain.GetHeight(),
+		"height": c.mods.Chain.GetCurHeight(),
 	})
 }
 

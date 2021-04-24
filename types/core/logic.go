@@ -68,12 +68,32 @@ type SystemKeeper interface {
 
 	// GetCurrentDifficulty returns the current network difficulty
 	GetCurrentDifficulty() *big.Int
+
+	// GetCurrentEpoch returns the current epoch
+	GetCurrentEpoch() (int64, error)
+
+	// GetEpochAt returns the epoch of a given height
+	GetEpochAt(height int64) int64
+
+	// GetCurrentEpochStartBlock GetEpochStartBlock returns the block info of the first block of an epoch
+	GetCurrentEpochStartBlock() (*state.BlockInfo, error)
+
+	// RegisterWorkNonce registers a proof of work nonce for the given epoch.
+	//  - It will delete all registered nonces for epoch - 1.
+	RegisterWorkNonce(epoch int64, nonce uint64) error
+
+	// IsWorkNonceRegistered returns nil if a proof of work nonce has
+	// been registered for the given epoch. Return storage.ErrRecordNotFound
+	// if nonce is not registered.
+	IsWorkNonceRegistered(epoch int64, nonce uint64) error
 }
 
 // BalanceAccount represents an account that maintains currency balance
 type BalanceAccount interface {
 	GetBalance() util.String
 	SetBalance(bal string)
+	GetGasBalance() util.String
+	SetGasBalance(bal string)
 	Clean(chainHeight uint64)
 }
 
