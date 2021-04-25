@@ -44,7 +44,7 @@ func (a *AccountKeeper) Get(address identifier.Address, blockNum ...uint64) *sta
 
 	// If we don't find the account, we return an empty account.
 	if bs == nil {
-		return state.BareAccount()
+		return state.NewBareAccount()
 	}
 
 	// Otherwise, we decode the account bytes to types.Account

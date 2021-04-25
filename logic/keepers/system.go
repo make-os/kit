@@ -131,12 +131,12 @@ func (s *SystemKeeper) GetEpochAt(height int64) int64 {
 
 // GetCurrentEpochStartBlock GetEpochStartBlock returns the block info of the first block of an epoch
 func (s *SystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
-	epoch, err := s.GetCurrentEpoch()
+	curEpoch, err := s.GetCurrentEpoch()
 	if err != nil {
 		return nil, err
 	}
 
-	startHeight := epoch.GetFirstInEpoch(epoch)
+	startHeight := epoch.GetFirstInEpoch(curEpoch)
 	bi, err := s.GetBlockInfo(startHeight)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get first block info")

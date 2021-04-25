@@ -29,7 +29,7 @@ func (pk *PushKeyAPI) GetOwner(addr string, blockHeight ...uint64) (*api.ResultA
 		return nil, makeReqErrFromCallErr(statusCode, err)
 	}
 
-	r := &api.ResultAccount{Account: state.BareAccount()}
+	r := &api.ResultAccount{Account: state.NewBareAccount()}
 	if err = r.Account.FromMap(out); err != nil {
 		return nil, errors.ReqErr(500, ErrCodeDecodeFailed, "", err.Error())
 	}

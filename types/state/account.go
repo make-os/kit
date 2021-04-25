@@ -18,8 +18,8 @@ const (
 	StakeTypeHost      = "s"
 )
 
-// BareAccount returns an empty account
-func BareAccount() *Account {
+// NewBareAccount returns an empty account
+func NewBareAccount() *Account {
 	return &Account{
 		Balance: "0",
 		Gas:     "0",

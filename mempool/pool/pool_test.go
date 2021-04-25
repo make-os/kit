@@ -47,7 +47,7 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should return err = 'exact transaction already in the pool' when transaction has already been added", func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount())
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
 			tp := New(10, mockKeepers, emitter.New(10))
@@ -60,7 +60,7 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should return nil and added to queue", func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount())
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
 			tp := New(1, mockKeepers, emitter.New(10))
@@ -74,7 +74,7 @@ var _ = Describe("pool", func() {
 
 	Describe(".getNonce", func() {
 		It("should return ErrAccountUnknown if account does not exist", func() {
-			mockAcctKeeper.EXPECT().Get(identifier.Address("some_address")).Return(state.BareAccount())
+			mockAcctKeeper.EXPECT().Get(identifier.Address("some_address")).Return(state.NewBareAccount())
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 			tp := New(1, mockKeepers, emitter.New(10))
 			_, err := tp.getNonce("some_address")
@@ -82,7 +82,7 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should return nonce if account exist", func() {
-			acct := state.BareAccount()
+			acct := state.NewBareAccount()
 			acct.Nonce = 10
 			mockAcctKeeper.EXPECT().Get(identifier.Address("some_address")).Return(acct)
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
@@ -99,7 +99,7 @@ var _ = Describe("pool", func() {
 		var sender = ed25519.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 			tp = New(1, mockKeepers, emitter.New(10))
 		})
@@ -122,7 +122,7 @@ var _ = Describe("pool", func() {
 		var sender = ed25519.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 
 			tp = New(1, mockKeepers, emitter.New(10))
@@ -144,7 +144,7 @@ var _ = Describe("pool", func() {
 		var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 			tp = New(2, mockKeepers, emitter.New(10))
 		})
@@ -193,7 +193,7 @@ var _ = Describe("pool", func() {
 		var sender3 = ed25519.NewKeyFromIntSeed(3)
 
 		BeforeEach(func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 			tp = New(100, mockKeepers, emitter.New(10))
 
@@ -223,7 +223,7 @@ var _ = Describe("pool", func() {
 		var sender2 = ed25519.NewKeyFromIntSeed(2)
 
 		BeforeEach(func() {
-			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.BareAccount()).AnyTimes()
+			mockAcctKeeper.EXPECT().Get(gomock.Any()).Return(state.NewBareAccount()).AnyTimes()
 			mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
 			tp = New(100, mockKeepers, emitter.New(10))
 

@@ -97,6 +97,9 @@ type MinerConfig struct {
 
 	// Threads is the number of goroutines to running the mining algo.
 	Threads int `json:"threads" mapstructure:"threads"`
+
+	// SubmitFee is the amount of fee to set in a TxSubmitWork transaction
+	SubmitFee float64 `json:"submitfee" mapstructure:"submitfee"`
 }
 
 // VersionInfo describes the clients

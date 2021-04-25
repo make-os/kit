@@ -9,12 +9,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	epoch2 "github.com/make-os/kit/util/epoch"
 	. "github.com/onsi/ginkgo"
@@ -31,8 +33,11 @@ var _ = Describe("Miner", func() {
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
 	var mockService *mocks.MockService
-	var mockKeepers *mocks.MockKeepers
+	var mockLogic *mocks.MockLogic
 	var mockSysKeeper *mocks.MockSystemKeeper
+	var mockAcctKeeper *mocks.MockAccountKeeper
+	var mockMemReactor *mocks.MockMempoolReactor
+	var sender = ed25519.NewKeyFromIntSeed(1)
 	var m Miner
 
 	BeforeEach(func() {
@@ -40,10 +45,14 @@ var _ = Describe("Miner", func() {
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
 		mockService = mocks.NewMockService(ctrl)
-		mockKeepers = mocks.NewMockKeepers(ctrl)
+		mockLogic = mocks.NewMockLogic(ctrl)
 		mockSysKeeper = mocks.NewMockSystemKeeper(ctrl)
-		mockKeepers.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-		m = NewMiner(cfg, mockKeepers, mockService)
+		mockMemReactor = mocks.NewMockMempoolReactor(ctrl)
+		mockAcctKeeper = mocks.NewMockAccountKeeper(ctrl)
+		mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+		mockLogic.EXPECT().AccountKeeper().Return(mockAcctKeeper).AnyTimes()
+		mockLogic.EXPECT().GetMempoolReactor().Return(mockMemReactor).AnyTimes()
+		m = NewMiner(cfg, mockLogic, mockService)
 	})
 
 	AfterEach(func() {
@@ -81,7 +90,8 @@ var _ = Describe("Miner", func() {
 		It("should start 2 miners if Threads=2", func() {
 			mockService.EXPECT().IsSyncing(gomock.Any()).Return(false, nil)
 			ids := make(chan int, 2)
-			m.(*CPUMiner).mine = func(id int, minerAddr []byte, keepers core.Keepers, log logger.Logger, stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
+			m.(*CPUMiner).mine = func(id int, minerKey *ed25519.Key, keepers core.Logic, log logger.Logger,
+				stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
 				ids <- id
 				return
 			}
@@ -97,7 +107,8 @@ var _ = Describe("Miner", func() {
 		It("should return error if miner is already running", func() {
 			mockService.EXPECT().IsSyncing(gomock.Any()).Return(false, nil)
 			ids := make(chan int, 2)
-			m.(*CPUMiner).mine = func(id int, minerAddr []byte, keepers core.Keepers, log logger.Logger, stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
+			m.(*CPUMiner).mine = func(id int, minerKey *ed25519.Key, keepers core.Logic, log logger.Logger,
+				stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
 				ids <- id
 				return
 			}
@@ -116,7 +127,8 @@ var _ = Describe("Miner", func() {
 	Describe(".Stop", func() {
 		It("should stop the miner", func() {
 			mockService.EXPECT().IsSyncing(gomock.Any()).Return(false, nil)
-			m.(*CPUMiner).mine = func(id int, minerAddr []byte, keepers core.Keepers, log logger.Logger, stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
+			m.(*CPUMiner).mine = func(id int, minerKey *ed25519.Key, keepers core.Logic, log logger.Logger,
+				stopCh chan bool, onAttempt func(nAttempts int64)) (epoch int64, nonce uint64, err error) {
 				for !util.IsBoolChanClosed(stopCh) {
 				}
 				return
@@ -127,11 +139,11 @@ var _ = Describe("Miner", func() {
 			Expect(err).To(BeNil())
 			m.Stop()
 			Expect(m.IsMining()).To(BeFalse())
-			Expect(util.IsBoolChanClosed(m.(*CPUMiner).stopThreads)).To(BeTrue())
+			Expect(util.IsBoolChanClosed(m.(*CPUMiner).stopThreads)).To(BeFalse())
 
 			m.Stop()
 			Expect(m.IsMining()).To(BeFalse())
-			Expect(util.IsBoolChanClosed(m.(*CPUMiner).stopThreads)).To(BeTrue())
+			Expect(util.IsBoolChanClosed(m.(*CPUMiner).stopThreads)).To(BeFalse())
 		})
 	})
 
@@ -139,7 +151,7 @@ var _ = Describe("Miner", func() {
 		It("should return error if unable to get last block info", func() {
 			stopCh := make(chan bool)
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-			_, _, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			_, _, err := mine(1, sender, mockLogic, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get last block info: error"))
 		})
@@ -151,7 +163,7 @@ var _ = Describe("Miner", func() {
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
 			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(nil, fmt.Errorf("error"))
-			_, _, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			_, _, err := mine(1, sender, mockLogic, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get current epoch start block: error"))
 		})
@@ -167,7 +179,7 @@ var _ = Describe("Miner", func() {
 			epochStartBlock := &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
 			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
 
-			retEpoch, nonce, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			retEpoch, nonce, err := mine(1, sender, mockLogic, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).To(BeNil())
 			Expect(epoch).To(Equal(retEpoch))
 			Expect(nonce).ToNot(BeZero())
@@ -189,7 +201,7 @@ var _ = Describe("Miner", func() {
 				close(stopCh)
 			}()
 
-			retEpoch, nonce, err := mine(1, util.RandBytes(20), mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			retEpoch, nonce, err := mine(1, sender, mockLogic, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).To(BeNil())
 			Expect(retEpoch).To(BeZero())
 			Expect(nonce).To(BeZero())
@@ -199,7 +211,7 @@ var _ = Describe("Miner", func() {
 	Describe(".VerifyWork", func() {
 		var retEpoch int64
 		var nonce uint64
-		var minerAddr = util.RandBytes(20)
+		var minerAddr = sender.PubKey().AddrRaw()
 		var epochStartBlock = &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
 
 		BeforeEach(func() {
@@ -212,7 +224,7 @@ var _ = Describe("Miner", func() {
 			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
 
-			retEpoch, nonce, err = mine(1, minerAddr, mockKeepers, cfg.G().Log, stopCh, func(int64) {})
+			retEpoch, nonce, err = mine(1, sender, mockLogic, cfg.G().Log, stopCh, func(int64) {})
 			Expect(err).To(BeNil())
 			Expect(epoch).To(Equal(retEpoch))
 			Expect(nonce).ToNot(BeZero())
@@ -220,16 +232,37 @@ var _ = Describe("Miner", func() {
 
 		It("should return true if nonce is valid for epoch", func() {
 			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
-			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce, mockKeepers)
+			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce, mockLogic)
 			Expect(err).To(BeNil())
 			Expect(good).To(BeTrue())
 		})
 
 		It("should return false if nonce is not valid for epoch", func() {
 			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
-			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce+1, mockKeepers)
+			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce+1, mockLogic)
 			Expect(err).To(BeNil())
 			Expect(good).To(BeFalse())
+		})
+	})
+
+	Describe(".SubmitWork", func() {
+		It("should return error when unable to add tx to mempool", func() {
+			senderAcct := state.NewBareAccount()
+			mockAcctKeeper.EXPECT().Get(sender.Addr()).Return(senderAcct)
+			mockMemReactor.EXPECT().AddTx(gomock.AssignableToTypeOf(&txns.TxSubmitWork{})).Return(nil, fmt.Errorf("error"))
+			_, err := SubmitWork(sender, 100, 2, 3.5, mockLogic, cfg.G().Log)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to add tx to mempool: error"))
+		})
+
+		It("should return hash when tx was added to the mempool", func() {
+			senderAcct := state.NewBareAccount()
+			mockAcctKeeper.EXPECT().Get(sender.Addr()).Return(senderAcct)
+			hash := util.HexBytes(util.RandBytes(32))
+			mockMemReactor.EXPECT().AddTx(gomock.AssignableToTypeOf(&txns.TxSubmitWork{})).Return(hash, nil)
+			res, err := SubmitWork(sender, 100, 2, 3.5, mockLogic, cfg.G().Log)
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(hash.String()))
 		})
 	})
 })

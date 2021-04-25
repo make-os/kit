@@ -293,7 +293,7 @@ func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 
 		// Create account
 		if ga.Type == config.GenDataTypeAccount {
-			newAcct := state.BareAccount()
+			newAcct := state.NewBareAccount()
 			newAcct.Balance = util.String(ga.Balance)
 			l.accountKeeper.Update(identifier.Address(ga.Address), newAcct)
 		}

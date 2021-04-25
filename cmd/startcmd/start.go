@@ -73,6 +73,7 @@ func setStartFlags(cmd *cobra.Command) {
 	f.BoolP("repo.untrackall", "x", false, "Untrack all previously tracked repositories")
 	f.Bool("miner.on", false, "Run the CPU miner")
 	f.Int("miner.threads", runtime.NumCPU(), "Run the CPU miners to run concurrently")
+	f.Float64("miner.submitfee", 0, "Specify the tx fee to pay for submitting a mined nonce")
 
 	// Light node primary
 	f.Bool("node.light", false, "Run the node in light mode")

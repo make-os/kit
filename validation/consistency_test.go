@@ -627,7 +627,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &state.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				mockAcctKeeper.EXPECT().Get(identifier.Address(tx.To)).Return(state.BareAccount())
+				mockAcctKeeper.EXPECT().Get(identifier.Address(tx.To)).Return(state.NewBareAccount())
 
 				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 0})
 				err = validation.CheckTxNSAcquireConsistency(tx, -1, mockLogic)

@@ -396,7 +396,7 @@ var _ = Describe("Validation", func() {
 				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
-				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
+				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.NewBareAccount())
 
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -416,7 +416,7 @@ var _ = Describe("Validation", func() {
 				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
@@ -444,7 +444,7 @@ var _ = Describe("Validation", func() {
 				pushKey.PubKey = privKey.PubKey().ToPublicKey()
 				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
@@ -473,7 +473,7 @@ var _ = Describe("Validation", func() {
 				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(ed25519.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
-				acct := state.BareAccount()
+				acct := state.NewBareAccount()
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 

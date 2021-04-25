@@ -12,14 +12,18 @@ import (
 	"time"
 
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/metrics/tick"
 	"github.com/make-os/kit/node/services"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	epochutil "github.com/make-os/kit/util/epoch"
 	"github.com/phoreproject/go-x11"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 )
 
 var (
@@ -44,7 +48,7 @@ var (
 type CPUMiner struct {
 	log           logger.Logger
 	cfg           *config.AppConfig
-	keepers       core.Keepers
+	logic         core.Logic
 	mine          CPUMinerFunc
 	active        bool
 	stopThreads   chan bool
@@ -52,15 +56,15 @@ type CPUMiner struct {
 	service       services.Service
 	retryStartInt *time.Ticker
 	hashrate      *tick.MovingAverage
-	minerAddr     []byte
+	minerKey      *ed25519.Key
 }
 
 // NewMiner creates an instance of CPUMiner
-func NewMiner(cfg *config.AppConfig, keeper core.Keepers, service services.Service) *CPUMiner {
+func NewMiner(cfg *config.AppConfig, keeper core.Logic, service services.Service) *CPUMiner {
 	return &CPUMiner{
 		cfg:         cfg,
 		log:         cfg.G().Log.Module("miner"),
-		keepers:     keeper,
+		logic:       keeper,
 		mine:        mine,
 		stopThreads: make(chan bool),
 		wg:          &sync.WaitGroup{},
@@ -92,11 +96,10 @@ func (m *CPUMiner) Start(scheduleStart bool) error {
 		return ErrNodeSyncing
 	}
 
-	valKey, err := m.cfg.G().PrivVal.GetKey()
+	m.minerKey, err = m.cfg.G().PrivVal.GetKey()
 	if err != nil {
 		return err
 	}
-	m.minerAddr = valKey.PubKey().AddrRaw()
 
 	m.log.Info("stating miners", "NumMiners", m.cfg.Miner.Threads)
 	for i := 0; i < m.cfg.Miner.Threads; i++ {
@@ -155,10 +158,10 @@ func (m *CPUMiner) run(id int) {
 			m.wg.Done()
 			return
 		default:
-			_, _, err := m.mine(
+			epoch, nonce, err := m.mine(
 				id,
-				m.minerAddr,
-				m.keepers,
+				m.minerKey,
+				m.logic,
 				m.log,
 				m.stopThreads,
 				func(int64) {
@@ -167,6 +170,11 @@ func (m *CPUMiner) run(id int) {
 			)
 			if err != nil {
 				m.log.Error("failed to mine", "Err", err)
+				continue
+			} else if nonce > 0 {
+				if _, err := SubmitWork(m.minerKey, epoch, nonce, m.cfg.Miner.SubmitFee, m.logic, m.log); err != nil {
+					log.Error(errors.Wrap(err, "failed to submit work nonce"))
+				}
 			}
 		}
 	}
@@ -174,8 +182,8 @@ func (m *CPUMiner) run(id int) {
 
 type CPUMinerFunc func(
 	id int,
-	minerAddr []byte,
-	keepers core.Keepers,
+	minerKey *ed25519.Key,
+	logic core.Logic,
 	log logger.Logger,
 	stopCh chan bool,
 	onAttempt func(nAttempts int64),
@@ -183,14 +191,14 @@ type CPUMinerFunc func(
 
 func mine(
 	id int,
-	minerAddr []byte,
-	keepers core.Keepers,
+	minerKey *ed25519.Key,
+	logic core.Logic,
 	log logger.Logger,
 	stopCh chan bool,
 	onAttempt func(nAttempts int64),
 ) (epoch int64, nonce uint64, err error) {
 
-	sk := keepers.SysKeeper()
+	sk := logic.SysKeeper()
 
 	// Get current block info
 	curBlock, err := sk.GetLastBlockInfo()
@@ -230,7 +238,7 @@ func mine(
 		}
 
 		result := make([]byte, 32)
-		x11.New().Hash(makeSeed(hash, minerAddr, nonce), result)
+		x11.New().Hash(makeSeed(hash, minerKey.PubKey().AddrRaw(), nonce), result)
 		if new(big.Int).SetBytes(result).Cmp(target) > 0 {
 			nonce++
 			continue
@@ -249,14 +257,51 @@ func mine(
 	return 0, 0, nil
 }
 
+// SubmitWork sends a TxSubmitWork transaction to register an epoch and nonce pair.
+func SubmitWork(
+	minerKey *ed25519.Key,
+	epoch int64,
+	nonce uint64,
+	fee float64,
+	logic core.Logic,
+	log logger.Logger,
+) (hash string, err error) {
+	tx := txns.NewBareTxSubmitWork()
+	tx.Fee = util.String(cast.ToString(fee))
+	tx.SenderPubKey = minerKey.PubKey().ToPublicKey()
+	tx.Epoch = epoch
+	tx.WorkNonce = nonce
+	tx.Timestamp = time.Now().Unix()
+
+	// Current nonce
+	acct := logic.AccountKeeper().Get(minerKey.PubKey().Addr())
+	tx.Nonce = acct.Nonce.UInt64() + 1
+
+	// Sign the tx
+	tx.Sig, err = tx.Sign(minerKey.PrivKey().Base58())
+	if err != nil {
+		return "", err
+	}
+
+	// Send tx
+	h, err := logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to add tx to mempool")
+	}
+
+	log.Info("Submitted work nonce", "hash", h.String())
+
+	return h.String(), nil
+}
+
 // VerifyWork checks whether a nonce is valid for the current epoch.
 //  - Returns true and nil if nonce is valid.
 //  - Returns false and nil if nonce is not valid.
-func VerifyWork(blockHash, minerAddr []byte, nonce uint64, keepers core.Keepers) (bool, error) {
+func VerifyWork(blockHash, minerAddr []byte, nonce uint64, logic core.Logic) (bool, error) {
 	result := make([]byte, 32)
 	x11.New().Hash(makeSeed(blockHash, minerAddr, nonce), result)
 
-	target := new(big.Int).Div(maxUint256, keepers.SysKeeper().GetCurrentDifficulty())
+	target := new(big.Int).Div(maxUint256, logic.SysKeeper().GetCurrentDifficulty())
 	if new(big.Int).SetBytes(result).Cmp(target) > 0 {
 		return false, nil
 	}

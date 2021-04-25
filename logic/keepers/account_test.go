@@ -26,12 +26,12 @@ var _ = Describe("Account", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
 				acct := ak.Get("unknown", 0)
-				Expect(acct).To(Equal(state2.BareAccount()))
+				Expect(acct).To(Equal(state2.NewBareAccount()))
 			})
 		})
 
 		When("account exists on the latest block", func() {
-			var testAcct = state2.BareAccount()
+			var testAcct = state2.NewBareAccount()
 
 			BeforeEach(func() {
 				testAcct.Nonce = 1
