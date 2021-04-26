@@ -200,4 +200,34 @@ var _ = Describe("SystemKeeper", func() {
 			Expect(sysKeeper.IsWorkNonceRegistered(2, 101)).To(BeNil())
 		})
 	})
+
+	Describe(".IndexWorkByNode & .GetWorkByNode", func() {
+		It("should index work and return expected result", func() {
+			err := sysKeeper.IndexWorkByNode(1, 10)
+			Expect(err).To(BeNil())
+			sysKeeper.IndexWorkByNode(2, 10)
+			sysKeeper.IndexWorkByNode(3, 10)
+			res, err := sysKeeper.GetWorkByNode()
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(3))
+			Expect(res[0].Epoch).To(Equal(int64(1)))
+			Expect(res[1].Epoch).To(Equal(int64(2)))
+			Expect(res[2].Epoch).To(Equal(int64(3)))
+		})
+
+		When("number indexed equal limit", func() {
+			It("should slice earliest records and maintain limit", func() {
+				NodeWorkIndexLimit = 2
+				err := sysKeeper.IndexWorkByNode(1, 10)
+				Expect(err).To(BeNil())
+				sysKeeper.IndexWorkByNode(2, 10)
+				sysKeeper.IndexWorkByNode(3, 10)
+				res, err := sysKeeper.GetWorkByNode()
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
+				Expect(res[0].Epoch).To(Equal(int64(2)))
+				Expect(res[1].Epoch).To(Equal(int64(3)))
+			})
+		})
+	})
 })

@@ -8,14 +8,21 @@ import (
 	"github.com/make-os/kit/storage"
 	"github.com/make-os/kit/storage/common"
 	storagetypes "github.com/make-os/kit/storage/types"
+	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/epoch"
 	"github.com/pkg/errors"
 )
 
-// ErrBlockInfoNotFound means the block info was not found
-var ErrBlockInfoNotFound = fmt.Errorf("block info not found")
+var (
+	// ErrBlockInfoNotFound means the block info was not found
+	ErrBlockInfoNotFound = fmt.Errorf("block info not found")
+
+	// NodeWorkIndexLimit is the number of nonces mined by
+	// the node that can be index at any time.
+	NodeWorkIndexLimit = 256
+)
 
 // SystemKeeper stores system information such as
 // app states, commit history and more.
@@ -196,4 +203,51 @@ func (s *SystemKeeper) IsWorkNonceRegistered(epoch int64, nonce uint64) error {
 	}
 
 	return nil
+}
+
+// IndexWorkByNode stores proof of work nonce discovered by this node
+func (s *SystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
+
+	key := MakeNodeWorkKey()
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return errors.Wrap(err, "failed to query node nonces")
+	}
+
+	var nonces []*core.NodeWork
+	if record != nil {
+		if err = record.Scan(&nonces); err != nil {
+			return errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	if len(nonces) >= NodeWorkIndexLimit {
+		nonces = nonces[NodeWorkIndexLimit-1:]
+	}
+
+	nonces = append(nonces, &core.NodeWork{Nonce: nonce, Epoch: epoch})
+	if err := s.db.Put(common.NewFromKeyValue(key, util.ToBytes(nonces))); err != nil {
+		return errors.Wrap(err, "failed to update node's work nonce index")
+	}
+
+	return nil
+}
+
+// GetWorkByNode returns proof of work nonce discovered by this node
+func (s *SystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
+
+	key := MakeNodeWorkKey()
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return nil, errors.Wrap(err, "failed to query node nonces")
+	}
+
+	var res []*core.NodeWork
+	if record != nil {
+		if err = record.Scan(&res); err != nil {
+			return nil, errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	return res, nil
 }

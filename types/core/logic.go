@@ -48,6 +48,11 @@ type AnnounceListEntry struct {
 	NextTime int64  `json:"nextTime" msgpack:"nextTime"`
 }
 
+type NodeWork struct {
+	Nonce uint64 `json:"nonce"`
+	Epoch int64  `json:"epoch"`
+}
+
 // SystemKeeper describes an interface for accessing system data
 type SystemKeeper interface {
 
@@ -86,6 +91,12 @@ type SystemKeeper interface {
 	// been registered for the given epoch. Return storage.ErrRecordNotFound
 	// if nonce is not registered.
 	IsWorkNonceRegistered(epoch int64, nonce uint64) error
+
+	// IndexWorkByNode stores proof of work nonce discovered by this node
+	IndexWorkByNode(epoch int64, nonce uint64) error
+
+	// GetWorkByNode returns proof of work nonce discovered by this node
+	GetWorkByNode() ([]*NodeWork, error)
 }
 
 // BalanceAccount represents an account that maintains currency balance

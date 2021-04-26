@@ -10,6 +10,7 @@ import (
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/constants"
+	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/errors"
@@ -26,6 +27,7 @@ var _ = Describe("MinerModule", func() {
 	var ctrl *gomock.Controller
 	var mockMiner *mocks.MockMiner
 	var mockLogic *mocks.MockLogic
+	var mockSysKeeper *mocks.MockSystemKeeper
 	var mockMempoolReactor *mocks.MockMempoolReactor
 
 	BeforeEach(func() {
@@ -33,9 +35,11 @@ var _ = Describe("MinerModule", func() {
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
 		mockMiner = mocks.NewMockMiner(ctrl)
+		mockSysKeeper = mocks.NewMockSystemKeeper(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
 		mockLogic.EXPECT().GetMempoolReactor().Return(mockMempoolReactor).AnyTimes()
+		mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 		m = modules.NewMinerModule(cfg, mockLogic, mockMiner)
 	})
 
@@ -137,6 +141,26 @@ var _ = Describe("MinerModule", func() {
 			res := m.SubmitWork(params, "", false)
 			Expect(res).To(HaveKey("hash"))
 			Expect(res["hash"]).To(Equal(hash))
+		})
+	})
+
+	Describe(".GetPreviousWork", func() {
+		It("should return error when unable to query previous mined nonce", func() {
+			mockSysKeeper.EXPECT().GetWorkByNode().Return(nil, fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "server_err", HttpCode: 400, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetPreviousWork()
+			})
+		})
+
+		It("should return error when unable to query previous mined nonce", func() {
+			works := []*core.NodeWork{
+				{Epoch: 1, Nonce: 100},
+				{Epoch: 2, Nonce: 100},
+			}
+			mockSysKeeper.EXPECT().GetWorkByNode().Return(works, nil)
+			res := m.GetPreviousWork()
+			Expect(util.StructSliceToMap(works)).To(Equal(res))
 		})
 	})
 })

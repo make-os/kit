@@ -266,6 +266,35 @@ func (mr *MockSystemKeeperMockRecorder) IsWorkNonceRegistered(epoch, nonce inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWorkNonceRegistered", reflect.TypeOf((*MockSystemKeeper)(nil).IsWorkNonceRegistered), epoch, nonce)
 }
 
+// IndexWorkByNode mocks base method
+func (m *MockSystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexWorkByNode", epoch, nonce)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexWorkByNode indicates an expected call of IndexWorkByNode
+func (mr *MockSystemKeeperMockRecorder) IndexWorkByNode(epoch, nonce interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexWorkByNode", reflect.TypeOf((*MockSystemKeeper)(nil).IndexWorkByNode), epoch, nonce)
+}
+
+// GetWorkByNode mocks base method
+func (m *MockSystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkByNode")
+	ret0, _ := ret[0].([]*core.NodeWork)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkByNode indicates an expected call of GetWorkByNode
+func (mr *MockSystemKeeperMockRecorder) GetWorkByNode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkByNode", reflect.TypeOf((*MockSystemKeeper)(nil).GetWorkByNode))
+}
+
 // MockBalanceAccount is a mock of BalanceAccount interface
 type MockBalanceAccount struct {
 	ctrl     *gomock.Controller

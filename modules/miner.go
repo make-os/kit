@@ -42,6 +42,7 @@ func (m *MinerModule) methods() []*modulestypes.VMMember {
 		{Name: "isRunning", Value: m.IsRunning, Description: "Checks whether the miner is running"},
 		{Name: "getHashrate", Value: m.GetHashrate, Description: "Get the hashrate of the miner"},
 		{Name: "submitWork", Value: m.SubmitWork, Description: "Submit a proof of work nonce to the network"},
+		{Name: "getPrevWork", Value: m.GetPreviousWork, Description: "Get the previous nonces found by the node"},
 	}
 }
 
@@ -143,4 +144,13 @@ func (m *MinerModule) SubmitWork(params map[string]interface{}, options ...inter
 	return map[string]interface{}{
 		"hash": hash,
 	}
+}
+
+// GetPreviousWork returns the previous nonces found by the node
+func (m *MinerModule) GetPreviousWork() []util.Map {
+	res, err := m.logic.SysKeeper().GetWorkByNode()
+	if err != nil {
+		panic(se(400, StatusCodeServerErr, "", err.Error()))
+	}
+	return util.StructSliceToMap(res)
 }

@@ -172,6 +172,9 @@ func (m *CPUMiner) run(id int) {
 				m.log.Error("failed to mine", "Err", err)
 				continue
 			} else if nonce > 0 {
+
+				m.logic.SysKeeper().IndexWorkByNode(epoch, nonce)
+
 				if _, err := SubmitWork(m.minerKey, epoch, nonce, m.cfg.Miner.SubmitFee, m.logic, m.log); err != nil {
 					log.Error(errors.Wrap(err, "failed to submit work nonce"))
 				}
