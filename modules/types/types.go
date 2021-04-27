@@ -72,8 +72,8 @@ type NodeModule interface {
 	GetCurHeight() string
 	GetBlockInfo(height string) util.Map
 	GetValidators(height string) (res []util.Map)
-	GetCurrentEpoch() util.Map
-	GetEpoch(height int64) util.Map
+	GetCurrentEpoch() string
+	GetEpoch(height int64) string
 	IsSyncing() bool
 }
 

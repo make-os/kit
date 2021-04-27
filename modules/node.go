@@ -210,15 +210,15 @@ func (m *NodeModule) IsSyncing() bool {
 }
 
 // GetCurrentEpoch returns the current epoch
-func (m *NodeModule) GetCurrentEpoch() util.Map {
-	epoch, err := m.keepers.SysKeeper().GetCurrentEpoch()
+func (m *NodeModule) GetCurrentEpoch() string {
+	curEpoch, err := m.keepers.SysKeeper().GetCurrentEpoch()
 	if err != nil {
 		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
-	return util.Map{"epoch": epoch}
+	return cast.ToString(curEpoch)
 }
 
 // GetEpoch returns the epoch of a block height
-func (m *NodeModule) GetEpoch(height int64) util.Map {
-	return util.Map{"epoch": epoch.GetEpochAt(height)}
+func (m *NodeModule) GetEpoch(height int64) string {
+	return cast.ToString(epoch.GetEpochAt(height))
 }
