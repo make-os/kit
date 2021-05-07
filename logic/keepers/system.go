@@ -155,12 +155,12 @@ func (s *SystemKeeper) GetCurrentEpochStartBlock() (*state.BlockInfo, error) {
 // RegisterWorkNonce registers a proof of work nonce for the given epoch.
 //  - It will delete all registered nonces for epoch - 1.
 func (s *SystemKeeper) RegisterWorkNonce(epoch int64, nonce uint64) error {
-	if err := s.db.Del(MakeQueryPoWEpoch(epoch - 1)); err != nil {
+	if err := s.db.Del(MakePoWEpochKey(epoch - 1)); err != nil {
 		return errors.Wrap(err, "failed to delete old epoch nonces")
 	}
 
 	// Get existing epoch nonce
-	key := MakeQueryPoWEpoch(epoch)
+	key := MakePoWEpochKey(epoch)
 	record, err := s.db.Get(key)
 	if err != nil && err != storage.ErrRecordNotFound {
 		return errors.Wrap(err, "failed to query epoch nonces")
@@ -186,7 +186,7 @@ func (s *SystemKeeper) RegisterWorkNonce(epoch int64, nonce uint64) error {
 // if nonce is not registered.
 func (s *SystemKeeper) IsWorkNonceRegistered(epoch int64, nonce uint64) error {
 
-	key := MakeQueryPoWEpoch(epoch)
+	key := MakePoWEpochKey(epoch)
 	record, err := s.db.Get(key)
 	if err != nil && err != storage.ErrRecordNotFound {
 		return errors.Wrap(err, "failed to query epoch nonces")
@@ -250,4 +250,59 @@ func (s *SystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
 	}
 
 	return res, nil
+}
+
+// IncrGasMinedInCurEpoch IncrGasMinedForCurrentEpoch increments the total gas award to miners in the given epoch
+func (s *SystemKeeper) IncrGasMinedInCurEpoch(newBal util.String) error {
+
+	curEpoch, err := s.GetCurrentEpoch()
+	if err != nil {
+		return err
+	}
+
+	if err := s.db.Del(MakeEpochTotalGasReward(curEpoch - 1)); err != nil {
+		return errors.Wrap(err, "failed to delete total gas reward for last epoch")
+	}
+
+	key := MakeEpochTotalGasReward(curEpoch)
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return errors.Wrap(err, "failed to query current balance")
+	}
+	var balance = "0"
+	if record != nil {
+		if err = record.Scan(&balance); err != nil {
+			return errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	balance = util.String(balance).Decimal().Add(newBal.Decimal()).String()
+	if err := s.db.Put(common.NewFromKeyValue(key, util.ToBytes(balance))); err != nil {
+		return errors.Wrap(err, "failed to update balance")
+	}
+
+	return nil
+}
+
+// GetTotalGasMinedInCurEpoch GetCurEpochTotalGasReward returns the total gas mined in an epoch
+func (s *SystemKeeper) GetTotalGasMinedInCurEpoch() (util.String, error) {
+
+	curEpoch, err := s.GetCurrentEpoch()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get current epoch")
+	}
+
+	key := MakeEpochTotalGasReward(curEpoch)
+	record, err := s.db.Get(key)
+	if err != nil && err != storage.ErrRecordNotFound {
+		return "", errors.Wrap(err, "failed to query epoch balance")
+	}
+	var balance = "0"
+	if record != nil {
+		if err = record.Scan(&balance); err != nil {
+			return "", errors.Wrap(err, "failed to decode value")
+		}
+	}
+
+	return util.String(balance), nil
 }

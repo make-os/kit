@@ -62,7 +62,8 @@ var Dev = &ChainInfo{
 	GenesisTime: 1595700581,
 	Validators:  []string{},
 	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
-		tmc.Consensus.CreateEmptyBlocksInterval = 1 * time.Minute
+		tmc.Consensus.CreateEmptyBlocksInterval = 5 * time.Second
+		// tmc.Consensus.CreateEmptyBlocksInterval = 1 * time.Minute
 	},
 }
 

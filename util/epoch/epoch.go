@@ -13,7 +13,7 @@ import (
 //  Supposing a epoch is 5 blocks, epoch end stage starts from [3] and ends at
 //  [5]. So [3] is the third to the last.
 func IsThirdToLastInEpochOfHeight(height int64) bool {
-	return IsLastInEpochOfHeight(height)-int64(params.NumBlocksToEffectValChange) == height
+	return GetLastHeightInEpochOfHeight(height)-int64(params.NumBlocksToEffectValChange) == height
 }
 
 // IsBeforeEndOfEpochOfHeight checks whether the block at the given height is the block next
@@ -24,7 +24,7 @@ func IsThirdToLastInEpochOfHeight(height int64) bool {
 // Supposing a epoch is 5 blocks, epoch end stage starts from [3] and ends at
 // [5]. So [4] is the block before of end of the epoch.
 func IsBeforeEndOfEpochOfHeight(height int64) bool {
-	return IsLastInEpochOfHeight(height)-(int64(params.NumBlocksToEffectValChange)-1) == height
+	return GetLastHeightInEpochOfHeight(height)-(int64(params.NumBlocksToEffectValChange)-1) == height
 }
 
 // IsEndOfEpochOfHeight checks whether the block at height is the last block of the epoch.
@@ -34,7 +34,7 @@ func IsBeforeEndOfEpochOfHeight(height int64) bool {
 // Supposing a epoch is 5 blocks, epoch end stage starts from [3] and ends at
 // [5]. So [5] is the last block of the epoch.
 func IsEndOfEpochOfHeight(height int64) bool {
-	return IsLastInEpochOfHeight(height) == height
+	return GetLastHeightInEpochOfHeight(height) == height
 }
 
 // GetEpochAt returns the epoch number where target height falls in
@@ -58,9 +58,9 @@ func GetFirstInEpoch(epoch int64) int64 {
 	return epoch*int64(params.NumBlocksPerEpoch) - int64(params.NumBlocksPerEpoch) + 1
 }
 
-// IsLastInEpochOfHeight returns the height of the last block in the epoch
+// GetLastHeightInEpochOfHeight returns the height of the last block in the epoch
 // where the target height falls in.
-func IsLastInEpochOfHeight(height int64) int64 {
+func GetLastHeightInEpochOfHeight(height int64) int64 {
 	epochOfHeight := GetEpochAt(height)
 	return epochOfHeight * int64(params.NumBlocksPerEpoch)
 }

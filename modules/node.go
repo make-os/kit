@@ -55,6 +55,7 @@ func (m *NodeModule) methods() []*types.VMMember {
 		{Name: "isSyncing", Value: m.IsSyncing, Description: "Check if the node is synchronizing with peers"},
 		{Name: "getCurEpoch", Value: m.GetCurrentEpoch, Description: "Get the current epoch"},
 		{Name: "getEpoch", Value: m.GetEpoch, Description: "Get the epoch of a block height"},
+		{Name: "getGasMinedInCurEpoch", Value: m.GetTotalGasMinedInEpoch, Description: "Get the amount of gas mined in the current epoch"},
 	}
 }
 
@@ -221,4 +222,13 @@ func (m *NodeModule) GetCurrentEpoch() string {
 // GetEpoch returns the epoch of a block height
 func (m *NodeModule) GetEpoch(height int64) string {
 	return cast.ToString(epoch.GetEpochAt(height))
+}
+
+// GetTotalGasMinedInEpoch returns the total gas mined in the current epoch
+func (m *NodeModule) GetTotalGasMinedInEpoch() string {
+	bal, err := m.keepers.SysKeeper().GetTotalGasMinedInCurEpoch()
+	if err != nil {
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+	return bal.String()
 }

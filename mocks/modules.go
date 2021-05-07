@@ -195,10 +195,10 @@ func (mr *MockNodeModuleMockRecorder) GetValidators(height interface{}) *gomock.
 }
 
 // GetCurrentEpoch mocks base method
-func (m *MockNodeModule) GetCurrentEpoch() util.Map {
+func (m *MockNodeModule) GetCurrentEpoch() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentEpoch")
-	ret0, _ := ret[0].(util.Map)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
@@ -209,10 +209,10 @@ func (mr *MockNodeModuleMockRecorder) GetCurrentEpoch() *gomock.Call {
 }
 
 // GetEpoch mocks base method
-func (m *MockNodeModule) GetEpoch(height int64) util.Map {
+func (m *MockNodeModule) GetEpoch(height int64) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpoch", height)
-	ret0, _ := ret[0].(util.Map)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 

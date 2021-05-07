@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 
+	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/logic/keepers"
@@ -199,17 +200,8 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	return nil
 }
 
-// postExecChecks performs some checks that reacts to the
-// result from executing a transaction.
-func (a *App) postExecChecks(
-	tx types.BaseTx,
-	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
-
-	if !resp.IsOK() {
-		a.log.Error("Transaction execution failed", "Err", resp.Log)
-		return resp
-	}
-
+// postExec initiates events based on specific, successfully processed transactions
+func (a *App) postExec(tx types.BaseTx, resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 	switch o := tx.(type) {
 	case *txns.TxTicketPurchase:
 		if o.Is(txns.TxTypeValidatorTicket) {
@@ -237,6 +229,10 @@ func (a *App) postExecChecks(
 				proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
 			})
 		}
+
+	case *txns.TxSubmitWork:
+		pp.Println("ABC")
+		a.logic.SysKeeper().IncrGasMinedInCurEpoch(params.GasReward)
 	}
 
 	// Keep reference of successfully processed txs
@@ -276,71 +272,13 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 		ValidateTx:  validation.ValidateTx,
 	})
 
+	if !resp.IsOK() {
+		a.log.Error("Transaction execution failed", "Err", resp.Log)
+		return resp
+	}
+
 	// Perform post-execution checks
-	return *a.postExecChecks(tx, &resp)
-}
-
-// updateValidators updates the validators of the chain.
-func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
-
-	// If it is not time to update validators, do nothing.
-	if !epoch.IsBeforeEndOfEpochOfHeight(curHeight) {
-		return nil
-	}
-
-	a.log.Info("Preparing to update validators", "Height", curHeight)
-
-	// Get next set of validators
-	selected, err := a.ticketMgr.GetTopValidators(params.MaxValidatorsPerEpoch)
-	if err != nil {
-		return err
-	}
-
-	// Do not update validators if no tickets were selected
-	if len(selected) == 0 {
-		a.log.Warn("Refused to update current validators since no tickets were selected")
-		return nil
-	}
-
-	// Create a new validator list.
-	// Keep an index of validators public key for faster query.
-	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
-	var newValidators []*core.Validator           // for validator keeper
-	var vIndex = map[string]struct{}{}
-	for _, st := range selected {
-		pubKey := st.Ticket.ProposerPubKey
-		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 1))
-		newValidators = append(newValidators, &core.Validator{PubKey: pubKey, TicketID: st.Ticket.Hash})
-		vIndex[pubKey.HexStr()] = struct{}{}
-	}
-
-	// Get current validators
-	curValidators, err := a.logic.ValidatorKeeper().Get(0)
-	if err != nil {
-		return err
-	}
-
-	// Set the power of existing validators to zero if they are not
-	// part of the new list. It means they have been removed.
-	for pubKey := range curValidators {
-		if _, ok := vIndex[pubKey.HexStr()]; ok {
-			continue
-		}
-		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 0))
-	}
-
-	// Set the new validators
-	resp.ValidatorUpdates = newValUpdates
-
-	// Cache the current validators; it will be persisted in a future block.
-	// Note: Tendermint validator updates kicks in after H+2 blocks.
-	a.unsavedValidators = newValidators
-	a.heightToSaveNewValidators = curHeight + 1
-
-	a.log.Info("Validators have successfully been updated",
-		"NumValidators", len(a.unsavedValidators))
-
-	return nil
+	return *a.postExec(tx, &resp)
 }
 
 // EndBlock indicates the end of a block.
@@ -408,6 +346,9 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// Mark all merge proposals as closed.
 	a.markMergeProposalAsClosed()
 
+	// Update difficulty
+	a.updateDifficulty(a.curBlock)
+
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
@@ -448,6 +389,69 @@ func (a *App) reset() {
 // Query for data from the application.
 func (a *App) Query(abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	return abcitypes.ResponseQuery{Code: 0}
+}
+
+// updateValidators updates the validators of the chain.
+func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
+
+	// If it is not time to update validators, do nothing.
+	if !epoch.IsBeforeEndOfEpochOfHeight(curHeight) {
+		return nil
+	}
+
+	a.log.Info("Preparing to update validators", "Height", curHeight)
+
+	// Get next set of validators
+	selected, err := a.ticketMgr.GetTopValidators(params.MaxValidatorsPerEpoch)
+	if err != nil {
+		return err
+	}
+
+	// Do not update validators if no tickets were selected
+	if len(selected) == 0 {
+		a.log.Warn("Refused to update current validators since no tickets were selected")
+		return nil
+	}
+
+	// Create a new validator list.
+	// Keep an index of validators public key for faster query.
+	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
+	var newValidators []*core.Validator           // for validator keeper
+	var vIndex = map[string]struct{}{}
+	for _, st := range selected {
+		pubKey := st.Ticket.ProposerPubKey
+		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 1))
+		newValidators = append(newValidators, &core.Validator{PubKey: pubKey, TicketID: st.Ticket.Hash})
+		vIndex[pubKey.HexStr()] = struct{}{}
+	}
+
+	// Get current validators
+	curValidators, err := a.logic.ValidatorKeeper().Get(0)
+	if err != nil {
+		return err
+	}
+
+	// Set the power of existing validators to zero if they are not
+	// part of the new list. It means they have been removed.
+	for pubKey := range curValidators {
+		if _, ok := vIndex[pubKey.HexStr()]; ok {
+			continue
+		}
+		newValUpdates = append(newValUpdates, abcitypes.Ed25519ValidatorUpdate(pubKey.Bytes(), 0))
+	}
+
+	// Set the new validators
+	resp.ValidatorUpdates = newValUpdates
+
+	// Cache the current validators; it will be persisted in a future block.
+	// Note: Tendermint validator updates kicks in after H+2 blocks.
+	a.unsavedValidators = newValidators
+	a.heightToSaveNewValidators = curHeight + 1
+
+	a.log.Info("Validators have successfully been updated",
+		"NumValidators", len(a.unsavedValidators))
+
+	return nil
 }
 
 // indexValidators indexes new validators
@@ -495,7 +499,9 @@ func (a *App) markMergeProposalAsClosed() {
 // expireHostTickets sets the expiry height of unbonded host tickets
 func (a *App) expireHostTickets() {
 	for _, ticketHash := range a.unbondHostReqs {
-		_ = a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height))
+		if err := a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height)); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to expiire host tickets"))
+		}
 	}
 }
 
@@ -526,6 +532,16 @@ func (a *App) indexTickets() {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
+}
+
+// updateDifficulty will update the difficulty at the end of the current epoch.
+func (a *App) updateDifficulty(block *state.BlockInfo) {
+	isEpochEnding := epoch.GetLastHeightInEpochOfHeight(block.Height.Int64()) == block.Height.Int64()
+	if !isEpochEnding {
+		return
+	}
+
+	return
 }
 
 func (a *App) ListSnapshots(snapshots abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {

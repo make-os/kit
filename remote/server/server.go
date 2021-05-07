@@ -377,7 +377,7 @@ func (sv *Server) getRepoPath(name string) string {
 	return filepath.Join(sv.rootDir, name)
 }
 
-// AnnounceObject announces a key on the DHT network
+// Announce announces a key on the DHT network
 func (sv *Server) Announce(objType int, repo string, hash []byte, doneCB func(error)) bool {
 	return sv.dht.Announce(objType, repo, hash, doneCB)
 }

@@ -295,6 +295,35 @@ func (mr *MockSystemKeeperMockRecorder) GetWorkByNode() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkByNode", reflect.TypeOf((*MockSystemKeeper)(nil).GetWorkByNode))
 }
 
+// IncrGasMinedInCurEpoch mocks base method
+func (m *MockSystemKeeper) IncrGasMinedInCurEpoch(newBal util.String) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrGasMinedInCurEpoch", newBal)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrGasMinedInCurEpoch indicates an expected call of IncrGasMinedInCurEpoch
+func (mr *MockSystemKeeperMockRecorder) IncrGasMinedInCurEpoch(newBal interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrGasMinedInCurEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).IncrGasMinedInCurEpoch), newBal)
+}
+
+// GetTotalGasMinedInCurEpoch mocks base method
+func (m *MockSystemKeeper) GetTotalGasMinedInCurEpoch() (util.String, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalGasMinedInCurEpoch")
+	ret0, _ := ret[0].(util.String)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalGasMinedInCurEpoch indicates an expected call of GetTotalGasMinedInCurEpoch
+func (mr *MockSystemKeeperMockRecorder) GetTotalGasMinedInCurEpoch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalGasMinedInCurEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).GetTotalGasMinedInCurEpoch))
+}
+
 // MockBalanceAccount is a mock of BalanceAccount interface
 type MockBalanceAccount struct {
 	ctrl     *gomock.Controller
@@ -1192,6 +1221,20 @@ func (mr *MockAtomicLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockAtomicLogic)(nil).OnEndBlock), block)
 }
 
+// ApplyProposals mocks base method
+func (m *MockAtomicLogic) ApplyProposals(block *state.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyProposals", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyProposals indicates an expected call of ApplyProposals
+func (mr *MockAtomicLogicMockRecorder) ApplyProposals(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyProposals", reflect.TypeOf((*MockAtomicLogic)(nil).ApplyProposals), block)
+}
+
 // GetDBTx mocks base method
 func (m *MockAtomicLogic) GetDBTx() types.Tx {
 	m.ctrl.T.Helper()
@@ -1555,6 +1598,20 @@ func (m *MockLogic) OnEndBlock(block *state.BlockInfo) error {
 func (mr *MockLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockLogic)(nil).OnEndBlock), block)
+}
+
+// ApplyProposals mocks base method
+func (m *MockLogic) ApplyProposals(block *state.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyProposals", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyProposals indicates an expected call of ApplyProposals
+func (mr *MockLogicMockRecorder) ApplyProposals(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyProposals", reflect.TypeOf((*MockLogic)(nil).ApplyProposals), block)
 }
 
 // MockKeepers is a mock of Keepers interface

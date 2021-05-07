@@ -42,19 +42,19 @@ var _ = Describe("EpochHelpers", func() {
 		})
 	})
 
-	Describe(".IsLastInEpochOfHeight", func() {
+	Describe(".GetLastHeightInEpochOfHeight", func() {
 		It("should get expected height", func() {
-			Expect(epoch.IsLastInEpochOfHeight(1)).To(Equal(int64(5)))
-			Expect(epoch.IsLastInEpochOfHeight(4)).To(Equal(int64(5)))
-			Expect(epoch.IsLastInEpochOfHeight(5)).To(Equal(int64(5)))
-			Expect(epoch.IsLastInEpochOfHeight(6)).To(Equal(int64(10)))
-			Expect(epoch.IsLastInEpochOfHeight(9)).To(Equal(int64(10)))
-			Expect(epoch.IsLastInEpochOfHeight(10)).To(Equal(int64(10)))
-			Expect(epoch.IsLastInEpochOfHeight(11)).To(Equal(int64(15)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(1)).To(Equal(int64(5)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(4)).To(Equal(int64(5)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(5)).To(Equal(int64(5)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(6)).To(Equal(int64(10)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(9)).To(Equal(int64(10)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(10)).To(Equal(int64(10)))
+			Expect(epoch.GetLastHeightInEpochOfHeight(11)).To(Equal(int64(15)))
 		})
 	})
 
-	Describe(".IsLastInEpochOfHeight", func() {
+	Describe(".GetLastHeightInEpochOfHeight", func() {
 		It("should panic if epoch=0", func() {
 			Expect(func() { epoch.GetFirstInEpoch(0) }).To(Panic())
 		})

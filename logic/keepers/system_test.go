@@ -230,4 +230,35 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 	})
+
+	Describe(".IncrGasMinedInCurEpoch & .GetTotalGasMinedInCurEpoch", func() {
+		It("should update balance correctly", func() {
+			params.NumBlocksPerEpoch = 1
+			var block1 = &state.BlockInfo{AppHash: []byte("hash1"), Height: 1}
+			sysKeeper.SaveBlockInfo(block1)
+
+			bal, err := sysKeeper.GetTotalGasMinedInCurEpoch()
+			Expect(err).To(BeNil())
+			Expect(bal.String()).To(Equal("0"))
+
+			sysKeeper.IncrGasMinedInCurEpoch("100")
+			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			Expect(err).To(BeNil())
+			Expect(bal.String()).To(Equal("100"))
+
+			sysKeeper.IncrGasMinedInCurEpoch("100")
+			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			Expect(err).To(BeNil())
+			Expect(bal.String()).To(Equal("200"))
+
+			// Epoch 2
+			var block2 = &state.BlockInfo{AppHash: []byte("hash2"), Height: 2}
+			sysKeeper.SaveBlockInfo(block2)
+
+			sysKeeper.IncrGasMinedInCurEpoch("100")
+			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			Expect(err).To(BeNil())
+			Expect(bal.String()).To(Equal("100"))
+		})
+	})
 })

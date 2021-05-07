@@ -97,6 +97,12 @@ type SystemKeeper interface {
 
 	// GetWorkByNode returns proof of work nonce discovered by this node
 	GetWorkByNode() ([]*NodeWork, error)
+
+	// IncrGasMinedForCurrentEpoch increments the total gas award to miners in the given epoch
+	IncrGasMinedInCurEpoch(newBal util.String) error
+
+	// GetTotalGasMinedInCurEpoch GetCurEpochTotalGasReward returns the total gas mined in an epoch
+	GetTotalGasMinedInCurEpoch() (util.String, error)
 }
 
 // BalanceAccount represents an account that maintains currency balance
@@ -320,7 +326,7 @@ type Logic interface {
 	// StateTree manages the app state tree
 	StateTree() tree.Tree
 
-	// WriteGenesisState initializes the app state with initial data
+	// ApplyGenesisState WriteGenesisState initializes the app state with initial data
 	ApplyGenesisState(state json.RawMessage) error
 
 	// SetTicketManager sets the ticket manager
@@ -358,6 +364,9 @@ type Logic interface {
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
 	OnEndBlock(block *state.BlockInfo) error
+
+	// ApplyProposals applies proposals ending at the given block.
+	ApplyProposals(block *state.BlockInfo) error
 }
 
 // Keepers describes modules for accessing the state and storage

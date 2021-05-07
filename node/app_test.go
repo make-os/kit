@@ -466,7 +466,7 @@ var _ = Describe("App", func() {
 		})
 	})
 
-	Describe(".postExecChecks", func() {
+	Describe(".postExec", func() {
 		When("tx is TxRepoCreate", func() {
 			var tx *txns.TxRepoCreate
 
@@ -474,7 +474,7 @@ var _ = Describe("App", func() {
 				tx = txns.NewBareTxRepoCreate()
 				tx.Name = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo name to new repo index", func() {
@@ -495,7 +495,7 @@ var _ = Describe("App", func() {
 				tx = txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo name to new repo index", func() {
@@ -519,7 +519,7 @@ var _ = Describe("App", func() {
 					{MergeProposalID: "0001"},
 				}
 				resp := &abcitypes.ResponseDeliverTx{}
-				app.postExecChecks(tx, resp)
+				app.postExec(tx, resp)
 			})
 
 			It("should add repo and proposal id to closable proposals", func() {
