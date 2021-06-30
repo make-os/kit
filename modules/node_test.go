@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/modules"
+	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
@@ -158,8 +159,22 @@ var _ = Describe("NodeModule", func() {
 		It("should return epoch on success", func() {
 			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
 			res := m.GetCurrentEpoch()
-			Expect(res).To(HaveKey("epoch"))
-			Expect(res["epoch"]).To(Equal(int64(10)))
+			Expect(res).To(Equal("10"))
+		})
+	})
+
+	Describe(".GetEpoch", func() {
+		It("should return expected epoch", func() {
+			params.NumBlocksPerEpoch = 5
+			Expect(m.GetEpoch(2)).To(Equal("1"))
+			Expect(m.GetEpoch(6)).To(Equal("2"))
+		})
+	})
+
+	Describe(".GetTotalGasMinedInEpoch", func() {
+		It("should return expected total gas mined in epoch", func() {
+			mockSysKeeper.EXPECT().GetTotalGasMinedInCurEpoch().Return(util.String("100"), nil)
+			Expect(m.GetTotalGasMinedInEpoch()).To(Equal("100"))
 		})
 	})
 })
