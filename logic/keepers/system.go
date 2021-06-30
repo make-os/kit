@@ -221,11 +221,11 @@ func (s *SystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
 		}
 	}
 
-	if len(nonces) >= NodeWorkIndexLimit {
-		nonces = nonces[NodeWorkIndexLimit-1:]
+	nonces = append(nonces, &core.NodeWork{Nonce: nonce, Epoch: epoch})
+	if len(nonces) > NodeWorkIndexLimit {
+		nonces = nonces[1:]
 	}
 
-	nonces = append(nonces, &core.NodeWork{Nonce: nonce, Epoch: epoch})
 	if err := s.db.Put(common.NewFromKeyValue(key, util.ToBytes(nonces))); err != nil {
 		return errors.Wrap(err, "failed to update node's work nonce index")
 	}
