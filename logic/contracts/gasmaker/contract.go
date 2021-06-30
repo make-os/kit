@@ -49,9 +49,6 @@ func (c *Contract) Exec() error {
 	}
 
 	// Add new gas reward
-	if senderAcct.Gas.Empty() {
-		senderAcct.Gas = "0"
-	}
 	senderAcct.Gas = util.String(senderAcct.Gas.Decimal().Add(params.GasReward.Decimal()).String())
 
 	// Deduct fee from the sender's coin balance and increment sender's nonce

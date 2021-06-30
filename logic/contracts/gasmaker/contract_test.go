@@ -84,7 +84,7 @@ var _ = Describe("Contract", func() {
 			var ct core.SystemContract
 			var tx *txns.TxSubmitWork
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Stakes: state.BareAccountStakes()})
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Gas: "0", Stakes: state.BareAccountStakes()})
 				tx = &txns.TxSubmitWork{
 					TxCommon:  &txns.TxCommon{Fee: "0", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Epoch:     1,
