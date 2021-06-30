@@ -253,7 +253,7 @@ func (r *Repo) GetNamespaceName() string {
 	return r.NamespaceName
 }
 
-// GetNamespace returns the repos's namespace
+// GetNamespace returns the repo's namespace
 func (r *Repo) GetNamespace() *state.Namespace {
 	return r.Namespace
 }
@@ -387,7 +387,7 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 	return
 }
 
-// UpdateLocalConfig updates the repo's 'repocfg' configuration file
+// UpdateRepoConfig updates the repo's 'repocfg' configuration file
 func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 
 	var f *os.File
@@ -411,7 +411,7 @@ func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 	return json.NewEncoder(f).Encode(cfg)
 }
 
-// GetLocalConfig returns the repo's 'repocfg' config object.
+// GetRepoConfig returns the repo's 'repocfg' config object.
 // Returns an empty LocalConfig and nil if no repo config file was found
 func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 
@@ -571,7 +571,7 @@ func (r *Repo) GetBranches() (branches []string, err error) {
 	return
 }
 
-// GetBranchCommit returns the recent commit of a branch
+// GetLatestCommit returns the recent commit of a branch
 func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 
 	branch = strings.ToLower(branch)
@@ -634,42 +634,9 @@ func (r *Repo) GetCommits(branch string, limit int) (res []*types.BranchCommit, 
 		return nil, err
 	}
 
-	seen := make(map[plumbing.Hash]bool)
-	itr := object.NewCommitIterCTime(commit, seen, nil)
-	for {
-		next, err := itr.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-
-		bc := &types.BranchCommit{Message: next.Message, Hash: next.Hash.String()}
-		if next.Committer != (object.Signature{}) {
-			bc.Committer = &types.CommitSignatory{
-				Name:      next.Committer.Name,
-				Email:     next.Committer.Email,
-				Timestamp: next.Committer.When.Unix(),
-			}
-		}
-		if next.Author != (object.Signature{}) {
-			bc.Author = &types.CommitSignatory{
-				Name:      next.Author.Name,
-				Email:     next.Author.Email,
-				Timestamp: next.Author.When.Unix(),
-			}
-		}
-
-		for _, parent := range next.ParentHashes {
-			bc.ParentHashes = append(bc.ParentHashes, parent.String())
-		}
-
-		res = append(res, bc)
-
-		if limit > 0 && len(res) == limit {
-			break
-		}
+	res, err = iterCommit(commit, limit, nil, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return
@@ -684,8 +651,26 @@ func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.Br
 		return nil, err
 	}
 
-	seen := make(map[plumbing.Hash]bool)
-	itr := object.NewCommitIterCTime(commit, seen, nil)
+	res, err = iterCommit(commit, limit, nil, []plumbing.Hash{commit.Hash})
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+// iterCommit walks the history of a commit.
+//  - commit: The commit whose history will be iterated.
+// 	- limit: The max. number of commit to return and iterate.
+// 	- ignore: A list of commit that we do not want iterated.
+//  - skip: A list of commit that will be iterated by not included in the result.
+func iterCommit(
+	commit *object.Commit,
+	limit int,
+	ignore []plumbing.Hash,
+	skip []plumbing.Hash,
+) (res []*types.BranchCommit, err error) {
+	itr := object.NewCommitIterCTime(commit, nil, ignore)
 	for {
 		next, err := itr.Next()
 		if err != nil {
@@ -695,7 +680,7 @@ func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.Br
 			return nil, err
 		}
 
-		if next.Hash.String() == commitHash {
+		if funk.Contains(skip, next.Hash) {
 			continue
 		}
 
@@ -725,6 +710,5 @@ func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.Br
 			break
 		}
 	}
-
-	return
+	return res, nil
 }
