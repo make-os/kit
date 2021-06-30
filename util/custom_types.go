@@ -383,9 +383,13 @@ func (s String) SS() string {
 	return string(s)
 }
 
-// Decimal returns the decimal representation of the string.
+// Decimal returns the decimal representation of the numeric string.
+// If s is empty, '0' is assumed.
 // Panics if string failed to be converted to decimal.
 func (s String) Decimal() decimal.Decimal {
+	if s == "" {
+		return decimal.Zero
+	}
 	return StrToDec(s.String())
 }
 
