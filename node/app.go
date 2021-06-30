@@ -3,7 +3,6 @@ package node
 import (
 	"bytes"
 
-	"github.com/k0kubun/pp"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/logic/keepers"
@@ -59,6 +58,7 @@ type App struct {
 	repoPropTxs               []*txns.TxRepoProposalVote
 	newRepos                  []string
 	closedMergeProps          []*mergeProposalInfo
+	curEpoch                  int64
 }
 
 // NewApp creates an instance of App
@@ -231,7 +231,6 @@ func (a *App) postExec(tx types.BaseTx, resp *abcitypes.ResponseDeliverTx) *abci
 		}
 
 	case *txns.TxSubmitWork:
-		pp.Println("ABC")
 		a.logic.SysKeeper().IncrGasMinedInCurEpoch(params.GasReward)
 	}
 
@@ -287,13 +286,16 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	resp := abcitypes.ResponseEndBlock{}
 
-	// Update validators
 	if err := a.updateValidators(req.Height, &resp); err != nil {
 		panic(errors.Wrap(err, "failed to update validators"))
 	}
 
 	if err := a.logic.OnEndBlock(a.curBlock); err != nil {
 		panic(errors.Wrap(err, "logic.OnEndBlock"))
+	}
+
+	if err := a.trackAndBroadcastEpochChange(); err != nil {
+		panic(errors.Wrap(err, "failed to track epoch change"))
 	}
 
 	return resp
@@ -522,6 +524,27 @@ func (a *App) broadcastTx() {
 			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
 		}
 	}
+}
+
+// trackAndBroadcastEpochChange tracks current epoch and will
+// broadcast EvtNewEpoch if there is a change in epoch
+func (a *App) trackAndBroadcastEpochChange() error {
+	curEpoch, err := a.logic.SysKeeper().GetCurrentEpoch()
+	if err != nil {
+		return err
+	}
+
+	if a.curEpoch == 0 {
+		a.curEpoch = curEpoch
+		return nil
+	}
+
+	if a.curEpoch != curEpoch {
+		a.cfg.G().Bus.Emit(core.EvtNewEpoch, curEpoch)
+		a.curEpoch = curEpoch
+	}
+
+	return nil
 }
 
 // indexTickets indexes new validator and host tickets

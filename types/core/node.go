@@ -14,4 +14,5 @@ type BlockGetter interface {
 // Events
 const (
 	EvtTxPushProcessed = "tx_push_added"
+	EvtNewEpoch        = "new_epoch"
 )

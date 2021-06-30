@@ -50,18 +50,20 @@ type CPUMiner struct {
 	cfg           *config.AppConfig
 	logic         core.Logic
 	mine          CPUMinerFunc
-	active        bool
 	stopThreads   chan bool
 	wg            *sync.WaitGroup
 	service       services.Service
 	retryStartInt *time.Ticker
 	hashrate      *tick.MovingAverage
 	minerKey      *ed25519.Key
+
+	lck    *sync.Mutex
+	active bool
 }
 
 // NewMiner creates an instance of CPUMiner
 func NewMiner(cfg *config.AppConfig, keeper core.Logic, service services.Service) *CPUMiner {
-	return &CPUMiner{
+	m := &CPUMiner{
 		cfg:         cfg,
 		log:         cfg.G().Log.Module("miner"),
 		logic:       keeper,
@@ -70,13 +72,26 @@ func NewMiner(cfg *config.AppConfig, keeper core.Logic, service services.Service
 		wg:          &sync.WaitGroup{},
 		service:     service,
 		hashrate:    tick.NewMovingAverage(hashrateMAWindow),
+		lck:         &sync.Mutex{},
 	}
+
+	go func() {
+		for evt := range m.cfg.G().Bus.On(core.EvtNewEpoch) {
+			if m.IsMining() {
+				m.log.Debug("New epoch detected. Restarting miner(s)", "New Epoch", evt.Args[0])
+				m.Stop()
+				m.Start(true)
+			}
+		}
+	}()
+
+	return m
 }
 
 // Start implements Miner.
 func (m *CPUMiner) Start(scheduleStart bool) error {
 
-	if m.active {
+	if m.IsMining() {
 		msg := "miner is already running"
 		m.log.Debug(msg)
 		return fmt.Errorf(msg)
@@ -101,13 +116,16 @@ func (m *CPUMiner) Start(scheduleStart bool) error {
 		return err
 	}
 
-	m.log.Info("stating miners", "NumMiners", m.cfg.Miner.Threads)
+	m.log.Info("Stating miners", "NumMiners", m.cfg.Miner.Threads)
 	for i := 0; i < m.cfg.Miner.Threads; i++ {
 		m.wg.Add(1)
 		go m.run(i + 1)
 	}
 
+	m.lck.Lock()
 	m.active = true
+	m.lck.Unlock()
+
 	return nil
 }
 
@@ -134,21 +152,25 @@ func (m *CPUMiner) GetHashrate() float64 {
 
 // IsMining implements Miner
 func (m *CPUMiner) IsMining() bool {
+	m.lck.Lock()
+	defer m.lck.Unlock()
 	return m.active
 }
 
 // Stop implements Miner
 func (m *CPUMiner) Stop() {
-	if !m.active {
+	if !m.IsMining() {
 		return
 	}
 	close(m.stopThreads)
-	m.log.Info("miner is stopping...")
 	m.wg.Wait()
-	m.log.Info("miner has stopped")
-	m.active = false
+	m.log.Info("Stopped miner(s)...")
 	m.hashrate = tick.NewMovingAverage(hashrateMAWindow)
 	m.stopThreads = make(chan bool)
+
+	m.lck.Lock()
+	m.active = false
+	m.lck.Unlock()
 }
 
 func (m *CPUMiner) run(id int) {
