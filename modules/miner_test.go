@@ -146,7 +146,7 @@ var _ = Describe("MinerModule", func() {
 
 	Describe(".GetPreviousWork", func() {
 		It("should return error when unable to query previous mined nonce", func() {
-			mockSysKeeper.EXPECT().GetWorkByNode().Return(nil, fmt.Errorf("error"))
+			mockSysKeeper.EXPECT().GetNodeWorks().Return(nil, fmt.Errorf("error"))
 			err := &errors.ReqError{Code: "server_err", HttpCode: 400, Msg: "error", Field: ""}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetPreviousWork()
@@ -158,7 +158,7 @@ var _ = Describe("MinerModule", func() {
 				{Epoch: 1, Nonce: 100},
 				{Epoch: 2, Nonce: 100},
 			}
-			mockSysKeeper.EXPECT().GetWorkByNode().Return(works, nil)
+			mockSysKeeper.EXPECT().GetNodeWorks().Return(works, nil)
 			res := m.GetPreviousWork()
 			Expect(util.StructSliceToMap(works)).To(Equal(res))
 		})

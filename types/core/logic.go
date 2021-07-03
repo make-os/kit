@@ -12,6 +12,7 @@ import (
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
+	"github.com/shopspring/decimal"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -72,7 +73,10 @@ type SystemKeeper interface {
 	GetHelmRepo() (string, error)
 
 	// GetCurrentDifficulty returns the current network difficulty
-	GetCurrentDifficulty() *big.Int
+	GetCurrentDifficulty() (*big.Int, error)
+
+	// ComputeDifficulty will compute and store the current difficulty
+	ComputeDifficulty() error
 
 	// GetCurrentEpoch returns the current epoch
 	GetCurrentEpoch() (int64, error)
@@ -92,17 +96,20 @@ type SystemKeeper interface {
 	// if nonce is not registered.
 	IsWorkNonceRegistered(epoch int64, nonce uint64) error
 
-	// IndexWorkByNode stores proof of work nonce discovered by this node
-	IndexWorkByNode(epoch int64, nonce uint64) error
+	// IndexNodeWork stores proof of work nonce discovered by this node
+	IndexNodeWork(epoch int64, nonce uint64) error
 
-	// GetWorkByNode returns proof of work nonce discovered by this node
-	GetWorkByNode() ([]*NodeWork, error)
+	// GetNodeWorks returns proof of work nonce discovered by this node
+	GetNodeWorks() ([]*NodeWork, error)
 
-	// IncrGasMinedForCurrentEpoch increments the total gas award to miners in the given epoch
+	// IncrGasMinedInCurEpoch increments the total gas award to miners in the given epoch
 	IncrGasMinedInCurEpoch(newBal util.String) error
 
-	// GetTotalGasMinedInCurEpoch GetCurEpochTotalGasReward returns the total gas mined in an epoch
-	GetTotalGasMinedInCurEpoch() (util.String, error)
+	// GetTotalGasMinedInEpoch  returns the total gas mined in an epoch
+	GetTotalGasMinedInEpoch(epoch int64) (util.String, error)
+
+	// AvgGasMinedLastEpochs returns the average gas mined within the last n epochs
+	AvgGasMinedLastEpochs(nPrevEpochs int64) (decimal.Decimal, error)
 }
 
 // BalanceAccount represents an account that maintains currency balance

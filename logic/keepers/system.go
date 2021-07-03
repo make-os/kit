@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/storage"
 	"github.com/make-os/kit/storage/common"
 	storagetypes "github.com/make-os/kit/storage/types"
@@ -13,6 +14,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/epoch"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -117,9 +119,57 @@ func (s *SystemKeeper) GetHelmRepo() (string, error) {
 	return string(record.Value), nil
 }
 
+// ComputeDifficulty will compute and store the current difficulty
+func (s *SystemKeeper) ComputeDifficulty() error {
+
+	curDiff, err := s.GetCurrentDifficulty()
+	if err != nil {
+		return err
+	}
+
+	// Get the average gas mined in the last few epochs
+	avgGasReward, err := s.AvgGasMinedLastEpochs(params.NumEpochInAvgGasMined)
+	if err != nil {
+		return err
+	}
+
+	// If the average gas reward in the last few epochs
+	// is greater than the minimum total gas reward expected to be mined in an epoch,
+	// the we increase difficulty, else we reduce the difficulty
+	points := decimal.NewFromBigInt(curDiff, 0).Mul(decimal.NewFromFloat(params.DifficultyChangePct))
+	if avgGasReward.LessThan(params.MinTotalGasRewardPerEpoch.Decimal()) {
+		curDiff = new(big.Int).Sub(curDiff, new(big.Int).SetInt64(points.IntPart()))
+	} else {
+		curDiff = new(big.Int).Add(curDiff, new(big.Int).SetInt64(points.IntPart()))
+	}
+
+	// If the calculated difficulty is less than the minimum
+	// difficult, default to min. difficulty
+	if curDiff.Cmp(params.MinDifficulty) == -1 {
+		curDiff = params.MinDifficulty
+	}
+
+	record := common.NewFromKeyValue(
+		MakeDifficultyKey(),
+		util.EncodeNumber(curDiff.Uint64()),
+	)
+
+	return s.db.Put(record)
+}
+
 // GetCurrentDifficulty returns the current network difficulty
-func (s *SystemKeeper) GetCurrentDifficulty() *big.Int {
-	return new(big.Int).SetInt64(1000000)
+func (s *SystemKeeper) GetCurrentDifficulty() (*big.Int, error) {
+
+	rec, err := s.db.Get(MakeDifficultyKey())
+	if err != nil && err != storage.ErrRecordNotFound {
+		return nil, err
+	}
+
+	if rec == nil {
+		return params.MinDifficulty, nil
+	}
+
+	return new(big.Int).SetUint64(util.DecodeNumber(rec.Value)), nil
 }
 
 // GetCurrentEpoch returns the current epoch
@@ -205,8 +255,8 @@ func (s *SystemKeeper) IsWorkNonceRegistered(epoch int64, nonce uint64) error {
 	return nil
 }
 
-// IndexWorkByNode stores proof of work nonce discovered by this node
-func (s *SystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
+// IndexNodeWork stores proof of work nonce discovered by this node
+func (s *SystemKeeper) IndexNodeWork(epoch int64, nonce uint64) error {
 
 	key := MakeNodeWorkKey()
 	record, err := s.db.Get(key)
@@ -233,8 +283,8 @@ func (s *SystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
 	return nil
 }
 
-// GetWorkByNode returns proof of work nonce discovered by this node
-func (s *SystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
+// GetNodeWorks returns proof of work nonce discovered by this node
+func (s *SystemKeeper) GetNodeWorks() ([]*core.NodeWork, error) {
 
 	key := MakeNodeWorkKey()
 	record, err := s.db.Get(key)
@@ -252,7 +302,7 @@ func (s *SystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
 	return res, nil
 }
 
-// IncrGasMinedInCurEpoch IncrGasMinedForCurrentEpoch increments the total gas award to miners in the given epoch
+// IncrGasMinedInCurEpoch increments the total gas award to miners in the given epoch
 func (s *SystemKeeper) IncrGasMinedInCurEpoch(newBal util.String) error {
 
 	curEpoch, err := s.GetCurrentEpoch()
@@ -260,11 +310,7 @@ func (s *SystemKeeper) IncrGasMinedInCurEpoch(newBal util.String) error {
 		return err
 	}
 
-	if err := s.db.Del(MakeEpochTotalGasReward(curEpoch - 1)); err != nil {
-		return errors.Wrap(err, "failed to delete total gas reward for last epoch")
-	}
-
-	key := MakeEpochTotalGasReward(curEpoch)
+	key := MakeEpochTotalGasRewardKey(curEpoch)
 	record, err := s.db.Get(key)
 	if err != nil && err != storage.ErrRecordNotFound {
 		return errors.Wrap(err, "failed to query current balance")
@@ -284,19 +330,14 @@ func (s *SystemKeeper) IncrGasMinedInCurEpoch(newBal util.String) error {
 	return nil
 }
 
-// GetTotalGasMinedInCurEpoch GetCurEpochTotalGasReward returns the total gas mined in an epoch
-func (s *SystemKeeper) GetTotalGasMinedInCurEpoch() (util.String, error) {
-
-	curEpoch, err := s.GetCurrentEpoch()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get current epoch")
-	}
-
-	key := MakeEpochTotalGasReward(curEpoch)
+// GetTotalGasMinedInEpoch returns the total gas mined in an epoch
+func (s *SystemKeeper) GetTotalGasMinedInEpoch(epoch int64) (util.String, error) {
+	key := MakeEpochTotalGasRewardKey(epoch)
 	record, err := s.db.Get(key)
 	if err != nil && err != storage.ErrRecordNotFound {
 		return "", errors.Wrap(err, "failed to query epoch balance")
 	}
+
 	var balance = "0"
 	if record != nil {
 		if err = record.Scan(&balance); err != nil {
@@ -305,4 +346,31 @@ func (s *SystemKeeper) GetTotalGasMinedInCurEpoch() (util.String, error) {
 	}
 
 	return util.String(balance), nil
+}
+
+// AvgGasMinedLastEpochs returns the average gas mined within the last n epochs
+func (s *SystemKeeper) AvgGasMinedLastEpochs(nPrevEpochs int64) (decimal.Decimal, error) {
+
+	curEpoch, err := s.GetCurrentEpoch()
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	startEpoch := curEpoch - nPrevEpochs
+	if startEpoch < 0 {
+		startEpoch = 1
+	}
+
+	sumGasMined := decimal.Zero
+	count := 0
+	for i := startEpoch; i < curEpoch; i++ {
+		gasMined, err := s.GetTotalGasMinedInEpoch(i)
+		if err != nil {
+			return decimal.Zero, err
+		}
+		sumGasMined = sumGasMined.Add(gasMined.Decimal())
+		count++
+	}
+
+	return sumGasMined.Div(decimal.NewFromFloat(float64(count))), nil
 }

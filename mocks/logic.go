@@ -16,6 +16,7 @@ import (
 	state "github.com/make-os/kit/types/state"
 	util "github.com/make-os/kit/util"
 	identifier "github.com/make-os/kit/util/identifier"
+	decimal "github.com/shopspring/decimal"
 	types2 "github.com/tendermint/tendermint/abci/types"
 	big "math/big"
 	reflect "reflect"
@@ -181,17 +182,32 @@ func (mr *MockSystemKeeperMockRecorder) GetHelmRepo() *gomock.Call {
 }
 
 // GetCurrentDifficulty mocks base method
-func (m *MockSystemKeeper) GetCurrentDifficulty() *big.Int {
+func (m *MockSystemKeeper) GetCurrentDifficulty() (*big.Int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentDifficulty")
 	ret0, _ := ret[0].(*big.Int)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetCurrentDifficulty indicates an expected call of GetCurrentDifficulty
 func (mr *MockSystemKeeperMockRecorder) GetCurrentDifficulty() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentDifficulty", reflect.TypeOf((*MockSystemKeeper)(nil).GetCurrentDifficulty))
+}
+
+// ComputeDifficulty mocks base method
+func (m *MockSystemKeeper) ComputeDifficulty() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComputeDifficulty")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ComputeDifficulty indicates an expected call of ComputeDifficulty
+func (mr *MockSystemKeeperMockRecorder) ComputeDifficulty() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeDifficulty", reflect.TypeOf((*MockSystemKeeper)(nil).ComputeDifficulty))
 }
 
 // GetCurrentEpoch mocks base method
@@ -266,33 +282,33 @@ func (mr *MockSystemKeeperMockRecorder) IsWorkNonceRegistered(epoch, nonce inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWorkNonceRegistered", reflect.TypeOf((*MockSystemKeeper)(nil).IsWorkNonceRegistered), epoch, nonce)
 }
 
-// IndexWorkByNode mocks base method
-func (m *MockSystemKeeper) IndexWorkByNode(epoch int64, nonce uint64) error {
+// IndexNodeWork mocks base method
+func (m *MockSystemKeeper) IndexNodeWork(epoch int64, nonce uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexWorkByNode", epoch, nonce)
+	ret := m.ctrl.Call(m, "IndexNodeWork", epoch, nonce)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// IndexWorkByNode indicates an expected call of IndexWorkByNode
-func (mr *MockSystemKeeperMockRecorder) IndexWorkByNode(epoch, nonce interface{}) *gomock.Call {
+// IndexNodeWork indicates an expected call of IndexNodeWork
+func (mr *MockSystemKeeperMockRecorder) IndexNodeWork(epoch, nonce interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexWorkByNode", reflect.TypeOf((*MockSystemKeeper)(nil).IndexWorkByNode), epoch, nonce)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexNodeWork", reflect.TypeOf((*MockSystemKeeper)(nil).IndexNodeWork), epoch, nonce)
 }
 
-// GetWorkByNode mocks base method
-func (m *MockSystemKeeper) GetWorkByNode() ([]*core.NodeWork, error) {
+// GetNodeWorks mocks base method
+func (m *MockSystemKeeper) GetNodeWorks() ([]*core.NodeWork, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWorkByNode")
+	ret := m.ctrl.Call(m, "GetNodeWorks")
 	ret0, _ := ret[0].([]*core.NodeWork)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetWorkByNode indicates an expected call of GetWorkByNode
-func (mr *MockSystemKeeperMockRecorder) GetWorkByNode() *gomock.Call {
+// GetNodeWorks indicates an expected call of GetNodeWorks
+func (mr *MockSystemKeeperMockRecorder) GetNodeWorks() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkByNode", reflect.TypeOf((*MockSystemKeeper)(nil).GetWorkByNode))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeWorks", reflect.TypeOf((*MockSystemKeeper)(nil).GetNodeWorks))
 }
 
 // IncrGasMinedInCurEpoch mocks base method
@@ -309,19 +325,34 @@ func (mr *MockSystemKeeperMockRecorder) IncrGasMinedInCurEpoch(newBal interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrGasMinedInCurEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).IncrGasMinedInCurEpoch), newBal)
 }
 
-// GetTotalGasMinedInCurEpoch mocks base method
-func (m *MockSystemKeeper) GetTotalGasMinedInCurEpoch() (util.String, error) {
+// GetTotalGasMinedInEpoch mocks base method
+func (m *MockSystemKeeper) GetTotalGasMinedInEpoch(epoch int64) (util.String, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTotalGasMinedInCurEpoch")
+	ret := m.ctrl.Call(m, "GetTotalGasMinedInEpoch", epoch)
 	ret0, _ := ret[0].(util.String)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTotalGasMinedInCurEpoch indicates an expected call of GetTotalGasMinedInCurEpoch
-func (mr *MockSystemKeeperMockRecorder) GetTotalGasMinedInCurEpoch() *gomock.Call {
+// GetTotalGasMinedInEpoch indicates an expected call of GetTotalGasMinedInEpoch
+func (mr *MockSystemKeeperMockRecorder) GetTotalGasMinedInEpoch(epoch interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalGasMinedInCurEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).GetTotalGasMinedInCurEpoch))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalGasMinedInEpoch", reflect.TypeOf((*MockSystemKeeper)(nil).GetTotalGasMinedInEpoch), epoch)
+}
+
+// AvgGasMinedLastEpochs mocks base method
+func (m *MockSystemKeeper) AvgGasMinedLastEpochs(nPrevEpochs int64) (decimal.Decimal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AvgGasMinedLastEpochs", nPrevEpochs)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AvgGasMinedLastEpochs indicates an expected call of AvgGasMinedLastEpochs
+func (mr *MockSystemKeeperMockRecorder) AvgGasMinedLastEpochs(nPrevEpochs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AvgGasMinedLastEpochs", reflect.TypeOf((*MockSystemKeeper)(nil).AvgGasMinedLastEpochs), nPrevEpochs)
 }
 
 // MockBalanceAccount is a mock of BalanceAccount interface

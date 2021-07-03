@@ -44,7 +44,7 @@ type App struct {
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validation.ValidateTxFunc
-	curBlock                  *state.BlockInfo
+	proposedBlock             *state.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
@@ -68,13 +68,13 @@ func NewApp(
 	logic core.AtomicLogic,
 	ticketMgr tickettypes.TicketManager) *App {
 	return &App{
-		db:         db,
-		logic:      logic,
-		cfg:        cfg,
-		curBlock:   &state.BlockInfo{},
-		log:        cfg.G().Log.Module("app"),
-		ticketMgr:  ticketMgr,
-		validateTx: validation.ValidateTx,
+		db:            db,
+		logic:         logic,
+		cfg:           cfg,
+		proposedBlock: &state.BlockInfo{},
+		log:           cfg.G().Log.Module("app"),
+		ticketMgr:     ticketMgr,
+		validateTx:    validation.ValidateTx,
 	}
 }
 
@@ -160,13 +160,13 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	a.curBlock.Time.Set(req.GetHeader().Time.Unix())
-	a.curBlock.Height.Set(req.GetHeader().Height)
-	a.curBlock.Hash = req.GetHash()
-	a.curBlock.LastAppHash = req.GetHeader().AppHash
-	a.curBlock.ProposerAddress = req.GetHeader().ProposerAddress
+	a.proposedBlock.Time.Set(req.GetHeader().Time.Unix())
+	a.proposedBlock.Height.Set(req.GetHeader().Height)
+	a.proposedBlock.Hash = req.GetHash()
+	a.proposedBlock.LastAppHash = req.GetHeader().AppHash
+	a.proposedBlock.ProposerAddress = req.GetHeader().ProposerAddress
 
-	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curBlock.ProposerAddress) {
+	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.proposedBlock.ProposerAddress) {
 		a.isCurrentBlockProposer = true
 	}
 
@@ -267,7 +267,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	// Execute the transaction (does not commit the state changes yet)
 	resp := a.logic.ExecTx(&core.ExecArgs{
 		Tx:          tx,
-		ChainHeight: uint64(a.curBlock.Height - 1),
+		ChainHeight: uint64(a.proposedBlock.Height - 1),
 		ValidateTx:  validation.ValidateTx,
 	})
 
@@ -290,8 +290,12 @@ func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock
 		panic(errors.Wrap(err, "failed to update validators"))
 	}
 
-	if err := a.logic.OnEndBlock(a.curBlock); err != nil {
+	if err := a.logic.OnEndBlock(a.proposedBlock); err != nil {
 		panic(errors.Wrap(err, "logic.OnEndBlock"))
+	}
+
+	if err := a.computeDifficulty(); err != nil {
+		panic(errors.Wrap(err, "failed to compute difficulty"))
 	}
 
 	if err := a.trackAndBroadcastEpochChange(); err != nil {
@@ -308,12 +312,12 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Construct a new block information object
 	bi := &state.BlockInfo{
-		Height:          a.curBlock.Height,
-		Hash:            a.curBlock.Hash,
-		LastAppHash:     a.curBlock.LastAppHash,
-		ProposerAddress: a.curBlock.ProposerAddress,
+		Height:          a.proposedBlock.Height,
+		Hash:            a.proposedBlock.Hash,
+		LastAppHash:     a.proposedBlock.LastAppHash,
+		ProposerAddress: a.proposedBlock.ProposerAddress,
 		AppHash:         a.logic.StateTree().WorkingHash(),
-		Time:            a.curBlock.Time,
+		Time:            a.proposedBlock.Time,
 	}
 
 	// Save the block information
@@ -328,9 +332,9 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// height is the height where the last validator update will take effect.
 	// Tendermint effects validator updates after 2 blocks; We need to index
 	// the validators to the real height when the validators were selected (2 blocks ago)
-	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
+	if a.proposedBlock.Height.Int64() == a.heightToSaveNewValidators {
 		a.indexValidators()
-		a.log.Info("Indexed new validators for the new epoch", "Height", a.curBlock.Height)
+		a.log.Info("Indexed new validators for the new epoch", "Height", a.proposedBlock.Height)
 	}
 
 	// Index the un-indexed txs
@@ -349,7 +353,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	a.markMergeProposalAsClosed()
 
 	// Update difficulty
-	a.updateDifficulty(a.curBlock)
+	a.updateDifficulty(a.proposedBlock)
 
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
@@ -381,11 +385,11 @@ func (a *App) reset() {
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.
-	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
+	if a.proposedBlock.Height.Int64() == a.heightToSaveNewValidators {
 		a.heightToSaveNewValidators = 0
 	}
 
-	a.curBlock = &state.BlockInfo{}
+	a.proposedBlock = &state.BlockInfo{}
 }
 
 // Query for data from the application.
@@ -458,7 +462,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 
 // indexValidators indexes new validators
 func (a *App) indexValidators() {
-	if err := a.logic.ValidatorKeeper().Index(a.curBlock.Height.Int64(), a.unsavedValidators); err != nil {
+	if err := a.logic.ValidatorKeeper().Index(a.proposedBlock.Height.Int64(), a.unsavedValidators); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to update current validators"))
 	}
 }
@@ -501,7 +505,7 @@ func (a *App) markMergeProposalAsClosed() {
 // expireHostTickets sets the expiry height of unbonded host tickets
 func (a *App) expireHostTickets() {
 	for _, ticketHash := range a.unbondHostReqs {
-		if err := a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.curBlock.Height)); err != nil {
+		if err := a.logic.GetTicketManager().UpdateExpireBy(ticketHash, uint64(a.proposedBlock.Height)); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to expiire host tickets"))
 		}
 	}
@@ -521,7 +525,7 @@ func (a *App) indexProposalVotes() {
 func (a *App) broadcastTx() {
 	for _, btx := range a.okTxs {
 		if btx.tx.Is(txns.TxTypePush) {
-			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.curBlock.Height.Int64(), btx.index)
+			a.cfg.G().Bus.Emit(core.EvtTxPushProcessed, btx.tx.(*txns.TxPush), a.proposedBlock.Height.Int64(), btx.index)
 		}
 	}
 }
@@ -547,10 +551,19 @@ func (a *App) trackAndBroadcastEpochChange() error {
 	return nil
 }
 
+// computeDifficulty will compute the difficult when the proposed
+// block is the first in the current epoch
+func (a *App) computeDifficulty() error {
+	if epoch.IsFirstInEpoch(a.proposedBlock.Height.Int64()) {
+		return a.logic.SysKeeper().ComputeDifficulty()
+	}
+	return nil
+}
+
 // indexTickets indexes new validator and host tickets
 func (a *App) indexTickets() {
 	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
-		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curBlock.Height),
+		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.proposedBlock.Height),
 			ticket.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
@@ -563,7 +576,6 @@ func (a *App) updateDifficulty(block *state.BlockInfo) {
 	if !isEpochEnding {
 		return
 	}
-
 	return
 }
 

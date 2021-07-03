@@ -195,7 +195,7 @@ func (m *CPUMiner) run(id int) {
 				continue
 			} else if nonce > 0 {
 
-				m.logic.SysKeeper().IndexWorkByNode(epoch, nonce)
+				m.logic.SysKeeper().IndexNodeWork(epoch, nonce)
 
 				if _, err := SubmitWork(m.minerKey, epoch, nonce, m.cfg.Miner.SubmitFee, m.logic, m.log); err != nil {
 					log.Error(errors.Wrap(err, "failed to submit work nonce"))
@@ -249,10 +249,14 @@ func mine(
 	seed := uint64(r.Int63())
 	nonce = seed
 
+	curDiff, err := sk.GetCurrentDifficulty()
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "failed to get difficulty")
+	}
 	var (
 		started  = time.Now()
 		hash     = epochStartBlock.Hash
-		target   = new(big.Int).Div(maxUint256, sk.GetCurrentDifficulty())
+		target   = new(big.Int).Div(maxUint256, curDiff)
 		attempts = int64(0)
 	)
 
@@ -326,7 +330,12 @@ func VerifyWork(blockHash, minerAddr []byte, nonce uint64, logic core.Logic) (bo
 	result := make([]byte, 32)
 	x11.New().Hash(makeSeed(blockHash, minerAddr, nonce), result)
 
-	target := new(big.Int).Div(maxUint256, logic.SysKeeper().GetCurrentDifficulty())
+	curDiff, err := logic.SysKeeper().GetCurrentDifficulty()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get difficulty")
+	}
+
+	target := new(big.Int).Div(maxUint256, curDiff)
 	if new(big.Int).SetBytes(result).Cmp(target) > 0 {
 		return false, nil
 	}

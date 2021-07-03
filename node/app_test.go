@@ -436,7 +436,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				app.curBlock.Height = 10
+				app.proposedBlock.Height = 10
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToHexBytes("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
@@ -525,7 +525,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-				app.curBlock.Height = 10
+				app.proposedBlock.Height = 10
 				app.heightToSaveNewValidators = 10
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
@@ -562,7 +562,7 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToHexBytes("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateExpireBy(util.StrToHexBytes("ticket_hash"), uint64(app.curBlock.Height))
+				mockLogic.TicketManager.EXPECT().UpdateExpireBy(util.StrToHexBytes("ticket_hash"), uint64(app.proposedBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 
 			})
@@ -674,7 +674,7 @@ var _ = Describe("App", func() {
 			evt := <-cfg.G().Bus.On(core.EvtTxPushProcessed)
 			Expect(evt.Args).To(HaveLen(3))
 			Expect(evt.Args[0]).To(Equal(tx))
-			Expect(evt.Args[1]).To(Equal(app.curBlock.Height.Int64()))
+			Expect(evt.Args[1]).To(Equal(app.proposedBlock.Height.Int64()))
 			Expect(evt.Args[2]).To(Equal(0))
 		})
 	})
@@ -710,4 +710,19 @@ var _ = Describe("App", func() {
 		})
 	})
 
+	Describe(".computeDifficulty", func() {
+		It("should not compute difficulty if proposed block height is not the first in the current epoch", func() {
+			params.NumBlocksPerEpoch = 5
+			app.proposedBlock = &state.BlockInfo{Height: 2}
+			mockLogic.SysKeeper.EXPECT().ComputeDifficulty().Times(0)
+			app.computeDifficulty()
+		})
+
+		It("should not compute difficulty if proposed block height is the first in the current epoch", func() {
+			params.NumBlocksPerEpoch = 5
+			app.proposedBlock = &state.BlockInfo{Height: 1}
+			mockLogic.SysKeeper.EXPECT().ComputeDifficulty().Times(1)
+			app.computeDifficulty()
+		})
+	})
 })

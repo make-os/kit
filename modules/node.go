@@ -55,7 +55,9 @@ func (m *NodeModule) methods() []*types.VMMember {
 		{Name: "isSyncing", Value: m.IsSyncing, Description: "Check if the node is synchronizing with peers"},
 		{Name: "getCurEpoch", Value: m.GetCurrentEpoch, Description: "Get the current epoch"},
 		{Name: "getEpoch", Value: m.GetEpoch, Description: "Get the epoch of a block height"},
-		{Name: "getGasMinedInCurEpoch", Value: m.GetTotalGasMinedInEpoch, Description: "Get the amount of gas mined in the current epoch"},
+		{Name: "getGasMinedInCurEpoch", Value: m.GetTotalGasMinedInCurEpoch, Description: "Get the amount of gas mined in the current epoch"},
+		{Name: "getGasMinedInEpoch", Value: m.GetTotalGasMinedInEpoch, Description: "Get the amount of gas mined in an epoch"},
+		{Name: "getCurDifficulty", Value: m.GetDifficulty, Description: "Get the current difficulty"},
 	}
 }
 
@@ -224,11 +226,35 @@ func (m *NodeModule) GetEpoch(height int64) string {
 	return cast.ToString(epoch.GetEpochAt(height))
 }
 
-// GetTotalGasMinedInEpoch returns the total gas mined in the current epoch
-func (m *NodeModule) GetTotalGasMinedInEpoch() string {
-	bal, err := m.keepers.SysKeeper().GetTotalGasMinedInCurEpoch()
+// GetTotalGasMinedInCurEpoch returns the total gas mined in the current epoch
+func (m *NodeModule) GetTotalGasMinedInCurEpoch() string {
+
+	curEpoch, err := m.keepers.SysKeeper().GetCurrentEpoch()
+	if err != nil {
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	bal, err := m.keepers.SysKeeper().GetTotalGasMinedInEpoch(curEpoch)
 	if err != nil {
 		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
 	}
 	return bal.String()
+}
+
+// GetTotalGasMinedInEpoch returns the total gas mined in the given epoch
+func (m *NodeModule) GetTotalGasMinedInEpoch(epoch int64) string {
+	bal, err := m.keepers.SysKeeper().GetTotalGasMinedInEpoch(epoch)
+	if err != nil {
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+	return bal.String()
+}
+
+// GetDifficulty returns the current difficulty
+func (m *NodeModule) GetDifficulty() string {
+	diff, err := m.keepers.SysKeeper().GetCurrentDifficulty()
+	if err != nil {
+		panic(errors.ReqErr(500, StatusCodeServerErr, "", err.Error()))
+	}
+	return diff.String()
 }

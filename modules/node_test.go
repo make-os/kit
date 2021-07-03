@@ -172,9 +172,38 @@ var _ = Describe("NodeModule", func() {
 	})
 
 	Describe(".GetTotalGasMinedInEpoch", func() {
+		It("should panic if unable to get total gas mined in epoch", func() {
+			epoch := int64(1)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(epoch).Return(util.String(""), fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetTotalGasMinedInEpoch(epoch)
+			})
+		})
+
 		It("should return expected total gas mined in epoch", func() {
-			mockSysKeeper.EXPECT().GetTotalGasMinedInCurEpoch().Return(util.String("100"), nil)
-			Expect(m.GetTotalGasMinedInEpoch()).To(Equal("100"))
+			epoch := int64(1)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(epoch).Return(util.String("100"), nil)
+			Expect(m.GetTotalGasMinedInEpoch(epoch)).To(Equal("100"))
+		})
+	})
+
+	Describe(".GetTotalGasMinedInCurEpoch", func() {
+		It("should panic if unable to get total gas mined in current epoch", func() {
+			epoch := int64(1)
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(epoch, nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(epoch).Return(util.String(""), fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetTotalGasMinedInCurEpoch()
+			})
+		})
+
+		It("should return expected total gas mined in current epoch", func() {
+			epoch := int64(1)
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(epoch, nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(epoch).Return(util.String("100"), nil)
+			Expect(m.GetTotalGasMinedInCurEpoch()).To(Equal("100"))
 		})
 	})
 })

@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SystemKeeper", func() {
+var _ = Describe("ValidatorKeeper", func() {
 	var appDB storagetypes.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -41,6 +41,10 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	Describe(".getByHeight", func() {
+		BeforeEach(func() {
+			params.NumBlocksPerEpoch = 5
+		})
+
 		When("no result is found", func() {
 			It("should return err=nil and empty map", func() {
 				res, err := valKeeper.getByHeight(1)

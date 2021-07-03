@@ -42,6 +42,11 @@ func GetEpochAt(height int64) int64 {
 	return int64(math.Ceil(float64(height) / float64(params.NumBlocksPerEpoch)))
 }
 
+// IsFirstInEpoch checks whether a given block height is the first block in an epoch
+func IsFirstInEpoch(height int64) bool {
+	return GetFirstInEpochOfHeight(height) == height
+}
+
 // GetFirstInEpochOfHeight returns the block height that is the first
 // block in the epoch where the target height falls in.
 func GetFirstInEpochOfHeight(height int64) int64 {

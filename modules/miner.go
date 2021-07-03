@@ -148,7 +148,7 @@ func (m *MinerModule) SubmitWork(params map[string]interface{}, options ...inter
 
 // GetPreviousWork returns the previous nonces found by the node
 func (m *MinerModule) GetPreviousWork() []util.Map {
-	res, err := m.logic.SysKeeper().GetWorkByNode()
+	res, err := m.logic.SysKeeper().GetNodeWorks()
 	if err != nil {
 		panic(se(400, StatusCodeServerErr, "", err.Error()))
 	}

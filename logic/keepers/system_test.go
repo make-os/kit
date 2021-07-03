@@ -2,18 +2,23 @@ package keepers
 
 import (
 	"fmt"
+	"math/big"
 	"os"
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/storage"
+	"github.com/make-os/kit/storage/common"
 	storagemocks "github.com/make-os/kit/storage/mocks"
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 )
 
 var _ = Describe("SystemKeeper", func() {
@@ -201,13 +206,13 @@ var _ = Describe("SystemKeeper", func() {
 		})
 	})
 
-	Describe(".IndexWorkByNode & .GetWorkByNode", func() {
+	Describe(".IndexNodeWork & .GetNodeWorks", func() {
 		It("should index work and return expected result", func() {
-			err := sysKeeper.IndexWorkByNode(1, 10)
+			err := sysKeeper.IndexNodeWork(1, 10)
 			Expect(err).To(BeNil())
-			sysKeeper.IndexWorkByNode(2, 10)
-			sysKeeper.IndexWorkByNode(3, 10)
-			res, err := sysKeeper.GetWorkByNode()
+			sysKeeper.IndexNodeWork(2, 10)
+			sysKeeper.IndexNodeWork(3, 10)
+			res, err := sysKeeper.GetNodeWorks()
 			Expect(err).To(BeNil())
 			Expect(res).To(HaveLen(3))
 			Expect(res[0].Epoch).To(Equal(int64(1)))
@@ -218,11 +223,11 @@ var _ = Describe("SystemKeeper", func() {
 		When("number indexed equal limit", func() {
 			It("should slice earliest records and maintain limit", func() {
 				NodeWorkIndexLimit = 2
-				err := sysKeeper.IndexWorkByNode(1, 10)
+				err := sysKeeper.IndexNodeWork(1, 10)
 				Expect(err).To(BeNil())
-				sysKeeper.IndexWorkByNode(2, 10)
-				sysKeeper.IndexWorkByNode(3, 10)
-				res, err := sysKeeper.GetWorkByNode()
+				sysKeeper.IndexNodeWork(2, 10)
+				sysKeeper.IndexNodeWork(3, 10)
+				res, err := sysKeeper.GetNodeWorks()
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
 				Expect(res[0].Epoch).To(Equal(int64(2)))
@@ -231,23 +236,23 @@ var _ = Describe("SystemKeeper", func() {
 		})
 	})
 
-	Describe(".IncrGasMinedInCurEpoch & .GetTotalGasMinedInCurEpoch", func() {
+	Describe(".IncrGasMinedInCurEpoch & .GetTotalGasMinedInEpoch", func() {
 		It("should update balance correctly", func() {
 			params.NumBlocksPerEpoch = 1
 			var block1 = &state.BlockInfo{AppHash: []byte("hash1"), Height: 1}
 			sysKeeper.SaveBlockInfo(block1)
 
-			bal, err := sysKeeper.GetTotalGasMinedInCurEpoch()
+			bal, err := sysKeeper.GetTotalGasMinedInEpoch(1)
 			Expect(err).To(BeNil())
 			Expect(bal.String()).To(Equal("0"))
 
 			sysKeeper.IncrGasMinedInCurEpoch("100")
-			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			bal, err = sysKeeper.GetTotalGasMinedInEpoch(1)
 			Expect(err).To(BeNil())
 			Expect(bal.String()).To(Equal("100"))
 
 			sysKeeper.IncrGasMinedInCurEpoch("100")
-			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			bal, err = sysKeeper.GetTotalGasMinedInEpoch(1)
 			Expect(err).To(BeNil())
 			Expect(bal.String()).To(Equal("200"))
 
@@ -256,9 +261,249 @@ var _ = Describe("SystemKeeper", func() {
 			sysKeeper.SaveBlockInfo(block2)
 
 			sysKeeper.IncrGasMinedInCurEpoch("100")
-			bal, err = sysKeeper.GetTotalGasMinedInCurEpoch()
+			bal, err = sysKeeper.GetTotalGasMinedInEpoch(2)
 			Expect(err).To(BeNil())
 			Expect(bal.String()).To(Equal("100"))
+		})
+	})
+
+	Describe(".GetCurrentDifficulty", func() {
+		It("should return minimum difficulty if no difficulty has been recorded before", func() {
+			diff, err := sysKeeper.GetCurrentDifficulty()
+			Expect(err).To(BeNil())
+			Expect(diff.Int64()).To(Equal(params.MinDifficulty.Int64()))
+		})
+
+		It("should return expected difficulty if previously set", func() {
+			diff := new(big.Int).SetInt64(200000)
+			record := common.NewFromKeyValue(MakeDifficultyKey(), util.EncodeNumber(diff.Uint64()))
+			err := sysKeeper.db.Put(record)
+			Expect(err).To(BeNil())
+
+			curDiff, err := sysKeeper.GetCurrentDifficulty()
+			Expect(err).To(BeNil())
+			Expect(curDiff.Int64()).To(Equal(diff.Int64()))
+		})
+	})
+
+	Describe(".AvgGasMinedLastEpochs", func() {
+		When("blocks per epoch = 1; num. previous epoch = 12; cur. epoch = 24", func() {
+			It("should return expected avg. gas mined", func() {
+				params.NumBlocksPerEpoch = 1
+
+				// Epoch 12 (10,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 12})
+				sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+				// Epoch 13 (5,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 13})
+				sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+				// Epoch 14 (3,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 14})
+				sysKeeper.IncrGasMinedInCurEpoch("3000")
+
+				// Epoch 20 (2,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 20})
+				sysKeeper.IncrGasMinedInCurEpoch("2000")
+
+				// Epoch 23 (1,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 23})
+				sysKeeper.IncrGasMinedInCurEpoch("1000")
+
+				// Epoch 24 (1,500 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 24})
+				sysKeeper.IncrGasMinedInCurEpoch("1500")
+
+				nPrevEpoch := 12.0
+
+				// Calculate expected average (exclude epoch 24 - current epoch)
+				expectedAvg := float64(10000+5000+3000+2000+1000) / nPrevEpoch
+				res, err := sysKeeper.AvgGasMinedLastEpochs(int64(nPrevEpoch))
+				Expect(err).To(BeNil())
+				Expect(res.String()).To(Equal(cast.ToString(expectedAvg)))
+			})
+		})
+
+		When("blocks per epoch = 1; num. previous epoch = 20; cur. epoch = 15", func() {
+			It("should return expected avg. gas mined", func() {
+				params.NumBlocksPerEpoch = 1
+
+				// Epoch 12 (10,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 12})
+				sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+				// Epoch 13 (5,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 13})
+				sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+				// Epoch 14 (3,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 14})
+				sysKeeper.IncrGasMinedInCurEpoch("3000")
+
+				// Epoch 15 (1,500 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 15})
+				sysKeeper.IncrGasMinedInCurEpoch("1500")
+
+				nPrevEpoch := 20.0
+				nEpochInWindow := 14.0
+
+				// Calculate expected average (exclude epoch 24 - current epoch)
+				expectedAvg := decimal.NewFromFloat(float64(10000+5000+3000) / nEpochInWindow)
+				res, err := sysKeeper.AvgGasMinedLastEpochs(int64(nPrevEpoch))
+				Expect(err).To(BeNil())
+				Expect(res.StringFixed(2)).To(Equal(expectedAvg.StringFixed(2)))
+			})
+		})
+
+		When("blocks per epoch = 1; num. previous epoch = 2; cur. epoch = 15", func() {
+			It("should return expected avg. gas mined", func() {
+				params.NumBlocksPerEpoch = 1
+
+				// Epoch 12 (10,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 12})
+				sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+				// Epoch 13 (5,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 13})
+				sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+				// Epoch 14 (3,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 14})
+				sysKeeper.IncrGasMinedInCurEpoch("3000")
+
+				// Epoch 15 (1,500 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 15})
+				sysKeeper.IncrGasMinedInCurEpoch("1500")
+
+				nPrevEpoch := 2.0
+				nEpochInWindow := 2.0
+
+				// Calculate expected average (exclude epoch 24 - current epoch)
+				expectedAvg := decimal.NewFromFloat(float64(5000+3000) / nEpochInWindow)
+				res, err := sysKeeper.AvgGasMinedLastEpochs(int64(nPrevEpoch))
+				Expect(err).To(BeNil())
+				Expect(res.StringFixed(2)).To(Equal(expectedAvg.StringFixed(2)))
+			})
+		})
+	})
+
+	Describe(".ComputeDifficulty", func() {
+		It("should increment difficulty if average total gas mined in last epoch window"+
+			" is greater or equal to minimum expected gas mined in an epoch", func() {
+			params.NumBlocksPerEpoch = 1
+			params.GasReward = "10000"
+			params.MinDifficulty = new(big.Int).SetInt64(1000000)
+			params.MinTotalGasRewardPerEpoch = "10000"
+
+			// Epoch 1 (10000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 1})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Epoch 2 (10000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 2})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Epoch 3 (10000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 3})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Epoch 4 (10000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 4})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Set initial difficulty
+			initialDiff := new(big.Int).SetInt64(2000000)
+			record := common.NewFromKeyValue(MakeDifficultyKey(), util.EncodeNumber(initialDiff.Uint64()))
+			err = sysKeeper.db.Put(record)
+			Expect(err).To(BeNil())
+
+			err := sysKeeper.ComputeDifficulty()
+			Expect(err).To(BeNil())
+
+			curDiff, err := sysKeeper.GetCurrentDifficulty()
+			Expect(err).To(BeNil())
+
+			points := decimal.NewFromBigInt(initialDiff, 0).Mul(decimal.NewFromFloat(params.DifficultyChangePct))
+			expected := decimal.NewFromBigInt(initialDiff, 0).Add(points)
+			Expect(curDiff.Int64()).To(Equal(expected.IntPart()))
+		})
+
+		It("should decrement difficulty if average total gas mined is less than gas reward", func() {
+			params.NumBlocksPerEpoch = 1
+			params.GasReward = "10000"
+			params.MinDifficulty = new(big.Int).SetInt64(1000000)
+			params.MinTotalGasRewardPerEpoch = "10000"
+
+			// Epoch 1 (10,000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 1})
+			sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+			// Epoch 2 (5,000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 2})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Epoch 3 (3,000 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 3})
+			sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+			// Epoch 4 (1,500 gas mined)
+			sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 4})
+			sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+			// Set initial difficulty
+			initialDiff := new(big.Int).SetInt64(2000000)
+			record := common.NewFromKeyValue(MakeDifficultyKey(), util.EncodeNumber(initialDiff.Uint64()))
+			err = sysKeeper.db.Put(record)
+			Expect(err).To(BeNil())
+
+			err := sysKeeper.ComputeDifficulty()
+			Expect(err).To(BeNil())
+
+			curDiff, err := sysKeeper.GetCurrentDifficulty()
+			Expect(err).To(BeNil())
+
+			points := decimal.NewFromBigInt(initialDiff, 0).Mul(decimal.NewFromFloat(params.DifficultyChangePct))
+			expected := decimal.NewFromBigInt(initialDiff, 0).Sub(points)
+			Expect(curDiff.Int64()).To(Equal(expected.IntPart()))
+		})
+
+		When("difficulty is to be reduced below minimum difficulty", func() {
+			It("should reset difficulty to minimum difficulty", func() {
+				params.NumBlocksPerEpoch = 1
+				params.GasReward = "10000"
+				params.MinDifficulty = new(big.Int).SetInt64(1000000)
+
+				// Epoch 1 (10,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 1})
+				sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+				// Epoch 2 (5,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 2})
+				sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+				// Epoch 3 (3,000 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 3})
+				sysKeeper.IncrGasMinedInCurEpoch("5000")
+
+				// Epoch 4 (1,500 gas mined)
+				sysKeeper.SaveBlockInfo(&state.BlockInfo{AppHash: []byte("hash1"), Height: 4})
+				sysKeeper.IncrGasMinedInCurEpoch("10000")
+
+				// Set initial difficulty
+				initialDiff := new(big.Int).SetInt64(1000000)
+				record := common.NewFromKeyValue(MakeDifficultyKey(), util.EncodeNumber(initialDiff.Uint64()))
+				err = sysKeeper.db.Put(record)
+				Expect(err).To(BeNil())
+
+				err := sysKeeper.ComputeDifficulty()
+				Expect(err).To(BeNil())
+
+				curDiff, err := sysKeeper.GetCurrentDifficulty()
+				Expect(err).To(BeNil())
+
+				Expect(curDiff.Int64()).To(Equal(params.MinDifficulty.Int64()))
+			})
 		})
 	})
 })

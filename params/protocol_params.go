@@ -1,6 +1,7 @@
 package params
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/make-os/kit/util"
@@ -76,9 +77,6 @@ var (
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
-
-	// GasReward is the unique of allocated for a valid pow nonce
-	GasReward = util.String("10000")
 )
 
 // Namespace config
@@ -156,4 +154,22 @@ var (
 
 	// MaxRepoSize is the maximum size of a repository
 	MaxRepoSize = 1024 * 1024 * 300 // 300 MB
+)
+
+// Miner Params
+var (
+	// GasReward is the unique of allocated for a valid pow nonce
+	GasReward = util.String("10000")
+
+	// MinTotalGasRewardPerEpoch is the minimum total gas reward mined by all miners.
+	MinTotalGasRewardPerEpoch = util.String("1000000")
+
+	// MinDifficulty is the minimum difficulty.
+	MinDifficulty = new(big.Int).SetInt64(1000000)
+
+	// DifficultyChangePct is the number of percentage to increase/decrease difficulty by
+	DifficultyChangePct = 0.01
+
+	// NumEpochInAvgGasMined is the number of previous epochs to use for calculating average gas mined.
+	NumEpochInAvgGasMined = int64(12)
 )

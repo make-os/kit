@@ -10,7 +10,7 @@ import (
 	. "github.com/make-os/kit/params"
 )
 
-func TestParams(t *testing.T) {
+func TestEpoch(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Params Suite")
 }
@@ -39,6 +39,15 @@ var _ = Describe("EpochHelpers", func() {
 			Expect(epoch.GetFirstInEpochOfHeight(9)).To(Equal(int64(6)))
 			Expect(epoch.GetFirstInEpochOfHeight(10)).To(Equal(int64(6)))
 			Expect(epoch.GetFirstInEpochOfHeight(11)).To(Equal(int64(11)))
+		})
+	})
+
+	Describe(".IsFirstInEpoch", func() {
+		It("should get expected height", func() {
+			Expect(epoch.IsFirstInEpoch(1)).To(BeTrue())
+			Expect(epoch.IsFirstInEpoch(2)).To(BeFalse())
+			Expect(epoch.IsFirstInEpoch(5)).To(BeFalse())
+			Expect(epoch.IsFirstInEpoch(6)).To(BeTrue())
 		})
 	})
 

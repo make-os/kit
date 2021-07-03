@@ -173,7 +173,7 @@ var _ = Describe("Miner", func() {
 			params.NumBlocksPerEpoch = 2
 			curBlock := &state.BlockInfo{Height: 20}
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000), nil)
 
 			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			epochStartBlock := &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
@@ -190,7 +190,7 @@ var _ = Describe("Miner", func() {
 			params.NumBlocksPerEpoch = 2
 			curBlock := &state.BlockInfo{Height: 20}
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000000000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000000000), nil)
 
 			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			epochStartBlock := &state.BlockInfo{Height: 20, Hash: util.RandBytes(32)}
@@ -219,7 +219,7 @@ var _ = Describe("Miner", func() {
 			params.NumBlocksPerEpoch = 2
 			curBlock := &state.BlockInfo{Height: 20}
 			mockSysKeeper.EXPECT().GetLastBlockInfo().Return(curBlock, nil)
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000), nil)
 
 			epoch := epoch2.GetEpochAt(curBlock.Height.Int64())
 			mockSysKeeper.EXPECT().GetBlockInfo(epoch2.GetFirstInEpoch(epoch)).Return(epochStartBlock, nil)
@@ -231,14 +231,14 @@ var _ = Describe("Miner", func() {
 		})
 
 		It("should return true if nonce is valid for epoch", func() {
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000), nil)
 			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce, mockLogic)
 			Expect(err).To(BeNil())
 			Expect(good).To(BeTrue())
 		})
 
 		It("should return false if nonce is not valid for epoch", func() {
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(1000), nil)
 			good, err := VerifyWork(epochStartBlock.Hash, minerAddr, nonce+1, mockLogic)
 			Expect(err).To(BeNil())
 			Expect(good).To(BeFalse())

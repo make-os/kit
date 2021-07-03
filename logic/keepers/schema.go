@@ -23,6 +23,7 @@ const (
 	TagPoWNonce                = "pwn"
 	TagNodeWork                = "nw"
 	TagTotalEpochGasReward     = "egr"
+	TagDifficulty              = "d"
 )
 
 // MakeRepoRefLastSyncHeightKey creates a key for storing a repo's reference last successful synchronized height.
@@ -138,6 +139,12 @@ func MakeNodeWorkKey() []byte {
 	return common.MakePrefix([]byte(TagNodeWork))
 }
 
-func MakeEpochTotalGasReward(epoch int64) []byte {
+// MakeEpochTotalGasRewardKey creates a key for storing total gas reward in an epoch
+func MakeEpochTotalGasRewardKey(epoch int64) []byte {
 	return common.MakePrefix([]byte(TagTotalEpochGasReward), util.EncodeNumber(uint64(epoch)))
+}
+
+// MakeDifficultyKey creates a key for storing difficulty
+func MakeDifficultyKey() []byte {
+	return common.MakePrefix([]byte(TagDifficulty))
 }
