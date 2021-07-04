@@ -1600,10 +1600,21 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:epoch, msg:epoch is in the future or past"))
 		})
 
+		It("should return error if epoch gas limit has been reached", func() {
+			tx.Epoch = 10
+			tx.WorkNonce = 1000
+			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(tx.Epoch).Return(params.EpochGasRewardLimit, nil)
+			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:epoch, msg:epoch gas reward limit has been reached"))
+		})
+
 		It("should return error if epoch and nonce pair has been seen before", func() {
 			tx.Epoch = 10
 			tx.WorkNonce = 1000
 			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(tx.Epoch)
 			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(nil)
 			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
 			Expect(err).ToNot(BeNil())
@@ -1614,6 +1625,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Epoch = 10
 			tx.WorkNonce = 1000
 			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(tx.Epoch)
 			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(fmt.Errorf("error"))
 			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
 			Expect(err).ToNot(BeNil())
@@ -1624,6 +1636,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Epoch = 10
 			tx.WorkNonce = 1000
 			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(tx.Epoch)
 			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(storage.ErrRecordNotFound)
 			mockSysKeeper.EXPECT().GetCurrentEpochStartBlock().Return(nil, fmt.Errorf("error"))
 			err = validation.CheckTxSubmitWorkConsistency(tx, -1, mockLogic)
@@ -1636,9 +1649,10 @@ var _ = Describe("TxValidator", func() {
 			tx.WorkNonce = 1000
 			tx.SenderPubKey = key.PubKey().ToPublicKey()
 			mockSysKeeper.EXPECT().GetCurrentEpoch().Return(int64(10), nil)
+			mockSysKeeper.EXPECT().GetTotalGasMinedInEpoch(tx.Epoch)
 			mockSysKeeper.EXPECT().IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce).Return(storage.ErrRecordNotFound)
 
-			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000))
+			mockSysKeeper.EXPECT().GetCurrentDifficulty().Return(new(big.Int).SetInt64(10000), nil)
 
 			epochStartBlock := &state.BlockInfo{Hash: util.RandBytes(32), Height: 2222}
 			mockSysKeeper.EXPECT().GetCurrentEpochStartBlock().Return(epochStartBlock, nil)

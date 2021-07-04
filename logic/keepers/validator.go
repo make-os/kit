@@ -57,7 +57,7 @@ get:
 	return res, rec.Scan(&res)
 }
 
-// GetByHeight gets validators at the given height. If height is <= 0, the
+// Get gets validators at the given height. If height is <= 0, the
 // validator set of the highest height is returned.
 func (v *ValidatorKeeper) Get(height int64) (core.BlockValidators, error) {
 

@@ -161,6 +161,9 @@ var (
 	// GasReward is the unique of allocated for a valid pow nonce
 	GasReward = util.String("10000")
 
+	// EpochGasRewardLimit is the total mine-able gas reward in an epoch
+	EpochGasRewardLimit = util.String("1000000")
+
 	// MinTotalGasRewardPerEpoch is the minimum total gas reward mined by all miners.
 	MinTotalGasRewardPerEpoch = util.String("1000000")
 

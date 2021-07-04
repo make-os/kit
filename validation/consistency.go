@@ -660,6 +660,14 @@ func CheckTxSubmitWorkConsistency(
 		return feI(index, "epoch", "epoch is in the future or past")
 	}
 
+	// Ensure the total gas reward limit has not been reached
+	totalGasMinedInEpoch, err := logic.SysKeeper().GetTotalGasMinedInEpoch(curEpoch)
+	if err != nil {
+		return errors.Wrap(err, "failed to get total gas mined in epoch")
+	} else if totalGasMinedInEpoch.Decimal().GreaterThanOrEqual(params.EpochGasRewardLimit.Decimal()) {
+		return feI(index, "epoch", "epoch gas reward limit has been reached")
+	}
+
 	// Check if nonce has been seen in this epoch
 	err = sk.IsWorkNonceRegistered(tx.Epoch, tx.WorkNonce)
 	if err == nil {
