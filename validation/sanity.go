@@ -837,3 +837,21 @@ func CheckTxSubmitWork(tx *txns.TxSubmitWork, index int) error {
 
 	return nil
 }
+
+// CheckTxBurnGasForCoin performs sanity checks on TxBurnGasForCoin
+func CheckTxBurnGasForCoin(tx *txns.TxBurnGasForCoin, index int) error {
+
+	if err := checkType(tx.TxType, txns.TxTypeBurnGasForCoin, index); err != nil {
+		return err
+	}
+
+	if tx.Amount.IsZero() {
+		return feI(index, "amount", "amount is required")
+	}
+
+	if err := CheckCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}

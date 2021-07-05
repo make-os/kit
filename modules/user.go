@@ -67,6 +67,7 @@ func (m *UserModule) methods() []*types.VMMember {
 		{Name: "getValidator", Value: m.GetValidator, Description: "Get the validator information"},
 		{Name: "setCommission", Value: m.SetCommission, Description: "Set the percentage of reward to share with a delegator"},
 		{Name: "send", Value: m.SendCoin, Description: "Send coins to another user account or a repository"},
+		{Name: "gasToCoin", Value: m.BurnGasForCoin, Description: "Burns gas to native coin (Testnet Only)"},
 	}
 }
 
@@ -256,7 +257,7 @@ func (m *UserModule) GetNonce(address string, height ...uint64) string {
 	return cast.ToString(acct.Nonce.UInt64())
 }
 
-// Get returns the account of the given address.
+// GetAccount returns the account of the given address.
 //  - address: The address corresponding the account
 //  - [height]: The target block height to query (default: latest)
 func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
@@ -278,7 +279,9 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 		acct.Stakes = nil
 	}
 
-	return util.ToMap(acct)
+	out := util.ToMap(acct)
+	out["gas"] = acct.GetGasBalance()
+	return out
 }
 
 // GetAvailableBalance returns the spendable balance of an account.
@@ -483,4 +486,42 @@ func (m *UserModule) GetGasBalance(address string, height ...uint64) string {
 	}
 
 	return acct.GetGasBalance().String()
+}
+
+// BurnGasForCoin creates a tx to burn/converts gas into native coin.
+//
+// ARGS:
+// params <map>
+// params.amount <string>:				The amount of gas to burn
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: The transaction hash
+// TODO: Remove in production build
+func (m *UserModule) BurnGasForCoin(params map[string]interface{}, options ...interface{}) util.Map {
+	var err error
+
+	var tx = txns.NewBareTxTxBurnGasForCoin()
+	if err = tx.FromMap(params); err != nil {
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+	}
+
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+		return tx.ToMap()
+	}
+
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+	}
+
+	return map[string]interface{}{
+		"hash": hash,
+	}
 }

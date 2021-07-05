@@ -84,7 +84,9 @@ var _ = Describe("Contract", func() {
 			var ct core.SystemContract
 			var tx *txns.TxSubmitWork
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Gas: "0", Stakes: state.BareAccountStakes()})
+				acct := &state.Account{Balance: "100", Stakes: state.BareAccountStakes()}
+				acct.SetGasBalance("0")
+				logic.AccountKeeper().Update(sender.Addr(), acct)
 				tx = &txns.TxSubmitWork{
 					TxCommon:  &txns.TxCommon{Fee: "0", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Epoch:     1,
@@ -97,8 +99,8 @@ var _ = Describe("Contract", func() {
 				err = ct.Exec()
 				Expect(err).To(BeNil())
 				senderAcct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(senderAcct.Gas).ToNot(BeEmpty())
-				Expect(senderAcct.Gas).To(Equal(params.GasReward))
+				Expect(senderAcct.GetGasBalance()).ToNot(BeEmpty())
+				Expect(senderAcct.GetGasBalance()).To(Equal(params.GasReward))
 				Expect(senderAcct.Balance.String()).To(Equal("100"))
 				Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})
@@ -115,7 +117,9 @@ var _ = Describe("Contract", func() {
 			var tx *txns.TxSubmitWork
 			var curGasBal = util.String("2000")
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "100", Gas: curGasBal, Stakes: state.BareAccountStakes()})
+				acct := &state.Account{Balance: "100", Stakes: state.BareAccountStakes()}
+				acct.SetGasBalance(curGasBal.String())
+				logic.AccountKeeper().Update(sender.Addr(), acct)
 				tx = &txns.TxSubmitWork{
 					TxCommon:  &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Epoch:     1,
@@ -128,8 +132,8 @@ var _ = Describe("Contract", func() {
 				err = ct.Exec()
 				Expect(err).To(BeNil())
 				senderAcct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(senderAcct.Gas).ToNot(BeEmpty())
-				Expect(senderAcct.Gas.String()).To(Equal(curGasBal.Decimal().Add(params.GasReward.Decimal()).String()))
+				Expect(senderAcct.GetGasBalance()).ToNot(BeEmpty())
+				Expect(senderAcct.GetGasBalance().String()).To(Equal(curGasBal.Decimal().Add(params.GasReward.Decimal()).String()))
 				Expect(senderAcct.Balance.String()).To(Equal("99"))
 				Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})

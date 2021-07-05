@@ -391,7 +391,7 @@ var _ = Describe("UserModule", func() {
 
 		It("should return 100 when gas balance is 100", func() {
 			acct := state.NewBareAccount()
-			acct.Gas = "100"
+			acct.SetGasBalance("100")
 			mockAcctKeeper.EXPECT().Get(identifier.Address("addr1")).Return(acct)
 			res := m.GetGasBalance("addr1")
 			Expect(res).To(Equal("100"))
@@ -549,4 +549,49 @@ var _ = Describe("UserModule", func() {
 		})
 	})
 
+	Describe(".BurnGasForCoin", func() {
+		It("should panic when unable to decode params", func() {
+			params := map[string]interface{}{"amount": struct{}{}}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'amount' expected type 'util.String', got unconvertible type 'struct {}'", Field: "params"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.BurnGasForCoin(params)
+			})
+		})
+
+		It("should return tx map equivalent if payloadOnly=true", func() {
+			key := ""
+			payloadOnly := true
+			params := map[string]interface{}{"amount": "123"}
+			res := m.BurnGasForCoin(params, key, payloadOnly)
+			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeBurnGasForCoin)))
+			Expect(res).To(And(
+				HaveKey("timestamp"),
+				HaveKey("nonce"),
+				HaveKey("amount"),
+				HaveKey("type"),
+				HaveKey("senderPubKey"),
+				HaveKey("fee"),
+				HaveKey("sig"),
+			))
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
+			params := map[string]interface{}{"amount": "123"}
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.BurnGasForCoin(params, "", false)
+			})
+		})
+
+		It("should return tx hash on success", func() {
+			params := map[string]interface{}{"amount": "123"}
+			hash := util.StrToHexBytes("tx_hash")
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
+			res := m.BurnGasForCoin(params, "", false)
+			Expect(res).To(HaveKey("hash"))
+			Expect(res["hash"]).To(Equal(hash))
+		})
+	})
 })

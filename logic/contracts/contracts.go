@@ -4,6 +4,7 @@ import (
 	"github.com/make-os/kit/logic/contracts/createrepo"
 	"github.com/make-os/kit/logic/contracts/depositproposalfee"
 	"github.com/make-os/kit/logic/contracts/gasmaker"
+	"github.com/make-os/kit/logic/contracts/gastocoin"
 	"github.com/make-os/kit/logic/contracts/gitpush"
 	"github.com/make-os/kit/logic/contracts/purchaseticket"
 	"github.com/make-os/kit/logic/contracts/registernamespace"
@@ -38,6 +39,7 @@ func init() {
 		voteproposal.NewContract(),
 		depositproposalfee.NewContract(),
 		gasmaker.NewContract(),
+		gastocoin.NewContract(),
 		upsertowner.NewContract(&SystemContracts),
 		updaterepo.NewContract(&SystemContracts),
 		registerrepopushkeys.NewContract(&SystemContracts),

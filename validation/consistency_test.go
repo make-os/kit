@@ -1661,4 +1661,44 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:wnonce, msg:work nonce does not satisfy epoch target"))
 		})
 	})
+
+	Describe(".CheckTxBurnGasForCoinConsistency", func() {
+		var tx *txns.TxBurnGasForCoin
+		BeforeEach(func() {
+			tx = txns.NewBareTxTxBurnGasForCoin()
+			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+		})
+
+		It("should return error when sender's gas balance is less than tx gas amount", func() {
+			tx.Amount = "10000"
+			acct := state.NewBareAccount()
+			mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+			err = validation.CheckTxBurnGasForCoinConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:insufficient gas balance"))
+		})
+
+		It("should return error when dry send returns error", func() {
+			tx.Amount = "10000"
+			acct := state.NewBareAccount()
+			acct.SetGasBalance(tx.Amount.String())
+			mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+			mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce,
+				false, uint64(0)).Return(fmt.Errorf("error"))
+			err = validation.CheckTxBurnGasForCoinConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return nil on success", func() {
+			tx.Amount = "10000"
+			acct := state.NewBareAccount()
+			acct.SetGasBalance(tx.Amount.String())
+			mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+			mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce,
+				false, uint64(0)).Return(nil)
+			err = validation.CheckTxBurnGasForCoinConsistency(tx, -1, mockLogic)
+			Expect(err).To(BeNil())
+		})
+	})
 })

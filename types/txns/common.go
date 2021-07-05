@@ -32,6 +32,7 @@ const (
 	TxTypeUpDelPushKey                                        // For updating or deleting a push key
 	TxTypeMergeRequestProposalAction                          // For identifying merge request proposal
 	TxTypeSubmitWork                                          // For submitting proof-of-work nonce
+	TxTypeBurnGasForCoin                                      // For burning gas to latinum
 )
 
 // TxType implements some of BaseTx, it includes type information about a transaction
@@ -313,6 +314,8 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 		tx = NewBareTxUpDelPushKey()
 	case TxTypeSubmitWork:
 		tx = NewBareTxSubmitWork()
+	case TxTypeBurnGasForCoin:
+		tx = NewBareTxTxBurnGasForCoin()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

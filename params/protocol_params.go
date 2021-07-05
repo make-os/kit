@@ -77,6 +77,9 @@ var (
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+
+	// GasToCoinExRate is the exchange rate for gas to native coin conversion
+	GasToCoinExRate = 0.02
 )
 
 // Namespace config

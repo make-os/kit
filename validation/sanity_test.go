@@ -1530,4 +1530,28 @@ var _ = Describe("TxValidator", func() {
 			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 		})
 	})
+
+	Describe(".CheckTxBurnGasForCoin", func() {
+		var tx *txns.TxBurnGasForCoin
+		BeforeEach(func() {
+			tx = txns.NewBareTxTxBurnGasForCoin()
+		})
+
+		It("should return error if amount is unset or zero", func() {
+			err := validation.CheckTxBurnGasForCoin(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:amount is required"))
+			tx.Amount = "0"
+			err = validation.CheckTxBurnGasForCoin(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:amount is required"))
+		})
+
+		It("failed common tx checks", func() {
+			tx.Amount = "1"
+			err := validation.CheckTxBurnGasForCoin(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
+		})
+	})
 })

@@ -692,3 +692,26 @@ func CheckTxSubmitWorkConsistency(
 
 	return nil
 }
+
+// CheckTxBurnGasForCoinConsistency performs consistency checks on CheckTxBurnGasForCoinConsistency
+func CheckTxBurnGasForCoinConsistency(
+	tx *txns.TxBurnGasForCoin,
+	index int,
+	logic core.Logic) error {
+
+	account := logic.AccountKeeper().Get(tx.GetFrom())
+	if account.GetGasBalance().Decimal().LessThan(tx.Amount.Decimal()) {
+		return feI(index, "amount", "insufficient gas balance")
+	}
+
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err := logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
+		return err
+	}
+
+	return nil
+}
