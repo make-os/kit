@@ -76,6 +76,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxSubmitWork(o, index)
 	case *txns.TxBurnGasForCoin:
 		return CheckTxBurnGasForCoin(o, index)
+	case *txns.TxBurnForSwap:
+		return CheckTxBurnForSwap(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -121,6 +123,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxSubmitWorkConsistency(o, index, logic)
 	case *txns.TxBurnGasForCoin:
 		return CheckTxBurnGasForCoinConsistency(o, index, logic)
+	case *txns.TxBurnForSwap:
+		return CheckTxBurnForSwapConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

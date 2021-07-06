@@ -594,4 +594,52 @@ var _ = Describe("UserModule", func() {
 			Expect(res["hash"]).To(Equal(hash))
 		})
 	})
+
+	Describe(".BurnForSwap()", func() {
+		It("should panic when unable to decode params", func() {
+			params := map[string]interface{}{"amount": struct{}{}}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'amount' expected type 'util.String', got unconvertible type 'struct {}'", Field: "params"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.BurnForSwap(params)
+			})
+		})
+
+		It("should return tx map equivalent if payloadOnly=true", func() {
+			key := ""
+			payloadOnly := true
+			params := map[string]interface{}{"amount": "123"}
+			res := m.BurnForSwap(params, key, payloadOnly)
+			Expect(res).ToNot(HaveKey("hash"))
+			Expect(res["type"]).To(Equal(float64(txns.TxTypeBurnForSwap)))
+			Expect(res).To(And(
+				HaveKey("timestamp"),
+				HaveKey("nonce"),
+				HaveKey("amount"),
+				HaveKey("gas"),
+				HaveKey("recipient"),
+				HaveKey("type"),
+				HaveKey("senderPubKey"),
+				HaveKey("fee"),
+				HaveKey("sig"),
+			))
+		})
+
+		It("should panic if unable to add tx to mempool", func() {
+			params := map[string]interface{}{"amount": "123"}
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			err := &errors.ReqError{Code: "err_mempool", HttpCode: 400, Msg: "error", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.BurnForSwap(params, "", false)
+			})
+		})
+
+		It("should return tx hash on success", func() {
+			params := map[string]interface{}{"amount": "123"}
+			hash := util.StrToHexBytes("tx_hash")
+			mockMempoolReactor.EXPECT().AddTx(gomock.Any()).Return(hash, nil)
+			res := m.BurnForSwap(params, "", false)
+			Expect(res).To(HaveKey("hash"))
+			Expect(res["hash"]).To(Equal(hash))
+		})
+	})
 })

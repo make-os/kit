@@ -855,3 +855,29 @@ func CheckTxBurnGasForCoin(tx *txns.TxBurnGasForCoin, index int) error {
 
 	return nil
 }
+
+// CheckTxBurnForSwap performs sanity checks on TxBurnGasForCoin
+func CheckTxBurnForSwap(tx *txns.TxBurnForSwap, index int) error {
+
+	if err := checkType(tx.TxType, txns.TxTypeBurnForSwap, index); err != nil {
+		return err
+	}
+
+	if tx.Amount.IsZero() {
+		return feI(index, "amount", "amount is required")
+	}
+
+	if tx.Recipient == "" {
+		return feI(index, "amount", "recipient is required")
+	}
+
+	if len(tx.Recipient) > 64 {
+		return feI(index, "amount", "recipient length cannot be more than 64")
+	}
+
+	if err := CheckCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}

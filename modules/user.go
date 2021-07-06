@@ -68,6 +68,7 @@ func (m *UserModule) methods() []*types.VMMember {
 		{Name: "setCommission", Value: m.SetCommission, Description: "Set the percentage of reward to share with a delegator"},
 		{Name: "send", Value: m.SendCoin, Description: "Send coins to another user account or a repository"},
 		{Name: "gasToCoin", Value: m.BurnGasForCoin, Description: "Burns gas to native coin (Testnet Only)"},
+		{Name: "burnForSwap", Value: m.BurnForSwap, Description: "Burns coin or gas balance for swap in an external system (Testnet Only)"},
 	}
 }
 
@@ -503,11 +504,52 @@ func (m *UserModule) GetGasBalance(address string, height ...uint64) string {
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-// TODO: Remove in production build
+// TODO: Remove in mainnet build
 func (m *UserModule) BurnGasForCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = txns.NewBareTxTxBurnGasForCoin()
+	var tx = txns.NewBareTxBurnGasForCoin()
+	if err = tx.FromMap(params); err != nil {
+		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
+	}
+
+	if printPayload, _ := finalizeTx(tx, m.logic, nil, options...); printPayload {
+		return tx.ToMap()
+	}
+
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		panic(errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error()))
+	}
+
+	return map[string]interface{}{
+		"hash": hash,
+	}
+}
+
+// BurnForSwap creates a tx to burn gas and coin balances to be transferred to
+// a recipient address on an external system by an external actor (like a bridge).
+//
+// ARGS:
+// params <map>
+// params.amount <string>:				The amount of gas to burn
+// params.gas <boolean>:				Indicate whether to burn gas balance or coin balance
+// params.recipient <string>:			The recipient external address
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: The transaction hash
+// TODO: Remove in mainnet build
+func (m *UserModule) BurnForSwap(params map[string]interface{}, options ...interface{}) util.Map {
+	var err error
+
+	var tx = txns.NewBareTxBurnForSwap()
 	if err = tx.FromMap(params); err != nil {
 		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}

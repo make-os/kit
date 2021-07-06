@@ -33,6 +33,7 @@ const (
 	TxTypeMergeRequestProposalAction                          // For identifying merge request proposal
 	TxTypeSubmitWork                                          // For submitting proof-of-work nonce
 	TxTypeBurnGasForCoin                                      // For burning gas to latinum
+	TxTypeBurnForSwap                                         // For burning account balances for external swap
 )
 
 // TxType implements some of BaseTx, it includes type information about a transaction
@@ -315,7 +316,9 @@ func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 	case TxTypeSubmitWork:
 		tx = NewBareTxSubmitWork()
 	case TxTypeBurnGasForCoin:
-		tx = NewBareTxTxBurnGasForCoin()
+		tx = NewBareTxBurnGasForCoin()
+	case TxTypeBurnForSwap:
+		tx = NewBareTxBurnForSwap()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

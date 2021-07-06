@@ -1534,7 +1534,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxBurnGasForCoin", func() {
 		var tx *txns.TxBurnGasForCoin
 		BeforeEach(func() {
-			tx = txns.NewBareTxTxBurnGasForCoin()
+			tx = txns.NewBareTxBurnGasForCoin()
 		})
 
 		It("should return error if amount is unset or zero", func() {
@@ -1550,6 +1550,46 @@ var _ = Describe("TxValidator", func() {
 		It("failed common tx checks", func() {
 			tx.Amount = "1"
 			err := validation.CheckTxBurnGasForCoin(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
+		})
+	})
+
+	Describe(".CheckTxBurnForSwap", func() {
+		var tx *txns.TxBurnForSwap
+		BeforeEach(func() {
+			tx = txns.NewBareTxBurnForSwap()
+		})
+
+		It("should return error if amount is unset or zero", func() {
+			err := validation.CheckTxBurnForSwap(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:amount is required"))
+			tx.Amount = "0"
+			err = validation.CheckTxBurnForSwap(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:amount is required"))
+		})
+
+		It("should return error if recipient was not provided", func() {
+			tx.Amount = "1"
+			err := validation.CheckTxBurnForSwap(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:recipient is required"))
+		})
+
+		It("should return error if recipient was not provided", func() {
+			tx.Amount = "1"
+			tx.Recipient = util.RandString(65)
+			err := validation.CheckTxBurnForSwap(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:amount, msg:recipient length cannot be more than 64"))
+		})
+
+		It("failed common tx checks", func() {
+			tx.Amount = "1"
+			tx.Recipient = "an_address"
+			err := validation.CheckTxBurnForSwap(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 		})

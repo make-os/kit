@@ -1665,7 +1665,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxBurnGasForCoinConsistency", func() {
 		var tx *txns.TxBurnGasForCoin
 		BeforeEach(func() {
-			tx = txns.NewBareTxTxBurnGasForCoin()
+			tx = txns.NewBareTxBurnGasForCoin()
 			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 		})
 
@@ -1698,6 +1698,66 @@ var _ = Describe("TxValidator", func() {
 			mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce,
 				false, uint64(0)).Return(nil)
 			err = validation.CheckTxBurnGasForCoinConsistency(tx, -1, mockLogic)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".CheckTxBurnForSwapConsistency", func() {
+		var tx *txns.TxBurnForSwap
+		BeforeEach(func() {
+			tx = txns.NewBareTxBurnForSwap()
+			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+		})
+
+		When("tx.Gas = true", func() {
+			It("should return error when sender's gas balance is less than tx amount", func() {
+				tx.Amount = "10000"
+				tx.Gas = true
+				acct := state.NewBareAccount()
+				mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+				err = validation.CheckTxBurnForSwapConsistency(tx, -1, mockLogic)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:amount, msg:insufficient gas balance"))
+			})
+		})
+
+		When("tx.Gas = false", func() {
+			It("should return error when sender's coin balance is less than tx amount", func() {
+				tx.Amount = "10000"
+				tx.Gas = false
+				tx.Fee = "1"
+				acct := state.NewBareAccount()
+				acct.SetBalance("10000") // minus fee
+				mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&state.BlockInfo{Height: 1}, nil)
+				err = validation.CheckTxBurnForSwapConsistency(tx, -1, mockLogic)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:amount, msg:insufficient coin balance"))
+			})
+		})
+
+		It("should return error when dry send returns error", func() {
+			tx.Amount = "10000"
+			tx.Gas = true
+			acct := state.NewBareAccount()
+			acct.SetGasBalance(tx.Amount.String())
+			mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+			mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce,
+				false, uint64(0)).Return(fmt.Errorf("error"))
+			err = validation.CheckTxBurnForSwapConsistency(tx, -1, mockLogic)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return nil on success", func() {
+			tx.Amount = "10000"
+			tx.Gas = true
+			acct := state.NewBareAccount()
+			acct.SetGasBalance(tx.Amount.String())
+			mockAcctKeeper.EXPECT().Get(tx.GetFrom()).Return(acct)
+			mockLogic.EXPECT().DrySend(key.PubKey(), util.String("0"), tx.Fee, tx.Nonce,
+				false, uint64(0)).Return(nil)
+			err = validation.CheckTxBurnForSwapConsistency(tx, -1, mockLogic)
 			Expect(err).To(BeNil())
 		})
 	})

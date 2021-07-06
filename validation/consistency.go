@@ -693,7 +693,7 @@ func CheckTxSubmitWorkConsistency(
 	return nil
 }
 
-// CheckTxBurnGasForCoinConsistency performs consistency checks on CheckTxBurnGasForCoinConsistency
+// CheckTxBurnGasForCoinConsistency performs consistency checks on TxBurnGasForCoin
 func CheckTxBurnGasForCoinConsistency(
 	tx *txns.TxBurnGasForCoin,
 	index int,
@@ -702,6 +702,42 @@ func CheckTxBurnGasForCoinConsistency(
 	account := logic.AccountKeeper().Get(tx.GetFrom())
 	if account.GetGasBalance().Decimal().LessThan(tx.Amount.Decimal()) {
 		return feI(index, "amount", "insufficient gas balance")
+	}
+
+	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err := logic.DrySend(pubKey, "0",
+		tx.Fee,
+		tx.GetNonce(),
+		tx.HasMetaKey(types.TxMetaKeyAllowNonceGap),
+		0); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxBurnForSwapConsistency performs consistency checks on TxBurnForSwap
+func CheckTxBurnForSwapConsistency(
+	tx *txns.TxBurnForSwap,
+	index int,
+	logic core.Logic) error {
+
+	account := logic.AccountKeeper().Get(tx.GetFrom())
+
+	if tx.Gas && account.GetGasBalance().Decimal().LessThan(tx.Amount.Decimal()) {
+		return feI(index, "amount", "insufficient gas balance")
+	}
+
+	if !tx.Gas {
+		bi, err := logic.SysKeeper().GetLastBlockInfo()
+		if err != nil {
+			return errors.Wrap(err, "failed to get last block info")
+		}
+		// account balance must cover amount + fee
+		if account.GetAvailableBalance(bi.Height.UInt64()).Decimal().
+			LessThan(tx.Amount.Decimal().Add(tx.Fee.Decimal())) {
+			return feI(index, "amount", "insufficient coin balance")
+		}
 	}
 
 	pubKey, _ := ed25519.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())

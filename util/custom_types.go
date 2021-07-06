@@ -332,6 +332,11 @@ func (i *Int64) Int64() int64 {
 	return int64(*i)
 }
 
+// UInt64 casts and returns uint64
+func (i *Int64) UInt64() uint64 {
+	return uint64(*i)
+}
+
 // Set sets the value
 func (i *Int64) Set(v int64) {
 	*i = Int64(v)

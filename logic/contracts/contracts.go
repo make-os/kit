@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"github.com/make-os/kit/logic/contracts/burnforswap"
 	"github.com/make-os/kit/logic/contracts/createrepo"
 	"github.com/make-os/kit/logic/contracts/depositproposalfee"
 	"github.com/make-os/kit/logic/contracts/gasmaker"
@@ -40,6 +41,7 @@ func init() {
 		depositproposalfee.NewContract(),
 		gasmaker.NewContract(),
 		gastocoin.NewContract(),
+		burnforswap.NewContract(),
 		upsertowner.NewContract(&SystemContracts),
 		updaterepo.NewContract(&SystemContracts),
 		registerrepopushkeys.NewContract(&SystemContracts),
