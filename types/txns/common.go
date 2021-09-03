@@ -227,7 +227,7 @@ func (tx *TxProposalCommon) GetProposalValue() util.String {
 	return tx.Value
 }
 
-// GetID returns the target repository name
+// GetProposalRepoName returns the target repository name
 func (tx *TxProposalCommon) GetProposalRepoName() string {
 	return tx.RepoName
 }
