@@ -16,7 +16,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"
-	"github.com/make-os/kit/remote/push"
+	types2 "github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ type RequestContext struct {
 	R           *http.Request
 	TxDetails   []*types.TxDetail
 	PolEnforcer policy.EnforcerFunc
-	PushHandler push.Handler
+	PushHandler types2.Handler
 	Repo        types.LocalRepo
 	RepoDir     string
 	Operation   string
@@ -297,6 +297,14 @@ func serveService(s *RequestContext) error {
 		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
 		return errors.Wrap(err, "HandleUpdate error")
 	}
+
+	// Wait for the push tx to be added to the mempool.
+	hashOrErr := <-s.PushHandler.WaitForPushTx()
+	if err, isErr := hashOrErr.(error); isErr {
+		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
+		return errors.Wrap(err, "WaitForPushTx error")
+	}
+	s.pktEnc.Encode(plumbing.SidebandProgressln(fmt.Sprintf("hash: %s ", hashOrErr)))
 
 	// Write output from git to the http response
 	scn := pktline.NewScanner(stdout)

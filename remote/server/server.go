@@ -84,7 +84,7 @@ type Server struct {
 	blockGetter   core.BlockGetter      // Provides access to blocks
 	refSyncer     rstypes.RefSync       // Responsible for syncing pushed references in a push transaction
 
-	// Cache or Indexes
+	// Indexes
 	noteSenders        *cache.Cache // Store senders of push notes
 	endorsementSenders *cache.Cache // Stores senders of Endorsement messages
 	endorsements       *cache.Cache // Stores push endorsements
@@ -519,13 +519,13 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 type PushHandlerFunc func(
 	targetRepo remotetypes.LocalRepo,
 	txDetails []*remotetypes.TxDetail,
-	enforcer policy.EnforcerFunc) push.Handler
+	enforcer policy.EnforcerFunc) pushtypes.Handler
 
 // createPushHandler creates an instance of BasicHandler
 func (sv *Server) createPushHandler(
 	targetRepo remotetypes.LocalRepo,
 	txDetails []*remotetypes.TxDetail,
-	enforcer policy.EnforcerFunc) push.Handler {
+	enforcer policy.EnforcerFunc) pushtypes.Handler {
 	return push.NewHandler(targetRepo, txDetails, enforcer, sv)
 }
 
@@ -559,8 +559,4 @@ func (sv *Server) Stop() error {
 	sv.Shutdown(context.Background())
 	sv.log.Info("Shutdown")
 	return nil
-}
-
-func makeRepoPubSubAction(name string) string {
-	return "repo:push:" + name
 }

@@ -113,7 +113,7 @@ var (
 	// NotesReceivedCacheSize is the max size of the cache that stores IDs of notes recently received
 	NotesReceivedCacheSize = 10000
 
-	// PushEndQuorumSize is the minimum number of PushEnds a push note requires for approval
+	// PushEndorseQuorumSize is the minimum number of PushEnds a push note requires for approval
 	PushEndorseQuorumSize = 2
 
 	// RepoProposalTTL is the number of blocks a repo proposal can remain active

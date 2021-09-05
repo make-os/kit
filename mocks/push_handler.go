@@ -37,6 +37,20 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 	return m.recorder
 }
 
+// WaitForPushTx mocks base method
+func (m *MockHandler) WaitForPushTx() chan interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForPushTx")
+	ret0, _ := ret[0].(chan interface{})
+	return ret0
+}
+
+// WaitForPushTx indicates an expected call of WaitForPushTx
+func (mr *MockHandlerMockRecorder) WaitForPushTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForPushTx", reflect.TypeOf((*MockHandler)(nil).WaitForPushTx))
+}
+
 // HandleStream mocks base method
 func (m *MockHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error {
 	m.ctrl.T.Helper()

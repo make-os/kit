@@ -15,7 +15,6 @@ import (
 	"github.com/make-os/kit/params"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"
-	"github.com/make-os/kit/remote/push"
 	"github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/remote/refsync"
 	"github.com/make-os/kit/remote/repo"
@@ -748,7 +747,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should return error if unable to handle incoming stream", func() {
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) push.Handler {
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 					return mockHandler
@@ -764,7 +763,7 @@ var _ = Describe("Reactor", func() {
 				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
+					enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 					mockHandler.EXPECT().HandleUpdate(note).Return(fmt.Errorf("error"))
@@ -780,7 +779,7 @@ var _ = Describe("Reactor", func() {
 				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
-					enforcer policy.EnforcerFunc) push.Handler {
+					enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 					mockHandler.EXPECT().HandleUpdate(note).Return(nil)

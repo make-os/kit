@@ -55,13 +55,13 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
-	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
-	*types.Meta    `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce          uint64            `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
-	Fee            util.String       `json:"fee" msgpack:"fee" mapstructure:"fee"`
-	Sig            util.Bytes        `json:"sig" msgpack:"sig" mapstructure:"sig"`
-	Timestamp      int64             `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
-	SenderPubKey   ed25519.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	util.CodecUtil   `json:"-" msgpack:"-" mapstructure:"-"`
+	*types.BasicMeta `json:"-" msgpack:"-" mapstructure:"-"`
+	Nonce            uint64            `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee              util.String       `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig              util.Bytes        `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp        int64             `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey     ed25519.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
 }
 
 func (tx *TxCommon) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -85,7 +85,7 @@ func (tx *TxCommon) DecodeMsgpack(dec *msgpack2.Decoder) error {
 // NewBareTxCommon returns an instance of TxCommon with zero values
 func NewBareTxCommon() *TxCommon {
 	return &TxCommon{
-		Meta:         types.NewMeta(),
+		BasicMeta:    types.NewMeta(),
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,

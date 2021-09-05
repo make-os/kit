@@ -10,7 +10,7 @@ import (
 	"github.com/olebedev/emitter"
 )
 
-// subscribe subscribes to various incoming events
+// subscribe to various incoming events
 func (sv *Server) subscribe() {
 
 	// On EvtMempoolTxRemoved:

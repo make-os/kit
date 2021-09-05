@@ -41,12 +41,13 @@ var MaxRetry = 3
 type Session struct {
 	a        dht3.Announcer
 	wg       *sync.WaitGroup
+	lck      *sync.Mutex
 	errCount int
 }
 
 // NewSession creates an instance of Session
 func NewSession(a dht3.Announcer) *Session {
-	return &Session{a: a, wg: &sync.WaitGroup{}}
+	return &Session{a: a, wg: &sync.WaitGroup{}, lck: &sync.Mutex{}}
 }
 
 // Announce an object
@@ -54,7 +55,9 @@ func (s *Session) Announce(objType int, repo string, key []byte) bool {
 	s.wg.Add(1)
 	announced := s.a.Announce(objType, repo, key, func(err error) {
 		if err != nil {
+			s.lck.Lock()
 			s.errCount++
+			s.lck.Unlock()
 		}
 		s.wg.Done()
 	})
@@ -67,7 +70,10 @@ func (s *Session) Announce(objType int, repo string, key []byte) bool {
 // OnDone calls the callback with the number of failed announcements in the session.
 func (s *Session) OnDone(cb func(errCount int)) {
 	s.wg.Wait()
-	cb(s.errCount)
+	s.lck.Lock()
+	errCount := s.errCount
+	s.lck.Unlock()
+	cb(errCount)
 }
 
 // Task represents a key that needs to be announced.

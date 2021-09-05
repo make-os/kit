@@ -208,6 +208,70 @@ func (m *MockPushNote) EXPECT() *MockPushNoteMockRecorder {
 	return m.recorder
 }
 
+// HasMetaKey mocks base method
+func (m *MockPushNote) HasMetaKey(key string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasMetaKey", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasMetaKey indicates an expected call of HasMetaKey
+func (mr *MockPushNoteMockRecorder) HasMetaKey(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMetaKey", reflect.TypeOf((*MockPushNote)(nil).HasMetaKey), key)
+}
+
+// GetMeta mocks base method
+func (m *MockPushNote) GetMeta() map[string]interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMeta")
+	ret0, _ := ret[0].(map[string]interface{})
+	return ret0
+}
+
+// GetMeta indicates an expected call of GetMeta
+func (mr *MockPushNoteMockRecorder) GetMeta() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeta", reflect.TypeOf((*MockPushNote)(nil).GetMeta))
+}
+
+// ConcatMeta mocks base method
+func (m *MockPushNote) Join(d map[string]interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Join", d)
+}
+
+// ConcatMeta indicates an expected call of ConcatMeta
+func (mr *MockPushNoteMockRecorder) ConcatMeta(d interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Join", reflect.TypeOf((*MockPushNote)(nil).Join), d)
+}
+
+// LoadMeta mocks base method
+func (m *MockPushNote) LoadMeta(d map[string]interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "LoadMeta", d)
+}
+
+// LoadMeta indicates an expected call of LoadMeta
+func (mr *MockPushNoteMockRecorder) LoadMeta(d interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadMeta", reflect.TypeOf((*MockPushNote)(nil).LoadMeta), d)
+}
+
+// SetMeta mocks base method
+func (m *MockPushNote) SetMeta(key string, val interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetMeta", key, val)
+}
+
+// SetMeta indicates an expected call of SetMeta
+func (mr *MockPushNoteMockRecorder) SetMeta(key, val interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMeta", reflect.TypeOf((*MockPushNote)(nil).SetMeta), key, val)
+}
+
 // GetTargetRepo mocks base method
 func (m *MockPushNote) GetTargetRepo() types0.LocalRepo {
 	m.ctrl.T.Helper()
@@ -595,32 +659,4 @@ func (m *MockPushNote) IsFromRemotePeer() bool {
 func (mr *MockPushNoteMockRecorder) IsFromRemotePeer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromRemotePeer", reflect.TypeOf((*MockPushNote)(nil).IsFromRemotePeer))
-}
-
-// GetMeta mocks base method
-func (m *MockPushNote) GetMeta() map[string]interface{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMeta")
-	ret0, _ := ret[0].(map[string]interface{})
-	return ret0
-}
-
-// GetMeta indicates an expected call of GetMeta
-func (mr *MockPushNoteMockRecorder) GetMeta() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeta", reflect.TypeOf((*MockPushNote)(nil).GetMeta))
-}
-
-// HasMetaKey mocks base method
-func (m *MockPushNote) HasMetaKey(key string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasMetaKey", key)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasMetaKey indicates an expected call of HasMetaKey
-func (mr *MockPushNoteMockRecorder) HasMetaKey(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMetaKey", reflect.TypeOf((*MockPushNote)(nil).HasMetaKey), key)
 }
