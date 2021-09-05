@@ -11,75 +11,23 @@ import (
 	plumb "github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	memtypes "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
+	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"
 	"github.com/make-os/kit/remote/push/types"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
-	types2 "github.com/make-os/kit/types"
+	coretypes "github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	errors2 "github.com/make-os/kit/util/errors"
-
-	"github.com/make-os/kit/pkgs/logger"
 	"github.com/pkg/errors"
 )
-
-// Handler describes an interface for handling incoming push updates.
-type Handler interface {
-
-	// HandleStream starts the process of handling a pushed packfile.
-	//
-	// It reads the pushed updates from the packfile, extracts useful
-	// information and writes the update to gitReceive which is the
-	// git-receive-pack process.
-	//
-	// Access the git-receive-pack process using gitReceiveCmd.
-	//
-	// pktEnc provides access to the git output encoder.
-	HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error
-
-	// EnsureReferencesHaveTxDetail checks that each pushed reference
-	// have a transaction detail that provide more information about
-	// the transaction.
-	EnsureReferencesHaveTxDetail() error
-
-	// DoAuth performs authorization checks on the specified target reference.
-	// If targetRef is unset, all references are checked. If ignorePostRefs is
-	// true, post references like issue and merge references are not checked.
-	DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error
-
-	// HandleAuthorization performs authorization checks on all pushed references.
-	HandleAuthorization(ur *packp.ReferenceUpdateRequest) error
-
-	// HandleReferences process pushed references.
-	HandleReferences() error
-
-	// HandleRepoSize performs garbage collection and repo size validation.
-	//
-	// It will return error if repo size exceeds the allowed maximum.
-	//
-	// It will also reload the repository handle since GC makes
-	// go-git internal state stale.
-	HandleGCAndSizeCheck() error
-
-	// HandleUpdate creates a push note to represent the push operation and
-	// adds it to the push pool and then have it broadcast to peers.
-	HandleUpdate(targetNote types.PushNote) error
-
-	// HandleReference performs validation and update reversion for a single pushed reference.
-	// // When revertOnly is true, only reversion operation is performed.
-	HandleReference(ref string) []error
-
-	// HandleReversion reverts the pushed references back to their pre-push state.
-	HandleReversion() []error
-
-	// HandlePushNote implements Handler by handing incoming push note
-	HandlePushNote(note types.PushNote) (err error)
-}
 
 // BasicHandler implements Handler. It provides handles all phases of a push operation.
 type BasicHandler struct {
@@ -124,6 +72,39 @@ func NewHandler(
 	h.ReferenceHandler = h.HandleReference
 	h.AuthorizationHandler = h.HandleAuthorization
 	return h
+}
+
+// WaitForPushTx waits for the final push transaction to be created and added to the mempool.
+// It will return error if the tx was rejected.
+// An error is returned if the tx was not successfully added to the pool after 15 minutes.
+// On success, it returns the tx hash
+func (h *BasicHandler) WaitForPushTx() chan interface{} {
+	ch := make(chan interface{}, 1)
+	go func() {
+		bus := h.Server.Cfg().G().Bus
+		for len(ch) == 0 {
+			select {
+			case evt := <-bus.Once(memtypes.EvtMempoolTxAdded):
+				tx := evt.Args[1].(coretypes.BaseTx)
+				if tx.Is(txns.TxTypePush) && tx.(*txns.TxPush).GetNoteID() == h.NoteID {
+					ch <- tx.GetHash().String()
+					return
+				}
+
+			case evt := <-bus.Once(memtypes.EvtMempoolTxRejected):
+				tx := evt.Args[1].(coretypes.BaseTx)
+				if tx.Is(txns.TxTypePush) && tx.(*txns.TxPush).GetNoteID() == h.NoteID {
+					ch <- evt.Args[0].(error)
+					return
+				}
+
+			case <-time.After(15 * time.Minute):
+				ch <- fmt.Errorf("timed out while waiting for push tx to be added to mempool")
+				return
+			}
+		}
+	}()
+	return ch
 }
 
 // HandleStream implements Handler. It reads the packfile and pipes it to git.
@@ -377,8 +358,6 @@ func (h *BasicHandler) HandleUpdate(targetNote types.PushNote) (err error) {
 		return err
 	}
 
-	h.pktEnc.Encode(plumbing.SidebandProgressln(fmt.Sprintf("hash: %s ", h.NoteID)))
-
 	return nil
 }
 
@@ -412,7 +391,7 @@ func (h *BasicHandler) HandlePushNote(note types.PushNote) (err error) {
 func (h *BasicHandler) createPushNote() (*types.Note, error) {
 
 	var note = &types.Note{
-		Meta:            types2.NewMeta(),
+		BasicMeta:       coretypes.NewMeta(),
 		TargetRepo:      h.Repo,
 		PushKeyID:       crypto.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
 		RepoName:        h.TxDetails.GetRepoName(),

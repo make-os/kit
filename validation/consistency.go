@@ -15,7 +15,6 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
-	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
@@ -319,8 +318,8 @@ func CheckTxPushConsistency(tx *txns.TxPush, _ int, logic core.Logic) error {
 		return errors.Wrap(err, "could not verify aggregated endorsers' signature")
 	}
 
-	// Copy tx meta into the note's meta so it is accessible to CheckPushNoteConsistency
-	util.CopyMap(tx.GetMeta(), tx.Note.GetMeta())
+	// Copy tx meta into the note's meta for use in CheckPushNoteConsistency
+	tx.Note.Join(tx.GetMeta())
 
 	// Check push note
 	if err := validation.CheckPushNoteConsistency(tx.Note, logic); err != nil {

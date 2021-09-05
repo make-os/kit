@@ -14,6 +14,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
+	memtypes "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
@@ -28,6 +29,7 @@ import (
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
+	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	mocks2 "github.com/make-os/kit/util/mocks"
 	. "github.com/onsi/ginkgo"
@@ -934,6 +936,42 @@ var _ = Describe("BasicHandler", func() {
 			time.Sleep(1 * time.Millisecond)
 
 			Expect(cbCalled).To(BeTrue())
+		})
+	})
+
+	Describe(".WaitForPushTx", func() {
+		It("should return tx hash when tx was added to the mempool", func(done Done) {
+			mockRemoteSrv.EXPECT().Cfg().Return(cfg)
+
+			tx := txns.NewBareTxPush()
+			handler.NoteID = tx.Note.ID().String()
+
+			time.AfterFunc(10*time.Millisecond, func() {
+				cfg.G().Bus.Emit(memtypes.EvtMempoolTxAdded, nil, tx)
+			})
+
+			go func() {
+				defer GinkgoRecover()
+				Expect(<-handler.WaitForPushTx()).Should(Equal(tx.GetHash().String()))
+				close(done)
+			}()
+		})
+
+		It("should return return error when tx was rejected from mempool", func(done Done) {
+			mockRemoteSrv.EXPECT().Cfg().Return(cfg)
+
+			tx := txns.NewBareTxPush()
+			handler.NoteID = tx.Note.ID().String()
+
+			time.AfterFunc(10*time.Millisecond, func() {
+				cfg.G().Bus.Emit(memtypes.EvtMempoolTxRejected, fmt.Errorf("error"), tx)
+			})
+
+			go func() {
+				defer GinkgoRecover()
+				Expect(<-handler.WaitForPushTx()).Should(Equal(fmt.Errorf("error")))
+				close(done)
+			}()
 		})
 	})
 })

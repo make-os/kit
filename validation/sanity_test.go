@@ -1468,8 +1468,17 @@ var _ = Describe("TxValidator", func() {
 			Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 		})
 
+		It("has too low fee", func() {
+			tx.Nonce = 1
+			tx.Fee = "0.0001"
+			err := validation.CheckCommon(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(MatchRegexp("field:fee, msg:fee cannot be lower than the base price of"))
+		})
+
 		It("has no timestamp", func() {
 			tx.Nonce = 1
+			tx.Fee = "1"
 			err := validation.CheckCommon(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
@@ -1478,6 +1487,7 @@ var _ = Describe("TxValidator", func() {
 		It("has no public key", func() {
 			tx.Nonce = 1
 			tx.Timestamp = time.Now().Unix()
+			tx.Fee = "1"
 			err := validation.CheckCommon(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
@@ -1487,6 +1497,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Nonce = 1
 			tx.Timestamp = time.Now().Unix()
 			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+			tx.Fee = "1"
 			err := validation.CheckCommon(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
@@ -1496,6 +1507,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Nonce = 1
 			tx.Timestamp = time.Now().Unix()
 			tx.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
+			tx.Fee = "1"
 			tx.Sig = []byte("invalid")
 			err := validation.CheckCommon(tx, -1)
 			Expect(err).ToNot(BeNil())

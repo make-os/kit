@@ -330,13 +330,13 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		a.log.Info("Indexed new validators for the new epoch", "Height", a.proposedBlock.Height)
 	}
 
-	// Index the un-indexed txs
+	// Emit `EvtTxPushProcessed` for each of the processed transactions
 	a.broadcastTx()
 
 	// Index proposal votes
 	a.indexProposalVotes()
 
-	// Set the expire height for each host stake unbond request
+	// Set the expiry height for each host stake unbond request
 	a.expireHostTickets()
 
 	// Create new repositories

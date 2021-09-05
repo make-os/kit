@@ -128,16 +128,16 @@ type TxHandlerFunc func(*txns.TxPush, string, int, int64, func())
 
 // OnNewTx receives push transactions and adds non-delete
 // pushed references to the task queue.
-// targetRef is the specific pushed reference that will be queued. If unset, all references are queued.
+// targetRef is the pushed reference that will be queued. If unset, all references are queued.
 // txIndex is the index of the transaction it its containing block.
 // height is the block height that contains the transaction.
 func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, height int64, doneCb func()) {
 
 	// Ignore already queued transaction
-	if rs.queued.Has(tx.GetID()) {
+	if rs.queued.Has(tx.GetNoteID()) {
 		return
 	}
-	rs.queued.Add(tx.GetID(), struct{}{})
+	rs.queued.Add(tx.GetNoteID(), struct{}{})
 
 	// Check if the repository is allowed to be synchronized.
 	if rs.CanSync(tx.Note.GetNamespace(), tx.Note.GetRepoName()) != nil {
@@ -158,7 +158,7 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, heigh
 		}
 
 		go rs.addTask(&reftypes.RefTask{
-			ID:           tx.GetID(),
+			ID:           tx.GetNoteID(),
 			RepoName:     tx.Note.GetRepoName(),
 			NoteCreator:  tx.Note.GetCreatorPubKey(),
 			Endorsements: tx.Endorsements,
@@ -167,7 +167,7 @@ func (rs *RefSync) OnNewTx(tx *txns.TxPush, targetRef string, txIndex int, heigh
 			TxIndex:      txIndex,
 			Timestamp:    tx.GetTimestamp(),
 			Done: func() {
-				rs.queued.Remove(tx.GetID())
+				rs.queued.Remove(tx.GetNoteID())
 				if doneCb != nil {
 					doneCb()
 				}

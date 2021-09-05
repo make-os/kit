@@ -4,7 +4,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/remote/types"
-	types2 "github.com/make-os/kit/types"
+	coretypes "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
@@ -13,10 +13,10 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-// PushNote implements types.PushNote
+// Note PushNote implements types.PushNote
 type Note struct {
-	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
-	*types2.Meta   `json:"-" msgpack:"-" mapstructure:"-"`
+	util.CodecUtil       `json:"-" msgpack:"-" mapstructure:"-"`
+	*coretypes.BasicMeta `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
 	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
@@ -269,7 +269,7 @@ type Endorsement interface {
 	BytesAndID() ([]byte, util.Bytes32)
 }
 
-// Endorsement is used to endorse a push note
+// PushEndorsement Endorsement is used to endorse a push note
 type PushEndorsement struct {
 	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
 
@@ -361,72 +361,6 @@ func (e *PushEndorsement) Clone() *PushEndorsement {
 	return cp
 }
 
-// PushPool represents a pool for ordering git push transactions
-type PushPool interface {
-
-	// Register a push transaction to the pool.
-	//
-	// Check all the references to ensure there are no identical (same repo,
-	// reference and nonce) references with same nonce in the pool. A valid
-	// reference is one which has no identical reference with a higher fee rate in
-	// the pool. If an identical reference exist in the pool with an inferior fee
-	// rate, the existing tx holding the reference is eligible for replacable by tx
-	// holding the reference with a superior fee rate. In cases where more than one
-	// reference of tx is superior to multiple references in multiple transactions,
-	// replacement will only happen if the fee rate of tx is higher than the
-	// combined fee rate of the replaceable transactions.
-	//
-	// noValidation disables tx validation
-	Add(note PushNote) error
-
-	// Full returns true if the pool is full
-	Full() bool
-
-	// Get finds and returns a push note
-	Get(noteID string) *Note
-
-	// Len returns the number of items in the pool
-	Len() int
-
-	// Remove removes a push note
-	Remove(pushNote PushNote)
-
-	// HasSeen checks whether a note with the given ID was recently added
-	HasSeen(noteID string) bool
-}
-
-type PushNote interface {
-	GetTargetRepo() types.LocalRepo
-	SetTargetRepo(repo types.LocalRepo)
-	GetPusherKeyID() []byte
-	GetPusherAddress() identifier.Address
-	GetPusherAccountNonce() uint64
-	GetPusherKeyIDString() string
-	EncodeMsgpack(enc *msgpack.Encoder) error
-	DecodeMsgpack(dec *msgpack.Decoder) error
-	Bytes(recompute ...bool) []byte
-	BytesNoCache() []byte
-	BytesNoSig() []byte
-	GetEcoSize() uint64
-	GetCreatorPubKey() util.Bytes32
-	GetNodeSignature() []byte
-	GetRepoName() string
-	GetNamespace() string
-	GetTimestamp() int64
-	GetPushedReferences() PushedReferences
-	Len() uint64
-	ID(recompute ...bool) util.Bytes32
-	BytesAndID(recompute ...bool) ([]byte, util.Bytes32)
-	TxSize() uint
-	SizeForFeeCal() uint64
-	GetSize() uint64
-	GetFee() util.String
-	GetValue() util.String
-	IsFromRemotePeer() bool
-	GetMeta() map[string]interface{}
-	HasMetaKey(key string) bool
-}
-
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
 	util.CodecUtil  `json:"-" msgpack:"-" mapstructure:"-"`
@@ -434,7 +368,7 @@ type PushedReference struct {
 	OldHash         string               `json:"oldHash,omitempty" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
 	NewHash         string               `json:"newHash,omitempty" msgpack:"newHash,omitempty"` // The hash of the reference after the push
 	Nonce           uint64               `json:"nonce,omitempty" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
-	MergeProposalID string               `json:"mergeID,omitempty" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	MergeProposalID string               `json:"mergeID,omitempty" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is compliant with.
 	Fee             util.String          `json:"fee,omitempty" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
 	Value           util.String          `json:"value,omitempty" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
 	PushSig         util.Bytes           `json:"pushSig,omitempty" msgpack:"pushSig,omitempty"` // The signature of from the push request token

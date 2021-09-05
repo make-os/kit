@@ -146,7 +146,7 @@ var _ = Describe("RefSync", func() {
 				"repo2": {},
 			})
 			tx := &txns.TxPush{Note: &types.Note{RepoName: "repo1"}}
-			rs.queued.Add(tx.GetID(), struct{}{})
+			rs.queued.Add(tx.GetNoteID(), struct{}{})
 			rs.OnNewTx(tx, "", 0, 1, nil)
 			Expect(len(rs.queues)).To(Equal(0))
 		})

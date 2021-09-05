@@ -114,7 +114,7 @@ func (sv *Server) maybeScheduleReSync(note pushtypes.PushNote, ref string, fromB
 func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// Attempt to decode message to a PushNote
-	var note = pushtypes.Note{FromRemotePeer: true}
+	var note = pushtypes.Note{BasicMeta: types.NewMeta(), FromRemotePeer: true}
 	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -127,6 +127,9 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	sv.markNoteAsSeen(noteID)
 
 	// Ignore note if already processed in a block
+	// TODO: sv.nodeService.GetTx will not find a result using note ID
+	//  as it only indexes full TxPush transaction, not a PushNote.
+	//  Remove this or find another way.
 	_, _, err := sv.nodeService.GetTx(context.Background(), note.ID().Bytes(), sv.cfg.IsLightNode())
 	if err != nil && err != types.ErrTxNotFound {
 		return errors.Wrap(err, "failed to check if note has been processed")
@@ -215,7 +218,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		})
 	})
 
-	// FetchAsync the objects for each references in the push note.
+	// FetchAsync the objects for each reference in the push note.
 	// The callback is called when all objects have been fetched successfully.
 	sv.objFetcher.FetchAsync(&note, func(err error) {
 		_ = sv.onObjectsFetched(err, &note, txDetails, polEnforcer)
@@ -238,7 +241,7 @@ func (sv *Server) onObjectsFetched(
 	}
 
 	// Reload repository handle because the handle's internal reference
-	// become stale after new objects where written to the repository.
+	// will become stale after new objects where written to the repository.
 	if err = note.GetTargetRepo().Reload(); err != nil {
 		return errors.Wrap(err, "failed to reload repo handle")
 	}
@@ -354,7 +357,7 @@ func (sv *Server) onEndorsementReceived(peer p2p.Peer, msgBytes []byte) error {
 	// cache the Endorsement object as an endorsement of the PushNote
 	sv.registerNoteEndorsement(noteID, &endorsement)
 
-	// Attempt to create an send a PushTx to the transaction pool
+	// Attempt to create and send a PushTx to the transaction pool
 	_ = sv.makePushTx(noteID)
 
 broadcast:

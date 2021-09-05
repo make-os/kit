@@ -313,12 +313,12 @@ type Logic interface {
 
 	// DrySend checks whether the given sender can execute the transaction
 	//
-	// sender can be an address, identifier.Address or *crypto.PubKey.
-	// value is the amount to transfer out of the sender account.
-	// fee is the amount of coins to pay for network fee.
-	// nonce is the sending account next nonce
-	// allowNonceGap allows current nonce and next nonce to have a difference > 1
-	// chainHeight is the block height to query the account from.
+	//  - sender can be an address, identifier.Address or *crypto.PubKey.
+	//  - value is the amount to transfer out of the sender account.
+	//  - fee is the amount of coins to pay for network fee.
+	//  - nonce is the sending account next nonce
+	//  - allowNonceGap allows current nonce and next nonce to have a difference > 1
+	//  - chainHeight is the block height to query the account from.
 	DrySend(sender interface{}, value, fee util.String, nonce uint64, allowNonceGap bool, chainHeight uint64) error
 
 	// ExecTx executes a transaction.

@@ -185,7 +185,7 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 		tmcfg.P2P.ListenAddress = "0.0.0.0" + tmcfg.P2P.ListenAddress
 	}
 
-	appCfg.G().Bus = emitter.New(0)
+	appCfg.G().Bus = emitter.New(10000)
 	appCfg.G().TMConfig = tmcfg
 }
 

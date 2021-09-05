@@ -115,6 +115,9 @@ func (s *SystemKeeper) GetHelmRepo() (string, error) {
 func (s *SystemKeeper) GetCurrentEpoch() (int64, error) {
 	curBlock, err := s.GetLastBlockInfo()
 	if err != nil {
+		if err == ErrBlockInfoNotFound {
+			return 0, nil
+		}
 		return 0, errors.Wrap(err, "failed to get last block info")
 	}
 	return s.GetEpochAt(curBlock.Height.Int64()), nil

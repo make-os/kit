@@ -13,6 +13,7 @@ type TxCode int
 type BaseTx interface {
 	msgpack.CustomEncoder
 	msgpack.CustomDecoder
+	Meta
 
 	// GetType returns the type of the transaction
 	GetType() TxCode
@@ -56,7 +57,7 @@ type BaseTx interface {
 	// GetBytesNoSig returns the serialized the tx excluding the signature
 	GetBytesNoSig() []byte
 
-	//  Bytes Returns the serialized transaction
+	// Bytes Returns the serialized transaction
 	Bytes() []byte
 
 	// ComputeHash computes the hash of the transaction
@@ -81,16 +82,7 @@ type BaseTx interface {
 	// FromMap populate the fields from a map
 	FromMap(map[string]interface{}) error
 
-	// GetMeta returns the meta information of the transaction
-	GetMeta() map[string]interface{}
-
-	// SetMeta set key and value
-	SetMeta(key string, val interface{})
-
-	// HasMetaKey checks if a key exists in the metadata map
-	HasMetaKey(key string) bool
-
-	// Id checks if the tx is a given type
+	// Is Id checks if the tx is a given type
 	Is(txType TxCode) bool
 }
 

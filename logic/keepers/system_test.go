@@ -143,17 +143,25 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	Describe(".GetCurrentEpoch", func() {
-		var block1 = &state.BlockInfo{AppHash: []byte("stuff 2"), Height: 200}
-		BeforeEach(func() {
-			params.NumBlocksPerEpoch = 10
-			err = sysKeeper.SaveBlockInfo(block1)
-			Expect(err).To(BeNil())
+		When("a block exist", func() {
+			var block1 = &state.BlockInfo{AppHash: []byte("stuff 2"), Height: 200}
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 10
+				err = sysKeeper.SaveBlockInfo(block1)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return expected epoch=20", func() {
+				epoch, err := sysKeeper.GetCurrentEpoch()
+				Expect(err).To(BeNil())
+				Expect(epoch).To(Equal(int64(20)))
+			})
 		})
 
-		It("should return expected epoch=20", func() {
+		It("should return 0 if no block was found", func() {
 			epoch, err := sysKeeper.GetCurrentEpoch()
 			Expect(err).To(BeNil())
-			Expect(epoch).To(Equal(int64(20)))
+			Expect(epoch).To(Equal(int64(0)))
 		})
 	})
 
