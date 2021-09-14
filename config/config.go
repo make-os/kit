@@ -62,23 +62,6 @@ var (
 	// verified within. Should be significantly less than the unbonding period.
 	// TODO: Determine actual value for production env
 	DefaultLightNodeTrustPeriod = 168 * time.Hour
-
-	// ChainSeedPeers are peers are trusted, permanent peers to connect us to the network.
-	// They will be redialed on connection failure.
-	ChainSeedPeers = []string{
-		"a2f1e5786d3564c14faafffd6a050d2f81c655d9@s1.seeders.live:9000",
-		"9cd75740de0c9d7b2a5d3921b78abbbb39b1bebe@s2.seeders.live:9000",
-		"3ccd79a6f332f83b85f63290ca53187022aada0a@s3.seeders.live:9000",
-		"d0165f00485e22ec0197e15a836ce66587515a84@s4.seeders.live:9000",
-	}
-
-	// DHTSeedPeers are DHT seed peers to connect to.
-	DHTSeedPeers = []string{
-		"/dns4/s1.seeders.live/tcp/9003/p2p/12D3KooWAeorTJTi3uRDC3nSMa1V9CujJQg5XcN3UjSSV2HDceQU",
-		"/dns4/s2.seeders.live/tcp/9003/p2p/12D3KooWEksv3Nvbv5dRwKRkLJjoLvsuC6hyokj5sERx8mWrxMoB",
-		"/dns4/s3.seeders.live/tcp/9003/p2p/12D3KooWJzM4Hf5KWrXnAJjgJkro7zK2edtDu8ocYt8UgU7vsmFa",
-		"/dns4/s4.seeders.live/tcp/9003/p2p/12D3KooWE7KybnAaoxuw6UiMpof2LT9hMky8k83tZgpdNCqRWx9P",
-	}
 )
 
 // GetConfig get the app config
@@ -103,7 +86,7 @@ func RawStateToGenesisData(state json.RawMessage) (entries []*GenDataEntry) {
 	return entries
 }
 
-// GenesisData returns the genesis data in raw JSON format.
+// GetRawGenesisData returns the genesis data in raw JSON format.
 // If devMode is true, the development genesis file is used.
 func GetRawGenesisData(devMode bool) json.RawMessage {
 	if !devMode {
@@ -143,7 +126,7 @@ func IsTendermintInitialized(tmcfg *config.Config) bool {
 	return tmos.FileExists(tmcfg.PrivValidatorKeyFile())
 }
 
-// ConfigureVM sets up the application command structure, tendermint
+// Configure sets up the application command structure, tendermint
 // and kit configuration. This is where all configuration and
 // settings are prepared
 func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
@@ -156,21 +139,15 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	setup(appCfg, tmcfg, initializing)
 
 	// Tendermint config overwrites
-	setupTendermintCfg(appCfg, tmcfg)
+	chainInfo := setupTendermintCfg(appCfg, tmcfg)
 
 	// Setup logger
 	setupLogger(appCfg, tmcfg)
 
-	// In dev mode, do not use the production persistent seed peers
-	if cfg.IsDev() {
-		ChainSeedPeers = []string{}
-		DHTSeedPeers = []string{}
-	}
-
 	// Add seed peers if .IgnoreSeeds is false
 	if !appCfg.Node.IgnoreSeeds {
-		tmcfg.P2P.PersistentPeers = appCfg.Node.PersistentPeers + "," + strings.Join(ChainSeedPeers, ",")
-		appCfg.DHT.BootstrapPeers = appCfg.DHT.BootstrapPeers + "," + strings.Join(DHTSeedPeers, ",")
+		tmcfg.P2P.PersistentPeers = appCfg.Node.PersistentPeers + "," + strings.Join(chainInfo.ChainSeedPeers, ",")
+		appCfg.DHT.BootstrapPeers = appCfg.DHT.BootstrapPeers + "," + strings.Join(chainInfo.DHTSeedPeers, ",")
 	}
 
 	if appCfg.DHT.Address != "" && appCfg.DHT.Address[:1] == ":" {
@@ -189,14 +166,14 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	appCfg.G().TMConfig = tmcfg
 }
 
-func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
+func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) *ChainInfo {
 	tmcfg.TxIndex.Indexer = "kv"
 	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !cfg.IsDev()
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
 	if cfg.IsTest() {
-		return
+		return nil
 	}
 
 	// Check if there is a pre-defined chain configurer for the version.
@@ -206,6 +183,8 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) {
 	if chain != nil {
 		chain.Configure(cfg, tmcfg)
 	}
+
+	return chain.(*ChainInfo)
 }
 
 func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {

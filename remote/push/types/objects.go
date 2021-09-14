@@ -65,7 +65,7 @@ func (pt *Note) GetTargetRepo() types.LocalRepo {
 	return pt.TargetRepo
 }
 
-// GetTargetRepo returns the target repository
+// SetTargetRepo returns the target repository
 func (pt *Note) SetTargetRepo(repo types.LocalRepo) {
 	pt.TargetRepo = repo
 }
@@ -80,7 +80,7 @@ func (pt *Note) GetNodeSignature() []byte {
 	return pt.RemoteNodeSig
 }
 
-// GetPusherKeyID returns the pusher pusher key ID
+// GetPusherKeyID returns the pusher key ID
 func (pt *Note) GetPusherKeyID() []byte {
 	return pt.PushKeyID
 }
