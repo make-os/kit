@@ -17,7 +17,7 @@ ENV branch $branch
 RUN apt-get update && apt-get install git
 
 # Clone source repository
-RUN git clone https://gitlab.com/makeos/kit
+RUN git clone https://github.com/make-os/kit
 
 # Build and install
 RUN cd kit && git checkout ${branch} && make install
