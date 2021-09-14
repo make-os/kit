@@ -302,7 +302,7 @@ func (c *AppConfig) SetRepoRoot(dir string) {
 	c.repoDir = dir
 }
 
-// IsAttached checks whether the node was started in attach mode
+// IsAttachMode checks whether the node was started in attach mode
 func (c *AppConfig) IsAttachMode() bool {
 	return viper.GetBool("attachmode")
 }

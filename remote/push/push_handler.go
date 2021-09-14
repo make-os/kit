@@ -108,7 +108,12 @@ func (h *BasicHandler) WaitForPushTx() chan interface{} {
 }
 
 // HandleStream implements Handler. It reads the packfile and pipes it to git.
-func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceive io.WriteCloser, gitRcvCmd util.Cmd, pktEnc *pktline.Encoder) error {
+func (h *BasicHandler) HandleStream(
+	packfile io.Reader,
+	gitReceive io.WriteCloser,
+	gitRcvCmd util.Cmd,
+	pktEnc *pktline.Encoder,
+) error {
 
 	if pktEnc != nil {
 		h.pktEnc = pktEnc
