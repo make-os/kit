@@ -304,7 +304,7 @@ func serveService(s *RequestContext) error {
 		s.pktEnc.Encode(plumbing.SidebandErr(errors.Wrap(err, "push error").Error()))
 		return errors.Wrap(err, "WaitForPushTx error")
 	}
-	s.pktEnc.Encode(plumbing.SidebandProgressln(fmt.Sprintf("hash here: %s ", hashOrErr)))
+	s.pktEnc.Encode(plumbing.SidebandProgressln(fmt.Sprintf("hash: %s ", hashOrErr)))
 
 	// Write output from git to the http response
 	scn := pktline.NewScanner(stdout)
