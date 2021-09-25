@@ -33,7 +33,7 @@ func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-// Unlock decrypts a ciphertext
+// Decrypt decrypts a ciphertext
 func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 
 	iv := ciphertext[:aes.BlockSize]

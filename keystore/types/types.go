@@ -35,7 +35,7 @@ type StoredKey interface {
 	GetCreatedAt() time.Time
 }
 
-// StoredKeyMeta represents additional meta data of an account
+// StoredKeyMeta represents additional metadata of an account
 type StoredKeyMeta map[string]interface{}
 
 // HasKey checks whether a key exist
@@ -58,8 +58,7 @@ func (sm StoredKeyMeta) Map() map[string]interface{} {
 type KeyPayload struct {
 	Type          int    `json:"type" msgpack:"type"`
 	FormatVersion string `json:"version" msgpack:"version"`
-
-	SecretKey string `json:"secretKey" msgpack:"secretKey"`
+	SecretKey     string `json:"secretKey" msgpack:"secretKey"`
 }
 
 // Keystore describes a module for managing keys

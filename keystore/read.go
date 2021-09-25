@@ -104,7 +104,7 @@ func (sk *StoredKey) GetUnlockedData() []byte {
 	return sk.Data
 }
 
-// GetUnlockedData returns the locked data.
+// GetCreatedAt  returns the locked data.
 // Only available when key is unlocked.
 func (sk *StoredKey) GetCreatedAt() time.Time {
 	return sk.CreatedAt
