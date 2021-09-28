@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Handlers is responsible for handling incoming RPC requests
+// Handler is responsible for handling incoming RPC requests
 // by routing to a method that can handle the request and
 // return a response.
 type Handler struct {
@@ -104,6 +104,14 @@ func (s *Handler) MergeAPISet(apiSets ...APISet) {
 // the request according to JSON RPC specification,
 // find and execute the target rpc method
 func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response) {
+
+	// Handle cors
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return nil
+	}
 
 	var newReq Request
 	if err := json.NewDecoder(r.Body).Decode(&newReq); err != nil {

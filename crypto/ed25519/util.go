@@ -99,7 +99,7 @@ func CreatePushKeyID(pk PublicKey) string {
 	return MustPubKeyFromBytes(pk.Bytes()).PushAddr().String()
 }
 
-// CreatePushKeyID returns bech32 address corresponding to a push key.
+// BytesToPushKeyID returns bech32 address corresponding to a push key.
 // Panics if pk is not a valid ed25519 public key
 func BytesToPushKeyID(pk []byte) string {
 	encoded, err := bech32.ConvertAndEncode(constants.PushAddrHRP, pk)
