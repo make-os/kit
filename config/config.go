@@ -217,6 +217,13 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 		homeID = fmt.Sprintf("_%s", homeID)
 	}
 
+	// If net version = mainnet but node mode is not production,
+	// set net version to dev network
+	netVersion := viper.GetUint64("net.version")
+	if netVersion == MainNetVersion && !cfg.IsProd() {
+		viper.Set("net.version", DevChain.GetVersion())
+	}
+
 	// If network version is not supported, exit
 	if !cfg.IsTest() {
 		getChainInfoOrFatal()

@@ -10,6 +10,7 @@ import (
 var networks = map[string]Info{}
 
 func init() {
+	networks[MainChain.GetVersion()] = MainChain
 	networks[TestnetChainV1.GetVersion()] = TestnetChainV1
 	networks[DevChain.GetVersion()] = DevChain
 }
@@ -54,6 +55,17 @@ func (ci *ChainInfo) GetName() string {
 // GetVersion returns the chain's numeric version
 func (ci *ChainInfo) GetVersion() string {
 	return ci.NetVersion
+}
+
+// MainChain contains configurations for mainnet
+var MainChain = &ChainInfo{
+	Name:        "main-dev",
+	NetVersion:  "1",
+	GenesisTime: 1595700581,
+	Validators:  []string{},
+	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
+		tmc.Consensus.CreateEmptyBlocksInterval = 120 * time.Second
+	},
 }
 
 // DevChain contains configurations for development
