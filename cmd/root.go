@@ -133,7 +133,7 @@ func preRun(cmd *cobra.Command) {
 	isInit := cmd.CalledAs() == "init"
 	if isInit {
 		if v1Flag := cmd.Flags().Lookup("v1"); v1Flag != nil && v1Flag.Changed {
-			viper.Set("net.version", config.TestnetV1.NetVersion)
+			viper.Set("net.version", config.TestnetChainV1.NetVersion)
 		}
 	}
 

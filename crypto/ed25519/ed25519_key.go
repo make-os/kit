@@ -48,7 +48,6 @@ func NewKey(seed *int64) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &Key{
 		privKey: &PrivKey{privKey: priv},
 		Meta:    make(map[string]interface{}),
@@ -513,7 +512,7 @@ func ConvertBase58PubKeyToTMPubKey(b58PubKey string) (ed25519.PubKey, error) {
 		return nil, err
 	}
 	bz, _ := pubKey.Bytes()
-	return (bz), nil
+	return bz, nil
 }
 
 // ConvertBase58PrivKeyToTMPrivKey converts base58 private key to tendermint's ed25519.PrivKeyEd25519

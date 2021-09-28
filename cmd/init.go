@@ -151,8 +151,8 @@ var initCmd = &cobra.Command{
 
 		// If testnet v1 present is requested, overwrite validators, genesis time and state
 		if configureTestnetV1 {
-			validators = config.TestnetV1.Validators
-			genesisTime = config.TestnetV1.GenesisTime
+			validators = config.TestnetChainV1.Validators
+			genesisTime = config.TestnetChainV1.GenesisTime
 			genState = ""
 		}
 

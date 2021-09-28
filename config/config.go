@@ -166,6 +166,19 @@ func Configure(appCfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	appCfg.G().TMConfig = tmcfg
 }
 
+// getChainInfoOrFatal gets the chain info based on the net version.
+// Calls os.Exit(1) on failure if chain info was not found.
+func getChainInfoOrFatal() Info {
+	// Check if there is a pre-defined chain configurer for the version.
+	// If yes, use it to apply configurations, otherwise, return
+	netVersion := viper.GetString("net.version")
+	chain := Get(netVersion)
+	if chain == nil {
+		log.Fatalf(fmt.Sprintf("chain config not found for network version = %s", netVersion))
+	}
+	return chain
+}
+
 func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) *ChainInfo {
 	tmcfg.TxIndex.Indexer = "kv"
 	tmcfg.P2P.ListenAddress = cfg.Node.ListeningAddr
@@ -176,13 +189,9 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) *ChainInfo {
 		return nil
 	}
 
-	// Check if there is a pre-defined chain configurer for the version.
-	// If yes, use it to apply configurations, otherwise, return
-	netVersion := viper.GetString("net.version")
-	chain := Get(netVersion)
-	if chain != nil {
-		chain.Configure(cfg, tmcfg)
-	}
+	// Configure chain
+	chain := getChainInfoOrFatal()
+	chain.Configure(cfg, tmcfg)
 
 	return chain.(*ChainInfo)
 }
@@ -206,6 +215,11 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	if homeID != "" {
 		cfg.Node.Mode = ModeDev
 		homeID = fmt.Sprintf("_%s", homeID)
+	}
+
+	// If network version is not supported, exit
+	if !cfg.IsTest() {
+		getChainInfoOrFatal()
 	}
 
 	// Construct data directory, if not set in config

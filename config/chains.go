@@ -3,7 +3,6 @@ package config
 import (
 	"time"
 
-	"github.com/spf13/cast"
 	tmcfg "github.com/tendermint/tendermint/config"
 )
 
@@ -11,8 +10,8 @@ import (
 var networks = map[string]Info{}
 
 func init() {
-	networks[cast.ToString(TestnetV1.GetVersion())] = TestnetV1
-	networks[cast.ToString(Dev.GetVersion())] = Dev
+	networks[TestnetChainV1.GetVersion()] = TestnetChainV1
+	networks[DevChain.GetVersion()] = DevChain
 }
 
 // Get finds a chain's info  by version
@@ -26,14 +25,14 @@ func Get(version string) Info {
 
 // Info describes a chain version
 type Info interface {
-	GetVersion() int
+	GetVersion() string
 	GetName() string
 	Configure(cfg *AppConfig, tmc *tmcfg.Config)
 }
 
 // ChainInfo implements Info
 type ChainInfo struct {
-	NetVersion     int
+	NetVersion     string
 	GenesisTime    uint64
 	Validators     []string
 	Name           string
@@ -53,14 +52,14 @@ func (ci *ChainInfo) GetName() string {
 }
 
 // GetVersion returns the chain's numeric version
-func (ci *ChainInfo) GetVersion() int {
+func (ci *ChainInfo) GetVersion() string {
 	return ci.NetVersion
 }
 
-// Dev contains configurations for development
-var Dev = &ChainInfo{
+// DevChain contains configurations for development
+var DevChain = &ChainInfo{
 	Name:        "dev",
-	NetVersion:  1000,
+	NetVersion:  "1000",
 	GenesisTime: 1595700581,
 	Validators:  []string{},
 	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
@@ -69,10 +68,10 @@ var Dev = &ChainInfo{
 	},
 }
 
-// TestnetV1 contains configurations for testnet v1 chain
-var TestnetV1 = &ChainInfo{
+// TestnetChainV1 contains configurations for testnet v1 chain
+var TestnetChainV1 = &ChainInfo{
 	Name:        "testnet-v1",
-	NetVersion:  2000,
+	NetVersion:  "2000",
 	GenesisTime: 1595700581,
 	Validators: []string{
 		"47shQ9ihsZBf2nYL6tAYR8q8Twb47KTNjimowxaNFRyGPL93oZL",
