@@ -257,9 +257,9 @@ func MaybeApplyProposal(args *ApplyProposalArgs) (bool, error) {
 	}
 
 	// When the proposal has fee deposit enabled and the deposit period has
-	// passed, but not enough deposits where paid, there will be no votes as
-	// such we move return any existing deposits to their senders and set
-	// the outcome.
+	// passed, but not enough deposits where paid, there will be no voting
+	// and as such we must return any existing deposits to their senders
+	// and set the outcome.
 	if args.Proposal.IsFeeDepositEnabled() &&
 		!args.Proposal.IsDepositPeriod(args.ChainHeight+1) &&
 		!args.Proposal.IsDepositedFeeOK() {
@@ -271,7 +271,7 @@ func MaybeApplyProposal(args *ApplyProposalArgs) (bool, error) {
 	var outcome state.ProposalOutcome
 
 	// When allowed voters are only the repo owners and there is just one owner
-	// whom is also the creator of the proposal, instantly apply the args.Proposal.
+	// who is also the creator of the proposal, instantly apply the args.Proposal.
 	isOwnersOnlyProposal := args.Proposal.GetVoterType() == state.VoterOwner
 	if isOwnersOnlyProposal && len(args.Repo.Owners) == 1 && args.Repo.Owners.Has(args.Proposal.GetCreator()) {
 		outcome = state.ProposalOutcomeAccepted

@@ -127,8 +127,8 @@ func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
 // An error will be returned when unable to convert types in map to expected types in the object.
 func (tx *TxRepoProposalRegisterPushKey) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
-	err = errors.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
-	err = errors.CallOnNilErr(err, func() error { return tx.TxProposalCommon.FromMap(data) })
-	err = errors.CallOnNilErr(err, func() error { return util.DecodeMap(data, &tx) })
+	err = errors.CallIfNil(err, func() error { return tx.TxType.FromMap(data) })
+	err = errors.CallIfNil(err, func() error { return tx.TxProposalCommon.FromMap(data) })
+	err = errors.CallIfNil(err, func() error { return util.DecodeMap(data, &tx) })
 	return err
 }

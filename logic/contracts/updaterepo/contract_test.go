@@ -90,6 +90,7 @@ var _ = Describe("Contract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
+					TxDescription:    &txns.TxDescription{Description: "hello world"},
 					Config:           config.ToBasicMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -100,17 +101,22 @@ var _ = Describe("Contract", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
-			Specify("that the proposal is finalized and self accepted", func() {
+			Specify("that the proposal was immediately finalized", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get(propID).IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(1)))
 			})
 
-			Specify("that config is updated", func() {
+			Specify("that config was updated", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
 				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(1000)))
+			})
+
+			Specify("that the description was updated", func() {
+				repo := logic.RepoKeeper().Get(repoName)
+				Expect(repo.Description).To(Equal("hello world"))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
@@ -143,6 +149,7 @@ var _ = Describe("Contract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
+					TxDescription:    &txns.TxDescription{Description: "hello world"},
 					Config:           config.ToBasicMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -153,7 +160,7 @@ var _ = Describe("Contract", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
-			Specify("that the proposal is not finalized or self accepted", func() {
+			Specify("that the proposal was not immediately finalized", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get(propID).IsFinalized()).To(BeFalse())
@@ -195,6 +202,7 @@ var _ = Describe("Contract", func() {
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
+					TxDescription:    &txns.TxDescription{Description: "hello world"},
 					Config:           config.ToBasicMap(),
 				}, 200).Exec()
 				Expect(err).To(BeNil())
@@ -218,7 +226,7 @@ var _ = Describe("Contract", func() {
 			repo.Config = state.DefaultRepoConfig
 		})
 
-		When("update config object is empty", func() {
+		When("action data for config is empty", func() {
 			It("should not change the config", func() {
 				proposal := &state.RepoProposal{
 					ActionData: map[string]util.Bytes{
@@ -232,10 +240,22 @@ var _ = Describe("Contract", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
+
+				// No Action data
+				proposal = &state.RepoProposal{
+					ActionData: map[string]util.Bytes{},
+				}
+				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
+					Proposal:    proposal,
+					Repo:        repo,
+					ChainHeight: 0,
+				})
+				Expect(err).To(BeNil())
+				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
 			})
 		})
 
-		When("update config object is not empty", func() {
+		When("action data for config object is not empty", func() {
 			It("should change the config", func() {
 				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropQuorum: 120, PropDuration: 100}}
 				proposal := &state.RepoProposal{
@@ -251,6 +271,52 @@ var _ = Describe("Contract", func() {
 				Expect(err).To(BeNil())
 				Expect(repo.Config.Gov.PropQuorum).To(Equal(float64(120)))
 				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
+			})
+		})
+
+		When("action data for description is empty", func() {
+			It("should not change the description", func() {
+				proposal := &state.RepoProposal{
+					ActionData: map[string]util.Bytes{
+						constants.ActionDataKeyDescription: util.ToBytes(""),
+					},
+				}
+				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
+					Proposal:    proposal,
+					Repo:        repo,
+					ChainHeight: 0,
+				})
+				Expect(err).To(BeNil())
+				Expect(repo.Description).To(BeEmpty())
+
+				// No Action data
+				proposal = &state.RepoProposal{
+					ActionData: map[string]util.Bytes{},
+				}
+				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
+					Proposal:    proposal,
+					Repo:        repo,
+					ChainHeight: 0,
+				})
+				Expect(err).To(BeNil())
+				Expect(repo.Description).To(BeEmpty())
+			})
+		})
+
+		When("action data for description is not empty", func() {
+			It("should change the description", func() {
+				proposal := &state.RepoProposal{
+					ActionData: map[string]util.Bytes{
+						constants.ActionDataKeyDescription: util.ToBytes("hello world"),
+					},
+				}
+				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
+					Proposal:    proposal,
+					Repo:        repo,
+					ChainHeight: 0,
+				})
+				Expect(err).To(BeNil())
+				Expect(repo.Description).To(Equal("hello world"))
 			})
 		})
 	})

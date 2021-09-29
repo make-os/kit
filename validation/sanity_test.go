@@ -1278,6 +1278,25 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:value, msg:proposal creation fee cannot be less than network minimum"))
 		})
+
+		It("should return error when either `config` or `desc`", func() {
+			params.DefaultMinProposalFee = 1
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			err := validation.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:config|desc, msg:set either `desc` or `config` fields"))
+		})
+
+		It("should return error when description length is too long", func() {
+			params.DefaultMinProposalFee = 1
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.Description = strings.Repeat("a", params.TxRepoCreateMaxCharDesc+1)
+			err := validation.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:desc, msg:description length cannot be greater than 140"))
+		})
 	})
 
 	Describe(".CheckTxRepoProposalRegisterPushKey", func() {

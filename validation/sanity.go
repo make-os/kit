@@ -60,6 +60,24 @@ func checkValue(tx *txns.TxValue, index int) error {
 	return nil
 }
 
+func checkDescription(tx *txns.TxDescription, required bool, index int) error {
+
+	if required {
+		if err := v.Validate(tx.Description,
+			v.Required.Error(feI(index, "desc", "requires a description").Error()),
+		); err != nil {
+			return err
+		}
+	}
+
+	if len(tx.Description) > params.TxRepoCreateMaxCharDesc {
+		return feI(index, "desc", fmt.Sprintf("description length cannot be greater than %d",
+			params.TxRepoCreateMaxCharDesc))
+	}
+
+	return nil
+}
+
 func checkPositiveValue(tx *txns.TxValue, index int) error {
 	if err := v.Validate(tx.Value,
 		v.Required.Error(feI(index, "value", "value is required").Error()),
@@ -292,7 +310,6 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 
 // CheckTxRepoCreate performs sanity checks on TxRepoCreate
 func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
-
 	if err := checkType(tx.TxType, txns.TxTypeRepoCreate, index); err != nil {
 		return err
 	}
@@ -308,15 +325,8 @@ func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
 		return err
 	}
 
-	if err := v.Validate(tx.Description,
-		v.Required.Error(feI(index, "desc", "requires a description").Error()),
-	); err != nil {
+	if err := checkDescription(tx.TxDescription, true, index); err != nil {
 		return err
-	}
-
-	if len(tx.Description) > params.TxRepoCreateMaxCharDesc {
-		return feI(index, "desc", fmt.Sprintf("description length cannot be greater than %d",
-			params.TxRepoCreateMaxCharDesc))
 	}
 
 	if err := CheckRepoConfig(tx.Config, index); err != nil {
@@ -736,6 +746,14 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 	}
 
 	if err := checkProposalFee(tx.Value, index); err != nil {
+		return err
+	}
+
+	if len(tx.Config) == 0 && len(tx.Description) == 0 {
+		return feI(index, "config|desc", "set either `desc` or `config` fields")
+	}
+
+	if err := checkDescription(tx.TxDescription, false, index); err != nil {
 		return err
 	}
 

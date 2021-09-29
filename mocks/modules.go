@@ -1333,6 +1333,20 @@ func (mr *MockRepoModuleMockRecorder) GetTracked() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracked", reflect.TypeOf((*MockRepoModule)(nil).GetTracked))
 }
 
+// GetReposCreatedByAddress mocks base method
+func (m *MockRepoModule) GetReposCreatedByAddress(address string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReposCreatedByAddress", address)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetReposCreatedByAddress indicates an expected call of GetReposCreatedByAddress
+func (mr *MockRepoModuleMockRecorder) GetReposCreatedByAddress(address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReposCreatedByAddress", reflect.TypeOf((*MockRepoModule)(nil).GetReposCreatedByAddress), address)
+}
+
 // ListPath mocks base method
 func (m *MockRepoModule) ListPath(name, path string, revision ...string) []util.Map {
 	m.ctrl.T.Helper()

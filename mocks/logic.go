@@ -611,6 +611,35 @@ func (mr *MockRepoKeeperMockRecorder) IsProposalClosed(name, propID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProposalClosed", reflect.TypeOf((*MockRepoKeeper)(nil).IsProposalClosed), name, propID)
 }
 
+// IndexRepoCreatedByAddress mocks base method
+func (m *MockRepoKeeper) IndexRepoCreatedByAddress(address []byte, repoName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexRepoCreatedByAddress", address, repoName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexRepoCreatedByAddress indicates an expected call of IndexRepoCreatedByAddress
+func (mr *MockRepoKeeperMockRecorder) IndexRepoCreatedByAddress(address, repoName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexRepoCreatedByAddress", reflect.TypeOf((*MockRepoKeeper)(nil).IndexRepoCreatedByAddress), address, repoName)
+}
+
+// GetReposCreatedByAddress mocks base method
+func (m *MockRepoKeeper) GetReposCreatedByAddress(address []byte) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReposCreatedByAddress", address)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReposCreatedByAddress indicates an expected call of GetReposCreatedByAddress
+func (mr *MockRepoKeeperMockRecorder) GetReposCreatedByAddress(address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReposCreatedByAddress", reflect.TypeOf((*MockRepoKeeper)(nil).GetReposCreatedByAddress), address)
+}
+
 // MockNamespaceKeeper is a mock of NamespaceKeeper interface
 type MockNamespaceKeeper struct {
 	ctrl     *gomock.Controller

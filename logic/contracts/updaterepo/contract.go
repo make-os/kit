@@ -49,7 +49,12 @@ func (c *Contract) Exec() error {
 	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpdate
-	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)
+	if len(c.tx.Config) > 0 {
+		proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)
+	}
+	if c.tx != nil && c.tx.Description != "" {
+		proposal.ActionData[constants.ActionDataKeyDescription] = util.ToBytes(c.tx.Description)
+	}
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := c.tx.Fee.Decimal().Add(c.tx.Value.Decimal())
@@ -69,7 +74,7 @@ func (c *Contract) Exec() error {
 		goto update
 	}
 
-	// Index the proposal against its end height so it
+	// Index the proposal against its end height so that it
 	// can be tracked and finalized at that height.
 	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 		return errors.Wrap(err, common.ErrFailedToIndexProposal)
@@ -83,8 +88,25 @@ update:
 // Apply applies the proposal action
 func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 	var cfgUpd map[string]interface{}
-	if err := util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd); err != nil {
-		return err
+
+	// Update config if an update exists
+	actDataCfg := args.Proposal.GetActionData()[constants.ActionDataKeyCFG]
+	if len(actDataCfg) > 0 {
+		if err := util.ToObject(actDataCfg, &cfgUpd); err != nil {
+			return err
+		}
+		if err := args.Repo.Config.MergeMap(cfgUpd); err != nil {
+			return err
+		}
 	}
-	return args.Repo.Config.MergeMap(cfgUpd)
+
+	// Update description if update exist
+	actDataDesc := args.Proposal.GetActionData()[constants.ActionDataKeyDescription]
+	if len(actDataDesc) > 0 {
+		if err := util.ToObject(actDataDesc, &args.Repo.Description); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

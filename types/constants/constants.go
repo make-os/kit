@@ -31,6 +31,7 @@ const (
 	ActionDataKeyFeeMode       = "fm"
 	ActionDataKeyFeeCap        = "fc"
 	ActionDataKeyCFG           = "cfg"
+	ActionDataKeyDescription   = "desc"
 	ActionDataKeyNamespace     = "ns"
 	ActionDataKeyNamespaceOnly = "nso"
 )

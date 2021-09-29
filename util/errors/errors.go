@@ -48,8 +48,8 @@ func FieldError(field string, msg string) error {
 	return &BadFieldError{Field: field, Msg: msg, Index: -1}
 }
 
-// CallOnNilErr calls f if err is nil
-func CallOnNilErr(err error, f func() error) error {
+// CallIfNil calls f if err is nil
+func CallIfNil(err error, f func() error) error {
 	if err == nil {
 		err = f()
 	}
