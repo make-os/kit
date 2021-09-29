@@ -77,6 +77,15 @@ func (a *RepoAPI) tracked(interface{}) (resp *rpc.Response) {
 	return rpc.Success(a.mods.Repo.GetTracked())
 }
 
+// listByCreator returns names of repos created by an address
+func (a *RepoAPI) listByCreator(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	names := a.mods.Repo.GetReposCreatedByAddress(m.Get("address").Str())
+	return rpc.Success(map[string]interface{}{
+		"repos": names,
+	})
+}
+
 // ls list files and directories of a repository
 func (a *RepoAPI) ls(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
@@ -142,21 +151,22 @@ func (a *RepoAPI) getAncestors(params interface{}) (resp *rpc.Response) {
 func (a *RepoAPI) APIs() rpc.APISet {
 	ns := constants.NamespaceRepo
 	return []rpc.MethodInfo{
-		{Name: "create", Namespace: ns, Func: a.createRepo, Description: "Create a repository"},
-		{Name: "update", Namespace: ns, Func: a.update, Description: "Update a repository"},
-		{Name: "upsertOwner", Namespace: ns, Func: a.upsertOwner, Description: "Add or update one or more owners"},
-		{Name: "depositPropFee", Namespace: ns, Func: a.depositPropFee, Description: "Deposit fee into a proposal"},
-		{Name: "get", Namespace: ns, Func: a.getRepo, Description: "Get a repository"},
-		{Name: "addContributor", Namespace: ns, Func: a.addContributor, Description: "Add one or more contributors"},
-		{Name: "vote", Namespace: ns, Func: a.vote, Description: "Cast a vote on a repository's proposal"},
-		{Name: "track", Namespace: ns, Func: a.track, Description: "Track one or more repositories", Private: true},
-		{Name: "untrack", Namespace: ns, Func: a.untrack, Description: "Untrack one or more repositories", Private: true},
-		{Name: "tracked", Namespace: ns, Func: a.tracked, Description: "Get all tracked repositories", Private: true},
-		{Name: "ls", Namespace: ns, Func: a.ls, Description: "List files and directories of a repository", Private: false},
-		{Name: "getLines", Namespace: ns, Func: a.getFileLines, Description: "Gets the lines of a file in a repository", Private: false},
-		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Description: "Gets a list of branches in a repository", Private: false},
-		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Description: "Gets the latest commit of a branch in a repository", Private: false},
-		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Description: "Gets a list of commits in a branch of a repository", Private: false},
-		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Description: "Get ancestors of a commit in a repository", Private: false},
+		{Name: "create", Namespace: ns, Func: a.createRepo, Desc: "Create a repository"},
+		{Name: "update", Namespace: ns, Func: a.update, Desc: "Update a repository"},
+		{Name: "upsertOwner", Namespace: ns, Func: a.upsertOwner, Desc: "Add or update one or more owners"},
+		{Name: "depositPropFee", Namespace: ns, Func: a.depositPropFee, Desc: "Deposit fee into a proposal"},
+		{Name: "get", Namespace: ns, Func: a.getRepo, Desc: "Get a repository"},
+		{Name: "addContributor", Namespace: ns, Func: a.addContributor, Desc: "Add one or more contributors"},
+		{Name: "vote", Namespace: ns, Func: a.vote, Desc: "Cast a vote on a repository's proposal"},
+		{Name: "track", Namespace: ns, Func: a.track, Desc: "Track one or more repositories", Private: true},
+		{Name: "untrack", Namespace: ns, Func: a.untrack, Desc: "Untrack one or more repositories", Private: true},
+		{Name: "tracked", Namespace: ns, Func: a.tracked, Desc: "Get all tracked repositories", Private: true},
+		{Name: "listByCreator", Namespace: ns, Func: a.listByCreator, Desc: "List repositories created by an address"},
+		{Name: "ls", Namespace: ns, Func: a.ls, Desc: "List files and directories of a repository"},
+		{Name: "getLines", Namespace: ns, Func: a.getFileLines, Desc: "Gets the lines of a file in a repository"},
+		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Desc: "Gets a list of branches in a repository"},
+		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Desc: "Gets the latest commit of a branch in a repository"},
+		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Gets a list of commits in a branch of a repository"},
+		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Desc: "Get ancestors of a commit in a repository"},
 	}
 }

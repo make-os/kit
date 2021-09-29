@@ -24,10 +24,10 @@ func (l *Manager) echo(params interface{}) (resp *rpc.Response) {
 func (l *Manager) APIs() rpc.APISet {
 	return []rpc.MethodInfo{
 		{
-			Name:        "echo",
-			Namespace:   constants.NamespaceRPC,
-			Description: "Returns echos back any parameter sent in the request",
-			Func:        l.echo,
+			Name:      "echo",
+			Namespace: constants.NamespaceRPC,
+			Desc:      "Returns echos back any parameter sent in the request",
+			Func:      l.echo,
 		},
 	}
 }

@@ -20,6 +20,7 @@ const (
 	TagTrackedRepo             = "tr"
 	TagAnnouncementScheduleKey = "ak"
 	TagRepoRefLastSyncHeight   = "rrh"
+	TagAddressRepoPairKey      = "ar"
 )
 
 // MakeRepoRefLastSyncHeightKey creates a key for storing a repo's reference last successful synchronized height.
@@ -124,4 +125,14 @@ func MakeAnnounceListKey(key []byte, announceTime int64) []byte {
 // MakeQueryAnnounceListKey creates a key for accessing all DHT key announcements entries.
 func MakeQueryAnnounceListKey() []byte {
 	return common.MakePrefix([]byte(TagAnnouncementScheduleKey))
+}
+
+// MakeAddressRepoPairKey creates a key for associating an address to a repo name
+func MakeAddressRepoPairKey(address []byte, repoName string) []byte {
+	return common.MakeKey([]byte(repoName), []byte(TagAddressRepoPairKey), address)
+}
+
+// MakeQueryAddressRepoPairKey creates a key for query addresses associated with a repo name
+func MakeQueryAddressRepoPairKey(address []byte) []byte {
+	return common.MakePrefix([]byte(TagAddressRepoPairKey), address)
 }

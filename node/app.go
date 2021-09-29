@@ -38,6 +38,11 @@ type blockTx struct {
 	index int
 }
 
+type newRepo struct {
+	name           string
+	creatorAddress []byte
+}
+
 // App implements tendermint ABCI interface to
 type App struct {
 	db                        storagetypes.Engine
@@ -56,7 +61,7 @@ type App struct {
 	heightToSaveNewValidators int64
 	okTxs                     []blockTx
 	repoPropTxs               []*txns.TxRepoProposalVote
-	newRepos                  []string
+	newRepos                  []newRepo
 	closedMergeProps          []*mergeProposalInfo
 	curEpoch                  int64
 }
@@ -214,20 +219,19 @@ func (a *App) postExec(tx types.BaseTx, resp *abcitypes.ResponseDeliverTx) *abci
 		a.unbondHostReqs = append(a.unbondHostReqs, o.TicketHash)
 
 	case *txns.TxRepoCreate:
-		a.newRepos = append(a.newRepos, o.Name)
+		a.newRepos = append(a.newRepos, newRepo{name: o.Name, creatorAddress: o.SenderPubKey.MustAddressRaw()})
 
 	case *txns.TxRepoProposalVote:
 		a.repoPropTxs = append(a.repoPropTxs, o)
 
 	case *txns.TxPush:
 		for _, ref := range o.Note.GetPushedReferences() {
-			if ref.MergeProposalID == "" {
-				continue
+			if ref.MergeProposalID != "" {
+				a.closedMergeProps = append(a.closedMergeProps, &mergeProposalInfo{
+					repo:       o.Note.GetRepoName(),
+					proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
+				})
 			}
-			a.closedMergeProps = append(a.closedMergeProps, &mergeProposalInfo{
-				repo:       o.Note.GetRepoName(),
-				proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
-			})
 		}
 	}
 
@@ -330,22 +334,12 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		a.log.Info("Indexed new validators for the new epoch", "Height", a.proposedBlock.Height)
 	}
 
-	// Emit `EvtTxPushProcessed` for each of the processed transactions
 	a.broadcastTx()
-
-	// Index proposal votes
 	a.indexProposalVotes()
-
-	// Set the expiry height for each host stake unbond request
 	a.expireHostTickets()
-
-	// Create new repositories
-	_ = a.createGitRepositories()
-
-	// Mark all merge proposals as closed.
+	a.createGitRepositories()
+	a.indexRepoCreator()
 	a.markMergeProposalAsClosed()
-
-	// Update difficulty
 	a.updateDifficulty(a.proposedBlock)
 
 	// Commit all state changes
@@ -373,7 +367,7 @@ func (a *App) reset() {
 	a.isCurrentBlockProposer = false
 	a.okTxs = []blockTx{}
 	a.repoPropTxs = []*txns.TxRepoProposalVote{}
-	a.newRepos = []string{}
+	a.newRepos = []newRepo{}
 	a.closedMergeProps = []*mergeProposalInfo{}
 
 	// Only reset heightToSaveNewValidators if the current height is
@@ -474,16 +468,23 @@ func (a *App) createGitRepositories() error {
 	}
 
 	tracked := a.logic.RepoSyncInfoKeeper().Tracked()
-	for _, repoName := range a.newRepos {
-		if len(tracked) > 0 && tracked[repoName] == nil {
+	for _, repo := range a.newRepos {
+		if len(tracked) > 0 && tracked[repo.name] == nil {
 			continue
 		}
-		if err := a.logic.GetRemoteServer().InitRepository(repoName); err != nil {
+		if err := a.logic.GetRemoteServer().InitRepository(repo.name); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to create repository"))
 		}
 	}
 
 	return nil
+}
+
+// indexRepoCreator indexes a new repo name with their creator.
+func (a *App) indexRepoCreator() {
+	for _, repo := range a.newRepos {
+		a.logic.RepoKeeper().IndexRepoCreatedByAddress(repo.creatorAddress, repo.name)
+	}
 }
 
 // markMergeProposalAsClosed marks a merge proposal as closed.

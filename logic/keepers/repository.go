@@ -25,29 +25,20 @@ func NewRepoKeeper(state *tree.SafeTree, db storagetypes.Tx) *RepoKeeper {
 	return &RepoKeeper{state: state, db: db}
 }
 
-// Get finds a repository by name.
-//
-// It will populate the proposals in the repo with their correct config
-// source from the version the repo that they where first appeared in.
-//
-// ARGS:
-// name: The name of the repository to find.
-// blockNum: The target block to query (Optional. Default: latest)
-//
-// CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
+// Get implements RepoKeeper
+func (rk *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 
-	repo := a.GetNoPopulate(name, blockNum...)
+	repo := rk.GetNoPopulate(name, blockNum...)
 
 	// For each proposal in the repo, fetch their config from the version of the
 	// repo where they first appeared.
-	stateVersion := a.state.Version()
+	stateVersion := rk.state.Version()
 	err := repo.Proposals.ForEach(func(prop *state.RepoProposal, id string) error {
 		if prop.Height.UInt64() == uint64(stateVersion) {
 			prop.Config = repo.Config.Gov
 			return nil
 		}
-		propParent := a.GetNoPopulate(name, prop.Height.UInt64())
+		propParent := rk.GetNoPopulate(name, prop.Height.UInt64())
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
@@ -61,15 +52,8 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 	return repo
 }
 
-// GetNoPopulate fetches a repository by the given name without making additional
-// queries to populate the repo with associated objects.
-//
-// ARGS:
-// name: The name of the repository to find.
-// blockNum: The target block to query (Optional. Default: latest)
-//
-// CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repository {
+// GetNoPopulate implements RepoKeeper
+func (rk *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repository {
 
 	// Get version is provided
 	var version uint64
@@ -82,9 +66,9 @@ func (a *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repos
 	key := MakeRepoKey(name)
 	var bs []byte
 	if version != 0 {
-		_, bs = a.state.GetVersioned(key, int64(version))
+		_, bs = rk.state.GetVersioned(key, int64(version))
 	} else {
-		_, bs = a.state.Get(key)
+		_, bs = rk.state.Get(key)
 	}
 
 	// If we don't find the repo, we return an empty repository.
@@ -101,45 +85,29 @@ func (a *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repos
 	return repo
 }
 
-// Update sets a new object at the given name.
-//
-// ARGS:
-// name: The name of the repository to update
-// udp: The updated repository object to replace the existing object.
-func (a *RepoKeeper) Update(name string, upd *state.Repository) {
-	a.state.Set(MakeRepoKey(name), upd.Bytes())
+// Update implements RepoKeeper
+func (rk *RepoKeeper) Update(name string, upd *state.Repository) {
+	rk.state.Set(MakeRepoKey(name), upd.Bytes())
 }
 
-// IndexProposalVote indexes a proposal vote.
-//
-// ARGS:
-// name: The name of the repository
-// propID: The target proposal
-// voterAddr: The address of the voter
-// vote: Indicates the vote choice
-func (a *RepoKeeper) IndexProposalVote(name, propID, voterAddr string, vote int) error {
+// IndexProposalVote implements RepoKeeper
+func (rk *RepoKeeper) IndexProposalVote(name, propID, voterAddr string, vote int) error {
 	key := MakeRepoProposalVoteKey(name, propID, voterAddr)
 	rec := common.NewFromKeyValue(key, []byte(fmt.Sprintf("%d", vote)))
-	if err := a.db.Put(rec); err != nil {
+	if err := rk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index proposal vote")
 	}
 
 	return nil
 }
 
-// GetProposalVote returns the vote choice of the
-// given voter for the given proposal
-//
-// ARGS:
-// name: The name of the repository
-// propID: The target proposal
-// voterAddr: The address of the voter
-func (a *RepoKeeper) GetProposalVote(
+// GetProposalVote implements RepoKeeper
+func (rk *RepoKeeper) GetProposalVote(
 	name, propID,
 	voterAddr string) (vote int, found bool, err error) {
 
 	key := MakeRepoProposalVoteKey(name, propID, voterAddr)
-	rec, err := a.db.Get(key)
+	rec, err := rk.db.Get(key)
 	if err != nil {
 		if err != storage.ErrRecordNotFound {
 			return 0, false, err
@@ -152,30 +120,21 @@ func (a *RepoKeeper) GetProposalVote(
 	return vote, true, nil
 }
 
-// IndexProposalEnd indexes a proposal by its end height so it can be
-// tracked and finalized at the given height
-//
-// ARGS:
-// name: The name of the repository
-// propID: The target proposal
-// endHeight: The chain height when the proposal will stop accepting votes.
-func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) error {
+// IndexProposalEnd implements RepoKeeper
+func (rk *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) error {
 	key := MakeRepoProposalEndIndexKey(name, propID, endHeight)
 	rec := common.NewFromKeyValue(key, []byte("0"))
-	if err := a.db.Put(rec); err != nil {
+	if err := rk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index proposal end")
 	}
 	return nil
 }
 
-// GetProposalsEndingAt finds repo proposals ending at the given height
-//
-// ARGS:
-// height: The chain height when the proposal will stop accepting votes.
-func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
+// GetProposalsEndingAt implements RepoKeeper
+func (rk *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
 	var res []*core.EndingProposals
-	a.db.NewTx(true, true).Iterate(key, true, func(rec *common.Record) bool {
+	rk.db.NewTx(true, true).Iterate(key, true, func(rec *common.Record) bool {
 		prefixes := common.SplitPrefix(rec.GetKey())
 		res = append(res, &core.EndingProposals{
 			RepoName:   string(prefixes[2]),
@@ -187,28 +146,20 @@ func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals
 	return res
 }
 
-// MarkProposalAsClosed makes a proposal as "closed"
-//
-// ARGS:
-// name: The name of the repository
-// propID: The target proposal
-func (a *RepoKeeper) MarkProposalAsClosed(name, propID string) error {
+// MarkProposalAsClosed implements RepoKeeper
+func (rk *RepoKeeper) MarkProposalAsClosed(name, propID string) error {
 	key := MakeClosedProposalKey(name, propID)
 	rec := common.NewFromKeyValue(key, []byte("0"))
-	if err := a.db.Put(rec); err != nil {
+	if err := rk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to mark proposal as closed")
 	}
 	return nil
 }
 
-// IsProposalClosed checks whether a proposal has been marked "closed"
-//
-// ARGS:
-// name: The name of the repository
-// propID: The target proposal
-func (a *RepoKeeper) IsProposalClosed(name, propID string) (bool, error) {
+// IsProposalClosed implements RepoKeeper
+func (rk *RepoKeeper) IsProposalClosed(name, propID string) (bool, error) {
 	key := MakeClosedProposalKey(name, propID)
-	_, err := a.db.Get(key)
+	_, err := rk.db.Get(key)
 	if err != nil {
 		if err == storage.ErrRecordNotFound {
 			return false, nil
@@ -216,4 +167,25 @@ func (a *RepoKeeper) IsProposalClosed(name, propID string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// IndexRepoCreatedByAddress implements RepoKeeper
+func (rk *RepoKeeper) IndexRepoCreatedByAddress(address []byte, repoName string) error {
+	key := MakeAddressRepoPairKey(address, repoName)
+	rec := common.NewFromKeyValue(key, []byte("0"))
+	if err := rk.db.Put(rec); err != nil {
+		return errors.Wrap(err, "failed to index address and repo name pair")
+	}
+	return nil
+}
+
+// GetReposCreatedByAddress implements RepoKeeper
+func (rk *RepoKeeper) GetReposCreatedByAddress(address []byte) (res []string, err error) {
+	key := MakeQueryAddressRepoPairKey(address)
+	res = []string{}
+	rk.db.NewTx(true, true).Iterate(key, true, func(rec *common.Record) bool {
+		res = append(res, string(rec.Key))
+		return false
+	})
+	return res, nil
 }

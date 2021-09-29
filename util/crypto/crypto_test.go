@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/hex"
+	"testing"
 
 	"github.com/make-os/kit/pkgs/bech32"
 	"github.com/make-os/kit/types/constants"
@@ -9,6 +10,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestCrypto(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Crypto Suite")
+}
 
 var _ = Describe("Crypto", func() {
 
@@ -161,6 +167,10 @@ var _ = Describe("Crypto", func() {
 		It("should return false id actual data is not 20-bytes", func() {
 			id, _ := bech32.ConvertAndEncode(constants.PushAddrHRP, []byte("abc"))
 			Expect(IsValidPushAddr(id)).To(BeFalse())
+		})
+
+		It("should return true if valid", func() {
+			Expect(IsValidPushAddr("pk1dmqxfznwyhmkcgcfthlvvt88vajyhnxq7w8nsw")).To(BeTrue())
 		})
 	})
 

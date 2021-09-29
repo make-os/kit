@@ -3,6 +3,7 @@ package keepers
 import (
 	"os"
 
+	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	state2 "github.com/make-os/kit/types/state"
 
 	"github.com/make-os/kit/config"
@@ -243,6 +244,41 @@ var _ = Describe("RepoKeeper", func() {
 				Expect(err).To(BeNil())
 				Expect(closed).To(BeTrue())
 			})
+		})
+	})
+
+	Describe(".IndexRepoCreatedByAddress", func() {
+		It("should create a key for the address and repo name pair", func() {
+			addr := crypto2.NewKeyFromIntSeed(1).PubKey().AddrRaw()
+			repoName := "my_repo"
+			err := rk.IndexRepoCreatedByAddress(addr, repoName)
+			Expect(err).To(BeNil())
+
+			res, err := rk.db.Get(MakeAddressRepoPairKey(addr, repoName))
+			Expect(err).To(BeNil())
+			Expect(res.Key).ToNot(BeEmpty())
+		})
+	})
+
+	Describe(".GetReposCreatedByAddress", func() {
+		It("should return repos created by address", func() {
+			addr := crypto2.NewKeyFromIntSeed(1).PubKey().AddrRaw()
+
+			err := rk.IndexRepoCreatedByAddress(addr, "repo1")
+			Expect(err).To(BeNil())
+			err = rk.IndexRepoCreatedByAddress(addr, "repo2")
+			Expect(err).To(BeNil())
+
+			repos, err := rk.GetReposCreatedByAddress(addr)
+			Expect(err).To(BeNil())
+			Expect(repos).To(Equal([]string{"repo1", "repo2"}))
+		})
+
+		It("should return no repos when address address did not create any", func() {
+			addr := crypto2.NewKeyFromIntSeed(1).PubKey().AddrRaw()
+			repos, err := rk.GetReposCreatedByAddress(addr)
+			Expect(err).To(BeNil())
+			Expect(repos).To(BeEmpty())
 		})
 	})
 })

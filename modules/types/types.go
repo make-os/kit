@@ -156,6 +156,7 @@ type RepoModule interface {
 	Track(names string, height ...uint64)
 	UnTrack(names string)
 	GetTracked() util.Map
+	GetReposCreatedByAddress(address string) []string
 	ListPath(name, path string, revision ...string) []util.Map
 	GetFileLines(name, file string, revision ...string) []string
 	GetBranches(name string) []string

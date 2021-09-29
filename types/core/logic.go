@@ -124,11 +124,11 @@ type RepoKeeper interface {
 	// Get finds a repository by name.
 	//
 	// It will populate the proposals in the repo with their correct config
-	// source from the version the repo that they where first appeared in.
+	// source from the version the repo first appeared in.
 	//
 	// ARGS:
-	// name: The name of the repository to find.
-	// blockNum: The target block to query (Optional. Default: latest)
+	//  - name: The name of the repository to find.
+	//  - blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
 	Get(name string, blockNum ...uint64) *state.Repository
@@ -137,8 +137,8 @@ type RepoKeeper interface {
 	// queries to populate the repo with associated objects.
 	//
 	// ARGS:
-	// name: The name of the repository to find.
-	// blockNum: The target block to query (Optional. Default: latest)
+	//  - name: The name of the repository to find.
+	//  - blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
 	GetNoPopulate(name string, blockNum ...uint64) *state.Repository
@@ -146,56 +146,69 @@ type RepoKeeper interface {
 	// Update sets a new object at the given name.
 	//
 	// ARGS:
-	// name: The name of the repository to update
-	// udp: The updated repository object to replace the existing object.
+	//  - name: The name of the repository to update
+	//  - udp: The updated repository object to replace the existing object.
 	Update(name string, upd *state.Repository)
 
 	// IndexProposalVote indexes a proposal vote.
-	//
-	// ARGS:
-	// name: The name of the repository
-	// propID: The target proposal
-	// voterAddr: The address of the voter
-	// vote: Indicates the vote choice
+	// //
+	// // ARGS:
+	// //  - name: The name of the repository
+	// //  - propID: The target proposal
+	// //  - voterAddr: The address of the voter
+	// //  - vote: Indicates the vote choice
 	IndexProposalVote(name, propID, voterAddr string, vote int) error
 
 	// GetProposalVote returns the vote choice of the
-	// given voter for the given proposal
-	//
-	// ARGS:
-	// name: The name of the repository
-	// propID: The target proposal
-	// voterAddr: The address of the voter
+	// // given voter for the given proposal
+	// //
+	// // ARGS:
+	// //  - name: The name of the repository
+	// //  - propID: The target proposal
+	// //  - voterAddr: The address of the voter
 	GetProposalVote(name, propID, voterAddr string) (vote int, found bool, err error)
 
 	// IndexProposalEnd indexes a proposal by its end height so it can be
 	// tracked and finalized at the given height
 	//
 	// ARGS:
-	// name: The name of the repository
-	// propID: The target proposal
-	// endHeight: The chain height when the proposal will stop accepting votes.
+	//  - name: The name of the repository
+	//  - propID: The target proposal
+	//  - endHeight: The chain height when the proposal will stop accepting votes.
 	IndexProposalEnd(name, propID string, endHeight uint64) error
 
 	// GetProposalsEndingAt finds repo proposals ending at the given height
 	//
 	// ARGS:
-	// height: The chain height when the proposal will stop accepting votes.
+	//  - height: The chain height when the proposal will stop accepting votes.
 	GetProposalsEndingAt(height uint64) []*EndingProposals
 
 	// MarkProposalAsClosed makes a proposal as "closed"
 	//
 	// ARGS:
-	// name: The name of the repository
-	// propID: The target proposal
+	//  - name: The name of the repository
+	//  - propID: The target proposal
 	MarkProposalAsClosed(name, propID string) error
 
 	// IsProposalClosed checks whether a proposal has been marked "closed"
 	//
 	// ARGS:
-	// name: The name of the repository
-	// propID: The target proposal
+	//  - name: The name of the repository
+	//  - propID: The target proposal
 	IsProposalClosed(name, propID string) (bool, error)
+
+	// IndexRepoCreatedByAddress indexes the a repository created by the given address.
+	//
+	// ARGS:
+	//  - address: A 20 byte address
+	//  - repoName: A repository name
+	IndexRepoCreatedByAddress(address []byte, repoName string) error
+
+	// GetReposCreatedByAddress returns names of repositories created by the given address
+	//
+	// ARGS:
+	// - address: A 20 byte address
+	GetReposCreatedByAddress(address []byte) (res []string, err error)
 }
 
 // EndingProposals describes a proposal ending height

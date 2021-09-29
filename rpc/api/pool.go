@@ -39,22 +39,22 @@ func (c *PoolAPI) getPushPoolSize(params interface{}) (resp *rpc.Response) {
 func (c *PoolAPI) APIs() rpc.APISet {
 	return []rpc.MethodInfo{
 		{
-			Name:        "getSize",
-			Namespace:   constants.NamespacePool,
-			Description: "Get mempool size information",
-			Func:        c.getSize,
+			Name:      "getSize",
+			Namespace: constants.NamespacePool,
+			Desc:      "Get mempool size information",
+			Func:      c.getSize,
 		},
 		{
-			Name:        "getTop",
-			Namespace:   constants.NamespacePool,
-			Description: "Get top transactions from the mempool",
-			Func:        c.getTop,
+			Name:      "getTop",
+			Namespace: constants.NamespacePool,
+			Desc:      "Get top transactions from the mempool",
+			Func:      c.getTop,
 		},
 		{
-			Name:        "getPushPoolSize",
-			Namespace:   constants.NamespacePool,
-			Description: "Get the size of the pushpool",
-			Func:        c.getPushPoolSize,
+			Name:      "getPushPoolSize",
+			Namespace: constants.NamespacePool,
+			Desc:      "Get the size of the pushpool",
+			Func:      c.getPushPoolSize,
 		},
 	}
 }

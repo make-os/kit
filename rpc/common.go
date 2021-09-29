@@ -43,8 +43,8 @@ type MethodInfo struct {
 	// user session before this API function is executed.
 	Private bool `json:"private"`
 
-	// Description describes the API
-	Description string `json:"description"`
+	// Desc describes the API
+	Desc string `json:"description"`
 }
 
 func (a *MethodInfo) FullName() string {

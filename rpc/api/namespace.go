@@ -50,28 +50,28 @@ func (a *NamespaceAPI) lookup(params interface{}) (resp *rpc.Response) {
 func (c *NamespaceAPI) APIs() rpc.APISet {
 	return []rpc.MethodInfo{
 		{
-			Name:        "register",
-			Namespace:   constants.NamespaceNS,
-			Description: "Register a namespace",
-			Func:        c.register,
+			Name:      "register",
+			Namespace: constants.NamespaceNS,
+			Desc:      "Register a namespace",
+			Func:      c.register,
 		},
 		{
-			Name:        "updateDomain",
-			Namespace:   constants.NamespaceNS,
-			Description: "Update one or more domains of a namespace",
-			Func:        c.updateDomain,
+			Name:      "updateDomain",
+			Namespace: constants.NamespaceNS,
+			Desc:      "Update one or more domains of a namespace",
+			Func:      c.updateDomain,
 		},
 		{
-			Name:        "getTarget",
-			Namespace:   constants.NamespaceNS,
-			Description: "Get the target of a namespace URI",
-			Func:        c.getTarget,
+			Name:      "getTarget",
+			Namespace: constants.NamespaceNS,
+			Desc:      "Get the target of a namespace URI",
+			Func:      c.getTarget,
 		},
 		{
-			Name:        "lookup",
-			Namespace:   constants.NamespaceNS,
-			Description: "Find a namespace by its name",
-			Func:        c.lookup,
+			Name:      "lookup",
+			Namespace: constants.NamespaceNS,
+			Desc:      "Find a namespace by its name",
+			Func:      c.lookup,
 		},
 	}
 }

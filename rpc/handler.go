@@ -43,9 +43,9 @@ func New(mux *http.ServeMux, cfg *config.AppConfig) *Handler {
 func (s *Handler) APIs() APISet {
 	return APISet{
 		{
-			Name:        "methods",
-			Description: "List RPC methods",
-			Namespace:   constants.NamespaceRPC,
+			Name:      "methods",
+			Desc:      "List RPC methods",
+			Namespace: constants.NamespaceRPC,
 			Func: func(interface{}) *Response {
 				return Success(util.Map{"methods": s.Methods()})
 			},

@@ -56,7 +56,8 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "addContributor", Value: m.AddContributor, Description: "Register one or more push keys as contributors"},
 		{Name: "track", Value: m.Track, Description: "Track one or more repositories"},
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
-		{Name: "tracked", Value: m.GetTracked, Description: "Returns the tracked repositories"},
+		{Name: "tracked", Value: m.GetTracked, Description: "Get a list of tracked repositories"},
+		{Name: "listByCreator", Value: m.GetReposCreatedByAddress, Description: "List repositories created by an address"},
 
 		// Repository query methods.
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
@@ -152,7 +153,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	}
 }
 
-// upsertOwner creates a proposal to add or update a repository owner
+// UpsertOwner creates a proposal to add or update a repository owner
 //
 // params <map>
 //  - id <string>: A unique proposal id
@@ -189,7 +190,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 	}
 }
 
-// voteOnProposal sends a TxTypeRepoCreate transaction to create a git repository
+// Vote sends a TxTypeRepoCreate transaction to create a git repository
 //
 // params <map>
 //  - id <string>: The proposal ID to vote on
@@ -392,7 +393,7 @@ func (m *RepoModule) DepositProposalFee(params map[string]interface{}, options .
 	}
 }
 
-// Register creates a proposal to register one or more push keys
+// AddContributor creates a proposal to register one or more push keys
 //
 // params <map>
 //  - name 	<string>: The name of the repository
@@ -478,6 +479,19 @@ func (m *RepoModule) UnTrack(names string) {
 // GetTracked returns the tracked repositories
 func (m *RepoModule) GetTracked() util.Map {
 	return util.ToJSONMap(m.logic.RepoSyncInfoKeeper().Tracked())
+}
+
+// GetReposCreatedByAddress returns names of repos created by an address
+func (m *RepoModule) GetReposCreatedByAddress(address string) []string {
+	bz, err := ed25519.DecodeAddr(address)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+	repos, err := m.logic.RepoKeeper().GetReposCreatedByAddress(bz[:])
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+	return repos
 }
 
 // ListPath returns a list of entries in a repository's path

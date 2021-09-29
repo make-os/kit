@@ -31,16 +31,16 @@ func (a *TransactionAPI) getTransaction(params interface{}) (resp *rpc.Response)
 func (t *TransactionAPI) APIs() rpc.APISet {
 	return []rpc.MethodInfo{
 		{
-			Name:        "send",
-			Namespace:   constants.NamespaceTx,
-			Description: "Sends a signed transaction payload to the mempool",
-			Func:        t.sendPayload,
+			Name:      "send",
+			Namespace: constants.NamespaceTx,
+			Desc:      "Sends a signed transaction payload to the mempool",
+			Func:      t.sendPayload,
 		},
 		{
-			Name:        "get",
-			Namespace:   constants.NamespaceTx,
-			Description: "Get a transaction by its hash",
-			Func:        t.getTransaction,
+			Name:      "get",
+			Namespace: constants.NamespaceTx,
+			Desc:      "Get a transaction by its hash",
+			Func:      t.getTransaction,
 		},
 	}
 }
