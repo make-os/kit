@@ -75,6 +75,9 @@ var (
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+
+	// TxRepoCreateMaxCharDesc is the maximum character for a repo description
+	TxRepoCreateMaxCharDesc = 140
 )
 
 // Namespace config

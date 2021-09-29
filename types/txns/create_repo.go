@@ -10,21 +10,23 @@ import (
 // TxRepoCreate implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxRepoCreate struct {
-	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name      string                 `json:"name" msgpack:"name" mapstructure:"name"`
-	Config    map[string]interface{} `json:"config" msgpack:"config" mapstructure:"config"`
+	*TxCommon   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType     `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue    `json:",flatten" msgpack:"-" mapstructure:"-"`
+	Name        string                 `json:"name" msgpack:"name" mapstructure:"name"`
+	Description string                 `json:"desc" msgpack:"desc" mapstructure:"desc"`
+	Config      map[string]interface{} `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // NewBareTxRepoCreate returns an instance of TxRepoCreate with zero values
 func NewBareTxRepoCreate() *TxRepoCreate {
 	return &TxRepoCreate{
-		TxCommon: NewBareTxCommon(),
-		TxType:   &TxType{Type: TxTypeRepoCreate},
-		TxValue:  &TxValue{Value: "0"},
-		Name:     "",
-		Config:   make(map[string]interface{}),
+		TxCommon:    NewBareTxCommon(),
+		TxType:      &TxType{Type: TxTypeRepoCreate},
+		TxValue:     &TxValue{Value: "0"},
+		Name:        "",
+		Description: "",
+		Config:      make(map[string]interface{}),
 	}
 }
 
@@ -39,7 +41,8 @@ func (tx *TxRepoCreate) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.SenderPubKey,
 		tx.Value,
 		tx.Name,
-		tx.Config)
+		tx.Config,
+		tx.Description)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -53,7 +56,8 @@ func (tx *TxRepoCreate) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Value,
 		&tx.Name,
-		&tx.Config)
+		&tx.Config,
+		&tx.Description)
 }
 
 // Bytes returns the serialized transaction

@@ -186,7 +186,7 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) *ChainInfo {
 	tmcfg.RPC.ListenAddress = "tcp://" + cfg.RPC.TMRPCAddress
 
 	if cfg.IsTest() {
-		return nil
+		return &ChainInfo{}
 	}
 
 	// Configure chain

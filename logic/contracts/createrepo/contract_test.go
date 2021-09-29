@@ -20,7 +20,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 )
 
-func TestCreateRepo(t *testing.T) {
+func TestCreateRepoContract(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "CreateRepo Suite")
 }
@@ -68,10 +68,11 @@ var _ = Describe("CreateRepoContract", func() {
 		BeforeEach(func() {
 			repoCfg = state.MakeDefaultRepoConfig()
 			tx = &txns.TxRepoCreate{
-				Name:     "repo",
-				Config:   repoCfg.ToBasicMap(),
-				TxValue:  &txns.TxValue{Value: "4"},
-				TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				Name:        "repo",
+				Description: "a repository",
+				Config:      repoCfg.ToBasicMap(),
+				TxValue:     &txns.TxValue{Value: "4"},
+				TxCommon:    &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 			}
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Stakes: state.BareAccountStakes(), DelegatorCommission: 10})
 		})
@@ -86,6 +87,10 @@ var _ = Describe("CreateRepoContract", func() {
 
 			It("should set CreatedAt height to 1", func() {
 				Expect(repo.CreatedAt.UInt64()).To(Equal(uint64(1)))
+			})
+
+			It("should set Description", func() {
+				Expect(repo.Description).To(Equal(tx.Description))
 			})
 
 			Specify("that repo config is the default", func() {

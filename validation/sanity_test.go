@@ -569,6 +569,7 @@ var _ = Describe("TxValidator", func() {
 			tx = txns.NewBareTxRepoCreate()
 			tx.Name = "repo"
 			tx.Fee = "1"
+			tx.Description = "some description"
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -602,6 +603,26 @@ var _ = Describe("TxValidator", func() {
 				err := validation.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, msg:invalid identifier; only alphanumeric, _, and - characters are allowed"))
+			})
+
+			It("has no description", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Name = "name"
+				tx.Description = ""
+				err := validation.CheckTxRepoCreate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:desc, msg:requires a description"))
+			})
+
+			It("has description with length > 140", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Name = "name"
+				tx.Description = strings.Repeat("a", 141)
+				err := validation.CheckTxRepoCreate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:desc, msg:description length cannot be greater than 140"))
 			})
 
 			It("has invalid repo config (propVoter)", func() {

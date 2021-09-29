@@ -308,6 +308,17 @@ func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
 		return err
 	}
 
+	if err := v.Validate(tx.Description,
+		v.Required.Error(feI(index, "desc", "requires a description").Error()),
+	); err != nil {
+		return err
+	}
+
+	if len(tx.Description) > params.TxRepoCreateMaxCharDesc {
+		return feI(index, "desc", fmt.Sprintf("description length cannot be greater than %d",
+			params.TxRepoCreateMaxCharDesc))
+	}
+
 	if err := CheckRepoConfig(tx.Config, index); err != nil {
 		return err
 	}

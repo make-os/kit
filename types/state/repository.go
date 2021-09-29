@@ -334,6 +334,7 @@ func (rc *RepoContributors) Has(pushKeyID string) bool {
 func BareRepository() *Repository {
 	return &Repository{
 		Balance:      "0",
+		Description:  "",
 		References:   map[string]*Reference{},
 		Owners:       map[string]*RepoOwner{},
 		Proposals:    map[string]*RepoProposal{},
@@ -348,6 +349,9 @@ type Repository struct {
 
 	// Balance is the native coin balance
 	Balance util.String `json:"balance" msgpack:"balance" mapstructure:"balance"`
+
+	// Description describes the repository
+	Description string `json:"desc" msgpack:"desc" mapstructure:"desc"`
 
 	// References contains the repository reference information
 	References References `json:"references" msgpack:"references" mapstructure:"references"`
@@ -392,6 +396,7 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
 	return r.Balance.IsZero() &&
+		len(r.Description) == 0 &&
 		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
@@ -405,6 +410,7 @@ func (r *Repository) IsNil() bool {
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return r.EncodeMulti(enc,
 		r.Balance,
+		r.Description,
 		r.Owners,
 		r.References,
 		r.Proposals,
@@ -419,6 +425,7 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 	err := r.DecodeMulti(dec,
 		&r.Balance,
+		&r.Description,
 		&r.Owners,
 		&r.References,
 		&r.Proposals,

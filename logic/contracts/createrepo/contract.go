@@ -43,6 +43,7 @@ func (c *Contract) Exec() error {
 
 	// Create an empty repository
 	newRepo := state.BareRepository()
+	newRepo.Description = c.tx.Description
 	newRepo.CreatedAt = util.UInt64(c.chainHeight + 1)
 
 	// Add config
