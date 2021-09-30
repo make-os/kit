@@ -107,27 +107,27 @@ func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response
 
 	// Handle cors
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-		return nil
+		return
 	}
 
 	var newReq Request
 	if err := json.NewDecoder(r.Body).Decode(&newReq); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
 		return Error(-32700, "Parse error", nil)
 	}
 
 	if newReq.JSONRPCVersion != "2.0" {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
 		return Error(-32600, "`jsonrpc` value is required", nil)
 	}
 
 	// Target method must be known
 	method := s.apiSet.Get(newReq.Method)
 	if method == nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusOK)
 		return Error(-32601, "method not found", nil)
 	}
 
@@ -225,6 +225,6 @@ func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response
 		return
 	}
 
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(http.StatusOK)
 	return
 }
