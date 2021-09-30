@@ -75,11 +75,11 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 // Get returns a tx by hash
 //
 // ARGS:
-// hash: The transaction hash
+//  - hash: The transaction hash
 //
 // RETURNS object 	<map>
-// object.status 	<string>: 		The status of the transaction (in_block, in_mempool or in_pushpool).
-// object.data		<object>: 		The transaction object.
+//  - object.status 	<string>: 		The status of the transaction (in_block, in_mempool or in_pushpool).
+//  - object.data		<object>: 		The transaction object.
 func (m *TxModule) Get(hash string) util.Map {
 
 	if m.IsAttached() {
@@ -116,13 +116,13 @@ func (m *TxModule) Get(hash string) util.Map {
 	panic(errors.ReqErr(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
 }
 
-// sendPayload sends an already signed transaction object to the network
+// SendPayload sends an already signed transaction object to the network
 //
 // ARGS:
-// params: The transaction data
+//  - params: The transaction data
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+//  - object.hash <string>: 				The transaction hash
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 
 	if m.IsAttached() {
