@@ -72,9 +72,11 @@ genmocks:
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks
 	mockgen -source=remote/push/types/objects.go -destination=mocks/pushpool.go -package mocks
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
+	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
 	mockgen -source=remote/fetcher/object_fetcher.go -destination=mocks/object_fetcher.go -package mocks
 	mockgen -source=remote/refsync/types/types.go -destination=mocks/refsync.go -package mocks
 	mockgen -source=remote/push/push_handler.go -destination=mocks/push_handler.go -package mocks
+	mockgen -source=remote/push/types/interfaces.go -destination=mocks/push_types.go -package mocks
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks
 	mockgen -source=net/dht/dht.go -destination=mocks/dht_server.go -package mocks
 	mockgen -source=net/dht/provider_tracker.go -destination=mocks/provider_tracker.go -package mocks
