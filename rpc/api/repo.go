@@ -160,7 +160,7 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "vote", Namespace: ns, Func: a.vote, Desc: "Cast a vote on a repository's proposal"},
 		{Name: "track", Namespace: ns, Func: a.track, Desc: "Track one or more repositories", Private: true},
 		{Name: "untrack", Namespace: ns, Func: a.untrack, Desc: "Untrack one or more repositories", Private: true},
-		{Name: "tracked", Namespace: ns, Func: a.tracked, Desc: "Get all tracked repositories", Private: true},
+		{Name: "tracked", Namespace: ns, Func: a.tracked, Desc: "Get all tracked repositories"},
 		{Name: "listByCreator", Namespace: ns, Func: a.listByCreator, Desc: "List repositories created by an address"},
 		{Name: "ls", Namespace: ns, Func: a.ls, Desc: "List files and directories of a repository"},
 		{Name: "getLines", Namespace: ns, Func: a.getFileLines, Desc: "Gets the lines of a file in a repository"},
