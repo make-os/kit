@@ -38,7 +38,7 @@ type HookArgs struct {
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
 	GetNextNonce api.NextNonceGetter
 
-	// SetRemotePushToken is a function for creating, signing and apply a push token  to a give remote
+	// SetRemotePushToken is a function for creating, signing and applying a push token to a give remote
 	SetRemotePushToken server.MakeAndApplyPushTokenToRemoteFunc
 
 	CommitSigner types3.SignCommitFunc

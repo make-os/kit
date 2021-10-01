@@ -429,7 +429,7 @@ func RemoveFlag(args []string, flags ...string) []string {
 // Interrupt is used to signal program interruption
 type Interrupt chan struct{}
 
-// CloseIsTrue checks if the channel is closed
+// IsClosed checks if the channel is closed
 func (i *Interrupt) IsClosed() bool {
 	return IsStructChanClosed(*i)
 }
