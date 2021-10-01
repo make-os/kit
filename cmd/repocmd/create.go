@@ -25,6 +25,9 @@ type CreateArgs struct {
 	// Name is the unique name of the repository
 	Name string
 
+	// Description is a short description of the repository
+	Description string
+
 	// configPath is the path to the repo config file or a JSON string
 	// to be decoded as the config.
 	Config string
@@ -112,12 +115,13 @@ func CreateCmd(cfg *config.AppConfig, args *CreateArgs) error {
 	}
 
 	body := &api2.BodyCreateRepo{
-		Name:       args.Name,
-		Nonce:      nonce,
-		Value:      args.Value,
-		Fee:        args.Fee,
-		Config:     repoCfg,
-		SigningKey: key.GetKey(),
+		Name:        args.Name,
+		Description: args.Description,
+		Nonce:       nonce,
+		Value:       args.Value,
+		Fee:         args.Fee,
+		Config:      repoCfg,
+		SigningKey:  key.GetKey(),
 	}
 
 	// Create the repo creating transaction

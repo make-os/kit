@@ -49,6 +49,7 @@ var repoCreateCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		description, _ := cmd.Flags().GetString("desc")
 		fee, _ := cmd.Flags().GetFloat64("fee")
 		value, _ := cmd.Flags().GetFloat64("value")
 		signingKey, _ := cmd.Flags().GetString("signing-key")
@@ -59,6 +60,7 @@ var repoCreateCmd = &cobra.Command{
 		_, client := common.GetRepoAndClient(cmd, cfg, "")
 		if err := CreateCmd(cfg, &CreateArgs{
 			Name:                args[0],
+			Description:         description,
 			Fee:                 fee,
 			Value:               value,
 			SigningKey:          signingKey,
@@ -81,6 +83,10 @@ func setupRepoCreateCmd(cmd *cobra.Command) {
 	f := cmd.Flags()
 
 	f.StringP("config", "c", "", "Specify repository settings or a file containing it")
+
+	if f.Lookup("desc") == nil {
+		f.String("desc", "", "A description of the repository (max: 140 chars)")
+	}
 
 	if f.Lookup("value") == nil {
 		f.Float64P("value", "v", 0, "The amount of coins to transfer to the repository")

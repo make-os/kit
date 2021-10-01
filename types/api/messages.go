@@ -76,12 +76,13 @@ type ResultCreateRepo struct {
 
 // BodyCreateRepo contains arguments for creating a repository
 type BodyCreateRepo struct {
-	Name       string
-	Nonce      uint64
-	Value      float64
-	Fee        float64
-	Config     map[string]interface{}
-	SigningKey *ed25519.Key
+	Name        string
+	Description string
+	Nonce       uint64
+	Value       float64
+	Fee         float64
+	Config      map[string]interface{}
+	SigningKey  *ed25519.Key
 }
 
 // ResultRepository is the result for a request to get a repository

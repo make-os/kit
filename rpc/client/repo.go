@@ -26,6 +26,7 @@ func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error
 	// Create a TxRepoCreate object and fill it with args
 	tx := txns.NewBareTxRepoCreate()
 	tx.Name = body.Name
+	tx.Description = body.Description
 	tx.Nonce = body.Nonce
 	tx.Value = util.String(cast.ToString(body.Value))
 	tx.Fee = util.String(cast.ToString(body.Fee))
