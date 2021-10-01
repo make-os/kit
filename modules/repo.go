@@ -524,11 +524,11 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 
 	items, err := r.ListPath(rev, path)
 	if err != nil {
+		if err == plumbing.ErrReferenceNotFound {
+			return []util.Map{}
+		}
 		if err == repo.ErrPathNotFound {
 			panic(se(404, StatusCodePathNotFound, "path", err.Error()))
-		}
-		if err == plumbing.ErrReferenceNotFound {
-			panic(se(404, StatusCodeReferenceNotFound, "revision", err.Error()))
 		}
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
