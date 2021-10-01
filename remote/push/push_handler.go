@@ -102,14 +102,8 @@ func (h *BasicHandler) WaitForPushTx() chan interface{} {
 			case <-time.After(1 * time.Minute):
 				ch <- fmt.Errorf("timed out while waiting for push tx to be added to mempool")
 				return
-
-			default:
 			}
 		}
-		if config.GetInterrupt().IsClosed() {
-			ch <- fmt.Errorf("server is shutting down")
-		}
-		close(ch)
 	}()
 	return ch
 }

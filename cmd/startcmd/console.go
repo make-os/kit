@@ -26,7 +26,6 @@ var ConsoleCmd = &cobra.Command{
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
 				n.Stop()
-				config.GetInterrupt().Close()
 			})
 
 			// Register JS module hub

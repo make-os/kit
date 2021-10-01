@@ -546,7 +546,6 @@ func (sv *Server) Wait() {
 
 // Shutdown shuts down the server
 func (sv *Server) Shutdown(ctx context.Context) {
-	sv.log.Info("Shutting down")
 	if sv.srv != nil {
 		_ = sv.srv.Shutdown(ctx)
 	}
@@ -554,9 +553,11 @@ func (sv *Server) Shutdown(ctx context.Context) {
 
 // Stop implements Reactor
 func (sv *Server) Stop() error {
-	_ = sv.BaseReactor.Stop()
+	sv.log.Info("Gracefully shutting down server")
+	sv.BaseReactor.Stop()
 	sv.objFetcher.Stop()
-	sv.Shutdown(context.Background())
-	sv.log.Info("Shutdown")
+	ctx, cc := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cc()
+	sv.Shutdown(ctx)
 	return nil
 }

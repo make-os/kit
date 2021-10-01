@@ -398,6 +398,8 @@ func (n *Node) Stop() {
 	n.closeOnce.Do(func() {
 		n.log.Info("Stopping...")
 
+		config.GetInterrupt().Close()
+
 		if n.dht != nil {
 			_ = n.dht.Stop()
 		}
@@ -418,8 +420,6 @@ func (n *Node) Stop() {
 		if !n.cfg.IsAttachMode() {
 			n.log.Info("Databases have been closed")
 		}
-
-		config.GetInterrupt().Close()
 
 		n.log.Info("Stopped")
 	})
