@@ -11,6 +11,7 @@ import (
 	plumb "github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	"github.com/make-os/kit/config"
 	memtypes "github.com/make-os/kit/mempool/types"
 	"github.com/make-os/kit/net/dht/announcer"
 	"github.com/make-os/kit/params"
@@ -82,7 +83,7 @@ func (h *BasicHandler) WaitForPushTx() chan interface{} {
 	ch := make(chan interface{}, 1)
 	go func() {
 		bus := h.Server.Cfg().G().Bus
-		for len(ch) == 0 {
+		for len(ch) == 0 && !config.GetInterrupt().IsClosed() {
 			select {
 			case evt := <-bus.Once(memtypes.EvtMempoolTxAdded):
 				tx := evt.Args[1].(coretypes.BaseTx)
@@ -98,11 +99,17 @@ func (h *BasicHandler) WaitForPushTx() chan interface{} {
 					return
 				}
 
-			case <-time.After(15 * time.Minute):
+			case <-time.After(1 * time.Minute):
 				ch <- fmt.Errorf("timed out while waiting for push tx to be added to mempool")
 				return
+
+			default:
 			}
 		}
+		if config.GetInterrupt().IsClosed() {
+			ch <- fmt.Errorf("server is shutting down")
+		}
+		close(ch)
 	}()
 	return ch
 }
