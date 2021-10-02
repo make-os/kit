@@ -119,7 +119,7 @@ func (a *RepoAPI) getBranches(name interface{}) (resp *rpc.Response) {
 func (a *RepoAPI) getLatestCommit(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
 	return rpc.Success(util.Map{
-		"commits": a.mods.Repo.GetLatestBranchCommit(m.Get("name").Str(), m.Get("branch").Str()),
+		"commit": a.mods.Repo.GetLatestBranchCommit(m.Get("name").Str(), m.Get("branch").Str()),
 	})
 }
 
