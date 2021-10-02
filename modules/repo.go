@@ -650,6 +650,10 @@ func (m *RepoModule) GetBranches(name string) []string {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
+	for i, branch := range branches {
+		branches[i] = "refs/heads/" + branch
+	}
+
 	return branches
 }
 

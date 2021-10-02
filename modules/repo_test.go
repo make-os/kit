@@ -702,7 +702,7 @@ var _ = Describe("RepoModule", func() {
 		It("should return expected branch(es)", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			lines := m.GetBranches("repo1")
-			Expect(lines).To(Equal([]string{"master"}))
+			Expect(lines).To(Equal([]string{"refs/heads/master"}))
 		})
 	})
 
