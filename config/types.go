@@ -282,6 +282,11 @@ func (c *AppConfig) GetRepoRoot() string {
 	return c.repoDir
 }
 
+// GetRepoPath returns the full path of a repository
+func (c *AppConfig) GetRepoPath(name string) string {
+	return filepath.Join(c.repoDir, name)
+}
+
 // IsValidatorNode checks if the node is in validator mode
 func (c *AppConfig) IsValidatorNode() bool {
 	return c.Node.Validator

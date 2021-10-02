@@ -153,7 +153,7 @@ type LocalRepo interface {
 	// GetBranches returns a list of branches
 	GetBranches() (branches []string, err error)
 
-	// GetBranchCommit returns information about last commit of a branch
+	// GetLatestCommit returns information about last commit of a branch
 	GetLatestCommit(branch string) (*BranchCommit, error)
 
 	// GetCommits returns commits of a branch.

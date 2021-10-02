@@ -788,6 +788,16 @@ var _ = Describe("RepoModule", func() {
 		})
 	})
 
+	Describe(".CountCommits", func() {
+		It("should return correct commit count", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			count := m.CountCommits("repo1", "master")
+			Expect(count).To(Equal(7))
+			count = m.CountCommits("repo1", "cbc329e7e912227d58edea6d6a74d550cd664adf")
+			Expect(count).To(Equal(2))
+		})
+	})
+
 	Describe(".GetCommitAncestors", func() {
 		It("should panic if repo name is not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}

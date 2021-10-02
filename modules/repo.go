@@ -3,7 +3,6 @@ package modules
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
@@ -66,6 +65,7 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
 		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits in a branch of a repository"},
 		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
+		{Name: "countCommits", Value: m.CountCommits, Description: "Get a branch/reference commit count"},
 	}
 }
 
@@ -504,7 +504,7 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -550,7 +550,7 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 		panic(se(400, StatusCodeInvalidParam, "file", "file path is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -589,7 +589,7 @@ func (m *RepoModule) GetBranches(name string) []string {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -618,7 +618,7 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -638,7 +638,7 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 	return util.ToMap(c)
 }
 
-// GetCommits returns commits of a branch.
+// GetCommits returns commits in a branch.
 //  - name: The name of the target repository.
 //  - branch: The target branch.
 //  - limit: The number of commit to return. 0 means all.
@@ -651,7 +651,7 @@ func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
 		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -676,6 +676,38 @@ func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
 	return util.StructSliceToMap(commits)
 }
 
+// CountCommits returns the number commits in a branch/reference.
+//  - name: The name of the target repository.
+//  - ref: The target branch or reference.
+func (m *RepoModule) CountCommits(name, ref string) int {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if ref == "" {
+		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	count, err := r.NumCommits(ref, false)
+	if err != nil {
+		if err == plumbing.ErrReferenceNotFound {
+			panic(se(404, StatusCodeBranchNotFound, "branch", "branch does not exist"))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return count
+}
+
 // GetCommitAncestors returns ancestors of a commit with the given hash.
 //  - commitHash: The hash of the commit.
 //  - limit: The number of commit to return. 0 means all.
@@ -688,7 +720,7 @@ func (m *RepoModule) GetCommitAncestors(name, commitHash string, limit ...int) [
 		panic(se(400, StatusCodeInvalidParam, "commitHash", "commit hash is required"))
 	}
 
-	repoPath := filepath.Join(m.logic.Config().GetRepoRoot(), name)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {

@@ -135,6 +135,14 @@ func (a *RepoAPI) getCommits(params interface{}) (resp *rpc.Response) {
 	})
 }
 
+// getCommits gets a list of commits of a branch/reference in a repository
+func (a *RepoAPI) countCommits(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	return rpc.Success(util.Map{
+		"count": a.mods.Repo.CountCommits(m.Get("name").Str(), m.Get("branch").Str()),
+	})
+}
+
 // getAncestors gets ancestors of a commit in a repository
 func (a *RepoAPI) getAncestors(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
@@ -167,6 +175,7 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Desc: "Gets a list of branches in a repository"},
 		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Desc: "Gets the latest commit of a branch in a repository"},
 		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Gets a list of commits in a branch of a repository"},
+		{Name: "countCommits", Namespace: ns, Func: a.countCommits, Desc: "Get the number of commits in a reference"},
 		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Desc: "Get ancestors of a commit in a repository"},
 	}
 }
