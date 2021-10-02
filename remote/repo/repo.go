@@ -521,13 +521,22 @@ handleEntry:
 }
 
 // GetFileLines returns the lines of a file
+//  - ref: A full reference name or commit hash
+//  - path: The case-sensitive file path
 func (r *Repo) GetFileLines(ref, path string) (res []string, err error) {
-	reference, err := r.Reference(plumbing.ReferenceName(ref), true)
-	if err != nil {
-		return nil, err
+
+	var hash plumbing.Hash
+	if plumbing.IsHash(ref) && !strings.HasPrefix(strings.ToLower(ref), "refs") {
+		hash = plumbing.NewHash(ref)
+	} else {
+		reference, err := r.Reference(plumbing.ReferenceName(ref), true)
+		if err != nil {
+			return nil, err
+		}
+		hash = reference.Hash()
 	}
 
-	commit, err := r.CommitObject(reference.Hash())
+	commit, err := r.CommitObject(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -553,6 +562,50 @@ func (r *Repo) GetFileLines(ref, path string) (res []string, err error) {
 	}
 
 	return file.Lines()
+}
+
+// GetFile returns the lines of a file
+//  - ref: A full reference name or commit hash
+//  - path: The case-sensitive file path
+func (r *Repo) GetFile(ref, path string) (res string, err error) {
+
+	var hash plumbing.Hash
+	if plumbing.IsHash(ref) && !strings.HasPrefix(strings.ToLower(ref), "refs") {
+		hash = plumbing.NewHash(ref)
+	} else {
+		reference, err := r.Reference(plumbing.ReferenceName(ref), true)
+		if err != nil {
+			return "", err
+		}
+		hash = reference.Hash()
+	}
+
+	commit, err := r.CommitObject(hash)
+	if err != nil {
+		return "", err
+	}
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return "", err
+	}
+
+	targetEntry, err := tree.FindEntry(path)
+	if err != nil {
+		if err == object.ErrEntryNotFound {
+			return "", ErrPathNotFound
+		}
+		return "", err
+	} else if targetEntry.Mode == filemode.Dir {
+		return "", ErrPathNotAFile
+	}
+
+	file, err := tree.TreeEntryFile(targetEntry)
+	if err != nil {
+		return "", err
+	}
+
+	return file.Contents()
 }
 
 // GetBranches returns a list of branches
@@ -594,7 +647,10 @@ func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 		return nil, err
 	}
 
-	bc := &types.BranchCommit{Message: commit.Message, Hash: commit.Hash.String()}
+	bc := &types.BranchCommit{
+		Message: strings.Trim(strings.TrimSpace(commit.Message), "\n"),
+		Hash:    commit.Hash.String(),
+	}
 	if commit.Committer != (object.Signature{}) {
 		bc.Committer = &types.CommitSignatory{
 			Name:      commit.Committer.Name,

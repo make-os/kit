@@ -228,17 +228,17 @@ func (mr *MockGitModuleMockRecorder) GetMergeCommits(arg0 interface{}, arg1 ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockGitModule)(nil).GetMergeCommits), varargs...)
 }
 
-// GetPathUpdateTime mocks base method
-func (m *MockGitModule) GetPathUpdateInfo(arg0 string) (time.Time, error) {
+// GetPathUpdateInfo mocks base method
+func (m *MockGitModule) GetPathUpdateInfo(arg0 string) (*types.PathUpdateInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPathUpdateInfo", arg0)
-	ret0, _ := ret[0].(time.Time)
+	ret0, _ := ret[0].(*types.PathUpdateInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPathUpdateTime indicates an expected call of GetPathUpdateTime
-func (mr *MockGitModuleMockRecorder) GetPathUpdateTime(arg0 interface{}) *gomock.Call {
+// GetPathUpdateInfo indicates an expected call of GetPathUpdateInfo
+func (mr *MockGitModuleMockRecorder) GetPathUpdateInfo(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathUpdateInfo", reflect.TypeOf((*MockGitModule)(nil).GetPathUpdateInfo), arg0)
 }
@@ -793,6 +793,21 @@ func (mr *MockLocalRepoMockRecorder) GetCommits(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockLocalRepo)(nil).GetCommits), arg0, arg1)
 }
 
+// GetFile mocks base method
+func (m *MockLocalRepo) GetFile(arg0, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFile", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFile indicates an expected call of GetFile
+func (mr *MockLocalRepoMockRecorder) GetFile(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFile", reflect.TypeOf((*MockLocalRepo)(nil).GetFile), arg0, arg1)
+}
+
 // GetFileLines mocks base method
 func (m *MockLocalRepo) GetFileLines(arg0, arg1 string) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -958,17 +973,17 @@ func (mr *MockLocalRepoMockRecorder) GetPath() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockLocalRepo)(nil).GetPath))
 }
 
-// GetPathUpdateTime mocks base method
-func (m *MockLocalRepo) GetPathUpdateInfo(arg0 string) (time.Time, error) {
+// GetPathUpdateInfo mocks base method
+func (m *MockLocalRepo) GetPathUpdateInfo(arg0 string) (*types.PathUpdateInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPathUpdateInfo", arg0)
-	ret0, _ := ret[0].(time.Time)
+	ret0, _ := ret[0].(*types.PathUpdateInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPathUpdateTime indicates an expected call of GetPathUpdateTime
-func (mr *MockLocalRepoMockRecorder) GetPathUpdateTime(arg0 interface{}) *gomock.Call {
+// GetPathUpdateInfo indicates an expected call of GetPathUpdateInfo
+func (mr *MockLocalRepoMockRecorder) GetPathUpdateInfo(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathUpdateInfo", reflect.TypeOf((*MockLocalRepo)(nil).GetPathUpdateInfo), arg0)
 }

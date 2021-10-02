@@ -632,32 +632,32 @@ var _ = Describe("RepoModule", func() {
 		})
 	})
 
-	Describe(".GetFileLines", func() {
+	Describe(".ReadFileLines", func() {
 		It("should panic if repo name is not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("", "")
+				m.ReadFileLines("", "")
 			})
 		})
 
 		It("should panic if file path is not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "file path is required", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("repo1", "")
+				m.ReadFileLines("repo1", "")
 			})
 		})
 
 		It("should panic if repo does not exist", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 404, Msg: "repository does not exist", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("unknown", "a/b")
+				m.ReadFileLines("unknown", "a/b")
 			})
 		})
 
 		It("should panic if file path was not provided", func() {
 			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "file path is required", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("repo1", "")
+				m.ReadFileLines("repo1", "")
 			})
 		})
 
@@ -665,7 +665,7 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			err := &errors.ReqError{Code: "path_not_found", HttpCode: 404, Msg: "path not found", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("repo1", "unknown")
+				m.ReadFileLines("repo1", "unknown")
 			})
 		})
 
@@ -673,13 +673,13 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			err := &errors.ReqError{Code: "path_not_file", HttpCode: 400, Msg: "path is not a file", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.GetFileLines("repo1", "a")
+				m.ReadFileLines("repo1", "a")
 			})
 		})
 
 		It("should return lines of a file", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
-			lines := m.GetFileLines("repo1", "file.txt")
+			lines := m.ReadFileLines("repo1", "file.txt")
 			Expect(lines).To(Equal([]string{"Hello World", "Hello Friend"}))
 		})
 	})

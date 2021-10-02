@@ -158,7 +158,8 @@ type RepoModule interface {
 	GetTracked() util.Map
 	GetReposCreatedByAddress(address string) []string
 	ListPath(name, path string, revision ...string) []util.Map
-	GetFileLines(name, file string, revision ...string) []string
+	ReadFileLines(name, filePath string, revision ...string) []string
+	ReadFile(name, filePath string, revision ...string) string
 	GetBranches(name string) []string
 	GetLatestBranchCommit(name, branch string) util.Map
 	GetCommits(name, branch string, limit ...int) []util.Map

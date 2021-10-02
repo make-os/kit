@@ -150,6 +150,9 @@ type LocalRepo interface {
 	// GetFileLines returns the lines of a file
 	GetFileLines(ref, path string) (res []string, err error)
 
+	// GetFile returns the file as a string
+	GetFile(ref, path string) (res string, err error)
+
 	// GetBranches returns a list of branches
 	GetBranches() (branches []string, err error)
 

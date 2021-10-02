@@ -60,7 +60,8 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 
 		// Repository query methods.
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
-		{Name: "getLines", Value: m.GetFileLines, Description: "Get the lines of a file in a repository"},
+		{Name: "readFileLines", Value: m.ReadFileLines, Description: "Get the lines of a file in a repository"},
+		{Name: "readFile", Value: m.ReadFile, Description: "Get the string content of a file in a repository"},
 		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
 		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
 		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits in a branch of a repository"},
@@ -536,17 +537,17 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 	return util.StructSliceToMap(items)
 }
 
-// GetFileLines returns the lines of a file in a repository.
+// ReadFileLines returns the lines of a file in a repository.
 //  - name: The name of the target repository.
-//  - file: The file path.
+//  - filePath: The file path.
 //  - revision: The revision that will be queried (default: HEAD).
-func (m *RepoModule) GetFileLines(name, file string, revision ...string) []string {
+func (m *RepoModule) ReadFileLines(name, filePath string, revision ...string) []string {
 
 	if name == "" {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
-	if file == "" {
+	if filePath == "" {
 		panic(se(400, StatusCodeInvalidParam, "file", "file path is required"))
 	}
 
@@ -559,8 +560,8 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
 	}
 
-	if strings.HasPrefix(file, "."+string(os.PathSeparator)) {
-		file = file[2:]
+	if strings.HasPrefix(filePath, "."+string(os.PathSeparator)) {
+		filePath = filePath[2:]
 	}
 
 	var rev = "HEAD"
@@ -568,7 +569,7 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 		rev = revision[0]
 	}
 
-	lines, err := r.GetFileLines(rev, file)
+	lines, err := r.GetFileLines(rev, filePath)
 	if err != nil {
 		if err == repo.ErrPathNotFound {
 			panic(se(404, StatusCodePathNotFound, "file", err.Error()))
@@ -580,6 +581,52 @@ func (m *RepoModule) GetFileLines(name, file string, revision ...string) []strin
 	}
 
 	return lines
+}
+
+// ReadFile returns the string content of a file in a repository.
+//  - name: The name of the target repository.
+//  - filePath: The file path.
+//  - revision: The revision that will be queried (default: HEAD).
+func (m *RepoModule) ReadFile(name, filePath string, revision ...string) string {
+
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	if filePath == "" {
+		panic(se(400, StatusCodeInvalidParam, "file", "file path is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	if strings.HasPrefix(filePath, "."+string(os.PathSeparator)) {
+		filePath = filePath[2:]
+	}
+
+	var rev = "HEAD"
+	if len(revision) > 0 {
+		rev = revision[0]
+	}
+
+	str, err := r.GetFile(rev, filePath)
+	if err != nil {
+		if err == repo.ErrPathNotFound {
+			panic(se(404, StatusCodePathNotFound, "file", err.Error()))
+		}
+		if err == repo.ErrPathNotAFile {
+			panic(se(400, StatusCodePathNotAFile, "file", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "file", err.Error()))
+	}
+
+	return str
 }
 
 // GetBranches returns the list of branches

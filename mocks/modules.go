@@ -1366,23 +1366,42 @@ func (mr *MockRepoModuleMockRecorder) ListPath(name, path interface{}, revision 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPath", reflect.TypeOf((*MockRepoModule)(nil).ListPath), varargs...)
 }
 
-// GetFileLines mocks base method
-func (m *MockRepoModule) GetFileLines(name, file string, revision ...string) []string {
+// ReadFileLines mocks base method
+func (m *MockRepoModule) ReadFileLines(name, filePath string, revision ...string) []string {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{name, file}
+	varargs := []interface{}{name, filePath}
 	for _, a := range revision {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetFileLines", varargs...)
+	ret := m.ctrl.Call(m, "ReadFileLines", varargs...)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// GetFileLines indicates an expected call of GetFileLines
-func (mr *MockRepoModuleMockRecorder) GetFileLines(name, file interface{}, revision ...interface{}) *gomock.Call {
+// ReadFileLines indicates an expected call of ReadFileLines
+func (mr *MockRepoModuleMockRecorder) ReadFileLines(name, filePath interface{}, revision ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{name, file}, revision...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileLines", reflect.TypeOf((*MockRepoModule)(nil).GetFileLines), varargs...)
+	varargs := append([]interface{}{name, filePath}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadFileLines", reflect.TypeOf((*MockRepoModule)(nil).ReadFileLines), varargs...)
+}
+
+// ReadFile mocks base method
+func (m *MockRepoModule) ReadFile(name, filePath string, revision ...string) string {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name, filePath}
+	for _, a := range revision {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ReadFile", varargs...)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ReadFile indicates an expected call of ReadFile
+func (mr *MockRepoModuleMockRecorder) ReadFile(name, filePath interface{}, revision ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name, filePath}, revision...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadFile", reflect.TypeOf((*MockRepoModule)(nil).ReadFile), varargs...)
 }
 
 // GetBranches mocks base method
@@ -1430,6 +1449,20 @@ func (mr *MockRepoModuleMockRecorder) GetCommits(name, branch interface{}, limit
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name, branch}, limit...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockRepoModule)(nil).GetCommits), varargs...)
+}
+
+// CountCommits mocks base method
+func (m *MockRepoModule) CountCommits(name, branch string) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountCommits", name, branch)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// CountCommits indicates an expected call of CountCommits
+func (mr *MockRepoModuleMockRecorder) CountCommits(name, branch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountCommits", reflect.TypeOf((*MockRepoModule)(nil).CountCommits), name, branch)
 }
 
 // GetCommitAncestors mocks base method

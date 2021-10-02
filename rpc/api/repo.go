@@ -98,15 +98,27 @@ func (a *RepoAPI) ls(params interface{}) (resp *rpc.Response) {
 	})
 }
 
-// getFileLines gets the lines of a file in a repository
-func (a *RepoAPI) getFileLines(params interface{}) (resp *rpc.Response) {
+// readFileLines gets the lines of a file in a repository
+func (a *RepoAPI) readFileLines(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
 	var revision []string
 	if rev := m.Get("revision").Str(); rev != "" {
 		revision = []string{rev}
 	}
 	return rpc.Success(util.Map{
-		"lines": a.mods.Repo.GetFileLines(m.Get("name").Str(), m.Get("file").Str(), revision...),
+		"lines": a.mods.Repo.ReadFileLines(m.Get("name").Str(), m.Get("path").Str(), revision...),
+	})
+}
+
+// readFile gets the string content of a file in a repository
+func (a *RepoAPI) readFile(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	var revision []string
+	if rev := m.Get("revision").Str(); rev != "" {
+		revision = []string{rev}
+	}
+	return rpc.Success(util.Map{
+		"content": a.mods.Repo.ReadFile(m.Get("name").Str(), m.Get("path").Str(), revision...),
 	})
 }
 
@@ -171,7 +183,8 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "tracked", Namespace: ns, Func: a.tracked, Desc: "Get all tracked repositories"},
 		{Name: "listByCreator", Namespace: ns, Func: a.listByCreator, Desc: "List repositories created by an address"},
 		{Name: "ls", Namespace: ns, Func: a.ls, Desc: "List files and directories of a repository"},
-		{Name: "getLines", Namespace: ns, Func: a.getFileLines, Desc: "Gets the lines of a file in a repository"},
+		{Name: "readFileLines", Namespace: ns, Func: a.readFileLines, Desc: "Gets the lines of a file in a repository"},
+		{Name: "readFile", Namespace: ns, Func: a.readFile, Desc: "Gets the string content of a file in a repository"},
 		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Desc: "Gets a list of branches in a repository"},
 		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Desc: "Gets the latest commit of a branch in a repository"},
 		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Gets a list of commits in a branch of a repository"},
