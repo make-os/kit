@@ -123,8 +123,9 @@ func (a *RepoAPI) readFile(params interface{}) (resp *rpc.Response) {
 }
 
 // getBranches returns a list of branches in a repository
-func (a *RepoAPI) getBranches(name interface{}) (resp *rpc.Response) {
-	return rpc.Success(util.Map{"branches": a.mods.Repo.GetBranches(cast.ToString(name))})
+func (a *RepoAPI) getBranches(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	return rpc.Success(util.Map{"branches": a.mods.Repo.GetBranches(m.Get("name").Str())})
 }
 
 // getLatestCommit gets the latest commit of a branch in a repository
