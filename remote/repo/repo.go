@@ -476,7 +476,7 @@ handleEntry:
 		item := types.ListPathValue{}
 		item.Name = entry.Name
 		item.IsDir = entry.Mode == filemode.Dir
-		item.Hash = entry.Hash.String()
+		item.BlobHash = entry.Hash.String()
 		if entry.Mode != filemode.Dir {
 			var file *object.File
 			file, err = tree.File(entry.Name)
@@ -491,14 +491,18 @@ handleEntry:
 				fullPath = file.Name
 			}
 
-			t, _ := r.GetPathUpdateTime(fullPath)
-			if !t.IsZero() {
-				item.UpdatedAt = t.Unix()
+			t, _ := r.GetPathUpdateInfo(fullPath)
+			item.LastCommitMessage = t.LastCommitMessage
+			item.LastCommitHash = t.LastCommitHash
+			if !t.LastUpdateAt.IsZero() {
+				item.UpdatedAt = t.LastUpdateAt.Unix()
 			}
 		} else {
-			t, _ := r.GetPathUpdateTime(filepath.Join(path, entry.Name))
-			if !t.IsZero() {
-				item.UpdatedAt = t.Unix()
+			t, _ := r.GetPathUpdateInfo(filepath.Join(path, entry.Name))
+			item.LastCommitMessage = t.LastCommitMessage
+			item.LastCommitHash = t.LastCommitHash
+			if !t.LastUpdateAt.IsZero() {
+				item.UpdatedAt = t.LastUpdateAt.Unix()
 			}
 		}
 		res = append(res, item)

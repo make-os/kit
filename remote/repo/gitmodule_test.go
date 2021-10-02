@@ -555,33 +555,42 @@ var _ = Describe("GitModule", func() {
 		})
 	})
 
-	Describe(".GetPathUpdateTime", func() {
+	Describe(".GetPathUpdateInfo", func() {
 		BeforeEach(func() {
 			r = repo.NewGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
-		It("should get expected time", func() {
-			t, err := r.GetPathUpdateTime("a")
+		It("should get expected update time, update commit hash and update commit message", func() {
+			t, err := r.GetPathUpdateInfo("a")
 			Expect(err).To(BeNil())
-			Expect(t.Unix()).To(Equal(int64(1617047557)))
+			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617047557)))
+			Expect(t.LastCommitMessage).To(Equal("Added a directory"))
 
-			t, err = r.GetPathUpdateTime("a/b")
+			t, err = r.GetPathUpdateInfo("a/b")
 			Expect(err).To(BeNil())
-			Expect(t.Unix()).To(Equal(int64(1617042580)))
+			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617042580)))
+			Expect(t.LastCommitMessage).To(Equal("Added more files"))
 
-			t, err = r.GetPathUpdateTime("a/b/file3.txt")
+			t, err = r.GetPathUpdateInfo("a/b/file3.txt")
 			Expect(err).To(BeNil())
-			Expect(t.Unix()).To(Equal(int64(1617042580)))
+			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617042580)))
+			Expect(t.LastCommitMessage).To(Equal("Added more files"))
 
-			t, err = r.GetPathUpdateTime("x.exe")
+			t, err = r.GetPathUpdateInfo("x.exe")
 			Expect(err).To(BeNil())
-			Expect(t.Unix()).To(Equal(int64(1617053884)))
+			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617053884)))
+			Expect(t.LastCommitMessage).To(Equal("Added .exe"))
+
+			t, err = r.GetPathUpdateInfo("file.txt")
+			Expect(err).To(BeNil())
+			Expect(t.LastCommitHash).To(Equal("435747a11d7186d2e7fb831027e137a9d7104ab5"))
+			Expect(t.LastCommitMessage).To(Equal("degens"))
 		})
 
 		When("path is unknown", func() {
 			It("should get expected time", func() {
-				_, err := r.GetPathUpdateTime("unknown")
+				_, err := r.GetPathUpdateInfo("unknown")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("path not found"))
 			})

@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/araddon/dateparse"
 	"github.com/go-git/go-git/v5"
@@ -21,9 +20,9 @@ import (
 
 type InitRepositoryFunc func(name string, rootDir string, gitBinPath string) error
 
-// execGitCmd executes git commands and returns the output
-// repoDir: The directory of the target repository.
-// args: Arguments for the git sub-command
+// ExecGitCmd executes git commands and returns the output
+//  - repoDir: The directory of the target repository.
+//  - args: Arguments for the git sub-command
 func ExecGitCmd(gitBinDir, repoDir string, args ...string) ([]byte, error) {
 	cmd := exec.Command(gitBinDir, args...)
 	cmd.Dir = repoDir
@@ -67,8 +66,8 @@ type GitModule struct {
 }
 
 // NewGitModule creates an instance of GitModule.
-// binPath: Git executable path
-// path: The target repository path
+//  - binPath: Git executable path
+//  - path: The target repository path
 func NewGitModule(gitBinPath, path string) *GitModule {
 	return &GitModule{gitBinPath: gitBinPath, path: path}
 }
@@ -141,7 +140,7 @@ func (gm *GitModule) GetRecentCommitHash() (string, error) {
 }
 
 // GetHEAD returns the reference stored in HEAD
-// short: When set to true, the full reference name is returned
+//  - short: When set to true, the full reference name is returned
 func (gm *GitModule) GetHEAD(short bool) (string, error) {
 
 	var args = []string{"symbolic-ref", "HEAD"}
@@ -158,9 +157,9 @@ func (gm *GitModule) GetHEAD(short bool) (string, error) {
 }
 
 // CreateEmptyCommit creates a quiet commit.
-// msg: The commit message.
-// signingKey: The optional signing key. If provided, the commit is signed
-// env: Optional environment variables to pass to the command.
+//  - msg: The commit message.
+//  - signingKey: The optional signing key. If provided, the commit is signed
+//  - env: Optional environment variables to pass to the command.
 func (gm *GitModule) CreateEmptyCommit(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--quiet", "--allow-empty", "--allow-empty-message", "--file", "-"}
 	if signingKey != "" {
@@ -176,10 +175,10 @@ func (gm *GitModule) CreateEmptyCommit(msg, signingKey string, env ...string) er
 }
 
 // CreateTagWithMsg an annotated tag
-// args: `git tag` options (NOTE: -a and --file=- are added by default)
-// msg: The tag's message which is passed to the command's stdin.
-// signingKey: The signing key to use
-// env: Optional environment variables to pass to the command.
+//  - args: `git tag` options (NOTE: -a and --file=- are added by default)
+//  - msg: The tag's message which is passed to the command's stdin.
+//  - signingKey: The signing key to use
+//  - env: Optional environment variables to pass to the command.
 func (gm *GitModule) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
 	if signingKey != "" {
 		args = append(args, "-u", signingKey)
@@ -291,9 +290,9 @@ func (gm *GitModule) CreateBlob(content string) (string, error) {
 }
 
 // AmendRecentCommitWithMsg amends the recent commit
-// msg: The commit message.
-// signingKey: An optional signing key
-// env: Optional environment variables to pass to the command.
+//  - msg: The commit message.
+//  - signingKey: An optional signing key
+//  - env: Optional environment variables to pass to the command.
 func (gm *GitModule) AmendRecentCommitWithMsg(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message",
 		"--allow-empty", "--file", "-"}
@@ -554,25 +553,30 @@ func (gm *GitModule) Size() (size float64, err error) {
 	return
 }
 
-// GetPathUpdateTime returns the time a path was updated
-func (gm *GitModule) GetPathUpdateTime(path string) (time.Time, error) {
-	args := []string{"--no-pager", "log", "-1", "--format=%ad", "--date=iso", "--", path}
+// GetPathUpdateInfo returns update info for a given path
+func (gm *GitModule) GetPathUpdateInfo(path string) (*remotetypes.PathUpdateInfo, error) {
+	args := []string{"--no-pager", "log", "-1", `--format=%ad/%H/%s`, "--date=iso", "--", path}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, string(out))
+		return nil, errors.Wrap(err, string(out))
 	}
 
 	outStr := strings.TrimSpace(string(out))
 	if len(outStr) == 0 {
-		return time.Time{}, fmt.Errorf("path not found")
+		return nil, fmt.Errorf("path not found")
 	}
 
-	t, err := dateparse.ParseAny(strings.TrimSpace(string(out)))
+	parts := strings.Split(strings.TrimSpace(string(out)), "/")
+	t, err := dateparse.ParseAny(parts[0])
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, "failed to parse time")
+		return nil, errors.Wrap(err, "failed to parse time")
 	}
 
-	return t, nil
+	return &remotetypes.PathUpdateInfo{
+		LastUpdateAt:      t,
+		LastCommitHash:    parts[1],
+		LastCommitMessage: parts[2],
+	}, nil
 }

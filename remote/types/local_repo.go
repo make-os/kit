@@ -182,12 +182,14 @@ type BranchCommit struct {
 }
 
 type ListPathValue struct {
-	Name      string `json:"name"`
-	Hash      string `json:"hash"`
-	IsDir     bool   `json:"isDir"`
-	Size      int64  `json:"size"`
-	IsBinary  bool   `json:"isBinary"`
-	UpdatedAt int64  `json:"updatedAt"`
+	Name              string `json:"name"`
+	BlobHash          string `json:"blobHash"`
+	IsDir             bool   `json:"isDir"`
+	Size              int64  `json:"size"`
+	IsBinary          bool   `json:"isBinary"`
+	LastCommitMessage string `json:"lastCommitMsg"`
+	LastCommitHash    string `json:"lastCommitHash"`
+	UpdatedAt         int64  `json:"updatedAt"`
 }
 
 type LocalConfig struct {
@@ -234,7 +236,16 @@ type GitModule interface {
 	RefFetch(args RefFetchArgs) error
 	GC(pruneExpire ...string) error
 	Size() (size float64, err error)
-	GetPathUpdateTime(path string) (time.Time, error)
+	GetPathUpdateInfo(path string) (*PathUpdateInfo, error)
+}
+
+type PathUpdateInfo struct {
+	// LastUpdateAt is the time the updated happened
+	LastUpdateAt time.Time
+	// LastCommitHash is the hash of the commit where the updated occurred
+	LastCommitHash string
+	// LastCommitMessage is the update commit message
+	LastCommitMessage string
 }
 
 // Commit represents a Commit.
