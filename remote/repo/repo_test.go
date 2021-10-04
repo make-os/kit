@@ -398,7 +398,7 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	FDescribe(".ReadFileLines", func() {
+	Describe(".ReadFileLines", func() {
 		BeforeEach(func() {
 			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
@@ -493,14 +493,14 @@ var _ = Describe("Repo", func() {
 			bc, err := r.GetLatestCommit("master")
 			Expect(err).To(BeNil())
 			Expect(bc).ToNot(BeNil())
-			Expect(bc.Hash).To(Equal("aef606780a3f857fdd7fe8270efa547f118bef5f"))
+			Expect(bc.Hash).To(Equal("435747a11d7186d2e7fb831027e137a9d7104ab5"))
 		})
 
 		It("should return a commit when branch is valid", func() {
 			bc, err := r.GetLatestCommit("refs/heads/master")
 			Expect(err).To(BeNil())
 			Expect(bc).ToNot(BeNil())
-			Expect(bc.Hash).To(Equal("aef606780a3f857fdd7fe8270efa547f118bef5f"))
+			Expect(bc.Hash).To(Equal("435747a11d7186d2e7fb831027e137a9d7104ab5"))
 		})
 	})
 

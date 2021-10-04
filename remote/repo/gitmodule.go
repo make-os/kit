@@ -553,9 +553,20 @@ func (gm *GitModule) Size() (size float64, err error) {
 	return
 }
 
-// GetPathUpdateInfo returns update info for a given path
-func (gm *GitModule) GetPathUpdateInfo(path string) (*remotetypes.PathUpdateInfo, error) {
-	args := []string{"--no-pager", "log", "-1", `--format=%ad/%H/%s`, "--date=iso", "--", path}
+// GetPathLogInfo returns log info for a given path
+//  - path: The file or directory path.
+//  - revision: The references whose log is fetched (optional)
+func (gm *GitModule) GetPathLogInfo(path string, revision ...string) (*remotetypes.PathLogInfo, error) {
+	args := []string{"--no-pager", "log"}
+
+	rev := ""
+	if len(revision) > 0 {
+		rev = revision[0]
+		args = append(args, rev)
+	}
+
+	args = append(args, "-1", `--format=%ad/%H/%s`, "--date=iso", "--", path)
+
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
 	out, err := cmd.CombinedOutput()
@@ -574,7 +585,7 @@ func (gm *GitModule) GetPathUpdateInfo(path string) (*remotetypes.PathUpdateInfo
 		return nil, errors.Wrap(err, "failed to parse time")
 	}
 
-	return &remotetypes.PathUpdateInfo{
+	return &remotetypes.PathLogInfo{
 		LastUpdateAt:      t,
 		LastCommitHash:    parts[1],
 		LastCommitMessage: parts[2],

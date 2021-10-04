@@ -239,10 +239,10 @@ type GitModule interface {
 	RefFetch(args RefFetchArgs) error
 	GC(pruneExpire ...string) error
 	Size() (size float64, err error)
-	GetPathUpdateInfo(path string) (*PathUpdateInfo, error)
+	GetPathLogInfo(path string, revision ...string) (*PathLogInfo, error)
 }
 
-type PathUpdateInfo struct {
+type PathLogInfo struct {
 	// LastUpdateAt is the time the updated happened
 	LastUpdateAt time.Time
 	// LastCommitHash is the hash of the commit where the updated occurred

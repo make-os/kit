@@ -555,42 +555,47 @@ var _ = Describe("GitModule", func() {
 		})
 	})
 
-	Describe(".GetPathUpdateInfo", func() {
+	Describe(".GetPathLogInfo", func() {
 		BeforeEach(func() {
 			r = repo.NewGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
 		It("should get expected update time, update commit hash and update commit message", func() {
-			t, err := r.GetPathUpdateInfo("a")
+			t, err := r.GetPathLogInfo("a")
 			Expect(err).To(BeNil())
 			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617047557)))
 			Expect(t.LastCommitMessage).To(Equal("Added a directory"))
 
-			t, err = r.GetPathUpdateInfo("a/b")
+			t, err = r.GetPathLogInfo("a/b")
 			Expect(err).To(BeNil())
 			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617042580)))
 			Expect(t.LastCommitMessage).To(Equal("Added more files"))
 
-			t, err = r.GetPathUpdateInfo("a/b/file3.txt")
+			t, err = r.GetPathLogInfo("a/b/file3.txt")
 			Expect(err).To(BeNil())
 			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617042580)))
 			Expect(t.LastCommitMessage).To(Equal("Added more files"))
 
-			t, err = r.GetPathUpdateInfo("x.exe")
+			t, err = r.GetPathLogInfo("x.exe")
 			Expect(err).To(BeNil())
 			Expect(t.LastUpdateAt.Unix()).To(Equal(int64(1617053884)))
 			Expect(t.LastCommitMessage).To(Equal("Added .exe"))
 
-			t, err = r.GetPathUpdateInfo("file.txt")
+			t, err = r.GetPathLogInfo("file.txt")
 			Expect(err).To(BeNil())
 			Expect(t.LastCommitHash).To(Equal("435747a11d7186d2e7fb831027e137a9d7104ab5"))
 			Expect(t.LastCommitMessage).To(Equal("degens"))
+
+			t, err = r.GetPathLogInfo("file.txt", "dev")
+			Expect(err).To(BeNil())
+			Expect(t.LastCommitHash).To(Equal("503f6f48f004404b4caceb86e3a26feeadfa920e"))
+			Expect(t.LastCommitMessage).To(Equal("Word about stars"))
 		})
 
 		When("path is unknown", func() {
 			It("should get expected time", func() {
-				_, err := r.GetPathUpdateInfo("unknown")
+				_, err := r.GetPathLogInfo("unknown")
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("path not found"))
 			})

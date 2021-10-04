@@ -458,6 +458,7 @@ func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error)
 	}
 	if path == "." || path == "" {
 		targetEntry = &object.TreeEntry{Mode: filemode.Dir}
+		path = "."
 		goto handleEntry
 	}
 
@@ -469,6 +470,11 @@ func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error)
 		return nil, err
 	} else if targetEntry.Mode == filemode.Dir {
 		tree, _ = tree.Tree(path)
+	} else {
+		path, _ = filepath.Split(path)
+		if path != "" {
+			tree, err = tree.Tree(filepath.Clean(path))
+		}
 	}
 
 handleEntry:
@@ -486,19 +492,23 @@ handleEntry:
 			item.IsBinary, _ = file.IsBinary()
 			item.Size = file.Size
 
-			fullPath := filepath.Join(path, file.Name)
-			if targetEntry.Mode != filemode.Dir {
-				fullPath = file.Name
+			t, err2 := r.GetPathLogInfo(filepath.Join(path, entry.Name), ref)
+			if err2 != nil {
+				err = err2
+				return
 			}
 
-			t, _ := r.GetPathUpdateInfo(fullPath)
 			item.LastCommitMessage = t.LastCommitMessage
 			item.LastCommitHash = t.LastCommitHash
 			if !t.LastUpdateAt.IsZero() {
 				item.UpdatedAt = t.LastUpdateAt.Unix()
 			}
 		} else {
-			t, _ := r.GetPathUpdateInfo(filepath.Join(path, entry.Name))
+			t, err2 := r.GetPathLogInfo(filepath.Join(path, entry.Name), ref)
+			if err2 != nil {
+				err = err2
+				return
+			}
 			item.LastCommitMessage = t.LastCommitMessage
 			item.LastCommitHash = t.LastCommitHash
 			if !t.LastUpdateAt.IsZero() {
