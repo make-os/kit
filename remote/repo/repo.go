@@ -624,6 +624,7 @@ func (r *Repo) GetBranches() (branches []string, err error) {
 	if err != nil {
 		return nil, err
 	}
+	branches = []string{}
 	for {
 		var ref *plumbing.Reference
 		ref, err = itr.Next()
