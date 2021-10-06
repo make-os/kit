@@ -11,9 +11,9 @@ import (
 type VoterType int
 
 const (
-	VoterOwner                  VoterType = iota + 1 // Describes a repo where only owners can vote
-	VoterNetStakers                                  // Describes a repo where only network stakeholders can vote.
-	VoterNetStakersAndVetoOwner                      // Describes a repo whether only network stakeholders and veto owners can vote.
+	VoterOwner                  VoterType = iota + 1 // Only owners can vote
+	VoterNetStakers                                  // Only network stakeholders can vote.
+	VoterNetStakersAndVetoOwner                      // Only network stakeholders and veto owners can vote.
 )
 
 // ProposalCreatorType describes types of proposal creators
@@ -52,7 +52,7 @@ const (
 // ProposalFees contains address and fees paid by proposal creators
 type ProposalFees map[string]string
 
-// Register adds an entry
+// Add adds a new fee entry
 func (pf ProposalFees) Add(address string, fee string) {
 	pf[address] = fee
 }
@@ -339,7 +339,7 @@ func (p *RepoProposal) GetRejectedWithVetoByOwners() float64 {
 // RepoProposals represents an index of proposals for a repo.
 type RepoProposals map[string]*RepoProposal
 
-// Register adds a proposal map to the give id
+// Add adds a proposal map to the give id
 func (p *RepoProposals) Add(id string, rp *RepoProposal) {
 	(*p)[id] = rp
 }
