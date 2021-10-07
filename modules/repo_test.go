@@ -623,12 +623,10 @@ var _ = Describe("RepoModule", func() {
 			})
 		})
 
-		It("should return error when revision is invalid", func() {
+		It("should return empty list when revision is invalid", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
-			err := &errors.ReqError{Code: modules.StatusCodeReferenceNotFound, HttpCode: 404, Msg: "reference not found", Field: "revision"}
-			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
-				m.ListPath("repo1", ".", "something")
-			})
+			res := m.ListPath("repo1", ".", "something")
+			Expect(res).To(BeEmpty())
 		})
 	})
 
@@ -680,7 +678,7 @@ var _ = Describe("RepoModule", func() {
 		It("should return lines of a file", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			lines := m.ReadFileLines("repo1", "file.txt")
-			Expect(lines).To(Equal([]string{"Hello World", "Hello Friend"}))
+			Expect(lines).To(Equal([]string{"Hello World", "Hello Friend", "Hello Degens"}))
 		})
 	})
 
@@ -702,7 +700,7 @@ var _ = Describe("RepoModule", func() {
 		It("should return expected branch(es)", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			lines := m.GetBranches("repo1")
-			Expect(lines).To(Equal([]string{"refs/heads/master"}))
+			Expect(lines).To(Equal([]string{"refs/heads/dev", "refs/heads/master"}))
 		})
 	})
 
@@ -777,7 +775,7 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			bc := m.GetCommits("repo1", "master", 0)
 			Expect(bc).ToNot(BeEmpty())
-			Expect(bc).To(HaveLen(6))
+			Expect(bc).To(HaveLen(7))
 		})
 
 		It("should return limited commits when limit is > 0", func() {

@@ -5,6 +5,7 @@ import (
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/types/constants"
 	"github.com/spf13/cast"
+	"github.com/stretchr/objx"
 )
 
 // TransactionAPI provides RPC methods for various local account management functionality.
@@ -24,7 +25,9 @@ func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 
 // getTransaction gets a transaction by its hash
 func (a *TransactionAPI) getTransaction(params interface{}) (resp *rpc.Response) {
-	return rpc.Success(a.mods.Tx.Get(cast.ToString(params)))
+	o := objx.New(params)
+	hash := o.Get("hash").Str()
+	return rpc.Success(a.mods.Tx.Get(hash))
 }
 
 // APIs returns all API handlers

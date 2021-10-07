@@ -125,13 +125,13 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 type RepoConfigGovernance struct {
 	Voter                VoterType           `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
 	PropCreator          ProposalCreatorType `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
-	PropDuration         util.UInt64         `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
-	PropFee              float64             `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
-	PropFeeDepositDur    util.UInt64         `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
-	PropQuorum           float64             `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
-	PropVetoQuorum       float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
-	PropVetoOwnersQuorum float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
-	PropThreshold        float64             `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
+	PropDuration         util.String         `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
+	PropFee              util.String         `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
+	PropFeeDepositDur    util.String         `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
+	PropQuorum           util.String         `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
+	PropVetoQuorum       util.String         `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
+	PropVetoOwnersQuorum util.String         `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
+	PropThreshold        util.String         `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
 	PropFeeRefundType    PropFeeRefundType   `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType,omitempty"`
 	PropTallyMethod      ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
 	UsePowerAge          bool                `json:"usePowerAge" mapstructure:"usePowerAge" msgpack:"usePowerAge,omitempty"`
@@ -169,8 +169,7 @@ type RepoConfig struct {
 func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
 
 	toBool := cast.ToBool
-	toFlo := cast.ToFloat64
-	toUint64 := cast.ToUint64
+	toString := func(v string) util.String { return util.String(v) }
 	toInt := cast.ToInt
 
 	cfg := objx.New(m)
@@ -182,14 +181,14 @@ func (c *RepoConfig) FromMap(m map[string]interface{}) *RepoConfig {
 	gov.Voter = VoterType(toInt(o.Get("propVoter").Inter(int(gov.Voter))))
 	gov.PropCreator = ProposalCreatorType(toInt(o.Get("propCreator").Inter(int(gov.PropCreator))))
 	gov.UsePowerAge = toBool(o.Get("usePowerAge").Inter(gov.UsePowerAge))
-	gov.PropDuration = util.UInt64(toUint64(o.Get("propDur").Inter(gov.PropDuration.UInt64())))
-	gov.PropFeeDepositDur = util.UInt64(toUint64(o.Get("propFeeDepDur").Inter(gov.PropFeeDepositDur.UInt64())))
+	gov.PropDuration = toString(o.Get("propDur").Str(gov.PropDuration.String()))
+	gov.PropFeeDepositDur = toString(o.Get("propFeeDepDur").Str(gov.PropFeeDepositDur.String()))
 	gov.PropTallyMethod = ProposalTallyMethod(toInt(o.Get("propTallyMethod").Inter(int(gov.PropTallyMethod))))
-	gov.PropQuorum = toFlo(o.Get("propQuorum").Inter(gov.PropQuorum))
-	gov.PropThreshold = toFlo(o.Get("propThreshold").Inter(gov.PropThreshold))
-	gov.PropVetoQuorum = toFlo(o.Get("propVetoQuorum").Inter(gov.PropVetoQuorum))
-	gov.PropVetoOwnersQuorum = toFlo(o.Get("propVetoOwnersQuorum").Inter(gov.PropVetoOwnersQuorum))
-	gov.PropFee = toFlo(o.Get("propFee").Inter(gov.PropFee))
+	gov.PropQuorum = toString(o.Get("propQuorum").Str(gov.PropQuorum.String()))
+	gov.PropThreshold = toString(o.Get("propThreshold").Str(gov.PropThreshold.String()))
+	gov.PropVetoQuorum = toString(o.Get("propVetoQuorum").Str(gov.PropVetoQuorum.String()))
+	gov.PropVetoOwnersQuorum = toString(o.Get("propVetoOwnersQuorum").Str(gov.PropVetoOwnersQuorum.String()))
+	gov.PropFee = toString(o.Get("propFee").Str(gov.PropFee.String()))
 	gov.PropFeeRefundType = PropFeeRefundType(toInt(o.Get("propFeeRefundType").Inter(int(gov.PropFeeRefundType))))
 	gov.NoPropFeeForMergeReq = toBool(o.Get("noPropFeeForMergeReq").Inter(gov.NoPropFeeForMergeReq))
 
@@ -274,16 +273,39 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			Voter:                VoterOwner,
 			PropCreator:          ProposalCreatorAny,
 			UsePowerAge:          false,
-			PropDuration:         util.UInt64(params.RepoProposalTTL),
+			PropDuration:         util.UInt64ToString(params.RepoProposalTTL),
 			PropTallyMethod:      ProposalTallyMethodIdentity,
-			PropQuorum:           params.DefaultRepoProposalQuorum,
-			PropThreshold:        params.DefaultRepoProposalThreshold,
-			PropVetoQuorum:       params.DefaultRepoProposalVetoQuorum,
-			PropVetoOwnersQuorum: params.DefaultRepoProposalVetoOwnersQuorum,
-			PropFee:              params.DefaultMinProposalFee,
+			PropQuorum:           util.Float64ToString(params.DefaultRepoProposalQuorum),
+			PropThreshold:        util.Float64ToString(params.DefaultRepoProposalThreshold),
+			PropVetoQuorum:       util.Float64ToString(params.DefaultRepoProposalVetoQuorum),
+			PropVetoOwnersQuorum: util.Float64ToString(params.DefaultRepoProposalVetoOwnersQuorum),
+			PropFee:              util.Float64ToString(params.DefaultMinProposalFee),
 			PropFeeRefundType:    ProposalFeeRefundNo,
-			PropFeeDepositDur:    0,
+			PropFeeDepositDur:    "0",
 			NoPropFeeForMergeReq: true,
+		},
+		Policies: []*Policy{},
+	}
+}
+
+// MakeZeroValueRepoConfig returns a RepoConfig with all fields set to their zero value
+func MakeZeroValueRepoConfig() *RepoConfig {
+	return &RepoConfig{
+		Gov: &RepoConfigGovernance{
+			CreatorAsContributor: false,
+			Voter:                0,
+			PropCreator:          0,
+			UsePowerAge:          false,
+			PropDuration:         "0",
+			PropTallyMethod:      0,
+			PropQuorum:           "0",
+			PropThreshold:        "0",
+			PropVetoQuorum:       "0",
+			PropVetoOwnersQuorum: "0",
+			PropFee:              "0",
+			PropFeeRefundType:    0,
+			PropFeeDepositDur:    "0",
+			NoPropFeeForMergeReq: false,
 		},
 		Policies: []*Policy{},
 	}

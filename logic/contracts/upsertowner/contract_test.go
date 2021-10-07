@@ -243,8 +243,8 @@ var _ = Describe("Contract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Gov.PropDuration = 1000
-				repoUpd.Config.Gov.PropFeeDepositDur = 100
+				repoUpd.Config.Gov.PropDuration = "1000"
+				repoUpd.Config.Gov.PropFeeDepositDur = "100"
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 

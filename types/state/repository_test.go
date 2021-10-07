@@ -81,7 +81,7 @@ var _ = Describe("Repository", func() {
 				r = BareRepository()
 				r.Balance = "100"
 				config := BareRepoConfig()
-				config.Gov = &RepoConfigGovernance{PropDuration: 100}
+				config.Gov = &RepoConfigGovernance{PropDuration: "100"}
 				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
@@ -204,7 +204,7 @@ var _ = Describe("Repository", func() {
 				Gov: &RepoConfigGovernance{
 					Voter:       1,
 					UsePowerAge: true,
-					PropQuorum:  1,
+					PropQuorum:  "1",
 				},
 				Policies: []*Policy{
 					{Subject: "user1", Object: "dev", Action: "deny"},
@@ -212,16 +212,17 @@ var _ = Describe("Repository", func() {
 			}
 
 			It("should update base object", func() {
-				base.MergeMap(map[string]interface{}{
+				err := base.MergeMap(map[string]interface{}{
 					"governance": map[string]interface{}{
 						"propVoter":   13,
 						"usePowerAge": false,
-						"propQuorum":  0,
+						"propQuorum":  "0",
 					},
 				})
+				Expect(err).To(BeNil())
 				Expect(int(base.Gov.Voter)).To(Equal(13))
 				Expect(base.Gov.UsePowerAge).To(BeFalse())
-				Expect(base.Gov.PropQuorum).To(BeZero())
+				Expect(base.Gov.PropQuorum.String()).To(Equal("0"))
 			})
 		})
 
@@ -230,7 +231,7 @@ var _ = Describe("Repository", func() {
 
 			BeforeEach(func() {
 				base = &RepoConfig{
-					Gov: &RepoConfigGovernance{Voter: 1, PropDuration: 100, PropFee: 12},
+					Gov: &RepoConfigGovernance{Voter: 1, PropDuration: "100", PropFee: "12"},
 					Policies: []*Policy{
 						{Subject: "user1", Object: "dev", Action: "deny"},
 					},
@@ -253,7 +254,7 @@ var _ = Describe("Repository", func() {
 				Expect(base.Policies[1].Action).To(Equal("delete"))
 				Expect(base.Gov.Voter).To(Equal(VoterType(1)))
 				Expect(base.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
-				Expect(base.Gov.PropFee).To(Equal(float64(12)))
+				Expect(base.Gov.PropFee.Float()).To(Equal(float64(12)))
 			})
 		})
 	})
@@ -281,14 +282,14 @@ var _ = Describe("Repository", func() {
 				Voter:                1,
 				PropCreator:          1,
 				UsePowerAge:          true,
-				PropDuration:         12,
-				PropFeeDepositDur:    122,
+				PropDuration:         "12",
+				PropFeeDepositDur:    "122",
 				PropTallyMethod:      1,
-				PropQuorum:           25,
-				PropThreshold:        40,
-				PropVetoQuorum:       50,
-				PropVetoOwnersQuorum: 30,
-				PropFee:              10,
+				PropQuorum:           "25",
+				PropThreshold:        "40",
+				PropVetoQuorum:       "50",
+				PropVetoOwnersQuorum: "30",
+				PropFee:              "10",
 				PropFeeRefundType:    1,
 				NoPropFeeForMergeReq: true,
 			},

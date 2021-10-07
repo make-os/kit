@@ -68,11 +68,13 @@ var _ = Describe("CreateRepoContract", func() {
 		BeforeEach(func() {
 			repoCfg = state.MakeDefaultRepoConfig()
 			tx = &txns.TxRepoCreate{
-				Name:        "repo",
-				Description: "a repository",
-				Config:      repoCfg.ToBasicMap(),
-				TxValue:     &txns.TxValue{Value: "4"},
-				TxCommon:    &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				Name: "repo",
+				TxDescription: &txns.TxDescription{
+					Description: "a repository",
+				},
+				Config:   repoCfg.ToBasicMap(),
+				TxValue:  &txns.TxValue{Value: "4"},
+				TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 			}
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Stakes: state.BareAccountStakes(), DelegatorCommission: 10})
 		})
@@ -118,9 +120,10 @@ var _ = Describe("CreateRepoContract", func() {
 				BeforeEach(func() {
 					repoCfg.Gov.Voter = state.VoterOwner
 					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo",
-						Config:   repoCfg.ToBasicMap(),
-						TxValue:  &txns.TxValue{Value: "0"},
-						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+						Config:        repoCfg.ToBasicMap(),
+						TxDescription: &txns.TxDescription{},
+						TxValue:       &txns.TxValue{Value: "0"},
+						TxCommon:      &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -149,7 +152,7 @@ var _ = Describe("CreateRepoContract", func() {
 			})
 
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropDuration: 1000}}
+				repoCfg2 := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropDuration: "1000"}}
 				BeforeEach(func() {
 					tx.TxValue = &txns.TxValue{Value: "0"}
 					tx.TxCommon = &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}

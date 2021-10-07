@@ -408,9 +408,38 @@ func (s String) Float() float64 {
 	return f
 }
 
+// FloatE is like Float but returns error if unable to cast s to float64.
+func (s String) FloatE() (float64, error) {
+	f, err := cast.ToFloat64E(string(s))
+	if err != nil {
+		return 0, err
+	}
+	return f, nil
+}
+
+// UInt64 returns the uint64 equivalent of the numeric value.
+// Panics if not convertible to uint64
+func (s String) UInt64() uint64 {
+	f, err := cast.ToUint64E(string(s))
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
 // IsDecimal checks whether the string can be converted to Decimal
 func (s String) IsDecimal() bool {
 	return govalidator.IsFloat(string(s))
+}
+
+// Float64ToString cast float64 to util.String
+func Float64ToString(v float64) String {
+	return String(cast.ToString(v))
+}
+
+// UInt64ToString cast uint64 to util.String
+func UInt64ToString(v uint64) String {
+	return String(cast.ToString(v))
 }
 
 // TMAddress represents a tendermint address

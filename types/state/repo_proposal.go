@@ -185,7 +185,7 @@ func (p *RepoProposal) IsFeeDepositEnabled() bool {
 // IsDepositedFeeOK checks whether the fees deposited to the proposal
 // meets the minimum required deposit
 func (p *RepoProposal) IsDepositedFeeOK() bool {
-	propFee := decimal.NewFromFloat(p.Config.PropFee)
+	propFee := decimal.NewFromFloat(p.Config.PropFee.Float())
 	return p.Fees.Total().GreaterThanOrEqual(propFee)
 }
 
@@ -283,7 +283,7 @@ func (p *RepoProposal) GetRefundType() PropFeeRefundType {
 
 // GetQuorum implements Proposal
 func (p *RepoProposal) GetQuorum() float64 {
-	return p.Config.PropQuorum
+	return p.Config.PropQuorum.Float()
 }
 
 // GetTallyMethod implements Proposal
@@ -303,17 +303,17 @@ func (p *RepoProposal) GetActionData() map[string]util.Bytes {
 
 // GetThreshold implements Proposal
 func (p *RepoProposal) GetThreshold() float64 {
-	return p.Config.PropThreshold
+	return p.Config.PropThreshold.Float()
 }
 
 // GetVetoQuorum implements Proposal
 func (p *RepoProposal) GetVetoQuorum() float64 {
-	return p.Config.PropVetoQuorum
+	return p.Config.PropVetoQuorum.Float()
 }
 
 // GetVetoOwnersQuorum implements Proposal
 func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
-	return p.Config.PropVetoOwnersQuorum
+	return p.Config.PropVetoOwnersQuorum.Float()
 }
 
 // GetAccepted implements Proposal

@@ -1053,7 +1053,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Gov.PropFee = 200
+				repo.Config.Gov.PropFee = "200"
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config:          repo.Config.Gov,
 					FeeDepositEndAt: 100,
@@ -1372,7 +1372,7 @@ var _ = Describe("TxValidator", func() {
 				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 				repo.Balance = "100"
-				repo.Config.Gov.PropFee = 0
+				repo.Config.Gov.PropFee = "0"
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
 				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
@@ -1391,7 +1391,8 @@ var _ = Describe("TxValidator", func() {
 				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "10"
 				repo := state.BareRepository()
-				repo.Config.Gov.PropFee = 100
+				repo.Config = state.MakeZeroValueRepoConfig()
+				repo.Config.Gov.PropFee = "100"
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
 				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
@@ -1399,7 +1400,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum (100.000000)"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum (100)"))
 			})
 		})
 
@@ -1411,8 +1412,9 @@ var _ = Describe("TxValidator", func() {
 					txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					txProposal.Value = "101"
 					repo := state.BareRepository()
+					repo.Config = state.MakeZeroValueRepoConfig()
 					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
-					repo.Config.Gov.PropFee = 100
+					repo.Config.Gov.PropFee = "100"
 					repo.Config.Gov.Voter = state.VoterOwner
 
 					mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
@@ -1432,8 +1434,9 @@ var _ = Describe("TxValidator", func() {
 					txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 					txProposal.Value = "101"
 					repo := state.BareRepository()
+					repo.Config = state.MakeZeroValueRepoConfig()
 					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
-					repo.Config.Gov.PropFee = 100
+					repo.Config.Gov.PropFee = "100"
 					repo.Config.Gov.Voter = state.VoterOwner
 					repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
@@ -1455,7 +1458,8 @@ var _ = Describe("TxValidator", func() {
 				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Gov.PropFee = 100
+				repo.Config = state.MakeZeroValueRepoConfig()
+				repo.Config.Gov.PropFee = "100"
 				repo.Config.Gov.Voter = state.VoterOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 

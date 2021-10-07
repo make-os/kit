@@ -418,7 +418,7 @@ func CheckProposalCommonConsistency(
 	}
 
 	repoPropFee := repo.Config.Gov.PropFee
-	propFeeDec := decimal.NewFromFloat(repoPropFee)
+	propFeeDec := decimal.NewFromFloat(repoPropFee.Float())
 
 	// When the repo does not require a proposal deposit,
 	// ensure a proposal fee is not set.
@@ -429,9 +429,9 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if repo.Config.Gov.PropFeeDepositDur == 0 {
+	if repo.Config.Gov.PropFeeDepositDur.UInt64() == 0 {
 		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
-			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%f)", repoPropFee)
+			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%s)", repoPropFee)
 			return nil, feI(index, "value", msg)
 		}
 	}

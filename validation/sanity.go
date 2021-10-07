@@ -247,51 +247,79 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	sf := fmt.Sprintf
 
 	// Ensure the voter type is known
-	allowedVoterChoices := []state.VoterType{
+	if !funk.Contains([]state.VoterType{
 		state.VoterOwner,
 		state.VoterNetStakers,
-		state.VoterNetStakersAndVetoOwner}
-	if !funk.Contains(allowedVoterChoices, govCfg.Voter) {
+		state.VoterNetStakersAndVetoOwner}, govCfg.Voter) {
 		return feI(index, "governance.propVoter", sf("unknown value"))
 	}
 
 	// Ensure the proposal creator type is known
-	allowedPropCreator := []state.ProposalCreatorType{
+	if !funk.Contains([]state.ProposalCreatorType{
 		state.ProposalCreatorAny,
-		state.ProposalCreatorOwner}
-	if !funk.Contains(allowedPropCreator, govCfg.PropCreator) {
+		state.ProposalCreatorOwner}, govCfg.PropCreator) {
 		return feI(index, "governance.propCreator", sf("unknown value"))
 	}
 
 	// Ensure the proposer tally method is known
-	allowedTallyMethod := []state.ProposalTallyMethod{
+	if !funk.Contains([]state.ProposalTallyMethod{
 		state.ProposalTallyMethodIdentity,
 		state.ProposalTallyMethodCoinWeighted,
 		state.ProposalTallyMethodNetStakeNonDelegated,
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
-	}
-	if !funk.Contains(allowedTallyMethod, govCfg.PropTallyMethod) {
+	}, govCfg.PropTallyMethod) {
 		return feI(index, "governance.propTallyMethod", sf("unknown value"))
 	}
 
-	if govCfg.PropQuorum < 0 {
+	// Ensure the refund type method is known
+	if !funk.Contains([]state.PropFeeRefundType{
+		state.ProposalFeeRefundNo,
+		state.ProposalFeeRefundOnAccept,
+		state.ProposalFeeRefundOnAcceptReject,
+		state.ProposalFeeRefundOnAcceptAllReject,
+		state.ProposalFeeRefundOnBelowThreshold,
+		state.ProposalFeeRefundOnBelowThresholdAccept,
+		state.ProposalFeeRefundOnBelowThresholdAcceptReject,
+		state.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+	}, govCfg.PropFeeRefundType) {
+		return feI(index, "governance.propFeeRefundType", sf("unknown value"))
+	}
+
+	propDur, err := govCfg.PropDuration.FloatE()
+	if err != nil || propDur < 0 {
+		return feI(index, "governance.propDur", sf("must be a non-negative number"))
+	}
+
+	propQuorum, err := govCfg.PropQuorum.FloatE()
+	if err != nil || propQuorum < 0 {
 		return feI(index, "governance.propQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.PropThreshold < 0 {
+	propThreshold, err := govCfg.PropThreshold.FloatE()
+	if err != nil || propThreshold < 0 {
 		return feI(index, "governance.propThreshold", sf("must be a non-negative number"))
 	}
 
-	if govCfg.PropVetoQuorum < 0 {
+	propVetoQuorum, err := govCfg.PropVetoQuorum.FloatE()
+	if err != nil || propVetoQuorum < 0 {
 		return feI(index, "governance.propVetoQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.PropVetoOwnersQuorum < 0 {
+	propVetoOwnersQuorum, err := govCfg.PropVetoOwnersQuorum.FloatE()
+	if err != nil || propVetoOwnersQuorum < 0 {
 		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
-	if govCfg.PropFee < params.DefaultMinProposalFee {
+	propFeeDepDur, err := govCfg.PropFeeDepositDur.FloatE()
+	if err != nil || propFeeDepDur < 0 {
+		return feI(index, "governance.propFeeDepDur", sf("must be a non-negative number"))
+	}
+
+	propFee, err := govCfg.PropFee.FloatE()
+	if err != nil || propFee < 0 {
+		return feI(index, "governance.propFee", sf("must be a non-negative number"))
+	} else if propFee < params.DefaultMinProposalFee {
 		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
 	}
 

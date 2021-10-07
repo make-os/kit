@@ -26,7 +26,7 @@ func MakeProposal(
 		Config:     repo.Config.Clone().Gov,
 		Creator:    creatorAddress,
 		Height:     util.UInt64(chainHeight),
-		EndAt:      repo.Config.Gov.PropDuration + util.UInt64(chainHeight) + 1,
+		EndAt:      util.UInt64(repo.Config.Gov.PropDuration.UInt64() + chainHeight + 1),
 		Fees:       map[string]string{},
 		ActionData: map[string]util.Bytes{},
 	}
@@ -43,9 +43,9 @@ func MakeProposal(
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Gov.PropFeeDepositDur > 0 {
-		proposal.FeeDepositEndAt = 1 + util.UInt64(chainHeight) + repo.Config.Gov.PropFeeDepositDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Gov.PropDuration
+	if repo.Config.Gov.PropFeeDepositDur.UInt64() > 0 {
+		proposal.FeeDepositEndAt = util.UInt64(1 + chainHeight + repo.Config.Gov.PropFeeDepositDur.UInt64())
+		proposal.EndAt = util.UInt64(proposal.FeeDepositEndAt.UInt64() + repo.Config.Gov.PropDuration.UInt64())
 	}
 
 	// Register the proposal to the repo
@@ -139,7 +139,7 @@ func DetermineProposalOutcome(
 	keepers core.Keepers,
 	proposal state.Proposal,
 	repo *state.Repository,
-	chainHeight uint64) state.ProposalOutcome {
+	_ uint64) state.ProposalOutcome {
 	return GetProposalOutcome(keepers.GetTicketManager(), proposal, repo)
 }
 

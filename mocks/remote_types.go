@@ -228,19 +228,24 @@ func (mr *MockGitModuleMockRecorder) GetMergeCommits(arg0 interface{}, arg1 ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockGitModule)(nil).GetMergeCommits), varargs...)
 }
 
-// GetPathUpdateInfo mocks base method
-func (m *MockGitModule) GetPathUpdateInfo(arg0 string) (*types.PathLogInfo, error) {
+// GetPathLogInfo mocks base method
+func (m *MockGitModule) GetPathLogInfo(arg0 string, arg1 ...string) (*types.PathLogInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPathLogInfo", arg0)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPathLogInfo", varargs...)
 	ret0, _ := ret[0].(*types.PathLogInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPathUpdateInfo indicates an expected call of GetPathUpdateInfo
-func (mr *MockGitModuleMockRecorder) GetPathUpdateInfo(arg0 interface{}) *gomock.Call {
+// GetPathLogInfo indicates an expected call of GetPathLogInfo
+func (mr *MockGitModuleMockRecorder) GetPathLogInfo(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathLogInfo", reflect.TypeOf((*MockGitModule)(nil).GetPathUpdateInfo), arg0)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathLogInfo", reflect.TypeOf((*MockGitModule)(nil).GetPathLogInfo), varargs...)
 }
 
 // GetRecentCommitHash mocks base method
@@ -973,19 +978,24 @@ func (mr *MockLocalRepoMockRecorder) GetPath() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockLocalRepo)(nil).GetPath))
 }
 
-// GetPathUpdateInfo mocks base method
-func (m *MockLocalRepo) GetPathUpdateInfo(arg0 string) (*types.PathLogInfo, error) {
+// GetPathLogInfo mocks base method
+func (m *MockLocalRepo) GetPathLogInfo(arg0 string, arg1 ...string) (*types.PathLogInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPathLogInfo", arg0)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPathLogInfo", varargs...)
 	ret0, _ := ret[0].(*types.PathLogInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPathUpdateInfo indicates an expected call of GetPathUpdateInfo
-func (mr *MockLocalRepoMockRecorder) GetPathUpdateInfo(arg0 interface{}) *gomock.Call {
+// GetPathLogInfo indicates an expected call of GetPathLogInfo
+func (mr *MockLocalRepoMockRecorder) GetPathLogInfo(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathLogInfo", reflect.TypeOf((*MockLocalRepo)(nil).GetPathUpdateInfo), arg0)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPathLogInfo", reflect.TypeOf((*MockLocalRepo)(nil).GetPathLogInfo), varargs...)
 }
 
 // GetRecentCommitHash mocks base method

@@ -461,7 +461,6 @@ var _ = Describe("TxValidator", func() {
 				"desc": "invalid governance.propCreator value",
 				"err":  "field:governance.propCreator, msg:unknown value",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":   state.VoterOwner,
 					"propCreator": 1000,
 				}},
 			},
@@ -469,49 +468,94 @@ var _ = Describe("TxValidator", func() {
 				"desc": "invalid governance.propTallyMethod value",
 				"err":  "field:governance.propTallyMethod, msg:unknown value",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":       state.VoterOwner,
-					"propCreator":     state.ProposalCreatorAny,
 					"propTallyMethod": 1000,
+				}},
+			},
+			{
+				"desc": "proposal duration has negative value",
+				"err":  "field:governance.propDur, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propDur": "-1",
+				}},
+			},
+			{
+				"desc": "proposal duration has an invalid value",
+				"err":  "field:governance.propDur, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propDur": "1a",
+				}},
+			},
+			{
+				"desc": "proposal fee deposit duration has negative value",
+				"err":  "field:governance.propFeeDepDur, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propFeeDepDur": "-1",
+				}},
+			},
+			{
+				"desc": "proposal fee deposit duration has an invalid value",
+				"err":  "field:governance.propFeeDepDur, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propFeeDepDur": "1a",
 				}},
 			},
 			{
 				"desc": "proposal quorum has negative value",
 				"err":  "field:governance.propQuorum, msg:must be a non-negative number",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":       state.VoterOwner,
-					"propCreator":     state.ProposalCreatorAny,
-					"propTallyMethod": state.ProposalTallyMethodNetStake,
-					"propQuorum":      -1,
+					"propQuorum": "-1",
+				}},
+			},
+			{
+				"desc": "proposal quorum has an invalid value",
+				"err":  "field:governance.propQuorum, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propQuorum": "1a",
 				}},
 			},
 			{
 				"desc": "proposal threshold has negative value",
 				"err":  "field:governance.propThreshold, msg:must be a non-negative number",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":       state.VoterOwner,
-					"propCreator":     state.ProposalCreatorAny,
-					"propTallyMethod": state.ProposalTallyMethodNetStake,
-					"propThreshold":   -1,
+					"propThreshold": "-1",
+				}},
+			},
+			{
+				"desc": "proposal threshold has an invalid value",
+				"err":  "field:governance.propThreshold, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propThreshold": "1a",
+				}},
+			},
+			{
+				"desc": "proposal veto quorum has invalid number value",
+				"err":  "field:governance.propVetoQuorum, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVetoQuorum": "a1",
 				}},
 			},
 			{
 				"desc": "proposal veto quorum has negative value",
 				"err":  "field:governance.propVetoQuorum, msg:must be a non-negative number",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":       state.VoterOwner,
-					"propCreator":     state.ProposalCreatorAny,
-					"propTallyMethod": state.ProposalTallyMethodNetStake,
-					"propVetoQuorum":  -1,
+					"propVetoQuorum": "-1",
 				}},
 			},
 			{
 				"desc": "proposal veto owners quorum has negative value",
 				"err":  "field:governance.propVetoOwnersQuorum, msg:must be a non-negative number",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":            state.VoterOwner,
-					"propCreator":          state.ProposalCreatorAny,
-					"propTallyMethod":      state.ProposalTallyMethodNetStake,
-					"propVetoOwnersQuorum": -1,
+					"propVetoOwnersQuorum": "-1",
+				}},
+			},
+			{
+				"desc": "proposal fee has an invalid number",
+				"err":  "field:governance.propFee, msg:must be a non-negative number",
+				"before": func() {
+					params.DefaultMinProposalFee = float64(400)
+				},
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propFee": "100a",
 				}},
 			},
 			{
@@ -521,10 +565,8 @@ var _ = Describe("TxValidator", func() {
 					params.DefaultMinProposalFee = float64(400)
 				},
 				"data": map[string]interface{}{"governance": map[string]interface{}{
-					"propVoter":       state.VoterOwner,
-					"propCreator":     state.ProposalCreatorAny,
 					"propTallyMethod": state.ProposalTallyMethodNetStake,
-					"propFee":         100,
+					"propFee":         "100",
 				}},
 			},
 			{
@@ -541,6 +583,13 @@ var _ = Describe("TxValidator", func() {
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterNetStakers,
 					"propTallyMethod": state.ProposalTallyMethodIdentity,
+				}},
+			},
+			{
+				"desc": "when fee refund type is unknown",
+				"err":  "field:governance.propFeeRefundType, msg:unknown value",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propFeeRefundType": 12345,
 				}},
 			},
 		}

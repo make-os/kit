@@ -84,7 +84,7 @@ var _ = Describe("Contract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: 1000},
+					Gov: &state.RepoConfigGovernance{PropDuration: "1000"},
 				}
 
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
@@ -144,7 +144,7 @@ var _ = Describe("Contract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: 1000},
+					Gov: &state.RepoConfigGovernance{PropDuration: "1000"},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -191,13 +191,13 @@ var _ = Describe("Contract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Gov.PropDuration = 1000
-				repoUpd.Config.Gov.PropFeeDepositDur = 100
+				repoUpd.Config.Gov.PropDuration = "1000"
+				repoUpd.Config.Gov.PropFeeDepositDur = "100"
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: 2000},
+					Gov: &state.RepoConfigGovernance{PropDuration: "2000"},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -257,7 +257,7 @@ var _ = Describe("Contract", func() {
 
 		When("action data for config object is not empty", func() {
 			It("should change the config", func() {
-				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropQuorum: 120, PropDuration: 100}}
+				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropQuorum: "120", PropDuration: "100"}}
 				proposal := &state.RepoProposal{
 					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToBasicMap()),
@@ -269,7 +269,7 @@ var _ = Describe("Contract", func() {
 					ChainHeight: 0,
 				})
 				Expect(err).To(BeNil())
-				Expect(repo.Config.Gov.PropQuorum).To(Equal(float64(120)))
+				Expect(repo.Config.Gov.PropQuorum.Float()).To(Equal(float64(120)))
 				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
 			})
 		})

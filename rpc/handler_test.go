@@ -55,7 +55,7 @@ var _ = Describe("RPC", func() {
 			Expect(resp.Err.Code).To(Equal("-32700"))
 			Expect(resp.Err.Message).To(Equal("Parse error"))
 			Expect(resp.Result).To(BeNil())
-			Expect(rr.Code).To(Equal(400))
+			Expect(rr.Code).To(Equal(200))
 		})
 
 		It("should return not set handler if RPC.ON is false", func() {
@@ -78,7 +78,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Code).To(Equal("-32700"))
 				Expect(resp.Err.Message).To(Equal("Parse error"))
 				Expect(resp.Result).To(BeNil())
-				Expect(rr.Code).To(Equal(400))
+				Expect(rr.Code).To(Equal(200))
 			})
 			handler.ServeHTTP(rr, req)
 		})
@@ -94,7 +94,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Code).To(Equal("-32600"))
 				Expect(resp.Err.Message).To(Equal("`jsonrpc` value is required"))
 				Expect(resp.Result).To(BeNil())
-				Expect(rr.Code).To(Equal(400))
+				Expect(rr.Code).To(Equal(200))
 			})
 			handler.ServeHTTP(rr, req)
 		})
@@ -110,7 +110,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Code).To(Equal("-32601"))
 				Expect(resp.Err.Message).To(Equal("method not found"))
 				Expect(resp.Result).To(BeNil())
-				Expect(rr.Code).To(Equal(404))
+				Expect(rr.Code).To(Equal(200))
 			})
 
 			handler.ServeHTTP(rr, req)
@@ -127,7 +127,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Code).To(Equal("-32601"))
 				Expect(resp.Err.Message).To(Equal("method not found"))
 				Expect(resp.Result).To(BeNil())
-				Expect(rr.Code).To(Equal(404))
+				Expect(rr.Code).To(Equal(200))
 			})
 
 			handler.ServeHTTP(rr, req)
@@ -160,7 +160,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Code).To(Equal("-32601"))
 				Expect(resp.Err.Message).To(Equal("method not found"))
 				Expect(resp.Result).To(BeNil())
-				Expect(rr.Code).To(Equal(404))
+				Expect(rr.Code).To(Equal(200))
 			})
 
 			handler.ServeHTTP(rr, req)
@@ -451,7 +451,7 @@ var _ = Describe("RPC", func() {
 				Expect(resp.Err.Message).To(Equal("bad error"))
 				Expect(resp.Err.Data).To(Equal("some_data"))
 				Expect(resp.Err.Code).To(Equal("100"))
-				Expect(rr.Code).To(Equal(400))
+				Expect(rr.Code).To(Equal(200))
 			})
 
 			handler.ServeHTTP(rr, req)

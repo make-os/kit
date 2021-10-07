@@ -457,13 +457,14 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx = txns.NewBareTxRepoCreate()
 				tx.Name = "repo1"
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExec(tx, resp)
 			})
 
 			It("should add repo name to new repo index", func() {
 				Expect(app.newRepos).To(HaveLen(1))
-				Expect(app.newRepos).To(ContainElement(tx.Name))
+				Expect(app.newRepos[0].name).To(Equal(tx.Name))
 			})
 
 			It("should add tx to un-indexed cache", func() {
@@ -478,6 +479,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx = txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExec(tx, resp)
 			})
@@ -629,18 +631,23 @@ var _ = Describe("App", func() {
 
 	Describe(".createGitRepositories", func() {
 		It("should return nil if no new repo", func() {
-			app.newRepos = []string{}
+			app.newRepos = []newRepo{}
 			Expect(app.createGitRepositories()).To(BeNil())
 		})
 
 		It("should skip if node is in validator mode", func() {
 			cfg.Node.Validator = true
-			app.newRepos = []string{"repo1"}
+			app.newRepos = []newRepo{
+				{name: "repo1", creatorAddress: []byte{}},
+			}
 			Expect(app.createGitRepositories()).To(Equal(types.ErrSkipped))
 		})
 
 		It("should create all repositories if no repo is being tracked", func() {
-			app.newRepos = []string{"repo1", "repo2"}
+			app.newRepos = []newRepo{
+				{name: "repo1", creatorAddress: []byte{}},
+				{name: "repo2", creatorAddress: []byte{}},
+			}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo2")
@@ -648,14 +655,19 @@ var _ = Describe("App", func() {
 		})
 
 		It("should create only repositories that are being tracked when there the node tracks repos", func() {
-			app.newRepos = []string{"repo1", "repo2"}
+			app.newRepos = []newRepo{
+				{name: "repo1", creatorAddress: []byte{}},
+				{name: "repo2", creatorAddress: []byte{}},
+			}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{"repo1": {}})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1")
 			app.createGitRepositories()
 		})
 
 		It("should panic if unable to create repository", func() {
-			app.newRepos = []string{"repo1"}
+			app.newRepos = []newRepo{
+				{name: "repo1", creatorAddress: []byte{}},
+			}
 			mockLogic.RepoSyncInfoKeeper.EXPECT().Tracked().Return(map[string]*core.TrackedRepo{})
 			mockLogic.RemoteServer.EXPECT().InitRepository("repo1").Return(fmt.Errorf("error"))
 			mockLogic.AtomicLogic.EXPECT().Discard()

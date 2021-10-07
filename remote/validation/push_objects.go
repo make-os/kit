@@ -31,16 +31,6 @@ type RefMismatchErr struct {
 	Ref           string
 }
 
-// ErrCodeRefAndLocalStateMismatch is the code describing an error
-// that occurs when a pushed reference old hash does not match its
-// corresponding local reference hash.
-const ErrCodeRefAndLocalStateMismatch = "refAndLocalMismatch"
-
-// ErrCodeRefAndNetStateMismatch is the code describing an error
-// that occurs when a pushed reference old hash does not match its
-// corresponding network reference hash.
-const ErrCodeRefAndNetStateMismatch = "refAndNetMismatch"
-
 // CheckPushedReferenceConsistency validates pushed references.
 //
 // targetRepo is a reference to the local repo. If unset, the pushed
@@ -120,7 +110,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 
 		// When repo does not require a proposal fee, it must not be provided.
 		// Skip to end when repo does not require proposal fee
-		repoPropFee := govCfg.PropFee
+		repoPropFee := govCfg.PropFee.Float()
 		if repoPropFee == 0 {
 			if !refPropFee.IsZero() {
 				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
@@ -139,7 +129,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 
 		// When repo requires a proposal fee and a deposit period is not allowed,
 		// the full proposal fee must be provided.
-		hasDepositPeriod := govCfg.PropFeeDepositDur > 0
+		hasDepositPeriod := govCfg.PropFeeDepositDur.UInt64() > 0
 		if !hasDepositPeriod && refPropFee.Decimal().LessThan(decimal.NewFromFloat(repoPropFee)) {
 			return fe(-1, "value", constants.ErrFullProposalFeeRequired.Error())
 		}
