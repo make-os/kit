@@ -82,49 +82,49 @@ var _ = Describe("TxDetail", func() {
 			detail := &types.TxDetail{}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:pkID, msg:push key id is required"))
+			Expect(err.Error()).To(Equal(`"field":"pkID","index":"0","msg":"push key id is required"`))
 		})
 
 		It("should return error when push key is not valid", func() {
 			detail := &types.TxDetail{PushKeyID: "invalid_key"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:pkID, msg:push key id is not valid"))
+			Expect(err.Error()).To(Equal(`"field":"pkID","index":"0","msg":"push key id is not valid"`))
 		})
 
 		It("should return error when nonce is not set", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:nonce, msg:nonce is required"))
+			Expect(err.Error()).To(Equal(`"field":"nonce","index":"0","msg":"nonce is required"`))
 		})
 
 		It("should return error when fee is not set", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: ""}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:fee, msg:fee is required"))
+			Expect(err.Error()).To(Equal(`"field":"fee","index":"0","msg":"fee is required"`))
 		})
 
 		It("should return error when value is set for non-merge request reference", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Value: "1", Reference: "refs/heads/master"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:value, msg:field not expected"))
+			Expect(err.Error()).To(Equal(`"field":"value","index":"0","msg":"field not expected"`))
 		})
 
 		It("should return error when fee is not numeric", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1_invalid"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:fee, msg:fee must be numeric"))
+			Expect(err.Error()).To(Equal(`"field":"fee","index":"0","msg":"fee must be numeric"`))
 		})
 
 		It("should return error when signature is malformed", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Signature: "0x_invalid"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:sig, msg:signature format is not valid"))
+			Expect(err.Error()).To(Equal(`"field":"sig","index":"0","msg":"signature format is not valid"`))
 		})
 
 		It("should return error when merge proposal ID is not numeric", func() {
@@ -137,7 +137,7 @@ var _ = Describe("TxDetail", func() {
 			}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge proposal id must be numeric"))
+			Expect(err.Error()).To(Equal(`"field":"mergeID","index":"0","msg":"merge proposal id must be numeric"`))
 		})
 
 		It("should return error when merge proposal ID surpasses 8 bytes", func() {
@@ -150,7 +150,7 @@ var _ = Describe("TxDetail", func() {
 			}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge proposal id exceeded 8 bytes limit"))
+			Expect(err.Error()).To(Equal(`"field":"mergeID","index":"0","msg":"merge proposal id exceeded 8 bytes limit"`))
 		})
 
 		It("should return no error", func() {
@@ -172,7 +172,7 @@ var _ = Describe("TxDetail", func() {
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(state.BarePushKey())
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:pkID, msg:push key not found"))
+			Expect(err.Error()).To(Equal(`"field":"pkID","index":"0","msg":"push key not found"`))
 		})
 
 		It("should return error when repo namespace and push key scopes are set but namespace does not exist", func() {
@@ -186,7 +186,7 @@ var _ = Describe("TxDetail", func() {
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:namespace, msg:namespace (ns1) is unknown"))
+			Expect(err.Error()).To(Equal(`"field":"namespace","index":"0","msg":"namespace (ns1) is unknown"`))
 		})
 
 		It("should return scope error when key scope is r/repo1 and tx repo=repo2 and namespace is unset", func() {
@@ -246,7 +246,7 @@ var _ = Describe("TxDetail", func() {
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:nonce, msg:nonce (9) must be greater than current key owner nonce (10)"))
+			Expect(err.Error()).To(Equal(`"field":"nonce","index":"0","msg":"nonce (9) must be greater than current key owner nonce (10)"`))
 		})
 
 		When("merge proposal ID is set", func() {
@@ -265,7 +265,7 @@ var _ = Describe("TxDetail", func() {
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge proposal not found"))
+				Expect(err.Error()).To(Equal(`"field":"mergeID","index":"0","msg":"merge proposal not found"`))
 			})
 
 			It("should return error when the proposal is not a merge request", func() {
@@ -285,7 +285,7 @@ var _ = Describe("TxDetail", func() {
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:proposal is not a merge request"))
+				Expect(err.Error()).To(Equal(`"field":"mergeID","index":"0","msg":"proposal is not a merge request"`))
 			})
 
 			It("should return error when the proposal creator is not the push key owner", func() {
@@ -305,7 +305,7 @@ var _ = Describe("TxDetail", func() {
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge error: signer did not create the proposal"))
+				Expect(err.Error()).To(Equal(`"field":"mergeID","index":"0","msg":"merge error: signer did not create the proposal"`))
 			})
 
 			When("namespace is set", func() {
@@ -328,7 +328,7 @@ var _ = Describe("TxDetail", func() {
 
 					err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("index:0, field:namespace, msg:namespace domain (repo1) is unknown"))
+					Expect(err.Error()).To(Equal(`"field":"namespace","index":"0","msg":"namespace domain (repo1) is unknown"`))
 				})
 			})
 		})
@@ -350,7 +350,7 @@ var _ = Describe("TxDetail", func() {
 
 			err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:sig, msg:signature is not valid"))
+			Expect(err.Error()).To(Equal(`"field":"sig","index":"0","msg":"signature is not valid"`))
 		})
 
 		It("should return nil when signature is valid", func() {

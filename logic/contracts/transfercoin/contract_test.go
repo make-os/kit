@@ -82,7 +82,7 @@ var _ = Describe("Contract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey(), false)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value+fee, msg:sender's spendable account balance is insufficient"))
+				Expect(err.Error()).To(Equal(`"field":"value+fee","msg":"sender's spendable account balance is insufficient"`))
 			})
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("Contract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey(), false)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (3); expected (1)"))
+				Expect(err.Error()).To(Equal(`"field":"nonce","msg":"tx has an invalid nonce (3); expected (1)"`))
 			})
 		})
 
@@ -108,7 +108,7 @@ var _ = Describe("Contract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey(), true)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (3); expected a nonce that is greater than the current account nonce (10)"))
+				Expect(err.Error()).To(Equal(`"field":"nonce","msg":"tx has an invalid nonce (3); expected a nonce that is greater than the current account nonce (10)"`))
 			})
 
 			It("should return error when equal", func() {
@@ -117,7 +117,7 @@ var _ = Describe("Contract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey(), true)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg:tx has an invalid nonce (10); expected a nonce that is greater than the current account nonce (10)"))
+				Expect(err.Error()).To(Equal(`"field":"nonce","msg":"tx has an invalid nonce (10); expected a nonce that is greater than the current account nonce (10)"`))
 			})
 		})
 

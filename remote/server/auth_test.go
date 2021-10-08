@@ -89,7 +89,7 @@ var _ = Describe("Auth", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("index:1, field:pkID, msg:all push tokens must be signed with the same push key"))
+					Expect(err).To(MatchError(`"field":"pkID","index":"1","msg":"all push tokens must be signed with the same push key"`))
 				})
 			})
 		})
@@ -106,7 +106,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:repo, msg:all push tokens must target the same repository"))
+				Expect(err).To(MatchError(`"field":"repo","index":"1","msg":"all push tokens must target the same repository"`))
 			})
 		})
 
@@ -122,7 +122,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:nonce, msg:all push tokens must have the same nonce"))
+				Expect(err).To(MatchError(`"field":"nonce","index":"1","msg":"all push tokens must have the same nonce"`))
 			})
 		})
 
@@ -138,7 +138,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:namespace, msg:all push tokens must target the same namespace"))
+				Expect(err).To(MatchError(`"field":"namespace","index":"1","msg":"all push tokens must target the same namespace"`))
 			})
 		})
 

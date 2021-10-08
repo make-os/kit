@@ -43,7 +43,7 @@ var _ = Describe("ClientUtils", func() {
 			rpcPkClient.EXPECT().GetOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:'field', msg:'error', httpCode:'400', code:'100'"))
+			Expect(err).To(MatchError(`"code":"100","field":"field","httpCode":"400","msg":"error"`))
 		})
 
 		It("should return no err when rpc client succeeded", func() {
@@ -65,7 +65,7 @@ var _ = Describe("ClientUtils", func() {
 			rpcUserClient.EXPECT().Get("address1").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfAccount("address1", rpcClient)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:'field', msg:'error', httpCode:'400', code:'100'"))
+			Expect(err).To(MatchError(`"code":"100","field":"field","httpCode":"400","msg":"error"`))
 		})
 
 		It("should return no err when rpc client succeeded", func() {

@@ -74,28 +74,28 @@ var _ = Describe("Validation", func() {
 		now := time.Now().Unix()
 
 		var cases = [][]interface{}{
-			{&types.Note{}, "field:repo, msg:repo name is required"},
-			{&types.Note{RepoName: "repo"}, "field:pusherKeyId, msg:push key id is required"},
-			{&types.Note{RepoName: "re*&po"}, "field:repo, msg:repo name is not valid"},
-			{&types.Note{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
-			{&types.Note{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now}, "field:accountNonce, msg:account nonce must be greater than zero"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1}, "field:nodePubKey, msg:push node public key is required"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1, CreatorPubKey: nodePubKey}, "field:nodeSig, msg:push node signature is required"},
-			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1, CreatorPubKey: nodePubKey, RemoteNodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{}}}, "index:0, field:references.name, msg:name is required"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1"}}}, "index:0, field:references.oldHash, msg:old hash is required"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, "index:0, field:references.oldHash, msg:old hash is not valid"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash}}}, "index:0, field:references.newHash, msg:new hash is required"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: "invalid"}}}, "index:0, field:references.newHash, msg:new hash is not valid"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash}}}, "index:0, field:references.nonce, msg:reference nonce must be greater than zero"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1}}}, "index:0, field:fee, msg:fee is required"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "ten"}}}, "index:0, field:fee, msg:fee must be numeric"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "one"}}}, "index:0, field:value, msg:value must be numeric"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0", MergeProposalID: "1a"}}}, "index:0, field:mergeID, msg:merge proposal id must be numeric"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0", MergeProposalID: "123456789"}}}, "index:0, field:mergeID, msg:merge proposal id exceeded 8 bytes limit"},
-			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0"}}}, "index:0, field:pushSig, msg:signature is required"},
+			{&types.Note{}, `"field":"repo","msg":"repo name is required"`},
+			{&types.Note{RepoName: "repo"}, `"field":"pusherKeyId","msg":"push key id is required"`},
+			{&types.Note{RepoName: "re*&po"}, `"field":"repo","msg":"repo name is not valid"`},
+			{&types.Note{RepoName: "repo", Namespace: "*&ns"}, `"field":"namespace","msg":"namespace is not valid"`},
+			{&types.Note{RepoName: "repo", PushKeyID: []byte("xyz")}, `"field":"pusherKeyId","msg":"push key id is not valid"`},
+			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: 0}, `"field":"timestamp","msg":"timestamp is required"`},
+			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now}, `"field":"accountNonce","msg":"account nonce must be greater than zero"`},
+			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1}, `"field":"nodePubKey","msg":"push node public key is required"`},
+			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1, CreatorPubKey: nodePubKey}, `"field":"nodeSig","msg":"push node signature is required"`},
+			{&types.Note{RepoName: "repo", PushKeyID: pkID, Timestamp: now, PusherAcctNonce: 1, CreatorPubKey: nodePubKey, RemoteNodeSig: []byte("invalid signature")}, `"field":"nodeSig","msg":"failed to verify signature"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{}}}, `"field":"references.name","index":"0","msg":"name is required"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1"}}}, `"field":"references.oldHash","index":"0","msg":"old hash is required"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, `"field":"references.oldHash","index":"0","msg":"old hash is not valid"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash}}}, `"field":"references.newHash","index":"0","msg":"new hash is required"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: "invalid"}}}, `"field":"references.newHash","index":"0","msg":"new hash is not valid"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash}}}, `"field":"references.nonce","index":"0","msg":"reference nonce must be greater than zero"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1}}}, `"field":"fee","index":"0","msg":"fee is required"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "ten"}}}, `"field":"fee","index":"0","msg":"fee must be numeric"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "one"}}}, `"field":"value","index":"0","msg":"value must be numeric"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0", MergeProposalID: "1a"}}}, `"field":"mergeID","index":"0","msg":"merge proposal id must be numeric"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0", MergeProposalID: "123456789"}}}, `"field":"mergeID","index":"0","msg":"merge proposal id exceeded 8 bytes limit"`},
+			{&types.Note{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "0"}}}, `"field":"pushSig","index":"0","msg":"signature is required"`},
 		}
 
 		It("should check cases", func() {
@@ -128,7 +128,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' is unknown"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' is unknown"`))
 			})
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' old hash does not match its local version"`))
 			})
 		})
 
@@ -160,7 +160,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:failed to find reference 'refs/heads/master'"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"failed to find reference 'refs/heads/master'"`))
 			})
 		})
 
@@ -176,7 +176,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err about pushed reference and local hash mismatch", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' old hash does not match its local version"`))
 			})
 		})
 
@@ -192,7 +192,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' old hash does not match its local version"`))
 			})
 		})
 
@@ -208,7 +208,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its network version"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' old hash does not match its network version"`))
 			})
 		})
 
@@ -222,7 +222,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' has nonce '2', expecting '1'"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' has nonce '2', expecting '1'"`))
 			})
 		})
 
@@ -236,7 +236,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' has nonce '0', expecting '1'"))
+				Expect(err.Error()).To(Equal(`"field":"references","msg":"reference 'refs/heads/master' has nonce '0', expecting '1'"`))
 			})
 		})
 
@@ -253,7 +253,7 @@ var _ = Describe("Validation", func() {
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
 				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:" + constants.ErrProposalFeeNotExpected.Error()))
+				Expect(err).To(MatchError(`"field":"value","msg":"` + constants.ErrProposalFeeNotExpected.Error() + `"`))
 			})
 
 			It("should return nil when repo does not require a proposal fee and 'Value' is zero ", func() {
@@ -270,12 +270,12 @@ var _ = Describe("Validation", func() {
 				repository.Config.Gov.NoPropFeeForMergeReq = pointer.ToBool(false)
 				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
+				Expect(err).To(MatchError(`"field":"value","msg":"` + constants.ErrFullProposalFeeRequired.Error() + `"`))
 
 				refs = &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: ""}
 				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
+				Expect(err).To(MatchError(`"field":"value","msg":"` + constants.ErrFullProposalFeeRequired.Error() + `"`))
 			})
 
 			When("config exempts merge request from paying proposal fee", func() {
@@ -315,7 +315,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repo, msg:repository named 'unknown' is unknown"))
+				Expect(err.Error()).To(Equal(`"field":"repo","msg":"repository named 'unknown' is unknown"`))
 			})
 		})
 
@@ -329,7 +329,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:namespace, msg:namespace 'ns1' is unknown"))
+				Expect(err.Error()).To(Equal(`"field":"namespace","msg":"namespace 'ns1' is unknown"`))
 			})
 		})
 
@@ -345,7 +345,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repo, msg:repo not a target in namespace 'ns1'"))
+				Expect(err.Error()).To(Equal(`"field":"repo","msg":"repo not a target in namespace 'ns1'"`))
 			})
 		})
 
@@ -359,7 +359,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("field:pusherKeyId, msg:pusher's public key id '.*' is unknown"))
+				Expect(err.Error()).To(MatchRegexp(`"field":"pusherKeyId","msg":"pusher's public key id '.*' is unknown"`))
 			})
 		})
 
@@ -380,7 +380,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, msg:push key does not belong to pusher"))
+				Expect(err.Error()).To(Equal(`"field":"pusherAddr","msg":"push key does not belong to pusher"`))
 			})
 		})
 
@@ -404,7 +404,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, msg:pusher account not found"))
+				Expect(err.Error()).To(Equal(`"field":"pusherAddr","msg":"pusher account not found"`))
 			})
 		})
 
@@ -426,7 +426,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:accountNonce, msg:wrong account nonce '3', expecting '2'"))
+				Expect(err.Error()).To(Equal(`"field":"accountNonce","msg":"wrong account nonce '3', expecting '2'"`))
 			})
 		})
 
@@ -454,7 +454,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("index:0, field:references, msg:reference (.*) signature is not valid"))
+				Expect(err.Error()).To(MatchRegexp(`"field":"references","index":"0","msg":"reference (.*) signature is not valid"`))
 			})
 		})
 
@@ -496,7 +496,7 @@ var _ = Describe("Validation", func() {
 		It("should return error when push note id is not set", func() {
 			err := validation.CheckEndorsementSanity(&types.PushEndorsement{}, false, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:endorsements.noteID, msg:push note ID is required"))
+			Expect(err.Error()).To(Equal(`"field":"endorsements.noteID","msg":"push note ID is required"`))
 		})
 
 		It("should return error when public key is not valid", func() {
@@ -505,7 +505,7 @@ var _ = Describe("Validation", func() {
 				EndorserPubKey: util.EmptyBytes32,
 			}, false, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:endorsements.pubKey, msg:endorser's public key is required"))
+			Expect(err.Error()).To(Equal(`"field":"endorsements.pubKey","msg":"endorser's public key is required"`))
 		})
 
 		When("endorsement is not from a push transaction", func() {
@@ -516,7 +516,7 @@ var _ = Describe("Validation", func() {
 					References:     []*types.EndorsedReference{},
 				}, false, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.refs, msg:at least one reference is required"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.refs","index":"0","msg":"at least one reference is required"`))
 			})
 
 			It("should return error when there are no references in the endorsement at index >= 1", func() {
@@ -526,7 +526,7 @@ var _ = Describe("Validation", func() {
 					References:     []*types.EndorsedReference{},
 				}, false, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.refs, msg:at least one reference is required"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.refs","index":"1","msg":"at least one reference is required"`))
 			})
 		})
 
@@ -538,7 +538,7 @@ var _ = Describe("Validation", func() {
 					References:     []*types.EndorsedReference{},
 				}, true, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.refs, msg:at least one reference is required"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.refs","index":"0","msg":"at least one reference is required"`))
 			})
 
 			It("should not return expected error when there are no references in the endorsement at index >= 1", func() {
@@ -548,7 +548,7 @@ var _ = Describe("Validation", func() {
 					References:     []*types.EndorsedReference{},
 				}, true, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("index:1, field:endorsements.refs, msg:at least one reference is required"))
+				Expect(err.Error()).ToNot(Equal(`"field":"endorsements.refs","index":"1","msg":"at least one reference is required"`))
 			})
 
 			It("should not return when BLS signature is set", func() {
@@ -559,7 +559,7 @@ var _ = Describe("Validation", func() {
 					SigBLS:         []byte{1, 2, 3},
 				}, true, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.sigBLS, msg:BLS signature is not expected"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.sigBLS","index":"1","msg":"BLS signature is not expected"`))
 			})
 
 			It("should not return when endorsement at index > 0 has references set", func() {
@@ -568,7 +568,7 @@ var _ = Describe("Validation", func() {
 					References:     []*types.EndorsedReference{{}},
 				}, true, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.refs, msg:references not expected"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.refs","index":"1","msg":"references not expected"`))
 			})
 		})
 
@@ -579,7 +579,7 @@ var _ = Describe("Validation", func() {
 				References:     []*types.EndorsedReference{{}},
 			}, false, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:endorsements.sigBLS, msg:endorser's BLS signature is required"))
+			Expect(err.Error()).To(Equal(`"field":"endorsements.sigBLS","msg":"endorser's BLS signature is required"`))
 		})
 
 		It("should return no error when endorsement is valid", func() {
@@ -621,7 +621,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key does not belong to an active host"))
+				Expect(err.Error()).To(Equal(`"field":"endorsements.senderPubKey","msg":"sender public key does not belong to an active host"`))
 			})
 		})
 
@@ -652,7 +652,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, msg:signature could not be verified"))
+				Expect(err.Error()).To(ContainSubstring(`"field":"endorsements.sig","msg":"signature could not be verified"`))
 			})
 		})
 

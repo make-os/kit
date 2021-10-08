@@ -353,7 +353,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed push note validation: field:, msg:error"))
+				Expect(err.Error()).To(Equal(`failed push note validation: "field":"","msg":"error"`))
 			})
 		})
 

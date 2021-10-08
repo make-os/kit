@@ -28,11 +28,11 @@ type testSystemContract struct {
 	execErr error
 }
 
-func (t testSystemContract) Init(logic core.Keepers, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
+func (t testSystemContract) Init(_ core.Keepers, _ types.BaseTx, _ uint64) core.SystemContract {
 	return t
 }
 
-func (t testSystemContract) CanExec(tx types.TxCode) bool {
+func (t testSystemContract) CanExec(_ types.TxCode) bool {
 	return t.canExec
 }
 
@@ -105,7 +105,7 @@ var _ = Describe("Transaction", func() {
 					ValidateTx:  validation.ValidateTx,
 				})
 				Expect(resp.GetCode()).ToNot(BeZero())
-				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, msg:unsupported transaction type"))
+				Expect(resp.GetLog()).To(Equal(`tx failed validation: "field":"type","msg":"unsupported transaction type"`))
 			})
 		})
 
@@ -118,7 +118,7 @@ var _ = Describe("Transaction", func() {
 					ValidateTx:  validation.ValidateTx,
 				})
 				Expect(resp.GetCode()).ToNot(BeZero())
-				Expect(resp.Log).To(Equal("tx failed validation: field:type, msg:type is invalid"))
+				Expect(resp.Log).To(Equal(`tx failed validation: "field":"type","msg":"type is invalid"`))
 			})
 		})
 

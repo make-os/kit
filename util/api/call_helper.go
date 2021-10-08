@@ -1,3 +1,4 @@
+// TODO: Move this package to a more appropriate home
 package api
 
 import (
@@ -42,7 +43,7 @@ func CreateRepo(req *api.BodyCreateRepo, c types.Client) (hash string, err error
 	return resp.Hash, nil
 }
 
-// RepoCreator describes a function for creating a repo creating transaction.
+// PushKeyRegister describes a function for registering a push key
 type PushKeyRegister func(req *api.BodyRegisterPushKey, c types.Client) (hash string, err error)
 
 // RegisterPushKey creates a push key registration transaction and returns the hash.

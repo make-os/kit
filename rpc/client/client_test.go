@@ -133,7 +133,7 @@ var _ = Describe("PushKeyAPI", func() {
 			Expect(err).To(Equal(&errors.ReqError{
 				Code:     "decode_error",
 				HttpCode: 500,
-				Msg:      "field:balance, msg:invalid value type: has int, wants string",
+				Msg:      `"field":"balance","msg":"invalid value type: has int, wants string"`,
 				Field:    "",
 			}))
 		})
@@ -624,7 +624,7 @@ var _ = Describe("UserAPI", func() {
 			Expect(err).To(Equal(&errors.ReqError{
 				Code:     "decode_error",
 				HttpCode: 500,
-				Msg:      "field:balance, msg:invalid value type: has int, wants string",
+				Msg:      `"field":"balance","msg":"invalid value type: has int, wants string"`,
 				Field:    "",
 			}))
 		})

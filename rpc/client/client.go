@@ -63,7 +63,7 @@ func (c *RPCClient) GetOptions() *types.Options {
 	return c.opts
 }
 
-// Chain exposes methods for accessing chain information
+// Node exposes methods for accessing chain information
 func (c *RPCClient) Node() types.Node {
 	return &ChainAPI{c: c}
 }
@@ -157,7 +157,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	}
 
 	// At this point, we have a successful response.
-	// Decode the a map and return.
+	// Decode a map and return.
 	var m map[string]interface{}
 	err = json.DecodeClientResponse(resp.Body, &m)
 	if err != nil {

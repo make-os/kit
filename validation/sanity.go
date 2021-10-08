@@ -309,8 +309,8 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	isNotOwnerProposer := pointer.GetInt(govCfg.Voter) != pointer.GetInt(state.VoterOwner.Ptr())
 	if isNotOwnerProposer {
 		if *tallyMethod == *state.ProposalTallyMethodCoinWeighted.Ptr() || *tallyMethod == *state.ProposalTallyMethodIdentity.Ptr() {
-			return feI(index, "config", "when proposer type is not `ProposerOwner`, tally methods "+
-				"`CoinWeighted` and `Identity` are not allowed")
+			return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
+				"'CoinWeighted' and 'Identity' are not allowed")
 		}
 	}
 
@@ -759,7 +759,7 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 	}
 
 	if len(tx.Config) == 0 && len(tx.Description) == 0 {
-		return feI(index, "config|desc", "set either `desc` or `config` fields")
+		return feI(index, "config|desc", "set either 'desc' or 'config' fields")
 	}
 
 	if err := checkDescription(tx.TxDescription, false, index); err != nil {
