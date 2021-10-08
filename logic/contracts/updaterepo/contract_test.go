@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -71,7 +72,7 @@ var _ = Describe("Contract", func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", DelegatorCommission: 10})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Gov.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = state.VoterOwner.Ptr()
 		})
 
 		When("sender is the only owner", func() {
@@ -84,7 +85,7 @@ var _ = Describe("Contract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: "1000"},
+					Gov: &state.RepoConfigGovernance{PropDuration: pointer.ToString("1000")},
 				}
 
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
@@ -111,7 +112,7 @@ var _ = Describe("Contract", func() {
 			Specify("that config was updated", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
-				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(1000)))
+				Expect(*repo.Config.Gov.PropDuration).To(Equal("1000"))
 			})
 
 			Specify("that the description was updated", func() {
@@ -144,7 +145,7 @@ var _ = Describe("Contract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: "1000"},
+					Gov: &state.RepoConfigGovernance{PropDuration: pointer.ToString("1000")},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -180,7 +181,7 @@ var _ = Describe("Contract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Gov.PropDuration.UInt64() + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(util.PtrStrToUInt64(repoUpd.Config.Gov.PropDuration) + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -191,13 +192,13 @@ var _ = Describe("Contract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Gov.PropDuration = "1000"
-				repoUpd.Config.Gov.PropFeeDepositDur = "100"
+				repoUpd.Config.Gov.PropDuration = pointer.ToString("1000")
+				repoUpd.Config.Gov.PropFeeDepositDur = pointer.ToString("100")
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				config := &state.RepoConfig{
-					Gov: &state.RepoConfigGovernance{PropDuration: "2000"},
+					Gov: &state.RepoConfigGovernance{PropDuration: pointer.ToString("2000")},
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
@@ -257,7 +258,10 @@ var _ = Describe("Contract", func() {
 
 		When("action data for config object is not empty", func() {
 			It("should change the config", func() {
-				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropQuorum: "120", PropDuration: "100"}}
+				cfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{
+					PropQuorum:   pointer.ToString("120"),
+					PropDuration: pointer.ToString("100"),
+				}}
 				proposal := &state.RepoProposal{
 					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToBasicMap()),
@@ -269,8 +273,8 @@ var _ = Describe("Contract", func() {
 					ChainHeight: 0,
 				})
 				Expect(err).To(BeNil())
-				Expect(repo.Config.Gov.PropQuorum.Float()).To(Equal(float64(120)))
-				Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
+				Expect(*repo.Config.Gov.PropQuorum).To(Equal("120"))
+				Expect(*repo.Config.Gov.PropDuration).To(Equal("100"))
 			})
 		})
 

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -69,7 +70,7 @@ var _ = Describe("DepositProposalFeeContract", func() {
 			logic.AccountKeeper().Update(key2.Addr(), &state.Account{Balance: "20", DelegatorCommission: 0})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Gov.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = pointer.ToInt(int(state.VoterOwner))
 		})
 
 		When("sender has not previously deposited", func() {

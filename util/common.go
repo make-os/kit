@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlekSi/pointer"
 	"github.com/gen2brain/beeep"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mitchellh/mapstructure"
@@ -701,4 +702,19 @@ func FatalOnError(err error) {
 	if err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+// PtrStrToFloat cast string pointer to float64
+func PtrStrToFloat(inp *string) float64 {
+	return cast.ToFloat64(pointer.GetString(inp))
+}
+
+// PtrStrToFloatE is like PtrStrToFloat but returns error
+func PtrStrToFloatE(inp *string) (float64, error) {
+	return cast.ToFloat64E(pointer.GetString(inp))
+}
+
+// PtrStrToUInt64 cast string pointer to uint64
+func PtrStrToUInt64(inp *string) uint64 {
+	return cast.ToUint64(pointer.GetString(inp))
 }

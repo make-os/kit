@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/types/state"
@@ -449,8 +450,8 @@ var _ = Describe("TxValidator", func() {
 		var cases = []map[string]interface{}{
 			{
 				"desc": "unexpected governance.propVoter field type",
-				"err":  "dry merge failed: cannot append two different types (string, float64)",
-				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": "1"}},
+				"err":  "expected type 'int', got unconvertible type 'map[string]string'",
+				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": map[string]string{}}},
 			},
 			{
 				"desc": "invalid governance.propVoter value",
@@ -571,7 +572,7 @@ var _ = Describe("TxValidator", func() {
 			},
 			{
 				"desc": "when voter type is not ProposerOwner and tally method is CoinWeighted",
-				"err":  "field:config, msg:when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed",
+				"err":  "field:config, msg:when proposer type is not `ProposerOwner`, tally methods `CoinWeighted` and 'Identity' are not allowed",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterNetStakers,
 					"propTallyMethod": state.ProposalTallyMethodCoinWeighted,
@@ -579,7 +580,7 @@ var _ = Describe("TxValidator", func() {
 			},
 			{
 				"desc": "when voter is not ProposerOwner and tally method is Identity",
-				"err":  "field:config, msg:when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed",
+				"err":  "field:config, msg:when proposer type is not `ProposerOwner`, tally methods `CoinWeighted` and `Identity` are not allowed",
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterNetStakers,
 					"propTallyMethod": state.ProposalTallyMethodIdentity,
@@ -606,7 +607,7 @@ var _ = Describe("TxValidator", func() {
 					Expect(err).To(BeNil())
 				} else {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal(cur["err"].(string)))
+					Expect(err.Error()).To(ContainSubstring(cur["err"].(string)))
 				}
 			})
 		}
@@ -678,9 +679,9 @@ var _ = Describe("TxValidator", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.Name = "repo1"
-				tx.Config["governance"] = map[string]interface{}{
-					"propVoter": -1,
-				}
+				tx.Config = &state.RepoConfig{Gov: &state.RepoConfigGovernance{
+					Voter: pointer.ToInt(-1),
+				}}
 				err := validation.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:governance.propVoter, msg:unknown value"))

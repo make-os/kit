@@ -1,6 +1,7 @@
 package createrepo
 
 import (
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/logic/contracts/common"
 	"github.com/make-os/kit/logic/contracts/registerpushkey"
@@ -47,7 +48,10 @@ func (c *Contract) Exec() error {
 	newRepo.CreatedAt = util.UInt64(c.chainHeight + 1)
 
 	// Add config
-	newRepo.Config = state.NewDefaultRepoConfigFromMap(c.tx.Config)
+	newRepo.Config = state.MakeDefaultRepoConfig()
+	if err := newRepo.Config.Merge(c.tx.Config.ToMap()); err != nil {
+		return err
+	}
 
 	// Apply default policies when none is set
 	if len(newRepo.Config.Policies) == 0 {
@@ -61,7 +65,7 @@ func (c *Contract) Exec() error {
 	}
 
 	// Add the creator as a contributor if allowed in config.
-	if newRepo.Config.Gov.CreatorAsContributor {
+	if pointer.GetBool(newRepo.Config.Gov.CreatorAsContributor) {
 
 		// Register sender's public key as a push key
 		if err := registerpushkey.NewContractWithNoSenderUpdate().Init(c.Keepers, &txns.TxRegisterPushKey{
@@ -82,10 +86,11 @@ func (c *Contract) Exec() error {
 	// Register sender as owner only if voter type is VoterOwner or VoterNetStakersAndVetoOwner.
 	// If voter type is VoterNetStakersAndVetoOwner, give veto right to sender.
 	voterType := newRepo.Config.Gov.Voter
-	if voterType == state.VoterOwner || voterType == state.VoterNetStakersAndVetoOwner {
+	voterTypeIsNetStakersAndVetoOwners := *voterType == *state.VoterNetStakersAndVetoOwner.Ptr()
+	if *voterType == *state.VoterOwner.Ptr() || voterTypeIsNetStakersAndVetoOwners {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,
-			Veto:     voterType == state.VoterNetStakersAndVetoOwner,
+			Veto:     voterTypeIsNetStakersAndVetoOwners,
 			JoinedAt: util.UInt64(c.chainHeight) + 1,
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -72,7 +73,7 @@ var _ = Describe("CreateRepoContract", func() {
 				TxDescription: &txns.TxDescription{
 					Description: "a repository",
 				},
-				Config:   repoCfg.ToBasicMap(),
+				Config:   repoCfg,
 				TxValue:  &txns.TxValue{Value: "4"},
 				TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 			}
@@ -118,9 +119,9 @@ var _ = Describe("CreateRepoContract", func() {
 
 			When("voter type is VoteByOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Gov.Voter = state.VoterOwner
+					repoCfg.Gov.Voter = state.VoterOwner.Ptr()
 					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo",
-						Config:        repoCfg.ToBasicMap(),
+						Config:        repoCfg,
 						TxDescription: &txns.TxDescription{},
 						TxValue:       &txns.TxValue{Value: "0"},
 						TxCommon:      &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -128,7 +129,7 @@ var _ = Describe("CreateRepoContract", func() {
 					Expect(err).To(BeNil())
 				})
 
-				Specify("that the repo was added to the tree", func() {
+				Specify("that the repo was added to the tree, the send was added as an owner", func() {
 					repo := logic.RepoKeeper().Get("repo")
 					Expect(repo.IsNil()).To(BeFalse())
 					Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
@@ -137,10 +138,10 @@ var _ = Describe("CreateRepoContract", func() {
 
 			When("voter type is not VoteByOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Gov.Voter = state.VoterNetStakers
+					repoCfg.Gov.Voter = state.VoterNetStakers.Ptr()
 					tx.TxValue = &txns.TxValue{Value: "0"}
 					tx.TxCommon = &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}
-					tx.Config = repoCfg.ToBasicMap()
+					tx.Config = repoCfg
 					createrepo.NewContract().Init(logic, tx, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -151,12 +152,32 @@ var _ = Describe("CreateRepoContract", func() {
 				})
 			})
 
+			When("voter type is VoterNetStakersAndVetoOwner", func() {
+				BeforeEach(func() {
+					repoCfg.Gov.Voter = state.VoterNetStakersAndVetoOwner.Ptr()
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo",
+						Config:        repoCfg,
+						TxDescription: &txns.TxDescription{},
+						TxValue:       &txns.TxValue{Value: "0"},
+						TxCommon:      &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					}, 0).Exec()
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that the repo was added to the tree, the send was added as a veto owner", func() {
+					repo := logic.RepoKeeper().Get("repo")
+					Expect(repo.IsNil()).To(BeFalse())
+					Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
+					Expect(repo.Owners.Get(sender.Addr().String()).Veto).To(BeTrue())
+				})
+			})
+
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropDuration: "1000"}}
+				repoCfg2 := &state.RepoConfig{Gov: &state.RepoConfigGovernance{PropDuration: pointer.ToString("1000")}}
 				BeforeEach(func() {
 					tx.TxValue = &txns.TxValue{Value: "0"}
 					tx.TxCommon = &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()}
-					tx.Config = repoCfg2.ToBasicMap()
+					tx.Config = repoCfg2
 					createrepo.NewContract().Init(logic, tx, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -164,14 +185,14 @@ var _ = Describe("CreateRepoContract", func() {
 				Specify("that repo config is not the default", func() {
 					repo := logic.RepoKeeper().Get("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
-					Expect(repo.Config.Gov.PropDuration.UInt64()).To(Equal(uint64(1000)))
+					Expect(*repo.Config.Gov.PropDuration).To(Equal("1000"))
 				})
 			})
 		})
 
 		When("governance.CreatorAsContributor is true", func() {
 			BeforeEach(func() {
-				repoCfg.Gov.CreatorAsContributor = true
+				repoCfg.Gov.CreatorAsContributor = pointer.ToBool(true)
 				createrepo.NewContract().Init(logic, tx, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -189,8 +210,8 @@ var _ = Describe("CreateRepoContract", func() {
 
 		When("governance.CreatorAsContributor is false", func() {
 			BeforeEach(func() {
-				repoCfg.Gov.CreatorAsContributor = false
-				tx.Config = repoCfg.ToBasicMap()
+				repoCfg.Gov.CreatorAsContributor = pointer.ToBool(false)
+				tx.Config = repoCfg
 				createrepo.NewContract().Init(logic, tx, 0).Exec()
 				Expect(err).To(BeNil())
 			})

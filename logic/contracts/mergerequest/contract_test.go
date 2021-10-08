@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -74,7 +75,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 			repo = state.BareRepository()
 			repo.Config = state.DefaultRepoConfig
-			repo.Config.Gov.Voter = state.VoterOwner
+			repo.Config.Gov.Voter = pointer.ToInt(int(state.VoterOwner))
 		})
 
 		When("sender is the only owner", func() {
@@ -173,7 +174,8 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Gov.PropDuration.UInt64() + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(
+					util.PtrStrToUInt64(repo.Config.Gov.PropDuration) + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})

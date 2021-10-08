@@ -3,6 +3,7 @@ package keepers
 import (
 	"os"
 
+	"github.com/AlekSi/pointer"
 	crypto2 "github.com/make-os/kit/crypto/ed25519"
 	state2 "github.com/make-os/kit/types/state"
 
@@ -66,7 +67,7 @@ var _ = Describe("RepoKeeper", func() {
 			repoAtVersion1 := state2.BareRepository()
 
 			BeforeEach(func() {
-				repoAtVersion1.Config.Gov.PropFee = "100000"
+				repoAtVersion1.Config.Gov.PropFee = pointer.ToString("100000")
 				state.Set(MakeRepoKey("repo1"), repoAtVersion1.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
@@ -93,12 +94,12 @@ var _ = Describe("RepoKeeper", func() {
 
 			BeforeEach(func() {
 				// Version 1
-				repo.Config.Gov.PropFee = "100000"
+				repo.Config.Gov.PropFee = pointer.ToString("100000")
 				state.Set(MakeRepoKey("repo1"), repo.Bytes())
 				state.SaveVersion()
 
 				// Version 2
-				repo.Config.Gov.PropFee = "200000"
+				repo.Config.Gov.PropFee = pointer.ToString("200000")
 				state.Set(MakeRepoKey("repo1"), repo.Bytes())
 				state.SaveVersion()
 

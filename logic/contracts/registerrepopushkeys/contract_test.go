@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -71,7 +72,7 @@ var _ = Describe("Contract", func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", DelegatorCommission: 10})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Gov.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = pointer.ToInt(int(state.VoterOwner))
 		})
 
 		When("sender is the only owner", func() {

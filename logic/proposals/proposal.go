@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/params"
 	tickettypes "github.com/make-os/kit/ticket/types"
 	"github.com/make-os/kit/types/core"
@@ -11,6 +12,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
 )
 
@@ -26,7 +28,7 @@ func MakeProposal(
 		Config:     repo.Config.Clone().Gov,
 		Creator:    creatorAddress,
 		Height:     util.UInt64(chainHeight),
-		EndAt:      util.UInt64(repo.Config.Gov.PropDuration.UInt64() + chainHeight + 1),
+		EndAt:      util.UInt64(cast.ToUint64(pointer.GetString(repo.Config.Gov.PropDuration)) + chainHeight + 1),
 		Fees:       map[string]string{},
 		ActionData: map[string]util.Bytes{},
 	}
@@ -37,15 +39,15 @@ func MakeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Gov.UsePowerAge {
+	if pointer.GetBool(repo.Config.Gov.UsePowerAge) {
 		proposal.PowerAge = util.UInt64(chainHeight) + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Gov.PropFeeDepositDur.UInt64() > 0 {
-		proposal.FeeDepositEndAt = util.UInt64(1 + chainHeight + repo.Config.Gov.PropFeeDepositDur.UInt64())
-		proposal.EndAt = util.UInt64(proposal.FeeDepositEndAt.UInt64() + repo.Config.Gov.PropDuration.UInt64())
+	if cast.ToFloat64(pointer.GetString(repo.Config.Gov.PropFeeDepositDur)) > 0 {
+		proposal.FeeDepositEndAt = util.UInt64(1 + chainHeight + cast.ToUint64(repo.Config.Gov.PropFeeDepositDur))
+		proposal.EndAt = util.UInt64(proposal.FeeDepositEndAt.UInt64() + cast.ToUint64(repo.Config.Gov.PropDuration))
 	}
 
 	// Register the proposal to the repo

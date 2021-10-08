@@ -12,6 +12,7 @@ replace (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
+	github.com/AlekSi/pointer v1.1.0
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/bitfield/script v0.14.1
@@ -42,7 +43,6 @@ require (
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c
-	github.com/imdario/mergo v0.3.12
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
@@ -71,7 +71,6 @@ require (
 	github.com/onsi/gomega v1.10.1
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
-	github.com/phoreproject/go-x11 v0.0.0-00010101000000-000000000000
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.5.0
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect

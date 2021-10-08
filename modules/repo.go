@@ -122,7 +122,6 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	if err := tx.FromMap(params); err != nil {
 		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
-
 	retPayload, signingKey := finalizeTx(tx, m.logic, m.Client, options...)
 	if retPayload {
 		return tx.ToMap()
@@ -134,7 +133,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 			Nonce:      tx.Nonce,
 			Value:      cast.ToFloat64(tx.Value.String()),
 			Fee:        cast.ToFloat64(tx.Fee.String()),
-			Config:     tx.Config,
+			Config:     tx.Config.ToMap(),
 			SigningKey: ed25519.NewKeyFromPrivKey(signingKey),
 		})
 		if err != nil {

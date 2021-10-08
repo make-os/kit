@@ -3,6 +3,7 @@ package errors
 import (
 	"testing"
 
+	"github.com/k0kubun/pp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -75,14 +76,25 @@ var _ = Describe("Errors", func() {
 		})
 	})
 
-	Describe(".BadFieldErrorFromStr", func() {
-		When("field error is `field:id, msg:proposal id has been used, choose another, index:1`", func() {
+	FDescribe(".BadFieldErrorFromStr", func() {
+		When("case 1", func() {
 			str := `field:id, msg:proposal id has been used, choose another, index:1`
 			It("should return field='id', msg='proposal id has been used, choose another' and index='1'", func() {
 				bfe := BadFieldErrorFromStr(str)
 				Expect(bfe.Index).To(Equal(1))
 				Expect(bfe.Field).To(Equal("id"))
 				Expect(bfe.Msg).To(Equal("proposal id has been used, choose another"))
+			})
+		})
+
+		FWhen("case 2", func() {
+			It("should return field='id', msg='when proposer type is not `ProposerOwner`, tally methods `CoinWeighted` and `Identity` are not allowed'", func() {
+				str := "field:config, msg:when proposer type is not `ProposerOwner`, tally methods `CoinWeighted` and `Identity` are not allowed"
+				bfe := BadFieldErrorFromStr(str)
+				pp.Println(bfe)
+				// Expect(bfe.Index).To(Equal(1))
+				// Expect(bfe.Field).To(Equal("id"))
+				// Expect(bfe.Msg).To(Equal("proposal id has been used, choose another"))
 			})
 		})
 	})

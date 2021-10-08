@@ -432,16 +432,6 @@ func (s String) IsDecimal() bool {
 	return govalidator.IsFloat(string(s))
 }
 
-// Float64ToString cast float64 to util.String
-func Float64ToString(v float64) String {
-	return String(cast.ToString(v))
-}
-
-// UInt64ToString cast uint64 to util.String
-func UInt64ToString(v uint64) String {
-	return String(cast.ToString(v))
-}
-
 // TMAddress represents a tendermint address
 type TMAddress []byte
 

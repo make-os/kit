@@ -32,8 +32,8 @@ func (c *RepoAPI) Create(body *api.BodyCreateRepo) (*api.ResultCreateRepo, error
 	tx.Fee = util.String(cast.ToString(body.Fee))
 	tx.Timestamp = time.Now().Unix()
 	tx.SenderPubKey = body.SigningKey.PubKey().ToPublicKey()
-	if body.Config != nil {
-		tx.Config = body.Config
+	if err := tx.Config.Merge(body.Config); err != nil {
+		return nil, err
 	}
 
 	// Sign the tx

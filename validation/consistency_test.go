@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/push/types"
 	storagetypes "github.com/make-os/kit/storage/types"
 	tickettypes "github.com/make-os/kit/ticket/types"
@@ -1053,7 +1054,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Gov.PropFee = "200"
+				repo.Config.Gov.PropFee = pointer.ToString("200")
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config:          repo.Config.Gov,
 					FeeDepositEndAt: 100,
@@ -1079,6 +1080,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
+				repo.Config.Gov.Voter = state.VoterNetStakers.Ptr()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Gov,
 				})
@@ -1104,6 +1106,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
+				repo.Config.Gov.Voter = state.VoterNetStakers.Ptr()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Gov,
 				})
@@ -1129,7 +1132,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Gov.Voter = state.VoterOwner
+				repo.Config.Gov.Voter = state.VoterOwner.Ptr()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Gov,
 				})
@@ -1156,7 +1159,7 @@ var _ = Describe("TxValidator", func() {
 
 					repo := state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
-					repo.Config.Gov.Voter = state.VoterOwner
+					repo.Config.Gov.Voter = state.VoterOwner.Ptr()
 					repo.Proposals.Add("proposal1", &state.RepoProposal{
 						Config: repo.Config.Gov,
 					})
@@ -1372,7 +1375,7 @@ var _ = Describe("TxValidator", func() {
 				txCommon.SenderPubKey = ed25519.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 				repo.Balance = "100"
-				repo.Config.Gov.PropFee = "0"
+				repo.Config.Gov.PropFee = pointer.ToString("0")
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
 				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
@@ -1392,7 +1395,7 @@ var _ = Describe("TxValidator", func() {
 				txProposal.Value = "10"
 				repo := state.BareRepository()
 				repo.Config = state.MakeZeroValueRepoConfig()
-				repo.Config.Gov.PropFee = "100"
+				repo.Config.Gov.PropFee = pointer.ToString("100")
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
 				_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
@@ -1413,9 +1416,9 @@ var _ = Describe("TxValidator", func() {
 					txProposal.Value = "101"
 					repo := state.BareRepository()
 					repo.Config = state.MakeZeroValueRepoConfig()
-					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
-					repo.Config.Gov.PropFee = "100"
-					repo.Config.Gov.Voter = state.VoterOwner
+					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner.Ptr()
+					repo.Config.Gov.PropFee = pointer.ToString("100")
+					repo.Config.Gov.Voter = state.VoterOwner.Ptr()
 
 					mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
 					_, err = validation.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
@@ -1435,9 +1438,9 @@ var _ = Describe("TxValidator", func() {
 					txProposal.Value = "101"
 					repo := state.BareRepository()
 					repo.Config = state.MakeZeroValueRepoConfig()
-					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner
-					repo.Config.Gov.PropFee = "100"
-					repo.Config.Gov.Voter = state.VoterOwner
+					repo.Config.Gov.PropCreator = state.ProposalCreatorOwner.Ptr()
+					repo.Config.Gov.PropFee = pointer.ToString("100")
+					repo.Config.Gov.Voter = state.VoterOwner.Ptr()
 					repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 					mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)
@@ -1459,8 +1462,8 @@ var _ = Describe("TxValidator", func() {
 				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config = state.MakeZeroValueRepoConfig()
-				repo.Config.Gov.PropFee = "100"
-				repo.Config.Gov.Voter = state.VoterOwner
+				repo.Config.Gov.PropFee = pointer.ToString("100")
+				repo.Config.Gov.Voter = state.VoterOwner.Ptr()
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName).Return(repo)

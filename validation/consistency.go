@@ -15,6 +15,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
+	"github.com/make-os/kit/util"
 	crypto2 "github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
 	"github.com/pkg/errors"
@@ -418,7 +419,7 @@ func CheckProposalCommonConsistency(
 	}
 
 	repoPropFee := repo.Config.Gov.PropFee
-	propFeeDec := decimal.NewFromFloat(repoPropFee.Float())
+	propFeeDec := decimal.NewFromFloat(util.PtrStrToFloat(repoPropFee))
 
 	// When the repo does not require a proposal deposit,
 	// ensure a proposal fee is not set.
@@ -429,9 +430,9 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if repo.Config.Gov.PropFeeDepositDur.UInt64() == 0 {
+	if util.PtrStrToUInt64(repo.Config.Gov.PropFeeDepositDur) == 0 {
 		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
-			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%s)", repoPropFee)
+			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%s)", *repoPropFee)
 			return nil, feI(index, "value", msg)
 		}
 	}
@@ -440,7 +441,7 @@ func CheckProposalCommonConsistency(
 	// When proposal creator parameter is ProposalCreatorOwner, the sender is permitted only if they are an owner...
 	owner := repo.Owners.Get(txCommon.GetFrom().String())
 	propCreator := repo.Config.Gov.PropCreator
-	if propCreator == state.ProposalCreatorOwner && owner == nil {
+	if *propCreator == *state.ProposalCreatorOwner.Ptr() && owner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}
 
@@ -514,13 +515,13 @@ func CheckTxVoteConsistency(
 	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repoState.Owners.Get(tx.GetFrom().String())
-	if proposal.GetVoterType() == state.VoterOwner && senderOwner == nil {
+	if *proposal.GetVoterType().Ptr() == *state.VoterOwner.Ptr() && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	// If the proposal is targeted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
-	if proposal.GetVoterType() == state.VoterOwner &&
+	if *proposal.GetVoterType().Ptr() == *state.VoterOwner.Ptr() &&
 		tx.Vote == state.ProposalVoteNoWithVeto && !senderOwner.Veto {
 		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
 			"they have no veto right")

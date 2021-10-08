@@ -51,23 +51,23 @@ func (c *Contract) Exec() error {
 
 	// When proposers are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposer will have 1 voting power.
-	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.PropTallyMethod == state.ProposalTallyMethodIdentity {
+	if *prop.Config.Voter == *state.VoterOwner.Ptr() &&
+		*prop.Config.PropTallyMethod == *state.ProposalTallyMethodIdentity.Ptr() {
 		increments = 1
 	}
 
 	// When proposers are the owners, and tally method is ProposalTallyMethodCoinWeighted
 	// each proposer will use the value of the voter's spendable account balance
 	// as their voting power.
-	if prop.Config.Voter == state.VoterOwner &&
-		prop.Config.PropTallyMethod == state.ProposalTallyMethodCoinWeighted {
+	if *prop.Config.Voter == *state.VoterOwner.Ptr() &&
+		*prop.Config.PropTallyMethod == *state.ProposalTallyMethodCoinWeighted.Ptr() {
 		senderAcct := c.AccountKeeper().Get(spk.Addr())
 		increments = senderAcct.GetAvailableBalance(c.chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeNonDelegated {
+	if *prop.Config.PropTallyMethod == *state.ProposalTallyMethodNetStakeNonDelegated.Ptr() {
 		increments, err = c.GetTicketManager().
 			ValueOfNonDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.PowerAge.UInt64())
 		if err != nil {
@@ -77,7 +77,7 @@ func (c *Contract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
+	if *prop.Config.PropTallyMethod == *state.ProposalTallyMethodNetStakeOfDelegators.Ptr() {
 		increments, err = c.GetTicketManager().
 			ValueOfDelegatedTickets(c.tx.SenderPubKey.ToBytes32(), prop.PowerAge.UInt64())
 		if err != nil {
@@ -87,7 +87,7 @@ func (c *Contract) Exec() error {
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.PropTallyMethod == state.ProposalTallyMethodNetStake {
+	if *prop.Config.PropTallyMethod == *state.ProposalTallyMethodNetStake.Ptr() {
 
 		tickets, err := c.GetTicketManager().GetUnExpiredTickets(c.tx.SenderPubKey.ToBytes32(),
 			prop.PowerAge.UInt64())
@@ -180,7 +180,7 @@ func (c *Contract) Exec() error {
 		// Also, if the proposer type for the proposal is stakeholders and veto
 		// owners and voter is an owner, increment NoWithVetoByOwners by 1
 		voterOwnerObj := repo.Owners.Get(spk.Addr().String())
-		isStakeholderAndVetoOwnerProposer := prop.Config.Voter == state.VoterNetStakersAndVetoOwner
+		isStakeholderAndVetoOwnerProposer := *prop.Config.Voter == *state.VoterNetStakersAndVetoOwner.Ptr()
 		if isStakeholderAndVetoOwnerProposer && voterOwnerObj != nil && voterOwnerObj.Veto {
 			prop.NoWithVetoByOwners = 1
 		}

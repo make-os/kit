@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 
+	"github.com/AlekSi/pointer"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/bdn"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -21,6 +22,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
 )
 
@@ -110,7 +112,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 
 		// When repo does not require a proposal fee, it must not be provided.
 		// Skip to end when repo does not require proposal fee
-		repoPropFee := govCfg.PropFee.Float()
+		repoPropFee := cast.ToFloat64(pointer.GetString(govCfg.PropFee))
 		if repoPropFee == 0 {
 			if !refPropFee.IsZero() {
 				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
@@ -119,7 +121,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 		}
 
 		// When merge request proposal is exempted from paying proposal fee, skip to end
-		if govCfg.NoPropFeeForMergeReq {
+		if pointer.GetBool(govCfg.NoPropFeeForMergeReq) {
 			goto end
 		}
 
@@ -129,7 +131,7 @@ func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
 
 		// When repo requires a proposal fee and a deposit period is not allowed,
 		// the full proposal fee must be provided.
-		hasDepositPeriod := govCfg.PropFeeDepositDur.UInt64() > 0
+		hasDepositPeriod := cast.ToUint64(pointer.GetString(govCfg.PropFeeDepositDur)) > 0
 		if !hasDepositPeriod && refPropFee.Decimal().LessThan(decimal.NewFromFloat(repoPropFee)) {
 			return fe(-1, "value", constants.ErrFullProposalFeeRequired.Error())
 		}

@@ -3,6 +3,7 @@ package state
 import (
 	"fmt"
 
+	"github.com/AlekSi/pointer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -81,7 +82,7 @@ var _ = Describe("Repository", func() {
 				r = BareRepository()
 				r.Balance = "100"
 				config := BareRepoConfig()
-				config.Gov = &RepoConfigGovernance{PropDuration: "100"}
+				config.Gov = &RepoConfigGovernance{PropDuration: pointer.ToStringOrNil("100")}
 				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
@@ -198,72 +199,11 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("RepoConfig.MergeMap", func() {
-		Context("Governance Merging", func() {
-			base := &RepoConfig{
-				Gov: &RepoConfigGovernance{
-					Voter:       1,
-					UsePowerAge: true,
-					PropQuorum:  "1",
-				},
-				Policies: []*Policy{
-					{Subject: "user1", Object: "dev", Action: "deny"},
-				},
-			}
-
-			It("should update base object", func() {
-				err := base.MergeMap(map[string]interface{}{
-					"governance": map[string]interface{}{
-						"propVoter":   13,
-						"usePowerAge": false,
-						"propQuorum":  "0",
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(int(base.Gov.Voter)).To(Equal(13))
-				Expect(base.Gov.UsePowerAge).To(BeFalse())
-				Expect(base.Gov.PropQuorum.String()).To(Equal("0"))
-			})
-		})
-
-		Context("Policies Merging", func() {
-			var base *RepoConfig
-
-			BeforeEach(func() {
-				base = &RepoConfig{
-					Gov: &RepoConfigGovernance{Voter: 1, PropDuration: "100", PropFee: "12"},
-					Policies: []*Policy{
-						{Subject: "user1", Object: "dev", Action: "deny"},
-					},
-				}
-			})
-
-			It("should add to existing policy", func() {
-				err := base.MergeMap(map[string]interface{}{
-					"policies": []interface{}{
-						map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(base.Policies).To(HaveLen(2))
-				Expect(base.Policies[0].Subject).To(Equal("user1"))
-				Expect(base.Policies[0].Object).To(Equal("dev"))
-				Expect(base.Policies[0].Action).To(Equal("deny"))
-				Expect(base.Policies[1].Subject).To(Equal("sub2"))
-				Expect(base.Policies[1].Object).To(Equal("branch_dev"))
-				Expect(base.Policies[1].Action).To(Equal("delete"))
-				Expect(base.Gov.Voter).To(Equal(VoterType(1)))
-				Expect(base.Gov.PropDuration.UInt64()).To(Equal(uint64(100)))
-				Expect(base.Gov.PropFee.Float()).To(Equal(float64(12)))
-			})
-		})
-	})
-
 	Describe("RepoConfig.Clone", func() {
 		base := &RepoConfig{
 			Gov: &RepoConfigGovernance{
-				Voter:       1,
-				UsePowerAge: true,
+				Voter:       pointer.ToInt(1),
+				UsePowerAge: pointer.ToBool(true),
 			},
 			Policies: []*Policy{},
 		}
@@ -273,36 +213,6 @@ var _ = Describe("Repository", func() {
 			Expect(base).To(Equal(clone))
 			Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
 			Expect(fmt.Sprintf("%p", base.Gov)).ToNot(Equal(fmt.Sprintf("%p", clone.Gov)))
-		})
-	})
-
-	Describe("RepoConfig.FromMap", func() {
-		var cfg1 = &RepoConfig{
-			Gov: &RepoConfigGovernance{
-				Voter:                1,
-				PropCreator:          1,
-				UsePowerAge:          true,
-				PropDuration:         "12",
-				PropFeeDepositDur:    "122",
-				PropTallyMethod:      1,
-				PropQuorum:           "25",
-				PropThreshold:        "40",
-				PropVetoQuorum:       "50",
-				PropVetoOwnersQuorum: "30",
-				PropFee:              "10",
-				PropFeeRefundType:    1,
-				NoPropFeeForMergeReq: true,
-			},
-			Policies: []*Policy{
-				{Subject: "sub", Object: "obj", Action: "act"},
-			},
-		}
-
-		It("should populate from a map stripped of custom types", func() {
-			m := cfg1.ToBasicMap()
-			cfg2 := &RepoConfig{Gov: &RepoConfigGovernance{}, Policies: []*Policy{}}
-			cfg2.FromMap(m)
-			Expect(cfg1).To(Equal(cfg2))
 		})
 	})
 })

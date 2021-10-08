@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlekSi/pointer"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
@@ -265,8 +266,8 @@ var _ = Describe("Validation", func() {
 			It("should return err when repo requires a proposal fee and 'Value' is zero (0) or empty string('')", func() {
 				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 				repository := &state.Repository{Config: state.DefaultRepoConfig}
-				repository.Config.Gov.PropFee = "100"
-				repository.Config.Gov.NoPropFeeForMergeReq = false
+				repository.Config.Gov.PropFee = pointer.ToString("100")
+				repository.Config.Gov.NoPropFeeForMergeReq = pointer.ToBool(false)
 				err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:value, msg:" + constants.ErrFullProposalFeeRequired.Error()))
@@ -281,8 +282,8 @@ var _ = Describe("Validation", func() {
 				It("should return nil when repo requires a proposal fee and 'Value' is zero (0)", func() {
 					refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Nonce: 1, Fee: "1", Value: "0"}
 					repository := &state.Repository{Config: state.DefaultRepoConfig}
-					repository.Config.Gov.PropFee = "100"
-					repository.Config.Gov.NoPropFeeForMergeReq = true
+					repository.Config.Gov.PropFee = pointer.ToString("100")
+					repository.Config.Gov.NoPropFeeForMergeReq = pointer.ToBool(true)
 					err = validation.CheckPushedReferenceConsistency(nil, refs, repository)
 					Expect(err).To(BeNil())
 				})

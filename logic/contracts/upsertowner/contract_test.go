@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/AlekSi/pointer"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -75,7 +76,7 @@ var _ = Describe("Contract", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Gov.Voter = state.VoterOwner
+			repoUpd.Config.Gov.Voter = pointer.ToInt(int(state.VoterOwner))
 		})
 
 		When("sender is the only owner", func() {
@@ -230,7 +231,7 @@ var _ = Describe("Contract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Gov.PropDuration.UInt64() + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(util.PtrStrToUInt64(repoUpd.Config.Gov.PropDuration) + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -243,8 +244,8 @@ var _ = Describe("Contract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Gov.PropDuration = "1000"
-				repoUpd.Config.Gov.PropFeeDepositDur = "100"
+				repoUpd.Config.Gov.PropDuration = pointer.ToString("1000")
+				repoUpd.Config.Gov.PropFeeDepositDur = pointer.ToString("100")
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 

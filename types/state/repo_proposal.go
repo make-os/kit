@@ -1,34 +1,69 @@
 package state
 
 import (
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
+	"github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 )
 
 // VoterType represents a type of repository voter type
 type VoterType int
 
+func (p VoterType) Ptr() *int {
+	v := int(p)
+	return &v
+}
+
 const (
-	VoterOwner                  VoterType = iota + 1 // Only owners can vote
-	VoterNetStakers                                  // Only network stakeholders can vote.
-	VoterNetStakersAndVetoOwner                      // Only network stakeholders and veto owners can vote.
+	VoterOwner                  VoterType = iota // Only owners can vote
+	VoterNetStakers                              // Only network stakeholders can vote.
+	VoterNetStakersAndVetoOwner                  // Only network stakeholders and veto owners can vote.
 )
+
+// IsValidVoterType checks if v is a valid VoterType
+func IsValidVoterType(v *int) bool {
+	return funk.Contains([]VoterType{
+		VoterOwner,
+		VoterNetStakers,
+		VoterNetStakersAndVetoOwner,
+	}, VoterType(pointer.GetInt(v)))
+}
 
 // ProposalCreatorType describes types of proposal creators
 type ProposalCreatorType int
 
+func (p ProposalCreatorType) Ptr() *int {
+	v := int(p)
+	return &v
+}
+
 const (
-	ProposalCreatorAny ProposalCreatorType = iota + 1
+	ProposalCreatorAny ProposalCreatorType = iota
 	ProposalCreatorOwner
 )
+
+// IsValidProposalCreatorType checks if v is a valid ProposalCreatorType
+func IsValidProposalCreatorType(v *int) bool {
+	return funk.Contains([]ProposalCreatorType{
+		ProposalCreatorAny,
+		ProposalCreatorOwner,
+	}, ProposalCreatorType(pointer.GetInt(v)))
+}
 
 // PropFeeRefundType describes the typeof refund scheme supported
 type PropFeeRefundType int
 
+func (p PropFeeRefundType) Ptr() *int {
+	v := int(p)
+	return &v
+}
+
 const (
-	ProposalFeeRefundNo PropFeeRefundType = iota + 1
+	ProposalFeeRefundNo PropFeeRefundType = iota
 	ProposalFeeRefundOnAccept
 	ProposalFeeRefundOnAcceptReject
 	ProposalFeeRefundOnAcceptAllReject
@@ -38,16 +73,46 @@ const (
 	ProposalFeeRefundOnBelowThresholdAcceptAllReject
 )
 
+// IsValidPropFeeRefundTypeType checks if v is a valid PropFeeRefundTypeType
+func IsValidPropFeeRefundTypeType(v *int) bool {
+	return funk.Contains([]PropFeeRefundType{
+		ProposalFeeRefundNo,
+		ProposalFeeRefundOnAccept,
+		ProposalFeeRefundOnAcceptReject,
+		ProposalFeeRefundOnAcceptAllReject,
+		ProposalFeeRefundOnBelowThreshold,
+		ProposalFeeRefundOnBelowThresholdAccept,
+		ProposalFeeRefundOnBelowThresholdAcceptReject,
+		ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+	}, PropFeeRefundType(pointer.GetInt(v)))
+}
+
 // ProposalTallyMethod represents a type for repo proposal counting method
 type ProposalTallyMethod int
 
+func (p ProposalTallyMethod) Ptr() *int {
+	v := int(p)
+	return &v
+}
+
 const (
-	ProposalTallyMethodIdentity ProposalTallyMethod = iota + 1
+	ProposalTallyMethodIdentity ProposalTallyMethod = iota
 	ProposalTallyMethodCoinWeighted
 	ProposalTallyMethodNetStake
 	ProposalTallyMethodNetStakeNonDelegated
 	ProposalTallyMethodNetStakeOfDelegators
 )
+
+// IsValidProposalTallyMethod checks if v is a valid ProposalTallyMethod
+func IsValidProposalTallyMethod(v *int) bool {
+	return funk.Contains([]ProposalTallyMethod{
+		ProposalTallyMethodIdentity,
+		ProposalTallyMethodCoinWeighted,
+		ProposalTallyMethodNetStake,
+		ProposalTallyMethodNetStakeNonDelegated,
+		ProposalTallyMethodNetStakeOfDelegators,
+	}, ProposalTallyMethod(pointer.GetInt(v)))
+}
 
 // ProposalFees contains address and fees paid by proposal creators
 type ProposalFees map[string]string
@@ -119,6 +184,11 @@ type Proposal interface {
 // ProposalOutcome describes a proposal outcome
 type ProposalOutcome int
 
+func (p ProposalOutcome) Ptr() *int {
+	v := int(p)
+	return &v
+}
+
 // Proposal outcomes
 const (
 	ProposalOutcomeAccepted ProposalOutcome = iota + 1
@@ -185,7 +255,7 @@ func (p *RepoProposal) IsFeeDepositEnabled() bool {
 // IsDepositedFeeOK checks whether the fees deposited to the proposal
 // meets the minimum required deposit
 func (p *RepoProposal) IsDepositedFeeOK() bool {
-	propFee := decimal.NewFromFloat(p.Config.PropFee.Float())
+	propFee := decimal.NewFromFloat(cast.ToFloat64(*p.Config.PropFee))
 	return p.Fees.Total().GreaterThanOrEqual(propFee)
 }
 
@@ -258,7 +328,7 @@ func (p *RepoProposal) IncrAccept() {
 
 // GetVoterType implements Proposal
 func (p *RepoProposal) GetVoterType() VoterType {
-	return p.Config.Voter
+	return VoterType(pointer.GetInt(p.Config.Voter))
 }
 
 // GetPowerAge implements Proposal
@@ -278,17 +348,17 @@ func (p *RepoProposal) GetFees() ProposalFees {
 
 // GetRefundType implements Proposal
 func (p *RepoProposal) GetRefundType() PropFeeRefundType {
-	return p.Config.PropFeeRefundType
+	return PropFeeRefundType(pointer.GetInt(p.Config.PropFeeRefundType))
 }
 
 // GetQuorum implements Proposal
 func (p *RepoProposal) GetQuorum() float64 {
-	return p.Config.PropQuorum.Float()
+	return cast.ToFloat64(pointer.GetString(p.Config.PropQuorum))
 }
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.Config.PropTallyMethod
+	return ProposalTallyMethod(*p.Config.PropTallyMethod)
 }
 
 // GetAction implements Proposal
@@ -303,17 +373,17 @@ func (p *RepoProposal) GetActionData() map[string]util.Bytes {
 
 // GetThreshold implements Proposal
 func (p *RepoProposal) GetThreshold() float64 {
-	return p.Config.PropThreshold.Float()
+	return cast.ToFloat64(pointer.GetString(p.Config.PropThreshold))
 }
 
 // GetVetoQuorum implements Proposal
 func (p *RepoProposal) GetVetoQuorum() float64 {
-	return p.Config.PropVetoQuorum.Float()
+	return cast.ToFloat64(pointer.GetString(p.Config.PropVetoQuorum))
 }
 
 // GetVetoOwnersQuorum implements Proposal
 func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
-	return p.Config.PropVetoOwnersQuorum.Float()
+	return cast.ToFloat64(pointer.GetString(p.Config.PropVetoOwnersQuorum))
 }
 
 // GetAccepted implements Proposal

@@ -2,7 +2,6 @@ package errors
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -75,11 +74,6 @@ func fieldErrorWithIndex(index int, field, err string) error {
 	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"msg:%s", index, field, err))
 }
 
-// WrongFieldValueMsg generates a message to indicate an unexpected field value type
-func WrongFieldValueMsg(expectedType string, actual interface{}) string {
-	return fmt.Sprintf("wrong value type, want '%s', got %T", expectedType, reflect.TypeOf(actual).String())
-}
-
 // ReqError describes an error consumable by http services.
 type ReqError struct {
 	Code     string
@@ -114,11 +108,6 @@ func (s *ReqError) Error() string {
 		msgParts = append(msgParts, fmt.Sprintf("code:'%s'", s.Code))
 	}
 	return strings.Join(msgParts, ", ")
-}
-
-func IsReqError(target error) bool {
-	_, ok := target.(*ReqError)
-	return ok
 }
 
 // ReqErrorFromStr attempts to convert a string to a ReqError. It expects the

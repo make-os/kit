@@ -309,7 +309,7 @@ func (l *Logic) ApplyGenesisState(genState json.RawMessage) error {
 				})
 			}
 			newRepo.Config = state.MakeDefaultRepoConfig()
-			newRepo.Config.MergeMap(ga.Config)
+			newRepo.Config.Merge(ga.Config)
 			l.RepoKeeper().Update(ga.Name, newRepo)
 			if ga.Helm {
 				if err := l.SysKeeper().SetHelmRepo(ga.Name); err != nil {

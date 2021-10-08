@@ -1,6 +1,7 @@
 package txns
 
 import (
+	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/errors"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -14,8 +15,8 @@ type TxRepoCreate struct {
 	*TxType        `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue       `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxDescription `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name           string                 `json:"name" msgpack:"name" mapstructure:"name"`
-	Config         map[string]interface{} `json:"config" msgpack:"config" mapstructure:"config"`
+	Name           string            `json:"name" msgpack:"name" mapstructure:"name"`
+	Config         *state.RepoConfig `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // NewBareTxRepoCreate returns an instance of TxRepoCreate with zero values
@@ -26,7 +27,7 @@ func NewBareTxRepoCreate() *TxRepoCreate {
 		TxValue:       &TxValue{Value: "0"},
 		TxDescription: &TxDescription{Description: ""},
 		Name:          "",
-		Config:        make(map[string]interface{}),
+		Config:        &state.RepoConfig{},
 	}
 }
 

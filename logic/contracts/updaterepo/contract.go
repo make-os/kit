@@ -95,7 +95,7 @@ func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 		if err := util.ToObject(actDataCfg, &cfgUpd); err != nil {
 			return err
 		}
-		if err := args.Repo.Config.MergeMap(cfgUpd); err != nil {
+		if err := args.Repo.Config.Merge(cfgUpd); err != nil {
 			return err
 		}
 	}
