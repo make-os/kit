@@ -301,7 +301,7 @@ func (m *RepoModule) Get(name string, opts ...modtypes.GetOptions) util.Map {
 
 	r := m.logic.RepoKeeper().Get(name, blockHeight)
 
-	if r.IsNil() {
+	if r.IsEmpty() {
 		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 

@@ -39,7 +39,7 @@ func (rk *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 			return nil
 		}
 		propParent := rk.GetNoPopulate(name, prop.Height.UInt64())
-		if propParent.IsNil() {
+		if propParent.IsEmpty() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
 		prop.Config = propParent.Config.Gov

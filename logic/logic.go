@@ -340,7 +340,7 @@ func (l *Logic) ApplyProposals(block *state.BlockInfo) error {
 	endingProps := repoKeeper.GetProposalsEndingAt(nextChainHeight)
 	for _, ep := range endingProps {
 		repo := repoKeeper.Get(ep.RepoName)
-		if repo.IsNil() {
+		if repo.IsEmpty() {
 			return fmt.Errorf("repo not found") // should never happen
 		}
 		_, err := proposals.MaybeApplyProposal(&proposals.ApplyProposalArgs{

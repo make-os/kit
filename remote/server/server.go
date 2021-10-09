@@ -429,7 +429,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the repository exist
 	repoState := sv.logic.RepoKeeper().Get(repoName)
-	if repoState.IsNil() {
+	if repoState.IsEmpty() {
 		w.WriteHeader(http.StatusNotFound)
 		sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound)
 		return

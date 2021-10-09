@@ -131,7 +131,7 @@ var _ = Describe("CreateRepoContract", func() {
 
 				Specify("that the repo was added to the tree, the send was added as an owner", func() {
 					repo := logic.RepoKeeper().Get("repo")
-					Expect(repo.IsNil()).To(BeFalse())
+					Expect(repo.IsEmpty()).To(BeFalse())
 					Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
 				})
 			})
@@ -166,7 +166,7 @@ var _ = Describe("CreateRepoContract", func() {
 
 				Specify("that the repo was added to the tree, the send was added as a veto owner", func() {
 					repo := logic.RepoKeeper().Get("repo")
-					Expect(repo.IsNil()).To(BeFalse())
+					Expect(repo.IsEmpty()).To(BeFalse())
 					Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
 					Expect(repo.Owners.Get(sender.Addr().String()).Veto).To(BeTrue())
 				})

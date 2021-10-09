@@ -449,11 +449,6 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckRepoConfig", func() {
 		var cases = []map[string]interface{}{
 			{
-				"desc": "unexpected governance.propVoter field type",
-				"err":  "expected type 'int', got unconvertible type 'map[string]string'",
-				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": map[string]string{}}},
-			},
-			{
 				"desc": "invalid governance.propVoter value",
 				"err":  `"field":"governance.propVoter","msg":"unknown value"`,
 				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": 100}},
@@ -572,7 +567,7 @@ var _ = Describe("TxValidator", func() {
 			},
 			{
 				"desc": "when voter type is not ProposerOwner and tally method is CoinWeighted",
-				"err":  `"field":"config","msg":"when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"`,
+				"err":  `"field":"config","msg":"when proposer is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"`,
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterNetStakers,
 					"propTallyMethod": state.ProposalTallyMethodCoinWeighted,
@@ -580,7 +575,7 @@ var _ = Describe("TxValidator", func() {
 			},
 			{
 				"desc": "when voter is not ProposerOwner and tally method is Identity",
-				"err":  `"field":"config","msg":"when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"`,
+				"err":  `"field":"config","msg":"when proposer is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"`,
 				"data": map[string]interface{}{"governance": map[string]interface{}{
 					"propVoter":       state.VoterNetStakers,
 					"propTallyMethod": state.ProposalTallyMethodIdentity,
@@ -602,7 +597,9 @@ var _ = Describe("TxValidator", func() {
 				if before, ok := cur["before"]; ok {
 					before.(func())()
 				}
-				err := validation.CheckRepoConfig(cur["data"].(map[string]interface{}), -1)
+				repoCfg := &state.RepoConfig{Gov: &state.RepoConfigGovernance{}}
+				repoCfg.Merge(cur["data"].(map[string]interface{}))
+				err := validation.CheckRepoConfig(repoCfg, -1)
 				if cur["err"].(string) == "" {
 					Expect(err).To(BeNil())
 				} else {

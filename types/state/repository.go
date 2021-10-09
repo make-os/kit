@@ -189,9 +189,9 @@ func (c *RepoConfig) Merge(upd map[string]interface{}) error {
 	return util.DecodeMap(upd, c)
 }
 
-// IsNil checks if the object's field all have zero value
-func (c *RepoConfig) IsNil() bool {
-	return (c.Gov == nil || *c.Gov == RepoConfigGovernance{}) && len(c.Policies) == 0
+// IsEmpty checks if c considered empty
+func (c *RepoConfig) IsEmpty() bool {
+	return (c.Gov == nil || len(util.ToMap(c.Gov)) == 0) && len(c.Policies) == 0
 }
 
 // ToBasicMap converts the object to a basic map with all custom types stripped.
@@ -359,17 +359,17 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 	r.Owners[ownerAddress] = owner
 }
 
-// IsNil returns true if the repo fields are set to their nil value
-func (r *Repository) IsNil() bool {
+// IsEmpty returns true if the repo is considered empty
+func (r *Repository) IsEmpty() bool {
 	return r.Balance.IsZero() &&
 		len(r.Description) == 0 &&
 		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
 		len(r.Contributors) == 0 &&
+		r.Config.IsEmpty() &&
 		r.CreatedAt == 0 &&
-		r.UpdatedAt == 0 &&
-		r.Config.IsNil()
+		r.UpdatedAt == 0
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

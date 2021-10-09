@@ -142,7 +142,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 
 	// Ensure target repository exists
 	repoPath, repoState := sv.getRepoPath(repoName), sv.logic.RepoKeeper().Get(repoName)
-	if repoState.IsNil() {
+	if repoState.IsEmpty() {
 		return fmt.Errorf("repo '%s' not found", repoName)
 	}
 

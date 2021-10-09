@@ -7,6 +7,7 @@ import (
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
+	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/types/txns"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
@@ -49,7 +50,7 @@ func (c *Contract) Exec() error {
 	spk, _ := ed25519.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpdate
-	if len(c.tx.Config) > 0 {
+	if !c.tx.Config.IsEmpty() {
 		proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)
 	}
 	if c.tx != nil && c.tx.Description != "" {
@@ -87,7 +88,7 @@ update:
 
 // Apply applies the proposal action
 func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
-	var cfgUpd map[string]interface{}
+	var cfgUpd state.RepoConfig
 
 	// Update config if an update exists
 	actDataCfg := args.Proposal.GetActionData()[constants.ActionDataKeyCFG]
@@ -95,7 +96,7 @@ func (c *Contract) Apply(args *core.ProposalApplyArgs) error {
 		if err := util.ToObject(actDataCfg, &cfgUpd); err != nil {
 			return err
 		}
-		if err := args.Repo.Config.Merge(cfgUpd); err != nil {
+		if err := args.Repo.Config.Merge(cfgUpd.ToMap()); err != nil {
 			return err
 		}
 	}

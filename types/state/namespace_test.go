@@ -7,7 +7,7 @@ import (
 )
 
 var _ = Describe("Namespace", func() {
-	Describe(".IsNil", func() {
+	Describe(".IsEmpty", func() {
 		It("should return true when all fields have zero values", func() {
 			ns := state.BareNamespace()
 			Expect(ns.IsNil()).To(BeTrue())

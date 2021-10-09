@@ -1,6 +1,7 @@
 package txns
 
 import (
+	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/errors"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -14,7 +15,7 @@ type TxRepoProposalUpdate struct {
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxDescription    `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Config            map[string]interface{} `json:"config" msgpack:"config" mapstructure:"config"`
+	Config            *state.RepoConfig `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // NewBareRepoProposalUpdate returns an instance of TxRepoProposalUpdate with zero values
@@ -24,7 +25,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 		TxType:           &TxType{Type: TxTypeRepoProposalUpdate},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ID: ""},
 		TxDescription:    &TxDescription{Description: ""},
-		Config:           make(map[string]interface{}),
+		Config:           &state.RepoConfig{},
 	}
 }
 

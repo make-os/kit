@@ -267,7 +267,7 @@ func CheckPushNoteConsistency(note pptyp.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
-	if repo.IsNil() {
+	if repo.IsEmpty() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", note.GetRepoName())
 		return errors2.FieldError("repo", msg)
 	}

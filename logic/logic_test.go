@@ -80,7 +80,7 @@ var _ = Describe("Logic", func() {
 
 			It("should successfully add all repos", func() {
 				repo := logic.RepoKeeper().Get("my-repo")
-				Expect(repo.IsNil()).To(BeFalse())
+				Expect(repo.IsEmpty()).To(BeFalse())
 				helmRepo, err := logic.SysKeeper().GetHelmRepo()
 				Expect(err).To(BeNil())
 				Expect(helmRepo).NotTo(Equal("my-repo"))
@@ -110,7 +110,7 @@ var _ = Describe("Logic", func() {
 
 			It("should successfully add all repos", func() {
 				repo := logic.RepoKeeper().Get("my-repo")
-				Expect(repo.IsNil()).To(BeFalse())
+				Expect(repo.IsEmpty()).To(BeFalse())
 				helmRepo, err := logic.SysKeeper().GetHelmRepo()
 				Expect(err).To(BeNil())
 				Expect(helmRepo).NotTo(Equal("my-repo"))

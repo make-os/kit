@@ -15,7 +15,7 @@ var _ = Describe("Account", func() {
 		acct = &Account{Balance: "10", Nonce: 2, Stakes: stakes}
 	})
 
-	Describe(".IsNil", func() {
+	Describe(".IsEmpty", func() {
 		It("should return true for bare account", func() {
 			acct := NewBareAccount()
 			Expect(acct.IsNil()).To(BeTrue())

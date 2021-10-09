@@ -100,22 +100,22 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("BareRepository.IsNil", func() {
+	Describe("BareRepository.IsEmpty", func() {
 		It("should return true when no fields are set", func() {
 			r := BareRepository()
-			Expect(r.IsNil()).To(BeTrue())
+			Expect(r.IsEmpty()).To(BeTrue())
 		})
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
 			r.AddOwner("owner_addr", &RepoOwner{Creator: true})
-			Expect(r.IsNil()).To(BeFalse())
+			Expect(r.IsEmpty()).To(BeFalse())
 		})
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
 			r.References = map[string]*Reference{"refs/heads/master": {}}
-			Expect(r.IsNil()).To(BeFalse())
+			Expect(r.IsEmpty()).To(BeFalse())
 		})
 	})
 

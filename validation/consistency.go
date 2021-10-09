@@ -33,7 +33,7 @@ check:
 	// If recipient address is a native namespace repo address, ensure repo exist
 	if recipient.IsNativeRepoAddress() {
 		targetRepo := logic.RepoKeeper().Get(recipient.String()[2:])
-		if targetRepo.IsNil() {
+		if targetRepo.IsEmpty() {
 			return feI(index, "to", "recipient repo not found")
 		}
 	}
@@ -155,7 +155,7 @@ func CheckTxUnbondTicketConsistency(
 func CheckTxRepoCreateConsistency(tx *txns.TxRepoCreate, index int, logic core.Logic) error {
 
 	repoState := logic.RepoKeeper().Get(tx.Name)
-	if !repoState.IsNil() {
+	if !repoState.IsEmpty() {
 		return feI(index, "name", "name is not available. choose another")
 	}
 
@@ -252,7 +252,7 @@ func CheckTxUpDelPushKeyConsistency(
 func CheckTxPushConsistency(tx *txns.TxPush, _ int, logic core.Logic) error {
 
 	repoState := logic.RepoKeeper().Get(tx.Note.GetRepoName())
-	if repoState.IsNil() {
+	if repoState.IsEmpty() {
 		return fmt.Errorf("repo not found")
 	}
 
@@ -347,7 +347,7 @@ func CheckTxNSAcquireConsistency(tx *txns.TxNamespaceRegister, index int, logic 
 	if tx.To != "" &&
 		identifier.IsValidResourceName(tx.To) == nil &&
 		ed25519.IsValidUserAddr(tx.To) != nil {
-		if logic.RepoKeeper().Get(tx.To).IsNil() {
+		if logic.RepoKeeper().Get(tx.To).IsEmpty() {
 			return feI(index, "to", "repo does not exist")
 		}
 	}
@@ -409,7 +409,7 @@ func CheckProposalCommonConsistency(
 
 	// Find the repository
 	repo := logic.RepoKeeper().Get(prop.RepoName)
-	if repo.IsNil() {
+	if repo.IsEmpty() {
 		return nil, feI(index, "name", "repo not found")
 	}
 
@@ -481,7 +481,7 @@ func CheckTxVoteConsistency(
 
 	// The repo must exist
 	repoState := logic.RepoKeeper().Get(tx.RepoName)
-	if repoState.IsNil() {
+	if repoState.IsEmpty() {
 		return feI(index, "name", "repo not found")
 	}
 
@@ -556,7 +556,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 
 	// The repo must exist
 	repoState := logic.RepoKeeper().Get(tx.RepoName)
-	if repoState.IsNil() {
+	if repoState.IsEmpty() {
 		return feI(index, "name", "repo not found")
 	}
 

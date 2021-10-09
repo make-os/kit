@@ -12,7 +12,6 @@ import (
 	crypto2 "github.com/make-os/kit/util/crypto"
 	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/identifier"
-	"github.com/pkg/errors"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/make-os/kit/crypto/ed25519"
@@ -236,83 +235,99 @@ func CheckTxUnbondTicket(tx *txns.TxTicketUnbond, index int) error {
 }
 
 // CheckRepoConfig validates a repo configuration object
-func CheckRepoConfig(cfg map[string]interface{}, index int) error {
+func CheckRepoConfig(cfg *state.RepoConfig, index int) error {
 
-	// Check if new config can successfully merge into RepoConfig structure without issue
-	base := state.MakeDefaultRepoConfig()
-	if err := base.Merge(cfg); err != nil {
-		return errors.Wrap(err, "dry merge failed")
+	govCfg := cfg.Gov
+	if govCfg == nil {
+		goto policy
 	}
 
-	govCfg := base.Gov
-	sf := fmt.Sprintf
-
 	// Ensure the voter type is known
-	if !state.IsValidVoterType(govCfg.Voter) {
-		return feI(index, "governance.propVoter", sf("unknown value"))
+	if govCfg.Voter != nil && !state.IsValidVoterType(govCfg.Voter) {
+		return feI(index, "governance.propVoter", fmt.Sprintf("unknown value"))
 	}
 
 	// Ensure the proposal creator type is known
-	if !state.IsValidProposalCreatorType(govCfg.PropCreator) {
-		return feI(index, "governance.propCreator", sf("unknown value"))
+	if govCfg.PropCreator != nil && !state.IsValidProposalCreatorType(govCfg.PropCreator) {
+		return feI(index, "governance.propCreator", fmt.Sprintf("unknown value"))
 	}
 
 	// Ensure the proposer tally method is known
-	if !state.IsValidProposalTallyMethod(govCfg.PropTallyMethod) {
-		return feI(index, "governance.propTallyMethod", sf("unknown value"))
+	if govCfg.PropTallyMethod != nil && !state.IsValidProposalTallyMethod(govCfg.PropTallyMethod) {
+		return feI(index, "governance.propTallyMethod", fmt.Sprintf("unknown value"))
 	}
 
 	// Ensure the refund type method is known
-	if !state.IsValidPropFeeRefundTypeType(govCfg.PropFeeRefundType) {
-		return feI(index, "governance.propFeeRefundType", sf("unknown value"))
+	if govCfg.PropFeeRefundType != nil && !state.IsValidPropFeeRefundTypeType(govCfg.PropFeeRefundType) {
+		return feI(index, "governance.propFeeRefundType", fmt.Sprintf("unknown value"))
 	}
 
-	propDur, err := util.PtrStrToFloatE(govCfg.PropDuration)
-	if err != nil || propDur < 0 {
-		return feI(index, "governance.propDur", sf("must be a non-negative number"))
+	if govCfg.PropDuration != nil {
+		propDur, err := util.PtrStrToFloatE(govCfg.PropDuration)
+		if err != nil || propDur < 0 {
+			return feI(index, "governance.propDur", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propQuorum, err := util.PtrStrToFloatE(govCfg.PropQuorum)
-	if err != nil || propQuorum < 0 {
-		return feI(index, "governance.propQuorum", sf("must be a non-negative number"))
+	if govCfg.PropQuorum != nil {
+		propQuorum, err := util.PtrStrToFloatE(govCfg.PropQuorum)
+		if err != nil || propQuorum < 0 {
+			return feI(index, "governance.propQuorum", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propThreshold, err := util.PtrStrToFloatE(govCfg.PropThreshold)
-	if err != nil || propThreshold < 0 {
-		return feI(index, "governance.propThreshold", sf("must be a non-negative number"))
+	if govCfg.PropThreshold != nil {
+		propThreshold, err := util.PtrStrToFloatE(govCfg.PropThreshold)
+		if err != nil || propThreshold < 0 {
+			return feI(index, "governance.propThreshold", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propVetoQuorum, err := util.PtrStrToFloatE(govCfg.PropVetoQuorum)
-	if err != nil || propVetoQuorum < 0 {
-		return feI(index, "governance.propVetoQuorum", sf("must be a non-negative number"))
+	if govCfg.PropVetoQuorum != nil {
+		propVetoQuorum, err := util.PtrStrToFloatE(govCfg.PropVetoQuorum)
+		if err != nil || propVetoQuorum < 0 {
+			return feI(index, "governance.propVetoQuorum", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propVetoOwnersQuorum, err := util.PtrStrToFloatE(govCfg.PropVetoOwnersQuorum)
-	if err != nil || propVetoOwnersQuorum < 0 {
-		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
+	if govCfg.PropVetoOwnersQuorum != nil {
+		propVetoOwnersQuorum, err := util.PtrStrToFloatE(govCfg.PropVetoOwnersQuorum)
+		if err != nil || propVetoOwnersQuorum < 0 {
+			return feI(index, "governance.propVetoOwnersQuorum", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propFeeDepDur, err := util.PtrStrToFloatE(govCfg.PropFeeDepositDur)
-	if err != nil || propFeeDepDur < 0 {
-		return feI(index, "governance.propFeeDepDur", sf("must be a non-negative number"))
+	if govCfg.PropFeeDepositDur != nil {
+		propFeeDepDur, err := util.PtrStrToFloatE(govCfg.PropFeeDepositDur)
+		if err != nil || propFeeDepDur < 0 {
+			return feI(index, "governance.propFeeDepDur", fmt.Sprintf("must be a non-negative number"))
+		}
 	}
 
-	propFee, err := util.PtrStrToFloatE(govCfg.PropFee)
-	if err != nil || propFee < 0 {
-		return feI(index, "governance.propFee", sf("must be a non-negative number"))
-	} else if propFee < params.DefaultMinProposalFee {
-		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
+	if govCfg.PropFee != nil {
+		propFee, err := util.PtrStrToFloatE(govCfg.PropFee)
+		if err != nil || propFee < 0 {
+			return feI(index, "governance.propFee", fmt.Sprintf("must be a non-negative number"))
+		} else if propFee < params.DefaultMinProposalFee {
+			return feI(index, "governance.propFee", fmt.Sprintf("cannot be lower than network minimum"))
+		}
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	tallyMethod := govCfg.PropTallyMethod
-	isNotOwnerProposer := pointer.GetInt(govCfg.Voter) != pointer.GetInt(state.VoterOwner.Ptr())
-	if isNotOwnerProposer {
-		if *tallyMethod == *state.ProposalTallyMethodCoinWeighted.Ptr() || *tallyMethod == *state.ProposalTallyMethodIdentity.Ptr() {
-			return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
-				"'CoinWeighted' and 'Identity' are not allowed")
+	if govCfg.Voter != nil {
+		tallyMethod := govCfg.PropTallyMethod
+		isNotOwnerProposer := pointer.GetInt(govCfg.Voter) != pointer.GetInt(state.VoterOwner.Ptr())
+		if isNotOwnerProposer {
+			if *tallyMethod == *state.ProposalTallyMethodCoinWeighted.Ptr() ||
+				*tallyMethod == *state.ProposalTallyMethodIdentity.Ptr() {
+				return feI(index, "config", "when proposer is not 'ProposerOwner', tally methods "+
+					"'CoinWeighted' and 'Identity' are not allowed")
+			}
 		}
 	}
+
+policy:
+	// TODO: policy validation here
 
 	return nil
 }
@@ -338,7 +353,7 @@ func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
 		return err
 	}
 
-	if err := CheckRepoConfig(tx.Config.ToMap(), index); err != nil {
+	if err := CheckRepoConfig(tx.Config, index); err != nil {
 		return err
 	}
 
@@ -758,7 +773,7 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 		return err
 	}
 
-	if len(tx.Config) == 0 && len(tx.Description) == 0 {
+	if tx.Config.IsEmpty() && len(tx.Description) == 0 {
 		return feI(index, "config|desc", "set either 'desc' or 'config' fields")
 	}
 

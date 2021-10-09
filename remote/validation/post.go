@@ -456,7 +456,7 @@ func CheckMergeRequestPostBodyConsistency(
 		} else {
 			parts := strings.SplitN(target[1:], "/", 2)
 			targetRepo = keepers.RepoKeeper().GetNoPopulate(parts[0])
-			if targetRepo.IsNil() {
+			if targetRepo.IsEmpty() {
 				return fmt.Errorf("target branch's repository (%s) does not exist", parts[0])
 			}
 			if !targetRepo.References.Has(plumbing.NewBranchReferenceName(parts[1]).String()) {
