@@ -314,7 +314,7 @@ func CheckRepoConfig(cfg *state.RepoConfig, index int) error {
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	if govCfg.Voter != nil {
+	if govCfg.Voter != nil && govCfg.PropTallyMethod != nil {
 		tallyMethod := govCfg.PropTallyMethod
 		isNotOwnerProposer := pointer.GetInt(govCfg.Voter) != pointer.GetInt(state.VoterOwner.Ptr())
 		if isNotOwnerProposer {
