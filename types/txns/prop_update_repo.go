@@ -42,7 +42,8 @@ func (tx *TxRepoProposalUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.RepoName,
 		tx.ID,
 		tx.Description,
-		tx.Config)
+		tx.Config.ToMap(),
+	)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder

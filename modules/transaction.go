@@ -137,6 +137,7 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 	if err != nil {
 		panic(errors.ReqErr(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
+
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		se := errors.ReqErr(400, StatusCodeMempoolAddFail, "", err.Error())
