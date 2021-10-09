@@ -42,13 +42,14 @@ func (tx *TxRepoCreate) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.SenderPubKey,
 		tx.Value,
 		tx.Name,
-		tx.Config,
+		tx.Config.ToJSONToMap(),
 		tx.Description)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxRepoCreate) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return tx.DecodeMulti(dec,
+	var config map[string]interface{}
+	if err := tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
 		&tx.Fee,
@@ -57,8 +58,11 @@ func (tx *TxRepoCreate) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Value,
 		&tx.Name,
-		&tx.Config,
-		&tx.Description)
+		&config,
+		&tx.Description); err != nil {
+		return err
+	}
+	return util.DecodeMap(config, &tx.Config)
 }
 
 // Bytes returns the serialized transaction

@@ -42,13 +42,14 @@ func (tx *TxRepoProposalUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.RepoName,
 		tx.ID,
 		tx.Description,
-		tx.Config.ToMap(),
+		tx.Config.ToJSONToMap(),
 	)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxRepoProposalUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return tx.DecodeMulti(dec,
+	var config map[string]interface{}
+	if err := tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
 		&tx.Value,
@@ -59,7 +60,10 @@ func (tx *TxRepoProposalUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.RepoName,
 		&tx.ID,
 		&tx.Description,
-		&tx.Config)
+		&config); err != nil {
+		return err
+	}
+	return util.DecodeMap(config, &tx.Config)
 }
 
 // Bytes returns the serialized transaction

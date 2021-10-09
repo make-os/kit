@@ -260,7 +260,7 @@ var _ = Describe("RepoAPI", func() {
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
-				Config:     state.DefaultRepoConfig.ToBasicMap(),
+				Config:     state.DefaultRepoConfig.ToJSONToMap(),
 				SigningKey: key,
 			})
 			Expect(err).ToNot(BeNil())
@@ -282,7 +282,7 @@ var _ = Describe("RepoAPI", func() {
 				Nonce:      100,
 				Value:      10,
 				Fee:        1,
-				Config:     state.DefaultRepoConfig.ToBasicMap(),
+				Config:     state.DefaultRepoConfig.ToJSONToMap(),
 				SigningKey: key,
 			})
 			Expect(err).To(BeNil())

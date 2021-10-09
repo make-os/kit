@@ -76,7 +76,7 @@ func (b Bytes32) Bytes() []byte {
 	return b[:]
 }
 
-// HexBytes wraps b in HexBytes
+// ToHexBytes wraps b in HexBytes
 func (b Bytes32) ToHexBytes() HexBytes {
 	return b.Bytes()
 }

@@ -1,6 +1,8 @@
 package state
 
 import (
+	"encoding/json"
+
 	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
@@ -138,6 +140,23 @@ type RepoConfigGovernance struct {
 	NoPropFeeForMergeReq *bool   `json:"noPropFeeForMergeReq,omitempty" mapstructure:"noPropFeeForMergeReq,omitempty" msgpack:"noPropFeeForMergeReq,omitempty"`
 }
 
+func (b RepoConfigGovernance) MarshalJSON() ([]byte, error) {
+	m := util.ToMap(b)
+	if _, ok := m["propVoter"]; ok {
+		m["propVoter"] = cast.ToString(m["propVoter"])
+	}
+	if _, ok := m["propCreator"]; ok {
+		m["propCreator"] = cast.ToString(m["propCreator"])
+	}
+	if _, ok := m["propFeeRefundType"]; ok {
+		m["propFeeRefundType"] = cast.ToString(m["propFeeRefundType"])
+	}
+	if _, ok := m["propTallyMethod"]; ok {
+		m["propTallyMethod"] = cast.ToString(m["propTallyMethod"])
+	}
+	return json.Marshal(m)
+}
+
 // Policy describes a repository access policy
 type Policy struct {
 	Object  string `json:"obj,omitempty" mapstructure:"obj,omitempty" msgpack:"obj,omitempty"`
@@ -194,8 +213,11 @@ func (c *RepoConfig) IsEmpty() bool {
 	return (c.Gov == nil || len(util.ToMap(c.Gov)) == 0) && len(c.Policies) == 0
 }
 
-// ToBasicMap converts the object to a basic map with all custom types stripped.
-func (c *RepoConfig) ToBasicMap() map[string]interface{} {
+// ToJSONToMap converts c to a JSON map and the map to go map.
+//
+// This allows us to control how c is marshalled to go map
+// via custom marshal types.
+func (c *RepoConfig) ToJSONToMap() map[string]interface{} {
 	return util.ToJSONMap(c)
 }
 
