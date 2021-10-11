@@ -696,6 +696,7 @@ func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err
 	}
 
 	var hash plumbing.Hash
+	var isHash bool
 	if !plumbing.IsHash(ref) {
 		ref, err := r.Reference(refname, true)
 		if err != nil {
@@ -704,6 +705,7 @@ func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err
 		hash = ref.Hash()
 	} else {
 		hash = plumbing.NewHash(ref)
+		isHash = true
 	}
 
 	commit, err := r.CommitObject(hash)
@@ -711,7 +713,11 @@ func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err
 		return nil, err
 	}
 
-	res, err = iterCommit(commit, limit, nil, nil)
+	var skip []plumbing.Hash
+	if isHash {
+		skip = append(skip, hash)
+	}
+	res, err = iterCommit(commit, limit, nil, skip)
 	if err != nil {
 		return nil, err
 	}

@@ -549,9 +549,8 @@ var _ = Describe("Repo", func() {
 		It("should return a commits even commit hash is provided", func() {
 			commits, err := r.GetCommits("cbc329e7e912227d58edea6d6a74d550cd664adf", 0)
 			Expect(err).To(BeNil())
-			Expect(commits).To(HaveLen(2))
-			Expect(commits[0].Hash).To(Equal("cbc329e7e912227d58edea6d6a74d550cd664adf"))
-			Expect(commits[1].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
+			Expect(commits).To(HaveLen(1))
+			Expect(commits[0].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
 		})
 	})
 
