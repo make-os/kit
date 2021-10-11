@@ -159,10 +159,10 @@ type LocalRepo interface {
 	// GetLatestCommit returns information about last commit of a branch
 	GetLatestCommit(branch string) (*BranchCommit, error)
 
-	// GetCommits returns commits of a branch.
-	//  - branch: The target branch.
+	// GetCommits returns commits of a branch or commit hash
+	//  - ref: The target reference name (branch or commit hash)
 	//  - limit: The number of commit to return. 0 means all.
-	GetCommits(branch string, limit int) (res []*BranchCommit, err error)
+	GetCommits(ref string, limit int) (res []*BranchCommit, err error)
 
 	// GetCommitAncestors returns ancestors of a commit with the given hash.
 	//  - commitHash: The hash of the commit.

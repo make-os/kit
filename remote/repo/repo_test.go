@@ -545,6 +545,14 @@ var _ = Describe("Repo", func() {
 			Expect(commits[0].Hash).To(Equal("bc2d3657cad5fb7a3ed2f4f9b178c38587ba2fc6"))
 			Expect(commits[2].Hash).To(Equal("d6a23829e6787f8d16bd61effad57b88b500167a"))
 		})
+
+		It("should return a commits even commit hash is provided", func() {
+			commits, err := r.GetCommits("cbc329e7e912227d58edea6d6a74d550cd664adf", 0)
+			Expect(err).To(BeNil())
+			Expect(commits).To(HaveLen(2))
+			Expect(commits[0].Hash).To(Equal("cbc329e7e912227d58edea6d6a74d550cd664adf"))
+			Expect(commits[1].Hash).To(Equal("932401fb0bf48f602c501334b773fbc3422ceb31"))
+		})
 	})
 
 	Describe(".GetCommitAncestors", func() {

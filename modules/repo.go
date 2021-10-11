@@ -689,11 +689,11 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 }
 
 // GetCommits returns commits in a branch.
-//  - name: The name of the target repository.
+//  - reference: A branch name or commit hash.
 //  - branch: The target branch.
 //  - limit: The number of commit to return. 0 means all.
-func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
-	if name == "" {
+func (m *RepoModule) GetCommits(reference, branch string, limit ...int) []util.Map {
+	if reference == "" {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
@@ -701,7 +701,7 @@ func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
 		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
 	}
 
-	repoPath := m.logic.Config().GetRepoPath(name)
+	repoPath := m.logic.Config().GetRepoPath(reference)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {

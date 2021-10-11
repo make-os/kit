@@ -684,23 +684,29 @@ func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 	return bc, nil
 }
 
-// GetCommits returns commits of a branch
-//  - branch: The target branch.
+// GetCommits returns commits of a branch or commit hash
+//  - ref: The target reference name (branch or commit hash)
 //  - limit: The number of commit to return. 0 means all.
-func (r *Repo) GetCommits(branch string, limit int) (res []*types.BranchCommit, err error) {
+func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err error) {
 
-	branch = strings.ToLower(branch)
-	var refname = plumbing.ReferenceName("refs/heads/" + branch)
-	if strings.HasPrefix(branch, "refs/heads/") {
-		refname = plumbing.ReferenceName(branch)
+	ref = strings.ToLower(ref)
+	var refname = plumbing.ReferenceName("refs/heads/" + ref)
+	if strings.HasPrefix(ref, "refs/heads/") {
+		refname = plumbing.ReferenceName(ref)
 	}
 
-	ref, err := r.Reference(refname, true)
-	if err != nil {
-		return nil, err
+	var hash plumbing.Hash
+	if !plumbing.IsHash(ref) {
+		ref, err := r.Reference(refname, true)
+		if err != nil {
+			return nil, err
+		}
+		hash = ref.Hash()
+	} else {
+		hash = plumbing.NewHash(ref)
 	}
 
-	commit, err := r.CommitObject(ref.Hash())
+	commit, err := r.CommitObject(hash)
 	if err != nil {
 		return nil, err
 	}

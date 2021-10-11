@@ -162,7 +162,7 @@ type RepoModule interface {
 	ReadFile(name, filePath string, revision ...string) string
 	GetBranches(name string) []string
 	GetLatestBranchCommit(name, branch string) util.Map
-	GetCommits(name, branch string, limit ...int) []util.Map
+	GetCommits(reference, branch string, limit ...int) []util.Map
 	CountCommits(name, branch string) int
 	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
 }

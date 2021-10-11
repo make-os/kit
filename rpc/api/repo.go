@@ -136,7 +136,7 @@ func (a *RepoAPI) getLatestCommit(params interface{}) (resp *rpc.Response) {
 	})
 }
 
-// getCommits gets a list of commits of a branch in a repository
+// getCommits gets a list of commits of a branch or ancestors of a commit of a repository
 func (a *RepoAPI) getCommits(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
 	var limit []int
@@ -144,7 +144,7 @@ func (a *RepoAPI) getCommits(params interface{}) (resp *rpc.Response) {
 		limit = []int{int(l)}
 	}
 	return rpc.Success(util.Map{
-		"commits": a.mods.Repo.GetCommits(m.Get("name").Str(), m.Get("branch").Str(), limit...),
+		"commits": a.mods.Repo.GetCommits(m.Get("name").Str(), m.Get("reference").Str(), limit...),
 	})
 }
 
