@@ -504,6 +504,26 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".GetParentAndChildCommitDiff", func() {
+		It("should return expected patch output", func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo3")
+			Expect(err).To(BeNil())
+			res, err := r.GetParentAndChildCommitDiff("8c427dcc0d582cd7387b4c529185b7c1ab28f20c")
+			Expect(err).To(BeNil())
+			Expect(res.Patches).To(HaveLen(1))
+			Expect(res.Patches).To(HaveKey("a77021f4aead5f5ab8934a94154b0b4da6a551b5"))
+			Expect(res.Patches["a77021f4aead5f5ab8934a94154b0b4da6a551b5"]).To(Equal(`diff --git a/file_b.txt b/file_b.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..3b0c2f170067e69f5c9c6572b0ce0e85dccd3c6f
+--- /dev/null
++++ b/file_b.txt
+@@ -0,0 +1 @@
++We made games
+\ No newline at end of file
+`))
+		})
+	})
+
 	Describe(".GetCommits", func() {
 		BeforeEach(func() {
 			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo2")

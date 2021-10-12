@@ -1433,9 +1433,9 @@ func (mr *MockRepoModuleMockRecorder) GetLatestBranchCommit(name, branch interfa
 }
 
 // GetCommits mocks base method
-func (m *MockRepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
+func (m *MockRepoModule) GetCommits(reference, branch string, limit ...int) []util.Map {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{name, branch}
+	varargs := []interface{}{reference, branch}
 	for _, a := range limit {
 		varargs = append(varargs, a)
 	}
@@ -1445,9 +1445,9 @@ func (m *MockRepoModule) GetCommits(name, branch string, limit ...int) []util.Ma
 }
 
 // GetCommits indicates an expected call of GetCommits
-func (mr *MockRepoModuleMockRecorder) GetCommits(name, branch interface{}, limit ...interface{}) *gomock.Call {
+func (mr *MockRepoModuleMockRecorder) GetCommits(reference, branch interface{}, limit ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{name, branch}, limit...)
+	varargs := append([]interface{}{reference, branch}, limit...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockRepoModule)(nil).GetCommits), varargs...)
 }
 
@@ -1482,6 +1482,20 @@ func (mr *MockRepoModuleMockRecorder) GetCommitAncestors(name, commitHash interf
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name, commitHash}, limit...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitAncestors", reflect.TypeOf((*MockRepoModule)(nil).GetCommitAncestors), varargs...)
+}
+
+// GetParentsAndCommitDiff mocks base method
+func (m *MockRepoModule) GetParentsAndCommitDiff(name, commitHash string) util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParentsAndCommitDiff", name, commitHash)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetParentsAndCommitDiff indicates an expected call of GetParentsAndCommitDiff
+func (mr *MockRepoModuleMockRecorder) GetParentsAndCommitDiff(name, commitHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentsAndCommitDiff", reflect.TypeOf((*MockRepoModule)(nil).GetParentsAndCommitDiff), name, commitHash)
 }
 
 // MockNamespaceModule is a mock of NamespaceModule interface

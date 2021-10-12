@@ -156,6 +156,12 @@ func (a *RepoAPI) countCommits(params interface{}) (resp *rpc.Response) {
 	})
 }
 
+// getDiffOfCommitAndParents gets the diff output between a commit and its parent(s).
+func (a *RepoAPI) getDiffOfCommitAndParents(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	return rpc.Success(a.mods.Repo.GetParentsAndCommitDiff(m.Get("name").Str(), m.Get("commitHash").Str()))
+}
+
 // getAncestors gets ancestors of a commit in a repository
 func (a *RepoAPI) getAncestors(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
@@ -191,5 +197,6 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Gets a list of commits in a branch of a repository"},
 		{Name: "countCommits", Namespace: ns, Func: a.countCommits, Desc: "Get the number of commits in a reference"},
 		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Desc: "Get ancestors of a commit in a repository"},
+		{Name: "getDiffOfCommitAndParents", Namespace: ns, Func: a.getDiffOfCommitAndParents, Desc: "Gets the diff output between a commit and its parent(s)."},
 	}
 }

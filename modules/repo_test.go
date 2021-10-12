@@ -840,4 +840,47 @@ var _ = Describe("RepoModule", func() {
 			Expect(commits).To(HaveLen(1))
 		})
 	})
+
+	Describe(".GetParentsAndCommitDiff", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetParentsAndCommitDiff("", "")
+			})
+		})
+
+		It("should panic when commit hash was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "commit hash is required", Field: "commitHash"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetParentsAndCommitDiff("repo", "")
+			})
+		})
+
+		It("should panic when repo does not exist", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetParentsAndCommitDiff("unknown", "abc")
+			})
+		})
+
+		It("should panic when unable to get diff", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "commit_not_found", HttpCode: 404, Msg: "commit not found", Field: "commitHash"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetParentsAndCommitDiff("repo3", "abc")
+			})
+		})
+
+		It("should not panic when successful", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.GetParentsAndCommitDiff("repo3", "8c427dcc0d582cd7387b4c529185b7c1ab28f20c")
+				Expect(res["totalFiles"]).To(Equal(1))
+				Expect(res["totalAdditions"]).To(Equal(1))
+				Expect(res["totalDeletions"]).To(Equal(0))
+				Expect(res["patches"]).To(HaveLen(1))
+			})
+		})
+	})
 })

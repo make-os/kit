@@ -168,6 +168,19 @@ type LocalRepo interface {
 	//  - commitHash: The hash of the commit.
 	//  - limit: The number of commit to return. 0 means all.
 	GetCommitAncestors(commitHash string, limit int) (res []*BranchCommit, err error)
+
+	// GetParentAndChildCommitDiff returns the commit diff output between a
+	// child commit and its parent commit(s). If the commit has more than
+	// one parent, the diff will be run for all parents.
+	//  - commitHash: The child commit hash.
+	GetParentAndChildCommitDiff(commitHash string) (*GetCommitDiffResult, error)
+}
+
+type GetCommitDiffResult struct {
+	TotalFiles     int               `json:"totalFiles"`
+	TotalAdditions int               `json:"totalAdditions"`
+	TotalDeletions int               `json:"totalDeletions"`
+	Patches        map[string]string `json:"patches"`
 }
 
 type CommitSignatory struct {

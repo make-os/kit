@@ -67,6 +67,7 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits in a branch of a repository"},
 		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
 		{Name: "countCommits", Value: m.CountCommits, Description: "Get a branch/reference commit count"},
+		{Name: "getDiffOfCommitAndParents", Value: m.GetParentsAndCommitDiff, Description: "Get the diff output of a commit and its parent(s)"},
 	}
 }
 
@@ -793,4 +794,35 @@ func (m *RepoModule) GetCommitAncestors(name, commitHash string, limit ...int) [
 	}
 
 	return util.StructSliceToMap(commits)
+}
+
+// GetParentsAndCommitDiff gets the diff output between a commit and its parent(s).
+//  - name: The name of the target repository.
+//  - commitHash: The hash of the commit.
+func (m *RepoModule) GetParentsAndCommitDiff(name string, commitHash string) util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+	if commitHash == "" {
+		panic(se(400, StatusCodeInvalidParam, "commitHash", "commit hash is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	res, err := r.GetParentAndChildCommitDiff(commitHash)
+	if err != nil {
+		if err == plumbing.ErrObjectNotFound {
+			panic(se(404, StatusCodeCommitNotFound, "commitHash", "commit not found"))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.ToMap(res)
 }

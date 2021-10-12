@@ -964,6 +964,21 @@ func (mr *MockLocalRepoMockRecorder) GetObjectSize(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectSize", reflect.TypeOf((*MockLocalRepo)(nil).GetObjectSize), arg0)
 }
 
+// GetParentAndChildCommitDiff mocks base method
+func (m *MockLocalRepo) GetParentAndChildCommitDiff(arg0 string) (*types.GetCommitDiffResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParentAndChildCommitDiff", arg0)
+	ret0, _ := ret[0].(*types.GetCommitDiffResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetParentAndChildCommitDiff indicates an expected call of GetParentAndChildCommitDiff
+func (mr *MockLocalRepoMockRecorder) GetParentAndChildCommitDiff(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentAndChildCommitDiff", reflect.TypeOf((*MockLocalRepo)(nil).GetParentAndChildCommitDiff), arg0)
+}
+
 // GetPath mocks base method
 func (m *MockLocalRepo) GetPath() string {
 	m.ctrl.T.Helper()

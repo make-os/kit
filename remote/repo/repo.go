@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -637,6 +638,46 @@ func (r *Repo) GetBranches() (branches []string, err error) {
 		branches = append(branches, ref.Name().Short())
 	}
 	return
+}
+
+// GetParentAndChildCommitDiff returns the commit diff output between a
+// child commit and its parent commit(s). If the commit has more than
+// one parent, the diff will be run for all parents.
+//  - commitHash: The child commit hash.
+func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitDiffResult, error) {
+
+	commit, err := r.CommitObject(plumbing.NewHash(commitHash))
+	if err != nil {
+		return nil, err
+	}
+
+	fs, err := commit.Stats()
+	if err != nil {
+		return nil, err
+	}
+
+	res := &types.GetCommitDiffResult{TotalFiles: len(fs), Patches: map[string]string{}}
+	for _, stat := range fs {
+		res.TotalAdditions = stat.Addition
+		res.TotalDeletions = stat.Deletion
+	}
+
+	commit.Parents().ForEach(func(parent *object.Commit) error {
+		patch, err := parent.Patch(commit)
+		if err != nil {
+			return err
+		}
+
+		var buffer bytes.Buffer
+		if err = patch.Encode(&buffer); err != nil {
+			return err
+		}
+
+		res.Patches[parent.Hash.String()] = buffer.String()
+		return nil
+	})
+
+	return res, nil
 }
 
 // GetLatestCommit returns the recent commit of a branch

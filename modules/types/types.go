@@ -165,6 +165,7 @@ type RepoModule interface {
 	GetCommits(reference, branch string, limit ...int) []util.Map
 	CountCommits(name, branch string) int
 	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
+	GetParentsAndCommitDiff(name string, commitHash string) util.Map
 }
 type NamespaceModule interface {
 	Module

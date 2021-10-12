@@ -6,13 +6,13 @@ replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
 	github.com/btcsuite/btcutil => github.com/make-os/btcutil v1.0.3-0.20201208011646-272219d09635
 	github.com/imdario/mergo => github.com/ncodes/mergo v0.3.10-0.20200627182710-b10b58df675a
-	github.com/phoreproject/go-x11 => github.com/make-os/go-x11 v0.0.0-20190107235645-df0f52b15c3a
 	github.com/tendermint/tendermint => github.com/make-os/tendermint v0.34.0-rc4.0.20201212174221-93c4161d9329
 )
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/AlekSi/pointer v1.1.0
+	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/bitfield/script v0.14.1
@@ -32,7 +32,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
-	github.com/go-git/go-git/v5 v5.3.0
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-openapi/strfmt v0.19.11 // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gogo/protobuf v1.3.1
@@ -50,6 +50,7 @@ require (
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
+	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
 	github.com/libp2p/go-libp2p v0.12.0
@@ -77,8 +78,9 @@ require (
 	github.com/prometheus/common v0.14.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
+	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337
-	github.com/sirupsen/logrus v1.6.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
@@ -93,9 +95,12 @@ require (
 	github.com/tidwall/gjson v1.7.4
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/vmihailenco/msgpack/v4 v4.3.11
+	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	go.dedis.ch/kyber/v3 v3.0.11
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
+	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 // indirect
+	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
 	golang.org/x/tools v0.0.0-20200908211811-12e1bf57a112 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
