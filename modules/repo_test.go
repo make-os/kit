@@ -246,7 +246,7 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".Get", func() {
-		It("should panic when height option field is not valid", func() {
+		It("should panic when height option field was not valid", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "unexpected type", Field: "opts.height"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Get("repo1", types.GetOptions{Height: struct{}{}})
@@ -595,7 +595,7 @@ var _ = Describe("RepoModule", func() {
 
 	Describe(".ListPath", func() {
 
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ListPath("", "")
@@ -631,14 +631,14 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".ReadFileLines", func() {
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ReadFileLines("", "")
 			})
 		})
 
-		It("should panic if file path is not provided", func() {
+		It("should panic if file path was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "file path is required", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.ReadFileLines("repo1", "")
@@ -667,7 +667,7 @@ var _ = Describe("RepoModule", func() {
 			})
 		})
 
-		It("should panic if file path is not a file", func() {
+		It("should panic if file path was not a file", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			err := &errors.ReqError{Code: "path_not_file", HttpCode: 400, Msg: "path is not a file", Field: "file"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
@@ -683,7 +683,7 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".GetBranches", func() {
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetBranches("")
@@ -705,14 +705,14 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".GetLatestBranchCommit", func() {
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetLatestBranchCommit("", "")
 			})
 		})
 
-		It("should panic if branch name is not provided", func() {
+		It("should panic if branch name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "branch name is required", Field: "branch"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetLatestBranchCommit("repo", "")
@@ -742,14 +742,14 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".GetCommits", func() {
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetCommits("", "")
 			})
 		})
 
-		It("should panic if branch name is not provided", func() {
+		It("should panic if branch name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "branch name is required", Field: "branch"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetCommits("repo", "")
@@ -786,6 +786,47 @@ var _ = Describe("RepoModule", func() {
 		})
 	})
 
+	Describe(".GetCommit", func() {
+		It("should panic if repo name was not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetCommit("", "")
+			})
+		})
+
+		It("should panic if commit hash was not provided", func() {
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "commit hash is required", Field: "hash"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetCommit("repo", "")
+			})
+		})
+
+		It("should panic if repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetCommit("unknown", "hash")
+			})
+		})
+
+		It("should panic if commit was not found", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			err := &errors.ReqError{Code: "commit_not_found", HttpCode: 404, Msg: "commit does not exist", Field: "hash"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.GetCommit("repo1", "f23482ae207b19498049ec7b35c8274c34ba6093")
+			})
+		})
+
+		It("should not panic if commit was found", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			assert.NotPanics(GinkgoT(), func() {
+				hash := "932401fb0bf48f602c501334b773fbc3422ceb31"
+				res := m.GetCommit("repo1", hash)
+				Expect(res).ToNot(BeNil())
+				Expect(res["hash"]).To(Equal(hash))
+			})
+		})
+	})
+
 	Describe(".CountCommits", func() {
 		It("should return correct commit count", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
@@ -797,14 +838,14 @@ var _ = Describe("RepoModule", func() {
 	})
 
 	Describe(".GetCommitAncestors", func() {
-		It("should panic if repo name is not provided", func() {
+		It("should panic if repo name was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "repo name is required", Field: "name"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetCommitAncestors("", "")
 			})
 		})
 
-		It("should panic if commit hash is not provided", func() {
+		It("should panic if commit hash was not provided", func() {
 			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "commit hash is required", Field: "commitHash"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.GetCommitAncestors("repo", "")

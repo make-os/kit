@@ -681,7 +681,7 @@ func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitD
 }
 
 // GetLatestCommit returns the recent commit of a branch
-func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
+func (r *Repo) GetLatestCommit(branch string) (*types.CommitResult, error) {
 
 	branch = strings.ToLower(branch)
 	var refname = plumbing.ReferenceName("refs/heads/" + branch)
@@ -699,7 +699,7 @@ func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 		return nil, err
 	}
 
-	bc := &types.BranchCommit{
+	bc := &types.CommitResult{
 		Message: strings.Trim(strings.TrimSpace(commit.Message), "\n"),
 		Hash:    commit.Hash.String(),
 	}
@@ -725,10 +725,41 @@ func (r *Repo) GetLatestCommit(branch string) (*types.BranchCommit, error) {
 	return bc, nil
 }
 
+// GetCommit gets a commit by hash
+//  - hash: The commit hash
+func (r *Repo) GetCommit(hash string) (*types.CommitResult, error) {
+	commit, err := r.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return nil, err
+	}
+
+	res := &types.CommitResult{Message: commit.Message, Hash: commit.Hash.String()}
+	if commit.Committer != (object.Signature{}) {
+		res.Committer = &types.CommitSignatory{
+			Name:      commit.Committer.Name,
+			Email:     commit.Committer.Email,
+			Timestamp: commit.Committer.When.Unix(),
+		}
+	}
+	if commit.Author != (object.Signature{}) {
+		res.Author = &types.CommitSignatory{
+			Name:      commit.Author.Name,
+			Email:     commit.Author.Email,
+			Timestamp: commit.Author.When.Unix(),
+		}
+	}
+
+	for _, parent := range commit.ParentHashes {
+		res.ParentHashes = append(res.ParentHashes, parent.String())
+	}
+
+	return res, nil
+}
+
 // GetCommits returns commits of a branch or commit hash
 //  - ref: The target reference name (branch or commit hash)
 //  - limit: The number of commit to return. 0 means all.
-func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err error) {
+func (r *Repo) GetCommits(ref string, limit int) (res []*types.CommitResult, err error) {
 
 	ref = strings.ToLower(ref)
 	var refname = plumbing.ReferenceName("refs/heads/" + ref)
@@ -769,7 +800,7 @@ func (r *Repo) GetCommits(ref string, limit int) (res []*types.BranchCommit, err
 // GetCommitAncestors returns ancestors of a commit with the given hash.
 //  - commitHash: The hash of the commit.
 //  - limit: The number of commit to return. 0 means all.
-func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.BranchCommit, err error) {
+func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.CommitResult, err error) {
 	commit, err := r.CommitObject(plumbing.NewHash(commitHash))
 	if err != nil {
 		return nil, err
@@ -793,7 +824,7 @@ func iterCommit(
 	limit int,
 	ignore []plumbing.Hash,
 	skip []plumbing.Hash,
-) (res []*types.BranchCommit, err error) {
+) (res []*types.CommitResult, err error) {
 	itr := object.NewCommitIterCTime(commit, nil, ignore)
 	for {
 		next, err := itr.Next()
@@ -808,16 +839,16 @@ func iterCommit(
 			continue
 		}
 
-		bc := &types.BranchCommit{Message: next.Message, Hash: next.Hash.String()}
+		cr := &types.CommitResult{Message: next.Message, Hash: next.Hash.String()}
 		if next.Committer != (object.Signature{}) {
-			bc.Committer = &types.CommitSignatory{
+			cr.Committer = &types.CommitSignatory{
 				Name:      next.Committer.Name,
 				Email:     next.Committer.Email,
 				Timestamp: next.Committer.When.Unix(),
 			}
 		}
 		if next.Author != (object.Signature{}) {
-			bc.Author = &types.CommitSignatory{
+			cr.Author = &types.CommitSignatory{
 				Name:      next.Author.Name,
 				Email:     next.Author.Email,
 				Timestamp: next.Author.When.Unix(),
@@ -825,10 +856,10 @@ func iterCommit(
 		}
 
 		for _, parent := range next.ParentHashes {
-			bc.ParentHashes = append(bc.ParentHashes, parent.String())
+			cr.ParentHashes = append(cr.ParentHashes, parent.String())
 		}
 
-		res = append(res, bc)
+		res = append(res, cr)
 
 		if limit > 0 && len(res) == limit {
 			break

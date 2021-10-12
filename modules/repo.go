@@ -65,6 +65,7 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "getBranches", Value: m.GetBranches, Description: "Get a list of branches in a repository"},
 		{Name: "getLatestCommit", Value: m.GetLatestBranchCommit, Description: "Get the latest commit of a branch in a repository"},
 		{Name: "getCommits", Value: m.GetCommits, Description: "Get a list of commits in a branch of a repository"},
+		{Name: "getCommit", Value: m.GetCommit, Description: "Get a commit"},
 		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
 		{Name: "countCommits", Value: m.CountCommits, Description: "Get a branch/reference commit count"},
 		{Name: "getDiffOfCommitAndParents", Value: m.GetParentsAndCommitDiff, Description: "Get the diff output of a commit and its parent(s)"},
@@ -690,11 +691,11 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 }
 
 // GetCommits returns commits in a branch.
-//  - reference: A branch name or commit hash.
+//  - name: The name of the repository.
 //  - branch: The target branch.
 //  - limit: The number of commit to return. 0 means all.
-func (m *RepoModule) GetCommits(reference, branch string, limit ...int) []util.Map {
-	if reference == "" {
+func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
+	if name == "" {
 		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
 	}
 
@@ -702,7 +703,7 @@ func (m *RepoModule) GetCommits(reference, branch string, limit ...int) []util.M
 		panic(se(400, StatusCodeInvalidParam, "branch", "branch name is required"))
 	}
 
-	repoPath := m.logic.Config().GetRepoPath(reference)
+	repoPath := m.logic.Config().GetRepoPath(name)
 	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
@@ -725,6 +726,37 @@ func (m *RepoModule) GetCommits(reference, branch string, limit ...int) []util.M
 	}
 
 	return util.StructSliceToMap(commits)
+}
+
+// GetCommit gets a commit.
+//  - name: The name of the repository
+//  - hash: The commit hash.
+func (m *RepoModule) GetCommit(name, hash string) util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+	if hash == "" {
+		panic(se(400, StatusCodeInvalidParam, "hash", "commit hash is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	commit, err := r.GetCommit(hash)
+	if err != nil {
+		if err == plumbing.ErrObjectNotFound {
+			panic(se(404, StatusCodeCommitNotFound, "hash", "commit does not exist"))
+		}
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.ToMap(commit)
 }
 
 // CountCommits returns the number commits in a branch/reference.

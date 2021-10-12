@@ -504,6 +504,26 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".GetCommit", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error if commit was not found", func() {
+			_, err := r.GetCommit("8c427dcc0d582cd7387b4c529185b7c1ab28f20c")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(plumbing.ErrObjectNotFound))
+		})
+
+		It("should return error if commit was not found", func() {
+			h := "932401fb0bf48f602c501334b773fbc3422ceb31"
+			c, err := r.GetCommit(h)
+			Expect(err).To(BeNil())
+			Expect(c.Hash).To(Equal(h))
+		})
+	})
+
 	Describe(".GetParentAndChildCommitDiff", func() {
 		It("should return expected patch output", func() {
 			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo3")

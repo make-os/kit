@@ -157,17 +157,21 @@ type LocalRepo interface {
 	GetBranches() (branches []string, err error)
 
 	// GetLatestCommit returns information about last commit of a branch
-	GetLatestCommit(branch string) (*BranchCommit, error)
+	GetLatestCommit(branch string) (*CommitResult, error)
 
 	// GetCommits returns commits of a branch or commit hash
 	//  - ref: The target reference name (branch or commit hash)
 	//  - limit: The number of commit to return. 0 means all.
-	GetCommits(ref string, limit int) (res []*BranchCommit, err error)
+	GetCommits(ref string, limit int) (res []*CommitResult, err error)
+
+	// GetCommit gets a commit by hash
+	//  - hash: The commit hash
+	GetCommit(hash string) (*CommitResult, error)
 
 	// GetCommitAncestors returns ancestors of a commit with the given hash.
 	//  - commitHash: The hash of the commit.
 	//  - limit: The number of commit to return. 0 means all.
-	GetCommitAncestors(commitHash string, limit int) (res []*BranchCommit, err error)
+	GetCommitAncestors(commitHash string, limit int) (res []*CommitResult, err error)
 
 	// GetParentAndChildCommitDiff returns the commit diff output between a
 	// child commit and its parent commit(s). If the commit has more than
@@ -189,7 +193,7 @@ type CommitSignatory struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
-type BranchCommit struct {
+type CommitResult struct {
 	Committer    *CommitSignatory `json:"committer"`
 	Author       *CommitSignatory `json:"author"`
 	Message      string           `json:"message"`

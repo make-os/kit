@@ -148,6 +148,14 @@ func (a *RepoAPI) getCommits(params interface{}) (resp *rpc.Response) {
 	})
 }
 
+// getCommit gets a commit from a repo
+func (a *RepoAPI) getCommit(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	return rpc.Success(util.Map{
+		"commit": a.mods.Repo.GetCommit(m.Get("name").Str(), m.Get("hash").Str()),
+	})
+}
+
 // getCommits gets a list of commits of a branch/reference in a repository
 func (a *RepoAPI) countCommits(params interface{}) (resp *rpc.Response) {
 	m := objx.New(cast.ToStringMap(params))
@@ -191,12 +199,13 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "listByCreator", Namespace: ns, Func: a.listByCreator, Desc: "List repositories created by an address"},
 		{Name: "ls", Namespace: ns, Func: a.ls, Desc: "List files and directories of a repository"},
 		{Name: "readFileLines", Namespace: ns, Func: a.readFileLines, Desc: "Gets the lines of a file in a repository"},
-		{Name: "readFile", Namespace: ns, Func: a.readFile, Desc: "Gets the string content of a file in a repository"},
-		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Desc: "Gets a list of branches in a repository"},
+		{Name: "readFile", Namespace: ns, Func: a.readFile, Desc: "Get the string content of a file in a repository"},
+		{Name: "getBranches", Namespace: ns, Func: a.getBranches, Desc: "Get a list of branches in a repository"},
 		{Name: "getLatestCommit", Namespace: ns, Func: a.getLatestCommit, Desc: "Gets the latest commit of a branch in a repository"},
-		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Gets a list of commits in a branch of a repository"},
+		{Name: "getCommits", Namespace: ns, Func: a.getCommits, Desc: "Get a list of commits in a branch of a repository"},
+		{Name: "getCommit", Namespace: ns, Func: a.getCommit, Desc: "Get a commit from a repository"},
 		{Name: "countCommits", Namespace: ns, Func: a.countCommits, Desc: "Get the number of commits in a reference"},
 		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Desc: "Get ancestors of a commit in a repository"},
-		{Name: "getDiffOfCommitAndParents", Namespace: ns, Func: a.getDiffOfCommitAndParents, Desc: "Gets the diff output between a commit and its parent(s)."},
+		{Name: "getDiffOfCommitAndParents", Namespace: ns, Func: a.getDiffOfCommitAndParents, Desc: "Get the diff output between a commit and its parent(s)."},
 	}
 }

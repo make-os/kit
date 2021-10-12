@@ -163,6 +163,7 @@ type RepoModule interface {
 	GetBranches(name string) []string
 	GetLatestBranchCommit(name, branch string) util.Map
 	GetCommits(reference, branch string, limit ...int) []util.Map
+	GetCommit(name, hash string) util.Map
 	CountCommits(name, branch string) int
 	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
 	GetParentsAndCommitDiff(name string, commitHash string) util.Map

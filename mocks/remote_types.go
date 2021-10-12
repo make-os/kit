@@ -769,10 +769,10 @@ func (mr *MockLocalRepoMockRecorder) GetBranches() *gomock.Call {
 }
 
 // GetCommitAncestors mocks base method
-func (m *MockLocalRepo) GetCommitAncestors(arg0 string, arg1 int) ([]*types.BranchCommit, error) {
+func (m *MockLocalRepo) GetCommitAncestors(arg0 string, arg1 int) ([]*types.CommitResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommitAncestors", arg0, arg1)
-	ret0, _ := ret[0].([]*types.BranchCommit)
+	ret0, _ := ret[0].([]*types.CommitResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -784,10 +784,10 @@ func (mr *MockLocalRepoMockRecorder) GetCommitAncestors(arg0, arg1 interface{}) 
 }
 
 // GetCommits mocks base method
-func (m *MockLocalRepo) GetCommits(arg0 string, arg1 int) ([]*types.BranchCommit, error) {
+func (m *MockLocalRepo) GetCommits(arg0 string, arg1 int) ([]*types.CommitResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommits", arg0, arg1)
-	ret0, _ := ret[0].([]*types.BranchCommit)
+	ret0, _ := ret[0].([]*types.CommitResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -858,10 +858,10 @@ func (mr *MockLocalRepoMockRecorder) GetHEAD(arg0 interface{}) *gomock.Call {
 }
 
 // GetLatestCommit mocks base method
-func (m *MockLocalRepo) GetLatestCommit(arg0 string) (*types.BranchCommit, error) {
+func (m *MockLocalRepo) GetLatestCommit(arg0 string) (*types.CommitResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestCommit", arg0)
-	ret0, _ := ret[0].(*types.BranchCommit)
+	ret0, _ := ret[0].(*types.CommitResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
