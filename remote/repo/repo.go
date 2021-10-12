@@ -718,6 +718,7 @@ func (r *Repo) GetLatestCommit(branch string) (*types.CommitResult, error) {
 		}
 	}
 
+	bc.ParentHashes = []string{}
 	for _, parent := range commit.ParentHashes {
 		bc.ParentHashes = append(bc.ParentHashes, parent.String())
 	}
@@ -749,6 +750,7 @@ func (r *Repo) GetCommit(hash string) (*types.CommitResult, error) {
 		}
 	}
 
+	res.ParentHashes = []string{}
 	for _, parent := range commit.ParentHashes {
 		res.ParentHashes = append(res.ParentHashes, parent.String())
 	}
