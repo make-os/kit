@@ -181,10 +181,7 @@ type LocalRepo interface {
 }
 
 type GetCommitDiffResult struct {
-	TotalFiles     int                 `json:"totalFiles"`
-	TotalAdditions int                 `json:"totalAdditions"`
-	TotalDeletions int                 `json:"totalDeletions"`
-	Patches        []map[string]string `json:"patches"`
+	Patches []map[string]string `json:"patches"`
 }
 
 type CommitSignatory struct {

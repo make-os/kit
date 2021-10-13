@@ -650,17 +650,7 @@ func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitD
 		return nil, err
 	}
 
-	fs, err := commit.Stats()
-	if err != nil {
-		return nil, err
-	}
-
-	res := &types.GetCommitDiffResult{TotalFiles: len(fs), Patches: []map[string]string{}}
-	for _, stat := range fs {
-		res.TotalAdditions = stat.Addition
-		res.TotalDeletions = stat.Deletion
-	}
-
+	res := &types.GetCommitDiffResult{Patches: []map[string]string{}}
 	commit.Parents().ForEach(func(parent *object.Commit) error {
 		out, err := r.DiffCommits(parent.Hash.String(), commit.Hash.String())
 		if err != nil {
