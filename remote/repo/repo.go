@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -656,24 +655,18 @@ func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitD
 		return nil, err
 	}
 
-	res := &types.GetCommitDiffResult{TotalFiles: len(fs), Patches: map[string]string{}}
+	res := &types.GetCommitDiffResult{TotalFiles: len(fs), Patches: []map[string]string{}}
 	for _, stat := range fs {
 		res.TotalAdditions = stat.Addition
 		res.TotalDeletions = stat.Deletion
 	}
 
 	commit.Parents().ForEach(func(parent *object.Commit) error {
-		patch, err := parent.Patch(commit)
+		out, err := r.DiffCommits(parent.Hash.String(), commit.Hash.String())
 		if err != nil {
 			return err
 		}
-
-		var buffer bytes.Buffer
-		if err = patch.Encode(&buffer); err != nil {
-			return err
-		}
-
-		res.Patches[parent.Hash.String()] = buffer.String()
+		res.Patches = append(res.Patches, map[string]string{parent.Hash.String(): out})
 		return nil
 	})
 

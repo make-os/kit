@@ -591,3 +591,15 @@ func (gm *GitModule) GetPathLogInfo(path string, revision ...string) (*remotetyp
 		LastCommitMessage: parts[2],
 	}, nil
 }
+
+// DiffCommits returns the diff for the given commits
+func (gm *GitModule) DiffCommits(commitA, commitB string) (string, error) {
+	args := []string{"diff", fmt.Sprintf("%s..%s", commitA, commitB)}
+	cmd := exec.Command(gm.gitBinPath, args...)
+	cmd.Dir = gm.path
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf(string(out))
+	}
+	return strings.TrimSpace(string(out)), nil
+}

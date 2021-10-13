@@ -181,10 +181,10 @@ type LocalRepo interface {
 }
 
 type GetCommitDiffResult struct {
-	TotalFiles     int               `json:"totalFiles"`
-	TotalAdditions int               `json:"totalAdditions"`
-	TotalDeletions int               `json:"totalDeletions"`
-	Patches        map[string]string `json:"patches"`
+	TotalFiles     int                 `json:"totalFiles"`
+	TotalAdditions int                 `json:"totalAdditions"`
+	TotalDeletions int                 `json:"totalDeletions"`
+	Patches        []map[string]string `json:"patches"`
 }
 
 type CommitSignatory struct {
@@ -257,6 +257,7 @@ type GitModule interface {
 	GC(pruneExpire ...string) error
 	Size() (size float64, err error)
 	GetPathLogInfo(path string, revision ...string) (*PathLogInfo, error)
+	DiffCommits(commitA, commitB string) (string, error)
 }
 
 type PathLogInfo struct {

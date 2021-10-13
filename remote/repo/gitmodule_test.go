@@ -601,4 +601,24 @@ var _ = Describe("GitModule", func() {
 			})
 		})
 	})
+
+	Describe(".DiffCommits", func() {
+		It("should return diff", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
+			parent := testutil2.GetRecentCommitHash(path, "master")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit 2")
+			child := testutil2.GetRecentCommitHash(path, "master")
+			out, err := r.DiffCommits(parent, child)
+			Expect(err).To(BeNil())
+			Expect(out).To(Equal(`diff --git a/file.txt b/file.txt
+index 5e44cdd..8c3e057 100644
+--- a/file.txt
++++ b/file.txt
+@@ -1 +1 @@
+-some text 1
+\ No newline at end of file
++some text 1some text 2
+\ No newline at end of file`))
+		})
+	})
 })
