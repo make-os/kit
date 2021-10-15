@@ -49,7 +49,7 @@ func (c *Contract) Exec() error {
 
 	// Add config
 	newRepo.Config = state.MakeDefaultRepoConfig()
-	if err := newRepo.Config.Merge(c.tx.Config.ToMap()); err != nil {
+	if err := newRepo.Config.Merge(c.tx.Config.ToJSONToMap()); err != nil {
 		return err
 	}
 
