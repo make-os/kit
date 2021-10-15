@@ -108,7 +108,7 @@ func (s *Handler) handle(w http.ResponseWriter, r *http.Request) (resp *Response
 	// Handle cors
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if r.Method == http.MethodOptions {
 		return
 	}
