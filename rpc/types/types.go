@@ -1,8 +1,8 @@
 package types
 
 import (
-	"net"
-	"strconv"
+	"fmt"
+	"strings"
 
 	"github.com/make-os/kit/rpc"
 	"github.com/make-os/kit/types/api"
@@ -187,16 +187,18 @@ type Ticket interface {
 type Options struct {
 	Host     string
 	Port     int
-	HTTPS    bool
 	User     string
 	Password string
 }
 
 // URL returns a fully formed url to use for making requests
 func (o *Options) URL() string {
-	protocol := "http://"
-	if o.HTTPS {
-		protocol = "https://"
+	host := o.Host
+	if !strings.Contains(o.Host, "http") {
+		host = "http://" + o.Host
 	}
-	return protocol + net.JoinHostPort(o.Host, strconv.Itoa(o.Port)) + "/rpc"
+	if o.Port > 0 {
+		host = host + ":" + fmt.Sprintf("%d", o.Port)
+	}
+	return host + "/rpc"
 }

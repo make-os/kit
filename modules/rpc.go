@@ -84,7 +84,7 @@ func (m *RPCModule) ConnectLocal() util.Map {
 		panic(err)
 	}
 	portInt, _ := strconv.Atoi(port)
-	return m.connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
+	return m.connect(host, portInt, m.cfg.RPC.User, m.cfg.RPC.Password)
 }
 
 type ClientContext struct {
@@ -123,18 +123,16 @@ func newClientContext(client types2.Client) *ClientContext {
 //
 //  - host: The server's IP address
 //  - port: The server's port number
-//  - https: Forces/Disable secure connection with server
 //  - user: The server's username
 //  - pass: The server's password
 //
 // RETURNS <map>: A mapping of rpc methods under their respective namespaces.
-func (m *RPCModule) connect(host string, port int, https bool, user, pass string) util.Map {
+func (m *RPCModule) connect(host string, port int, user, pass string) util.Map {
 
 	// Create a client
 	c := client.NewClient(&types2.Options{
 		Host:     host,
 		Port:     port,
-		HTTPS:    https,
 		User:     user,
 		Password: pass,
 	})

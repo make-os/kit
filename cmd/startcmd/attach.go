@@ -3,6 +3,7 @@ package startcmd
 import (
 	"net"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/console"
 	"github.com/make-os/kit/keystore"
@@ -20,15 +21,20 @@ import (
 // It will test the connection by getting the RPC methods supported
 // by the server. Returns both client and RPC methods on success.
 func connectToServer(cfg *config.AppConfig) (types.Client, []rpc.MethodInfo, error) {
-	host, port, err := net.SplitHostPort(cfg.Remote.Address)
-	if err != nil {
-		return nil, nil, err
+
+	var host = cfg.Remote.Address
+	var port = "0"
+	var err error
+	if !govalidator.IsURL(cfg.Remote.Address) {
+		host, port, err = net.SplitHostPort(cfg.Remote.Address)
+		if err != nil {
+			host = cfg.Remote.Address
+		}
 	}
 
 	cl := client.NewClient(&types.Options{
 		Host:     host,
 		Port:     cast.ToInt(port),
-		HTTPS:    cfg.RPC.HTTPS,
 		User:     cfg.RPC.User,
 		Password: cfg.RPC.Password,
 	})

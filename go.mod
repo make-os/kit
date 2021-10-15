@@ -17,7 +17,7 @@ require (
 	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
-	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/bitfield/script v0.14.1
 	github.com/briandowns/spinner v1.11.1
 	github.com/btcsuite/btcutil v1.0.2

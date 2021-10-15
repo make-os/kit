@@ -160,6 +160,21 @@ func (mr *MockGitModuleMockRecorder) CreateTagWithMsg(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockGitModule)(nil).CreateTagWithMsg), varargs...)
 }
 
+// DiffCommits mocks base method
+func (m *MockGitModule) DiffCommits(arg0, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DiffCommits", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DiffCommits indicates an expected call of DiffCommits
+func (mr *MockGitModuleMockRecorder) DiffCommits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DiffCommits", reflect.TypeOf((*MockGitModule)(nil).DiffCommits), arg0, arg1)
+}
+
 // ExpandShortHash mocks base method
 func (m *MockGitModule) ExpandShortHash(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
@@ -705,6 +720,21 @@ func (mr *MockLocalRepoMockRecorder) DeleteObject(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockLocalRepo)(nil).DeleteObject), arg0)
 }
 
+// DiffCommits mocks base method
+func (m *MockLocalRepo) DiffCommits(arg0, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DiffCommits", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DiffCommits indicates an expected call of DiffCommits
+func (mr *MockLocalRepoMockRecorder) DiffCommits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DiffCommits", reflect.TypeOf((*MockLocalRepo)(nil).DiffCommits), arg0, arg1)
+}
+
 // ExpandShortHash mocks base method
 func (m *MockLocalRepo) ExpandShortHash(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
@@ -766,6 +796,21 @@ func (m *MockLocalRepo) GetBranches() ([]string, error) {
 func (mr *MockLocalRepoMockRecorder) GetBranches() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranches", reflect.TypeOf((*MockLocalRepo)(nil).GetBranches))
+}
+
+// GetCommit mocks base method
+func (m *MockLocalRepo) GetCommit(arg0 string) (*types.CommitResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommit", arg0)
+	ret0, _ := ret[0].(*types.CommitResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommit indicates an expected call of GetCommit
+func (mr *MockLocalRepoMockRecorder) GetCommit(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommit", reflect.TypeOf((*MockLocalRepo)(nil).GetCommit), arg0)
 }
 
 // GetCommitAncestors mocks base method

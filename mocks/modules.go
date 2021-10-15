@@ -1451,6 +1451,20 @@ func (mr *MockRepoModuleMockRecorder) GetCommits(reference, branch interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommits", reflect.TypeOf((*MockRepoModule)(nil).GetCommits), varargs...)
 }
 
+// GetCommit mocks base method
+func (m *MockRepoModule) GetCommit(name, hash string) util.Map {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommit", name, hash)
+	ret0, _ := ret[0].(util.Map)
+	return ret0
+}
+
+// GetCommit indicates an expected call of GetCommit
+func (mr *MockRepoModuleMockRecorder) GetCommit(name, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommit", reflect.TypeOf((*MockRepoModule)(nil).GetCommit), name, hash)
+}
+
 // CountCommits mocks base method
 func (m *MockRepoModule) CountCommits(name, branch string) int {
 	m.ctrl.T.Helper()

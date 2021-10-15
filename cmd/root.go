@@ -236,7 +236,6 @@ func init() {
 	// Remote API connection flags
 	RootCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
 	RootCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
-	RootCmd.PersistentFlags().Bool("rpc.https", false, "Force the client to use https:// protocol")
 	RootCmd.PersistentFlags().String("remote.address", config.DefaultRemoteServerAddress, "Set the RPC server address")
 	RootCmd.PersistentFlags().String("remote", "origin", "Set the default remote name")
 
@@ -252,7 +251,6 @@ func init() {
 	_ = viper.BindPFlag("rpc.user", RootCmd.PersistentFlags().Lookup("rpc.user"))
 	_ = viper.BindPFlag("rpc.password", RootCmd.PersistentFlags().Lookup("rpc.password"))
 	_ = viper.BindPFlag("remote.address", RootCmd.PersistentFlags().Lookup("remote.address"))
-	_ = viper.BindPFlag("rpc.https", RootCmd.PersistentFlags().Lookup("rpc.https"))
 	_ = viper.BindPFlag("remote.name", RootCmd.PersistentFlags().Lookup("remote"))
 	_ = viper.BindEnv("node.ignoreSeeds")
 }

@@ -236,7 +236,6 @@ func GetRPCClient(cmd *cobra.Command, targetRepo remotetypes.LocalRepo) (*client
 	rpcAddress := viper.GetString("remote.address")
 	rpcUser := viper.GetString("rpc.user")
 	rpcPassword := viper.GetString("rpc.password")
-	rpcSecured := viper.GetBool("rpc.https")
 
 	var err error
 	var host, port string
@@ -262,7 +261,6 @@ create:
 		Port:     cast.ToInt(port),
 		User:     rpcUser,
 		Password: rpcPassword,
-		HTTPS:    rpcSecured,
 	})
 
 	return c, nil
