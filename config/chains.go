@@ -92,16 +92,16 @@ var TestnetChainV1 = &ChainInfo{
 		"48GKXaSLgJ5ox2C1jDshFGtD6Y4Zhd1doxK6iTDp3KCSZjzdWKt",
 	},
 	ChainSeedPeers: []string{
-		"a2f1e5786d3564c14faafffd6a050d2f81c655d9@s1.seeders.live:9000",
-		"9cd75740de0c9d7b2a5d3921b78abbbb39b1bebe@s2.seeders.live:9000",
-		"3ccd79a6f332f83b85f63290ca53187022aada0a@s3.seeders.live:9000",
-		"d0165f00485e22ec0197e15a836ce66587515a84@s4.seeders.live:9000",
+		"a2f1e5786d3564c14faafffd6a050d2f81c655d9@s1.makeos.org:9000",
+		"9cd75740de0c9d7b2a5d3921b78abbbb39b1bebe@s2.makeos.org:9000",
+		"3ccd79a6f332f83b85f63290ca53187022aada0a@s3.makeos.org:9000",
+		"d0165f00485e22ec0197e15a836ce66587515a84@s4.makeos.org:9000",
 	},
 	DHTSeedPeers: []string{
-		"/dns4/s1.seeders.live/tcp/9003/p2p/12D3KooWAeorTJTi3uRDC3nSMa1V9CujJQg5XcN3UjSSV2HDceQU",
-		"/dns4/s2.seeders.live/tcp/9003/p2p/12D3KooWEksv3Nvbv5dRwKRkLJjoLvsuC6hyokj5sERx8mWrxMoB",
-		"/dns4/s3.seeders.live/tcp/9003/p2p/12D3KooWJzM4Hf5KWrXnAJjgJkro7zK2edtDu8ocYt8UgU7vsmFa",
-		"/dns4/s4.seeders.live/tcp/9003/p2p/12D3KooWE7KybnAaoxuw6UiMpof2LT9hMky8k83tZgpdNCqRWx9P",
+		"/dns4/s1.makeos.org/tcp/9003/p2p/12D3KooWAeorTJTi3uRDC3nSMa1V9CujJQg5XcN3UjSSV2HDceQU",
+		"/dns4/s2.makeos.org/tcp/9003/p2p/12D3KooWEksv3Nvbv5dRwKRkLJjoLvsuC6hyokj5sERx8mWrxMoB",
+		"/dns4/s3.makeos.org/tcp/9003/p2p/12D3KooWJzM4Hf5KWrXnAJjgJkro7zK2edtDu8ocYt8UgU7vsmFa",
+		"/dns4/s4.makeos.org/tcp/9003/p2p/12D3KooWE7KybnAaoxuw6UiMpof2LT9hMky8k83tZgpdNCqRWx9P",
 	},
 	Configurer: func(cfg *AppConfig, tmc *tmcfg.Config) {
 		tmc.Consensus.CreateEmptyBlocksInterval = 10 * time.Minute
