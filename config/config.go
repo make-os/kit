@@ -198,35 +198,25 @@ func setupTendermintCfg(cfg *AppConfig, tmcfg *config.Config) *ChainInfo {
 
 func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 
+	setDefaultViperConfig()
 	viper.SetEnvPrefix(AppEnvPrefix)
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	// Set mode
+	// Get home directory ID and set mode to Dev if user provided a home.id value
+	homeID := viper.GetString("home.id")
+	if homeID != "" {
+		viper.Set("dev", true)
+		cfg.Node.Mode = ModeDev
+		homeID = fmt.Sprintf("_%s", homeID)
+	}
+
+	// If mode is unset, set to production or dev
 	if cfg.Node.Mode == 0 {
 		cfg.Node.Mode = ModeProd
 		if viper.GetBool("dev") {
 			cfg.Node.Mode = ModeDev
 		}
-	}
-
-	// Get home directory ID and set mode to Dev if user provided a home.id value
-	homeID := viper.GetString("home.id")
-	if homeID != "" {
-		cfg.Node.Mode = ModeDev
-		homeID = fmt.Sprintf("_%s", homeID)
-	}
-
-	// If net version = mainnet but node mode is not production,
-	// set net version to dev network
-	netVersion := viper.GetUint64("net.version")
-	if netVersion == MainNetVersion && !cfg.IsProd() {
-		viper.Set("net.version", DevChain.GetVersion())
-	}
-
-	// If network version is not supported, exit
-	if !cfg.IsTest() {
-		getChainInfoOrFatal()
 	}
 
 	// Construct data directory, if not set in config
@@ -244,7 +234,6 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 	_ = os.MkdirAll(path.Join(dataDir, KeystoreDirName), 0700)
 
 	// Set viper configuration
-	setDefaultViperConfig()
 	viper.SetConfigName(AppName)
 	viper.AddConfigPath(dataDir)
 	viper.AddConfigPath(".")
@@ -257,6 +246,18 @@ func setup(cfg *AppConfig, tmcfg *config.Config, initializing bool) {
 		} else {
 			log.Fatalf("Failed to read config file: %s", err)
 		}
+	}
+
+	// If net version = mainnet but node mode is not production,
+	// set net version to dev network
+	netVersion := viper.GetUint64("net.version")
+	if netVersion == MainNetVersion && !cfg.IsProd() {
+		viper.Set("net.version", DevChain.GetVersion())
+	}
+
+	// If network version is not supported, exit
+	if !cfg.IsTest() {
+		getChainInfoOrFatal()
 	}
 
 	// Set tendermint root directory
