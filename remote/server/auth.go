@@ -212,7 +212,7 @@ func MakeAndApplyPushTokenToRemote(repo remotetypes.LocalRepo, args *MakeAndAppl
 // and adds it/them to one more URLs of a remote. Note:
 //  - The tokens are cached in the repocfg file.
 //  - A URL can have multiple tokens for different references applied to it.
-// 	- If the target reference has an existing token, it is replaced with a new one.
+//  - If the target reference has an existing token, it is replaced with a new one.
 //  - Setting args.ResetTokens will remove all existing tokens.
 func makeAndApplyPushTokenToRepoRemote(
 	args *MakeAndApplyPushTokenToRemoteArgs,

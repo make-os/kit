@@ -390,23 +390,16 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 // UpdateRepoConfig updates the repo's 'repocfg' configuration file
 func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 
-	var f *os.File
 	cfgFile := filepath.Join(r.Path, ".git", "repocfg")
-	if !util.IsFileOk(cfgFile) {
-		f, err = os.Create(cfgFile)
-		if err != nil {
-			return errors.Wrap(err, "failed to create repo config file")
-		}
-		defer f.Close()
+	if err := os.Remove(cfgFile); err != nil && !strings.Contains(err.Error(), "no such file") {
+		return err
 	}
 
-	if f == nil {
-		f, err = os.OpenFile(cfgFile, os.O_RDWR, 0644)
-		if err != nil {
-			return errors.Wrap(err, "failed to open repo config file")
-		}
-		defer f.Close()
+	f, err := os.Create(cfgFile)
+	if err != nil {
+		return errors.Wrap(err, "failed to create repo config file")
 	}
+	defer f.Close()
 
 	return json.NewEncoder(f).Encode(cfg)
 }
