@@ -138,7 +138,6 @@ type RPCConfig struct {
 	Password      string `json:"password" mapstructure:"password"`
 	DisableAuth   bool   `json:"disableauth" mapstructure:"disableauth"`
 	AuthPubMethod bool   `json:"authpubmethod" mapstructure:"authpubmethod"`
-	HTTPS         bool   `json:"https" mapstructure:"https"`
 	TMRPCAddress  string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 

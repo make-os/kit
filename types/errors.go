@@ -4,13 +4,9 @@ import "fmt"
 
 // RPC error codes
 const (
-	// Authentication error codes
 	ErrCodeInvalidAuthHeader      = 40000
 	ErrCodeInvalidAuthCredentials = 40001
-
-	// Implementation error codes
-	RPCErrCodeInvalidParamType  = 60000
-	RPCErrCodeInvalidParamValue = 60001
+	ErrRPCServerError             = 50000
 )
 
 // General
@@ -40,7 +36,6 @@ var (
 var (
 	ErrCodeTxBadEncode        uint32 = 20000
 	ErrCodeTxFailedValidation uint32 = 20001
-	ErrCodeTxPoolReject       uint32 = 20002
 )
 
 // Transaction processing errors
