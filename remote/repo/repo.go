@@ -14,11 +14,11 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
-	config2 "github.com/go-git/go-git/v5/plumbing/format/config"
+	fmtcfg "github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/storage"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
@@ -127,6 +127,35 @@ func (r *Repo) GetPath() string {
 	return r.Path
 }
 
+// Clone implements types.LocalRepo
+func (r *Repo) Clone(option types.CloneOption) (types.LocalRepo, string, error) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, "", errors.Wrap(err, "failed to create temporary directory")
+	}
+
+	repoDir := filepath.Join(dir, r.GetName())
+	if err := os.Mkdir(repoDir, 0700); err != nil {
+		return nil, "", err
+	}
+
+	opt := &git.CloneOptions{URL: r.Path, Depth: option.Depth}
+	if option.ReferenceName != "" {
+		opt.SingleBranch = true
+		opt.ReferenceName = plumbing.ReferenceName(option.ReferenceName)
+	}
+	if _, err = git.PlainClone(repoDir, option.Bare, opt); err != nil {
+		return nil, "", errors.Wrap(err, "failed to clone repository")
+	}
+
+	cloned, err := GetWithGitModule(r.gitBinPath, repoDir)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return cloned, dir, nil
+}
+
 // IsClean checks whether the working directory has no un-tracked, staged or modified files
 func (r *Repo) IsClean() (bool, error) {
 	wt, err := r.Repository.Worktree()
@@ -163,13 +192,13 @@ func (r *Repo) GetGitConfigOption(path string) string {
 	var sec interface{} = cfg.Raw.Section(pathParts[0])
 	for i, part := range pathParts[1:] {
 		if i == len(pathParts[1:])-1 {
-			if o, ok := sec.(*config2.Subsection); ok {
+			if o, ok := sec.(*fmtcfg.Subsection); ok {
 				return o.Option(part)
 			} else {
-				return sec.(*config2.Section).Option(part)
+				return sec.(*fmtcfg.Section).Option(part)
 			}
 		}
-		sec = sec.(*config2.Section).Subsection(part)
+		sec = sec.(*fmtcfg.Section).Subsection(part)
 	}
 
 	return ""
@@ -349,7 +378,7 @@ func (r *Repo) NumIssueBranches() (count int, err error) {
 		return 0, err
 	}
 	refIter.ForEach(func(reference *plumbing.Reference) error {
-		if plumbing2.IsIssueReference(reference.Name().String()) {
+		if pl.IsIssueReference(reference.Name().String()) {
 			count++
 		}
 		return nil

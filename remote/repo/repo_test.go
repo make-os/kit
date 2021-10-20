@@ -471,6 +471,30 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".Clone", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should successfully create a worktree clone", func() {
+			clone, temp, err := r.Clone(types.CloneOption{
+				Bare:          true,
+				ReferenceName: "refs/heads/dev",
+				Depth:         1,
+			})
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(temp)
+			Expect(clone.GetName()).To(Equal(r.GetName()))
+			head, err := clone.Head()
+			Expect(err).To(BeNil())
+			Expect(head).To(Equal("refs/heads/dev"))
+			numCommit, err := clone.NumCommits("dev", true)
+			Expect(err).To(BeNil())
+			Expect(numCommit).To(Equal(1))
+		})
+	})
+
 	Describe(".GetLatestCommit", func() {
 		BeforeEach(func() {
 			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")

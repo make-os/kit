@@ -11,6 +11,12 @@ import (
 	"github.com/make-os/kit/types/state"
 )
 
+type CloneOption struct {
+	Bare          bool
+	ReferenceName string
+	Depth         int
+}
+
 // LocalRepo represents a local git repository on disk
 type LocalRepo interface {
 	GitModule
@@ -94,6 +100,13 @@ type LocalRepo interface {
 
 	// GetPath returns the repository's path
 	GetPath() string
+
+	// Clone clones the repository into a temporary directory.
+	// It returns the cloned repo, the temp directory where it was cloned
+	// into and a nil error on success.
+	//  - bare: When true, a worktree is created, otherwise a bare repo is created.
+	//  - referenceName: Optionally limit fetching to the given reference
+	Clone(option CloneOption) (LocalRepo, string, error)
 
 	// IsClean checks whether the working directory has no un-tracked, staged or modified files
 	IsClean() (bool, error)
