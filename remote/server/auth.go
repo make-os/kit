@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/config"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/remote/policy"
 	remotetypes "github.com/make-os/kit/remote/types"
@@ -147,7 +148,12 @@ func DecodePushToken(v string) (*remotetypes.TxDetail, error) {
 
 // MakePushToken creates a push request token
 func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
-	sig, _ := key.GetKey().PrivKey().Sign(txDetail.BytesNoSig())
+	return MakePushTokenFromKey(key.GetKey(), txDetail)
+}
+
+// MakePushTokenFromKey creates a push request token
+func MakePushTokenFromKey(key *ed25519.Key, txDetail *remotetypes.TxDetail) string {
+	sig, _ := key.PrivKey().Sign(txDetail.BytesNoSig())
 	txDetail.Signature = base58.Encode(sig)
 	return base58.Encode(txDetail.Bytes())
 }
