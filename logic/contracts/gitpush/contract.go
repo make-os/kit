@@ -62,7 +62,7 @@ func (c *Contract) execReference(repo *state.Repository, repoName string, ref *p
 
 		// Process labels (new and negated labels)
 		if ref.Data.Labels != nil {
-			for _, label := range *ref.Data.Labels {
+			for _, label := range ref.Data.Labels {
 				if label[0] == '-' {
 					r.Data.Labels = util.RemoveFromStringSlice(r.Data.Labels, label[1:])
 					continue
@@ -75,7 +75,7 @@ func (c *Contract) execReference(repo *state.Repository, repoName string, ref *p
 
 		// Process assignees (new and negated assignees)
 		if ref.Data.Assignees != nil {
-			for _, assignee := range *ref.Data.Assignees {
+			for _, assignee := range ref.Data.Assignees {
 				if assignee[0] == '-' {
 					r.Data.Assignees = util.RemoveFromStringSlice(r.Data.Assignees, assignee[1:])
 					continue

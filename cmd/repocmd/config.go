@@ -17,16 +17,14 @@ import (
 	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/types"
-	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util"
-	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 )
 
 type Remote struct {
-	Name string
-	URL  string
+	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 // ConfigArgs contains arguments for ConfigCmd.
@@ -56,15 +54,6 @@ type ConfigArgs struct {
 	// Remotes contain a list of git remotes to append to the repo.
 	Remotes []Remote
 
-	// RpcClient is the RPC client
-	RPCClient rpctypes.Client
-
-	// KeyUnlocker is a function for getting and unlocking a push key from keystore.
-	KeyUnlocker common.UnlockKeyFunc
-
-	// GetNextNonce is a function for getting the next nonce of an account
-	GetNextNonce api.NextNonceGetter
-
 	// CommandCreator creates a wrapped exec.Cmd object
 	CommandCreator util.CommandCreator
 
@@ -85,7 +74,7 @@ type ConfigArgs struct {
 }
 
 // ConfigCmd configures a repository
-func ConfigCmd(_ *config.AppConfig, repo types.LocalRepo, args *ConfigArgs) error {
+func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
 
 	gitCfg, err := repo.Config()
 	if err != nil {

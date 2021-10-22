@@ -13,6 +13,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/AlekSi/pointer v1.1.0
 	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/bitfield/script v0.14.1
@@ -79,6 +80,7 @@ require (
 	github.com/prometheus/common v0.14.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337
 	github.com/sirupsen/logrus v1.7.0

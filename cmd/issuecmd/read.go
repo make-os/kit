@@ -159,16 +159,16 @@ func formatAndPrintIssueComments(
 		}
 
 		var assignees, assigneeFmt string
-		if comment.Body.Assignees != nil && len(*comment.Body.Assignees) > 0 {
-			assignees = strings.Join(*comment.Body.Assignees, ",")
+		if comment.Body.Assignees != nil && len(comment.Body.Assignees) > 0 {
+			assignees = strings.Join(comment.Body.Assignees, ",")
 		}
 		if assignees != "" {
 			assigneeFmt = "\nAssignees:  %as"
 		}
 
 		var labels, labelsFmt string
-		if comment.Body.Labels != nil && len(*comment.Body.Labels) > 0 {
-			labels = strings.Join(*comment.Body.Labels, ",")
+		if comment.Body.Labels != nil && len(comment.Body.Labels) > 0 {
+			labels = strings.Join(comment.Body.Labels, ",")
 		}
 		if labels != "" {
 			labelsFmt = "\nLabels:     %l"

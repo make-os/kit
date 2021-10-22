@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 	fmtcfg "github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage"
 	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
@@ -128,7 +130,7 @@ func (r *Repo) GetPath() string {
 }
 
 // Clone implements types.LocalRepo
-func (r *Repo) Clone(option types.CloneOption) (types.LocalRepo, string, error) {
+func (r *Repo) Clone(option types.CloneOptions) (types.LocalRepo, string, error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, "", errors.Wrap(err, "failed to create temporary directory")
@@ -873,4 +875,20 @@ func iterCommit(
 		}
 	}
 	return res, nil
+}
+
+// Push performs push to the repository
+func (r *Repo) Push(options types.PushOptions) (progress bytes.Buffer, err error) {
+	opts := &git.PushOptions{Progress: &progress}
+	if options.RemoteName != "" {
+		opts.RemoteName = options.RemoteName
+	}
+	if options.Token != "" {
+		opts.Auth = &http.BasicAuth{Username: options.Token, Password: "-"}
+	}
+	if options.RefSpec != "" {
+		opts.RefSpecs = []config.RefSpec{config.RefSpec(options.RefSpec)}
+	}
+	err = r.Repository.Push(opts)
+	return
 }

@@ -38,7 +38,7 @@ func New(ctx context.Context, cfg *config.AppConfig) (*BasicHost, error) {
 
 	lAddr := libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%s", address, port))
 	key, _ := cfg.G().PrivVal.GetKey()
-	h, err := libp2p.New(ctx, libp2p.Identity(key.PrivKey().Key()), lAddr)
+	h, err := libp2p.New(ctx, libp2p.Identity(key.UnwrappedPrivKey()), lAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create host")
 	}

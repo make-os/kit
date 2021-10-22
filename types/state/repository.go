@@ -7,7 +7,6 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	"github.com/vmihailenco/msgpack"
 )
@@ -198,7 +197,7 @@ func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 func (c *RepoConfig) Clone() *RepoConfig {
 	var clone = BareRepoConfig()
 	m := util.ToJSONMap(c)
-	_ = mapstructure.Decode(m, &clone)
+	_ = util.DecodeMap(m, &clone)
 	return clone
 }
 

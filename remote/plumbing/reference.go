@@ -13,7 +13,7 @@ var (
 	MergeRequestBranchPrefix = "merges"
 )
 
-// isBranch checks whether a reference name indicates a branch
+// IsBranch checks whether a reference name indicates a branch
 func IsBranch(name string) bool {
 	return plumbing.ReferenceName(name).IsBranch()
 }
@@ -54,18 +54,18 @@ func IsMergeRequestReferencePath(name string) bool {
 	return regexp.MustCompile(fmt.Sprintf(re, MergeRequestBranchPrefix)).MatchString(name)
 }
 
-// isReference checks the given name is a reference path or full reference name
+// IsReference checks the given name is a reference path or full reference name
 func IsReference(name string) bool {
 	re := "^refs/(heads|tags|notes)((/[a-z0-9_-]+)+)?$"
 	return regexp.MustCompile(re).MatchString(name)
 }
 
-// isTag checks whether a reference name indicates a tag
+// IsTag checks whether a reference name indicates a tag
 func IsTag(name string) bool {
 	return plumbing.ReferenceName(name).IsTag()
 }
 
-// isNote checks whether a reference name indicates a tag
+// IsNote checks whether a reference name indicates a tag
 func IsNote(name string) bool {
 	return plumbing.ReferenceName(name).IsNote()
 }
@@ -85,7 +85,7 @@ func MakeMergeRequestReference(id interface{}) string {
 	return fmt.Sprintf("refs/heads/%s/%v", MergeRequestBranchPrefix, id)
 }
 
-// MakeIssueReferencePath returns the full merge request reference path
+// MakeMergeRequestReferencePath returns the full merge request reference path
 func MakeMergeRequestReferencePath() string {
 	return fmt.Sprintf("refs/heads/%s", MergeRequestBranchPrefix)
 }

@@ -54,14 +54,14 @@ var _ = Describe("MergeRequestCreate", func() {
 		When("merge request number is unset (new merge request creation)", func() {
 			It("should return error when a reaction is unknown", func() {
 				args := &mergecmd.MergeRequestCreateArgs{Reactions: []string{":unknown:"}}
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("reaction (:unknown:) is not supported"))
 			})
 
 			It("should return error when reply hash is set but merge request number is not set", func() {
 				args := &mergecmd.MergeRequestCreateArgs{ReplyHash: "02we"}
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge request number is required when adding a comment"))
 			})
@@ -77,7 +77,7 @@ var _ = Describe("MergeRequestCreate", func() {
 							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body"), nil
 						},
 					}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).To(BeNil())
 					Expect(args.Title).To(Equal("my title"))
 					Expect(args.Body).To(Equal("my body"))
@@ -87,7 +87,7 @@ var _ = Describe("MergeRequestCreate", func() {
 			It("should return error when title is not provided from stdin", func() {
 				args := &mergecmd.MergeRequestCreateArgs{StdOut: bytes.NewBuffer(nil),
 					InputReader: func(title string, args *io2.InputReaderArgs) (string, error) { return "", nil }}
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(common.ErrTitleRequired))
 			})
@@ -98,7 +98,7 @@ var _ = Describe("MergeRequestCreate", func() {
 						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", ""), nil
 					},
 				}
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
 				Expect(err).To(Equal(common.ErrBodyRequired))
@@ -110,7 +110,7 @@ var _ = Describe("MergeRequestCreate", func() {
 						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", ""), nil
 					},
 				}
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
 				Expect(err).To(Equal(common.ErrBodyRequired))
@@ -146,7 +146,7 @@ var _ = Describe("MergeRequestCreate", func() {
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
 						return "", fmt.Errorf("error")
 					}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("failed read body from editor: error"))
 				})
@@ -154,7 +154,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				It("should return error when body is unset through editor", func() {
 					mockRepo.EXPECT().GetGitConfigOption("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(Equal(common.ErrBodyRequired))
 				})
@@ -166,7 +166,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				args := &mergecmd.MergeRequestCreateArgs{ID: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeMergeRequestReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge request (1) was not found"))
 			})
@@ -175,7 +175,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				args := &mergecmd.MergeRequestCreateArgs{ID: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeMergeRequestReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("", fmt.Errorf("error"))
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
@@ -185,7 +185,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				ref := plumbing.MakeMergeRequestReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(0, fmt.Errorf("error"))
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to count comments in merge request: error"))
 			})
@@ -195,7 +195,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				ref := plumbing.MakeMergeRequestReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("title not required when adding a comment to a merge request"))
 			})
@@ -206,35 +206,49 @@ var _ = Describe("MergeRequestCreate", func() {
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				mockRepo.EXPECT().IsAncestor("reply_hash", "xyz").Return(fmt.Errorf("bad"))
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("target comment hash (reply_hash) is unknown"))
 			})
 
-			When("base, baseHash, target, targetHash are unset and merge request reference is new", func() {
+			When("title, base, baseHash, target, targetHash are unset and merge request reference is new", func() {
 				var args *mergecmd.MergeRequestCreateArgs
 				BeforeEach(func() {
 					mockRepo.EXPECT().RefGet(gomock.Any()).Return("xyz", plumbing.ErrRefNotFound)
 					mockRepo.EXPECT().NumCommits(gomock.Any(), false).Return(0, nil)
 				})
 
-				It("should return error when base branch is unset in a new merge request post", func() {
+				It("should return error when title is unset in a new merge request post", func() {
 					args = &mergecmd.MergeRequestCreateArgs{ID: 1}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("title is required"))
+				})
+
+				It("should return error when base branch is unset in a new merge request post", func() {
+					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Title: "a title"}
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("base branch name is required"))
 				})
 
 				It("should return error when target branch is unset in a new merge request post", func() {
-					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Base: "master", BaseHash: "hash1"}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Title: "a title", Base: "master", BaseHash: ""}
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("base branch hash is required"))
+				})
+
+				It("should return error when target branch is unset in a new merge request post", func() {
+					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Title: "a title", Base: "master", BaseHash: "hash1"}
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("target branch name is required"))
 				})
 
 				It("should return error when target branch hash is unset in a new merge request post", func() {
-					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Base: "master", BaseHash: "hash1", Target: "dev"}
-					err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+					args = &mergecmd.MergeRequestCreateArgs{ID: 1, Title: "a title", Base: "master", BaseHash: "hash1", Target: "dev"}
+					_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("target branch hash is required"))
 				})
@@ -250,7 +264,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				mockRepo.EXPECT().RefGet(ref).Return("ref_hash", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				mockRepo.EXPECT().IsAncestor("comment_hash", "ref_hash").Return(nil)
-				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+				_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -263,7 +277,7 @@ var _ = Describe("MergeRequestCreate", func() {
 					return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body"), nil
 				},
 			}
-			err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(args.Title).To(Equal("my title"))
 			Expect(args.Body).To(Equal("my body"))

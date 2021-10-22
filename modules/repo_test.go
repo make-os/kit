@@ -1,14 +1,23 @@
 package modules_test
 
 import (
+	"bytes"
 	"fmt"
 
+	"github.com/go-git/go-git/v5"
+	config2 "github.com/go-git/go-git/v5/config"
+	plumbing2 "github.com/go-git/go-git/v5/plumbing"
 	"github.com/golang/mock/gomock"
+	"github.com/make-os/kit/cmd/issuecmd"
+	"github.com/make-os/kit/cmd/mergecmd"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/mocks"
 	mocks2 "github.com/make-os/kit/mocks/rpc"
 	"github.com/make-os/kit/modules"
 	"github.com/make-os/kit/modules/types"
+	"github.com/make-os/kit/remote/plumbing"
+	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/api"
 	"github.com/make-os/kit/types/constants"
@@ -33,6 +42,7 @@ var _ = Describe("RepoModule", func() {
 	var mockRepoSrv *mocks.MockRemoteServer
 	var mockMempoolReactor *mocks.MockMempoolReactor
 	var mockRepoKeeper *mocks.MockRepoKeeper
+	var mockAccountKeeper *mocks.MockAccountKeeper
 	var mockNSKeeper *mocks.MockNamespaceKeeper
 	var mockRepoSyncInfoKeeper *mocks.MockRepoSyncInfoKeeper
 
@@ -47,6 +57,7 @@ var _ = Describe("RepoModule", func() {
 		mockMempoolReactor = mocks.NewMockMempoolReactor(ctrl)
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockRepoKeeper = mocks.NewMockRepoKeeper(ctrl)
+		mockAccountKeeper = mocks.NewMockAccountKeeper(ctrl)
 		mockRepoSyncInfoKeeper = mocks.NewMockRepoSyncInfoKeeper(ctrl)
 		mockNSKeeper = mocks.NewMockNamespaceKeeper(ctrl)
 		mockLogic.EXPECT().Config().Return(cfg).AnyTimes()
@@ -55,6 +66,7 @@ var _ = Describe("RepoModule", func() {
 		mockLogic.EXPECT().GetRemoteServer().Return(mockRepoSrv).AnyTimes()
 		mockLogic.EXPECT().RepoSyncInfoKeeper().Return(mockRepoSyncInfoKeeper).AnyTimes()
 		mockLogic.EXPECT().NamespaceKeeper().Return(mockNSKeeper).AnyTimes()
+		mockLogic.EXPECT().AccountKeeper().Return(mockAccountKeeper).AnyTimes()
 		m = modules.NewRepoModule(mockService, mockRepoSrv, mockLogic)
 	})
 
@@ -75,7 +87,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Create", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Create(params)
 			})
@@ -152,7 +164,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".UpsertOwner", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"addresses": struct{}{}}
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'addresses[0]' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpsertOwner(params)
 			})
@@ -201,7 +213,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".Vote", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Vote(params)
 			})
@@ -428,7 +440,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".DepositProposalFee", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.DepositProposalFee(params)
 			})
@@ -474,7 +486,7 @@ var _ = Describe("RepoModule", func() {
 	Describe(".AddContributor", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: modules.StatusCodeInvalidParam, HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.AddContributor(params)
 			})
@@ -917,11 +929,485 @@ var _ = Describe("RepoModule", func() {
 			cfg.SetRepoRoot("../remote/repo/testdata")
 			assert.NotPanics(GinkgoT(), func() {
 				res := m.GetParentsAndCommitDiff("repo3", "8c427dcc0d582cd7387b4c529185b7c1ab28f20c")
-				Expect(res["totalFiles"]).To(Equal(1))
-				Expect(res["totalAdditions"]).To(Equal(1))
-				Expect(res["totalDeletions"]).To(Equal(0))
+				Expect(res).To(HaveKey("patches"))
 				Expect(res["patches"]).To(HaveLen(1))
+				Expect(res["patches"].([]map[string]string)[0]).To(HaveKey("a77021f4aead5f5ab8934a94154b0b4da6a551b5"))
+				Expect(res["patches"].([]map[string]string)[0]["a77021f4aead5f5ab8934a94154b0b4da6a551b5"]).To(Equal(`diff --git a/file_b.txt b/file_b.txt
+new file mode 100644
+index 0000000..3b0c2f1
+--- /dev/null
++++ b/file_b.txt
+@@ -0,0 +1 @@
++We made games
+\ No newline at end of file`))
 			})
 		})
+	})
+
+	Describe(".CreateIssue", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("", nil)
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("unknown", nil)
+			})
+		})
+
+		It("should panic when unable to find a free post ID", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.PostIDFinder = func(_ remotetypes.LocalRepo, _ int, _ string) (int, error) {
+				return 0, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("repo3", nil)
+			})
+		})
+
+		It("should panic when unable to clone repository", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("1")).Return("", plumbing2.ErrReferenceNotFound)
+			mockRepo.EXPECT().Clone(remotetypes.CloneOptions{
+				Bare:          false,
+				ReferenceName: "",
+				Depth:         1,
+			}).Return(nil, "", fmt.Errorf("error here"))
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) {
+				return mockRepo, nil
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "failed to clone repo: error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to create issue", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("1")).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.IssueCreate = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueCreateArgs) (*issuecmd.IssueCreateResult, error) {
+				return nil, fmt.Errorf("error here")
+			}
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to get create issue reference", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			issueRef := plumbing.MakeIssueReference("1")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(issueRef).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.IssueCreate = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueCreateArgs) (*issuecmd.IssueCreateResult, error) {
+				return &issuecmd.IssueCreateResult{Reference: issueRef}, nil
+			}
+
+			mockCloneRepo.EXPECT().RefGet(issueRef).Return("", fmt.Errorf("error here"))
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateIssue("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to get create issue reference", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			issueRef := plumbing.MakeIssueReference("1")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(issueRef).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockCloneRepo.EXPECT().GetPath().Return("/repo/path")
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.IssueCreate = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueCreateArgs) (*issuecmd.IssueCreateResult, error) {
+				return &issuecmd.IssueCreateResult{Reference: issueRef}, nil
+			}
+
+			mockCloneRepo.EXPECT().RefGet(issueRef).Return("hash123", nil)
+
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockTempRepoMgr.EXPECT().Add("/repo/path").Return("repoId_123")
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.CreateIssue("repo3", map[string]interface{}{
+					"id": 1,
+				})
+				Expect(res).To(Equal(util.Map(map[string]interface{}{
+					"hash":      "hash123",
+					"reference": issueRef,
+					"repoID":    "repoId_123",
+				})))
+			})
+		})
+	})
+
+	Describe(".CreateMergeRequest()", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("", nil)
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("unknown", nil)
+			})
+		})
+
+		It("should panic when unable to find a free post ID", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.PostIDFinder = func(_ remotetypes.LocalRepo, _ int, _ string) (int, error) {
+				return 0, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("repo3", nil)
+			})
+		})
+
+		It("should panic when unable to clone repository", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(plumbing.MakeMergeRequestReference("1")).Return("", plumbing2.ErrReferenceNotFound)
+			mockRepo.EXPECT().Clone(remotetypes.CloneOptions{
+				Bare:          false,
+				ReferenceName: "",
+				Depth:         1,
+			}).Return(nil, "", fmt.Errorf("error here"))
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) {
+				return mockRepo, nil
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "failed to clone repo: error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to create merge request", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(plumbing.MakeMergeRequestReference("1")).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.MergeRequestCreate = func(r remotetypes.LocalRepo, args *mergecmd.MergeRequestCreateArgs) (*mergecmd.MergeRequestCreateResult, error) {
+				return nil, fmt.Errorf("error here")
+			}
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to get create merge request reference", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			mrRef := plumbing.MakeMergeRequestReference("1")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(mrRef).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.MergeRequestCreate = func(r remotetypes.LocalRepo, args *mergecmd.MergeRequestCreateArgs) (*mergecmd.MergeRequestCreateResult, error) {
+				return &mergecmd.MergeRequestCreateResult{Reference: mrRef}, nil
+			}
+
+			mockCloneRepo.EXPECT().RefGet(mrRef).Return("", fmt.Errorf("error here"))
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.CreateMergeRequest("repo3", map[string]interface{}{
+					"id": 1,
+				})
+			})
+		})
+
+		It("should panic when unable to get create issue reference", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+
+			mrRef := plumbing.MakeMergeRequestReference("1")
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(mrRef).Return("", plumbing2.ErrReferenceNotFound)
+			m.GetLocalRepo = func(_, _ string) (remotetypes.LocalRepo, error) { return mockRepo, nil }
+
+			var mockCloneRepo = mocks.NewMockLocalRepo(ctrl)
+			mockCloneRepo.EXPECT().GetPath().Return("/repo/path")
+			mockRepo.EXPECT().Clone(gomock.Any()).Return(mockCloneRepo, "", nil)
+
+			m.MergeRequestCreate = func(r remotetypes.LocalRepo, args *mergecmd.MergeRequestCreateArgs) (*mergecmd.MergeRequestCreateResult, error) {
+				return &mergecmd.MergeRequestCreateResult{Reference: mrRef}, nil
+			}
+
+			mockCloneRepo.EXPECT().RefGet(mrRef).Return("hash123", nil)
+
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockTempRepoMgr.EXPECT().Add("/repo/path").Return("repoId_123")
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.CreateMergeRequest("repo3", map[string]interface{}{
+					"id": 1,
+				})
+				Expect(res).To(Equal(util.Map(map[string]interface{}{
+					"hash":      "hash123",
+					"reference": mrRef,
+					"repoID":    "repoId_123",
+				})))
+			})
+		})
+	})
+
+	Describe(".Push", func() {
+		It("should panic if id is not associated with a temporary repo", func() {
+			param := map[string]interface{}{"id": "repo_123"}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("")
+			err := &errors.ReqError{Code: "invalid_temp_repo_id", HttpCode: 404, Msg: "id is expired or invalid", Field: "id"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, "privKey")
+			})
+		})
+
+		It("should panic if reference is not a branch, note or tag reference", func() {
+			param := map[string]interface{}{"id": "repo_123", "reference": "some/type/of/reference"}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+			err := &errors.ReqError{Code: "invalid_reference_name", HttpCode: 400, Msg: "reference name is not valid", Field: "reference"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, "privKey")
+			})
+		})
+
+		It("should panic if private key was not set or is invalid", func() {
+			param := map[string]interface{}{"id": "repo_123", "reference": "refs/heads/master"}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr).Times(2)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo").Times(2)
+			err := &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key is required", Field: "privateKey"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, "")
+			})
+
+			err = &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key is not valid", Field: "privKey"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, "invalid_pk")
+			})
+		})
+
+		It("should panic if repo was not found", func() {
+			key := ed25519.NewKeyFromIntSeed(1)
+			param := map[string]interface{}{"id": "repo_123", "reference": "refs/heads/master"}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr).Times(2)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo").Times(2)
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return nil, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, key.PrivKey().Base58())
+			})
+
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return nil, git.ErrRepositoryNotExists
+			}
+			err = &errors.ReqError{Code: "repo_not_found", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, key.PrivKey().Base58())
+			})
+		})
+
+		It("should panic if unable to get config", func() {
+			key := ed25519.NewKeyFromIntSeed(1)
+			param := map[string]interface{}{
+				"id":        "repo_123",
+				"reference": "refs/heads/master",
+				"nonce":     "0",
+			}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return mockRepo, nil
+			}
+
+			// expected to be called if nonce is unset or zero
+			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
+
+			// expect origin remote to be set with correct url
+			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error here"))
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, key.PrivKey().Base58())
+			})
+		})
+
+		It("should panic if unable to set config", func() {
+			key := ed25519.NewKeyFromIntSeed(1)
+			param := map[string]interface{}{
+				"id":        "repo_123",
+				"reference": "refs/heads/master",
+				"nonce":     "0",
+			}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return mockRepo, nil
+			}
+
+			// expected to be called if nonce is unset or zero
+			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
+
+			// expect origin remote to be set with correct url
+			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
+			mockRepo.EXPECT().SetConfig(gomock.Any()).Return(fmt.Errorf("error here"))
+
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, key.PrivKey().Base58())
+			})
+		})
+
+		It("should attempt to push; "+
+			"it should set correct nonce when one was not provided; "+
+			"it should add correct remote to repo;"+
+			"it should nil on successful push", func() {
+			key := ed25519.NewKeyFromIntSeed(1)
+			param := map[string]interface{}{
+				"id":        "repo_123",
+				"reference": "refs/heads/master",
+				"nonce":     "0",
+			}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return mockRepo, nil
+			}
+
+			// expected to be called if nonce is unset or zero
+			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
+
+			// expect origin remote to be set with correct url
+			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
+			mockRepo.EXPECT().SetConfig(gomock.Any()).Do(func(cfg *config2.Config) {
+				Expect(cfg.Remotes).To(HaveLen(1))
+				Expect(cfg.Remotes).To(HaveKey("origin"))
+				Expect(cfg.Remotes["origin"].URLs).To(HaveLen(1))
+				Expect(cfg.Remotes["origin"].URLs[0]).To(Equal("http://127.0.0.1:9002/r/repo1"))
+			})
+
+			mockRepo.EXPECT().Push(gomock.Any()).DoAndReturn(func(opts remotetypes.PushOptions) (bytes.Buffer, error) {
+				Expect(opts.RemoteName).To(BeEmpty())
+				Expect(opts.Token).ToNot(BeEmpty())
+				Expect(opts.RefSpec).To(Equal(fmt.Sprintf("+%s:%s", param["reference"], param["reference"])))
+				return *bytes.NewBuffer([]byte("hash: tx_hash_123")), nil
+			})
+
+			// it should remove repo from temp. repo manager cache
+			mockTempRepoMgr.EXPECT().Remove(param["id"])
+
+			assert.NotPanics(GinkgoT(), func() {
+				txHash := m.Push(param, key.PrivKey().Base58())
+				Expect(txHash).To(Equal("tx_hash_123"))
+			})
+		})
+
+		It("should panic if push failed", func() {
+			key := ed25519.NewKeyFromIntSeed(1)
+			param := map[string]interface{}{
+				"id":        "repo_123",
+				"reference": "refs/heads/master",
+				"nonce":     "0",
+			}
+			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+
+			var mockRepo = mocks.NewMockLocalRepo(ctrl)
+			m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+				Expect(path).To(Equal("/path/repo"))
+				return mockRepo, nil
+			}
+
+			// expected to be called if nonce is unset or zero
+			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
+
+			// expect origin remote to be set with correct url
+			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
+			mockRepo.EXPECT().SetConfig(gomock.Any())
+
+			mockRepo.EXPECT().Push(gomock.Any()).DoAndReturn(func(opts remotetypes.PushOptions) (bytes.Buffer, error) {
+				return bytes.Buffer{}, fmt.Errorf("error here")
+			})
+
+			err := &errors.ReqError{Code: "push_failure", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.Push(param, key.PrivKey().Base58())
+			})
+		})
+
 	})
 })

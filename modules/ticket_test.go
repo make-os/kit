@@ -59,7 +59,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyValidatorTicket", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyValidatorTicket(params)
 			})
@@ -107,7 +107,7 @@ var _ = Describe("TicketModule", func() {
 	Describe(".BuyHostTicket()", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"delegate": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'delegate[0]' expected type 'uint8', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.BuyHostTicket(params)
 			})

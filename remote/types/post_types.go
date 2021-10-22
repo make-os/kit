@@ -4,10 +4,10 @@ package types
 type IssueFields struct {
 
 	// Labels describes and classifies the post using keywords
-	Labels *[]string `yaml:"labels,flow,omitempty" msgpack:"labels,omitempty"`
+	Labels []string `yaml:"labels,flow,omitempty" msgpack:"labels,omitempty"`
 
 	// Assignees are the push keys assigned to the post
-	Assignees *[]string `yaml:"assignees,flow,omitempty" msgpack:"assignees,omitempty"`
+	Assignees []string `yaml:"assignees,flow,omitempty" msgpack:"assignees,omitempty"`
 }
 
 // MergeRequestFields contains post body fields specific to merge request posts

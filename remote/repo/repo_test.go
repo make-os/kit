@@ -478,7 +478,7 @@ var _ = Describe("Repo", func() {
 		})
 
 		It("should successfully create a worktree clone", func() {
-			clone, temp, err := r.Clone(types.CloneOption{
+			clone, temp, err := r.Clone(types.CloneOptions{
 				Bare:          true,
 				ReferenceName: "refs/heads/dev",
 				Depth:         1,
@@ -492,6 +492,37 @@ var _ = Describe("Repo", func() {
 			numCommit, err := clone.NumCommits("dev", true)
 			Expect(err).To(BeNil())
 			Expect(numCommit).To(Equal(1))
+		})
+	})
+
+	Describe(".Push", func() {
+		BeforeEach(func() {
+			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			Expect(err).To(BeNil())
+		})
+
+		It("should successfully push", func() {
+			ref := "refs/heads/dev"
+			remote, temp, err := r.Clone(types.CloneOptions{Bare: true, ReferenceName: ref})
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(temp)
+			remoteHash := testutil2.GetRecentCommitHash(remote.GetPath(), ref)
+
+			clone, temp2, err2 := remote.Clone(types.CloneOptions{ReferenceName: ref})
+			Expect(err2).To(BeNil())
+			defer os.RemoveAll(temp2)
+			testutil2.AppendCommit(clone.GetPath(), "text.txt", "some text", "commit msg")
+			cloneHash := testutil2.GetRecentCommitHash(clone.GetPath(), ref)
+			Expect(remoteHash).ToNot(Equal(cloneHash))
+
+			_, err = clone.Push(types.PushOptions{
+				RemoteName: "origin",
+				RefSpec:    "+refs/heads/dev:refs/heads/dev",
+				Token:      "",
+			})
+			Expect(err).To(BeNil())
+			curRemoteHash := testutil2.GetRecentCommitHash(remote.GetPath(), ref)
+			Expect(curRemoteHash).To(Equal(cloneHash))
 		})
 	})
 

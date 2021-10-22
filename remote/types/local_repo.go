@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/go-git/go-git/v5/config"
@@ -11,7 +12,7 @@ import (
 	"github.com/make-os/kit/types/state"
 )
 
-type CloneOption struct {
+type CloneOptions struct {
 	Bare          bool
 	ReferenceName string
 	Depth         int
@@ -106,7 +107,7 @@ type LocalRepo interface {
 	// into and a nil error on success.
 	//  - bare: When true, a worktree is created, otherwise a bare repo is created.
 	//  - referenceName: Optionally limit fetching to the given reference
-	Clone(option CloneOption) (LocalRepo, string, error)
+	Clone(option CloneOptions) (LocalRepo, string, error)
 
 	// IsClean checks whether the working directory has no un-tracked, staged or modified files
 	IsClean() (bool, error)
@@ -191,6 +192,15 @@ type LocalRepo interface {
 	// one parent, the diff will be run for all parents.
 	//  - commitHash: The child commit hash.
 	GetParentAndChildCommitDiff(commitHash string) (*GetCommitDiffResult, error)
+
+	// Push performs push to the repository
+	Push(options PushOptions) (progress bytes.Buffer, err error)
+}
+
+type PushOptions struct {
+	RemoteName string
+	RefSpec    string
+	Token      string
 }
 
 type GetCommitDiffResult struct {

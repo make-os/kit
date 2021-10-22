@@ -171,7 +171,7 @@ var _ = Describe("Contract", func() {
 				refs = []*types.PushedReference{{
 					Name: ref,
 					Fee:  "1",
-					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: remotetypes.IssueFields{Labels: &labels, Assignees: &assignees}},
+					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: remotetypes.IssueFields{Labels: labels, Assignees: assignees}},
 				}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -208,7 +208,7 @@ var _ = Describe("Contract", func() {
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Labels: &[]string{"-label1"}}},
+						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Labels: []string{"-label1"}}},
 					}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -226,7 +226,7 @@ var _ = Describe("Contract", func() {
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Assignees: &[]string{"-key1"}}}}}
+						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Assignees: []string{"-key1"}}}}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},

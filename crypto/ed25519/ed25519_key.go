@@ -102,14 +102,29 @@ func (k *Key) PubKey() *PubKey {
 	}
 }
 
+// PrivKey returns the private key
+func (k *Key) PrivKey() *PrivKey {
+	return k.privKey
+}
+
+// UnwrappedPrivKey returns the standard private key
+func (k *Key) UnwrappedPrivKey() crypto.PrivKey {
+	return k.privKey.Unwrap()
+}
+
+// UnwrappedPubKey returns the standard public key
+func (k *Key) UnwrappedPubKey() crypto.PubKey {
+	return k.privKey.privKey.GetPublic()
+}
+
 // PrivKey represents a private key
 type PrivKey struct {
 	privKey crypto.PrivKey
 }
 
-// PrivKey returns the private key
-func (k *Key) PrivKey() *PrivKey {
-	return k.privKey
+// Wrap wraps the p in Key
+func (p *PrivKey) Wrap() *Key {
+	return NewKeyFromPrivKey(p)
 }
 
 // Bytes returns the byte equivalent of the public key
@@ -175,8 +190,8 @@ func (p *PrivKey) MustSign(data []byte) []byte {
 	return sig
 }
 
-// Key returns the wrapped crypto.PrivKey
-func (p *PrivKey) Key() crypto.PrivKey {
+// Unwrap returns the wrapped crypto.PrivKey
+func (p *PrivKey) Unwrap() crypto.PrivKey {
 	return p.privKey
 }
 

@@ -101,7 +101,7 @@ func ReadPostBody(repo types.LocalRepo, hash string) (*PostBody, *object.Commit,
 	return PostBodyFromContentFrontMatter(&cfm), commit, nil
 }
 
-// GetComment returns the comments in the post
+// GetComments returns the comments in the post
 func (p *Post) GetComments() (comments Comments, err error) {
 	hashes, err := p.Repo.GetRefCommits(p.Name, true)
 	if err != nil {
@@ -373,7 +373,7 @@ func (b *PostBody) IncludesAdminFields() bool {
 
 // PostBodyFromContentFrontMatter attempts to load the instance from
 // the specified content front matter object; It will find expected
-// fields and try to cast the their expected type. It will not validate
+// fields and try to cast their expected type. It will not validate
 // or return any error.
 func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBody {
 	ob := objx.New(cfm.FrontMatter)
@@ -394,12 +394,12 @@ func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBod
 
 	if ob.Has("labels") {
 		labels := cast.ToStringSlice(ob.Get("labels").InterSlice())
-		b.Labels = &labels
+		b.Labels = labels
 	}
 
 	if ob.Has("assignees") {
 		assignees := cast.ToStringSlice(ob.Get("assignees").InterSlice())
-		b.Assignees = &assignees
+		b.Assignees = assignees
 	}
 
 	return b
@@ -422,7 +422,8 @@ type PostEntry interface {
 	Comment() *Comment
 }
 
-type FreePostIDFinder func(repo types.LocalRepo, startID int, postRefType string) (int, error)
+// GetFreePostIDFunc describes GetFreePostID function signature
+type GetFreePostIDFunc func(repo types.LocalRepo, startID int, postRefType string) (int, error)
 
 // GetFreePostID finds and returns an ID that is unused within the post reference type
 func GetFreePostID(repo types.LocalRepo, startID int, postRefType string) (int, error) {
@@ -472,7 +473,7 @@ type CreatePostCommitArgs struct {
 	Force bool
 
 	// GetFreePostID is used to find a free post ID
-	GetFreePostID FreePostIDFinder
+	GetFreePostID GetFreePostIDFunc
 }
 
 // CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
@@ -523,7 +524,7 @@ func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool
 		return false, "", fmt.Errorf("can't add comment to a non-existing post")
 	}
 
-	// Create an post commit (pass the current reference hash as parent)
+	// Create a post commit (pass the current reference hash as parent)
 	commitHash, err := r.CreateSingleFileCommit("body", args.Body, "", hash)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to create post commit")

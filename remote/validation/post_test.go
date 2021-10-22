@@ -188,7 +188,7 @@ var _ = Describe("Validation", func() {
 						TxDetail:    detail,
 						CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
 						CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
-							return &plumbing2.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"label_update"}}}, nil
+							return &plumbing2.PostBody{IssueFields: types.IssueFields{Labels: []string{"label_update"}}}, nil
 						},
 					}
 					err := validation.ValidatePostCommit(mockRepo, commit, args)
@@ -217,8 +217,8 @@ var _ = Describe("Validation", func() {
 						return &plumbing2.PostBody{
 							Close: &cls,
 							IssueFields: types.IssueFields{
-								Labels:    &[]string{"l1", "l2"},
-								Assignees: &[]string{"key1", "key2"},
+								Labels:    []string{"l1", "l2"},
+								Assignees: []string{"key1", "key2"},
 							},
 						}, nil
 					},
@@ -228,8 +228,8 @@ var _ = Describe("Validation", func() {
 				Expect(err).To(BeNil())
 				Expect(callCount).To(Equal(1))
 				Expect(*detail.Data().Close).To(Equal(true))
-				Expect(*detail.Data().Labels).To(Equal([]string{"l1", "l2"}))
-				Expect(*detail.Data().Assignees).To(Equal([]string{"key1", "key2"}))
+				Expect(detail.Data().Labels).To(Equal([]string{"l1", "l2"}))
+				Expect(detail.Data().Assignees).To(Equal([]string{"key1", "key2"}))
 			})
 
 			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {

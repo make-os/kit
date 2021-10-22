@@ -76,7 +76,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Register", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"pubKey": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'pubKey[0]' expected type 'uint8', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'pubKey[0]' expected type 'uint8', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params)
 			})
@@ -84,9 +84,8 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"pubKey": pk.PubKey().Base58()}
-			res := m.Register(params, key, payloadOnly)
+			res := m.Register(params, key, true)
 			Expect(res).To(HaveKey("pubKey"))
 			Expect(res).ToNot(HaveKey("hash"))
 			Expect(res["type"]).To(Equal(float64(txns.TxTypeRegisterPushKey)))
@@ -145,7 +144,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Update", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Update(params)
 			})
@@ -153,9 +152,8 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
-			res := m.Update(params, key, payloadOnly)
+			res := m.Update(params, key, true)
 			Expect(res).To(HaveKey("id"))
 			Expect(res["id"]).To(Equal(pk.PushAddr().String()))
 			Expect(res).ToNot(HaveKey("hash"))
@@ -196,7 +194,7 @@ var _ = Describe("PushKeyModule", func() {
 	Describe(".Unregister", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"id": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'id' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Unregister(params)
 			})
@@ -204,9 +202,8 @@ var _ = Describe("PushKeyModule", func() {
 
 		It("should return tx map equivalent if payloadOnly=true", func() {
 			key := ""
-			payloadOnly := true
 			params := map[string]interface{}{"id": pk.PushAddr().String()}
-			res := m.Unregister(params, key, payloadOnly)
+			res := m.Unregister(params, key, true)
 			Expect(res).To(HaveKey("id"))
 			Expect(res["id"]).To(Equal(pk.PushAddr().String()))
 			Expect(res).ToNot(HaveKey("hash"))

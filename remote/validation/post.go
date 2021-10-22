@@ -10,7 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/jinzhu/copier"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	pl "github.com/make-os/kit/remote/plumbing"
 	rr "github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/core"
@@ -129,14 +129,14 @@ type CheckPostCommitArgs struct {
 type PostCommitChecker func(
 	repo types.LocalRepo,
 	commit types.Commit,
-	args *CheckPostCommitArgs) (*plumbing2.PostBody, error)
+	args *CheckPostCommitArgs) (*pl.PostBody, error)
 
 // CheckPostCommit validates new commits of a post reference. It returns nil post body
 // and error if validation failed or a post body and nil if validation passed.
-func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostCommitArgs) (*pl.PostBody, error) {
 
 	// Reference name must be valid
-	if !plumbing2.IsIssueReference(args.Reference) && !plumbing2.IsMergeRequestReference(args.Reference) {
+	if !pl.IsIssueReference(args.Reference) && !pl.IsMergeRequestReference(args.Reference) {
 		return nil, fmt.Errorf("post number is not valid. Must be numeric")
 	}
 
@@ -188,7 +188,7 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 		return nil, err
 	}
 
-	return plumbing2.PostBodyFromContentFrontMatter(&cfm), nil
+	return pl.PostBodyFromContentFrontMatter(&cfm), nil
 }
 
 // CheckPostBody checks whether the front matter and content extracted from a post body is ok.
@@ -210,8 +210,8 @@ func CheckPostBody(
 	var commonFields = []string{"title", "reactions", "replyTo", "close"}
 	var issueFields = []string{"labels", "assignees"}
 	var allowedFields []string
-	var isIssuePost = plumbing2.IsIssueReference(reference)
-	var isMergeReqPost = plumbing2.IsMergeRequestReference(reference)
+	var isIssuePost = pl.IsIssueReference(reference)
+	var isMergeReqPost = pl.IsMergeRequestReference(reference)
 
 	// Check whether the fields are allowed for the type of post reference
 	if isIssuePost {
@@ -414,7 +414,7 @@ func CheckMergeRequestPostBodyConsistency(
 		// Get the merge request proposal and check if
 		// it has been finalized; if it has, ensure the body does not include
 		// merge request fields since a finalized merge request cannot be changed.
-		id := mergerequest.MakeMergeRequestProposalID(plumbing2.GetReferenceShortName(reference))
+		id := mergerequest.MakeMergeRequestProposalID(pl.GetReferenceShortName(reference))
 		proposal := repoState.Proposals.Get(id)
 		if proposal == nil {
 			return fmt.Errorf("merge request proposal not found") // should not happen

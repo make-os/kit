@@ -9,6 +9,7 @@ import (
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/fetcher"
 	pushtypes "github.com/make-os/kit/remote/push/types"
+	"github.com/make-os/kit/remote/temprepomgr"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/rpc"
 )
@@ -76,6 +77,9 @@ type RemoteServer interface {
 
 	// GetFetcher returns the fetcher service
 	GetFetcher() fetcher.ObjectFetcher
+
+	// GetTempRepoManager returns the temporary repository manager
+	GetTempRepoManager() temprepomgr.TempRepoManager
 
 	// CheckNote validates a push note
 	CheckNote(note pushtypes.PushNote) error

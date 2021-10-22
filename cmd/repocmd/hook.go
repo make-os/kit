@@ -50,7 +50,7 @@ type HookArgs struct {
 	Stdin  io.Reader
 }
 
-// HookCmd handles pre-push calls by git
+// HookCmd handles git hook operations
 func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error {
 
 	updates, err := ioutil.ReadAll(args.Stdin)

@@ -74,6 +74,7 @@ genmocks:
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks
 	mockgen -source=remote/fetcher/object_fetcher.go -destination=mocks/object_fetcher.go -package mocks
+	mockgen -source=remote/temprepomgr/interface.go -destination=mocks/temprepomgr.go -package mocks
 	mockgen -source=remote/refsync/types/types.go -destination=mocks/refsync.go -package mocks
 	mockgen -source=remote/push/types/interfaces.go -destination=mocks/push_types.go -package mocks
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks

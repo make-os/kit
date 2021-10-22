@@ -198,7 +198,7 @@ var _ = Describe("TxModule", func() {
 
 		It("should panic if unable to decoded parameter", func() {
 			params := map[string]interface{}{"type": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'type' expected type 'types.TxCode', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.SendPayload(params)
 			})

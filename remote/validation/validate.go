@@ -36,7 +36,7 @@ type ChangeValidatorFunc func(
 // oldHash: The hash of the old reference
 // change: The change to the reference
 // txDetail: The pusher transaction detail
-// getPushKey: Getter function for reading push key public key
+// getPushKey: The getter function for reading push key public key
 func ValidateChange(
 	keepers core.Keepers,
 	localRepo types.LocalRepo,

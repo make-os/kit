@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	bytes "bytes"
 	config "github.com/go-git/go-git/v5/config"
 	plumbing "github.com/go-git/go-git/v5/plumbing"
 	object "github.com/go-git/go-git/v5/plumbing/object"
@@ -591,6 +592,22 @@ func (m *MockLocalRepo) Checkout(arg0 string, arg1, arg2 bool) error {
 func (mr *MockLocalRepoMockRecorder) Checkout(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLocalRepo)(nil).Checkout), arg0, arg1, arg2)
+}
+
+// Clone mocks base method
+func (m *MockLocalRepo) Clone(arg0 types.CloneOptions) (types.LocalRepo, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Clone", arg0)
+	ret0, _ := ret[0].(types.LocalRepo)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Clone indicates an expected call of Clone
+func (mr *MockLocalRepoMockRecorder) Clone(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clone", reflect.TypeOf((*MockLocalRepo)(nil).Clone), arg0)
 }
 
 // CommitObject mocks base method
@@ -1428,6 +1445,21 @@ func (m *MockLocalRepo) Prune(arg0 time.Time) error {
 func (mr *MockLocalRepoMockRecorder) Prune(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockLocalRepo)(nil).Prune), arg0)
+}
+
+// Push mocks base method
+func (m *MockLocalRepo) Push(arg0 types.PushOptions) (bytes.Buffer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Push", arg0)
+	ret0, _ := ret[0].(bytes.Buffer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Push indicates an expected call of Push
+func (mr *MockLocalRepoMockRecorder) Push(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockLocalRepo)(nil).Push), arg0)
 }
 
 // RefDelete mocks base method

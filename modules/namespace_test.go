@@ -120,7 +120,7 @@ var _ = Describe("NamespaceModule", func() {
 	Describe(".Register", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Register(params)
 			})
@@ -169,7 +169,7 @@ var _ = Describe("NamespaceModule", func() {
 	Describe(".UpdateDomain", func() {
 		It("should panic when unable to decode params", func() {
 			params := map[string]interface{}{"name": struct{}{}}
-			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}'", Field: "params"}
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "1 error(s) decoding:\n\n* 'name' expected type 'string', got unconvertible type 'struct {}', value: '{}'", Field: "params"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.UpdateDomain(params)
 			})

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
@@ -48,7 +49,7 @@ var issueCreateCmd = &cobra.Command{
 		cls, _ := cmd.Flags().GetBool("close")
 		forceNew, _ := cmd.Flags().GetBool("new")
 		force, _ := cmd.Flags().GetBool("force")
-		open, _ := cmd.Flags().GetBool("reopen")
+		reopen, _ := cmd.Flags().GetBool("reopen")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetString("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
@@ -98,28 +99,28 @@ var issueCreateCmd = &cobra.Command{
 		}
 
 		if cmd.Flags().Changed("reopen") {
-			issueCreateArgs.Open = &open
+			issueCreateArgs.Close = pointer.ToBool(reopen)
 		}
 
 		if cmd.Flags().Changed("labels") {
 			if labels == "" {
-				issueCreateArgs.Labels = &[]string{}
+				issueCreateArgs.Labels = []string{}
 			} else {
 				labels := funk.UniqString(strings.Split(labels, ","))
-				issueCreateArgs.Labels = &labels
+				issueCreateArgs.Labels = labels
 			}
 		}
 
 		if cmd.Flags().Changed("assignees") {
 			if assignees == "" {
-				issueCreateArgs.Assignees = &[]string{}
+				issueCreateArgs.Assignees = []string{}
 			} else {
 				assignees := funk.UniqString(strings.Split(assignees, ","))
-				issueCreateArgs.Assignees = &assignees
+				issueCreateArgs.Assignees = assignees
 			}
 		}
 
-		if err := IssueCreateCmd(curRepo, issueCreateArgs); err != nil {
+		if _, err := IssueCreateCmd(curRepo, issueCreateArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

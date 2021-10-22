@@ -47,7 +47,6 @@ var mergeReqCreateCmd = &cobra.Command{
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		noBody, _ := cmd.Flags().GetBool("no-body")
 		cls, _ := cmd.Flags().GetBool("close")
-		open, _ := cmd.Flags().GetBool("reopen")
 		forceNew, _ := cmd.Flags().GetBool("new")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
@@ -147,7 +146,6 @@ var mergeReqCreateCmd = &cobra.Command{
 			Reactions:          funk.UniqString(reactions),
 			UseEditor:          useEditor,
 			EditorPath:         editorPath,
-			Open:               open,
 			Base:               baseBranch,
 			BaseHash:           baseBranchHash,
 			Target:             targetBranch,
@@ -164,7 +162,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			mrCreateArgs.Close = &cls
 		}
 
-		if err := MergeRequestCreateCmd(r, mrCreateArgs); err != nil {
+		if _, err := MergeRequestCreateCmd(r, mrCreateArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

@@ -77,10 +77,10 @@ func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 	var labels, assignees interface{} = nil, nil
 	if rd.Labels != nil {
-		labels = strings.Join(*rd.Labels, " ")
+		labels = strings.Join(rd.Labels, " ")
 	}
 	if rd.Assignees != nil {
-		assignees = strings.Join(*rd.Assignees, " ")
+		assignees = strings.Join(rd.Assignees, " ")
 	}
 
 	return rd.EncodeMulti(enc, []interface{}{
@@ -124,12 +124,12 @@ func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 	if v := data[5]; v != nil {
 		labels := strings.Fields(cast.ToString(v))
-		rd.Labels = &labels
+		rd.Labels = labels
 	}
 
 	if v := data[6]; v != nil {
 		assignees := strings.Fields(cast.ToString(v))
-		rd.Assignees = &assignees
+		rd.Assignees = assignees
 	}
 
 	return

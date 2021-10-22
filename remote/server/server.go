@@ -29,6 +29,7 @@ import (
 	"github.com/make-os/kit/remote/refsync"
 	rstypes "github.com/make-os/kit/remote/refsync/types"
 	rr "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/temprepomgr"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/rpc"
@@ -65,24 +66,25 @@ var services = [][]interface{}{
 type Server struct {
 	p2p.BaseReactor
 	cfg           *config.AppConfig
-	log           logger.Logger         // log is the application logger
-	wg            *sync.WaitGroup       // wait group for waiting for the remote server
-	mux           *http.ServeMux        // The request multiplexer
-	srv           *http.Server          // The http server
-	rpcHandler    *rpc.Handler          // JSON-RPC 2.0 handler
-	rootDir       string                // the root directory where all repos are stored
-	validatorKey  *ed25519.Key          // the node's private validator key for signing transactions
-	addr          string                // addr is the listening address for the http server
-	gitBinPath    string                // gitBinPath is the path of the git executable
-	pushPool      pushtypes.PushPool    // The transaction pool for push transactions
-	mempool       core.Mempool          // The general transaction pool for block-bound transaction
-	logic         core.Logic            // logic is the application logic provider
-	nodeService   nodeService.Service   // The node external service provider
-	pushKeyGetter core.PushKeyGetter    // finds and returns PGP public key
-	dht           dht2.DHT              // The dht service
-	objFetcher    fetcher.ObjectFetcher // The object fetcher service
-	blockGetter   core.BlockGetter      // Provides access to blocks
-	refSyncer     rstypes.RefSync       // Responsible for syncing pushed references in a push transaction
+	log           logger.Logger               // log is the application logger
+	wg            *sync.WaitGroup             // wait group for waiting for the remote server
+	mux           *http.ServeMux              // The request multiplexer
+	srv           *http.Server                // The http server
+	rpcHandler    *rpc.Handler                // JSON-RPC 2.0 handler
+	rootDir       string                      // the root directory where all repos are stored
+	validatorKey  *ed25519.Key                // the node's private validator key for signing transactions
+	addr          string                      // addr is the listening address for the http server
+	gitBinPath    string                      // gitBinPath is the path of the git executable
+	pushPool      pushtypes.PushPool          // The transaction pool for push transactions
+	mempool       core.Mempool                // The general transaction pool for block-bound transaction
+	logic         core.Logic                  // logic is the application logic provider
+	nodeService   nodeService.Service         // The node external service provider
+	pushKeyGetter core.PushKeyGetter          // finds and returns PGP public key
+	dht           dht2.DHT                    // The dht service
+	objFetcher    fetcher.ObjectFetcher       // The object fetcher service
+	blockGetter   core.BlockGetter            // Provides access to blocks
+	refSyncer     rstypes.RefSync             // Responsible for syncing pushed references in a push transaction
+	tmpRepoMgr    temprepomgr.TempRepoManager // The temporary repo manager
 
 	// Indexes
 	noteSenders        *cache.Cache // Store senders of push notes
@@ -147,6 +149,7 @@ func New(
 		mempool:                 mempool,
 		blockGetter:             blockGetter,
 		refSyncer:               refsync.New(cfg, pushPool, mFetcher, dht, appLogic),
+		tmpRepoMgr:              temprepomgr.New(),
 		authenticate:            authenticate,
 		checkPushNote:           validation.CheckPushNote,
 		makeReferenceUpdatePack: push.MakeReferenceUpdateRequestPack,
@@ -220,6 +223,11 @@ func (sv *Server) SetRootDir(dir string) {
 // GetFetcher returns the fetcher service
 func (sv *Server) GetFetcher() fetcher.ObjectFetcher {
 	return sv.objFetcher
+}
+
+// GetTempRepoManager returns the temporary repository manager
+func (sv *Server) GetTempRepoManager() temprepomgr.TempRepoManager {
+	return sv.tmpRepoMgr
 }
 
 // getPushKey returns a pusher key by its ID

@@ -55,7 +55,7 @@ var _ = Describe("ConfigCmd", func() {
 			mockRepo = mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
 			args := &ConfigArgs{}
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(MatchError("error"))
 		})
 
@@ -73,7 +73,7 @@ var _ = Describe("ConfigCmd", func() {
 					actual = pass
 					return fmt.Errorf("")
 				}}
-			_ = ConfigCmd(nil, mockRepo, args)
+			_ = ConfigCmd(mockRepo, args)
 			Expect(actual).To(Equal(expected))
 		})
 
@@ -81,7 +81,7 @@ var _ = Describe("ConfigCmd", func() {
 			fee := 12.3
 			args := &ConfigArgs{Fee: &fee}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("fee")).To(Equal("12.3"))
 		})
@@ -89,7 +89,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set user.fee = 0 if args.Fee is unset", func() {
 			args := &ConfigArgs{Fee: nil}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("fee")).To(Equal("0"))
 		})
@@ -98,7 +98,7 @@ var _ = Describe("ConfigCmd", func() {
 			value := 12.3
 			args := &ConfigArgs{Value: &value}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("value")).To(Equal("12.3"))
 		})
@@ -107,7 +107,7 @@ var _ = Describe("ConfigCmd", func() {
 			nonce := uint64(23)
 			args := &ConfigArgs{Nonce: &nonce}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("nonce")).To(Equal("23"))
 		})
@@ -115,7 +115,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set user.nonce=0 if args.Nonce is unset", func() {
 			args := &ConfigArgs{Nonce: nil}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("nonce")).To(Equal("0"))
 		})
@@ -124,7 +124,7 @@ var _ = Describe("ConfigCmd", func() {
 			signingKey := "key"
 			args := &ConfigArgs{SigningKey: &signingKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
@@ -134,7 +134,7 @@ var _ = Describe("ConfigCmd", func() {
 			pushKey := "push_key"
 			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal(pushKey))
 		})
@@ -144,7 +144,7 @@ var _ = Describe("ConfigCmd", func() {
 			pushKey := ""
 			args := &ConfigArgs{SigningKey: &signingKey, PushKey: &pushKey}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("user").Option("signingKey")).To(Equal("key"))
 		})
@@ -167,7 +167,7 @@ var _ = Describe("ConfigCmd", func() {
 						return mockCmd
 					},
 				}
-				err = ConfigCmd(cfg, mockRepo, args)
+				err = ConfigCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to start passphrase agent: error"))
 			})
@@ -182,7 +182,7 @@ var _ = Describe("ConfigCmd", func() {
 					},
 					PassCacheTTL: "invalid",
 				}
-				err = ConfigCmd(cfg, mockRepo, args)
+				err = ConfigCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("passphrase cache duration is not valid"))
 			})
@@ -200,7 +200,7 @@ var _ = Describe("ConfigCmd", func() {
 						return fmt.Errorf("error")
 					},
 				}
-				err = ConfigCmd(cfg, mockRepo, args)
+				err = ConfigCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to send set request to passphrase agent: error"))
 			})
@@ -209,7 +209,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set remotes", func() {
 			args := &ConfigArgs{Remotes: []Remote{{Name: "r1", URL: "remote.com,remote2.com"}, {Name: "r2", URL: "remote3.com"}}}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Remotes).To(HaveLen(2))
 			Expect(repoCfg.Remotes["r1"].Name).To(Equal("r1"))
@@ -223,7 +223,7 @@ var _ = Describe("ConfigCmd", func() {
 				config.DefaultRemoteServerAddress = "127.0.0.1:9000"
 				args := &ConfigArgs{Remotes: []Remote{}}
 				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-				err = ConfigCmd(cfg, mockRepo, args)
+				err = ConfigCmd(mockRepo, args)
 				Expect(err).To(BeNil())
 				Expect(repoCfg.Remotes).To(HaveLen(1))
 				Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
@@ -234,7 +234,7 @@ var _ = Describe("ConfigCmd", func() {
 				config.DefaultRemoteServerAddress = ":9000"
 				args := &ConfigArgs{Remotes: []Remote{}}
 				mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-				err = ConfigCmd(cfg, mockRepo, args)
+				err = ConfigCmd(mockRepo, args)
 				Expect(err).To(BeNil())
 				Expect(repoCfg.Remotes).To(HaveLen(1))
 				Expect(repoCfg.Remotes["origin"].Name).To(Equal("origin"))
@@ -245,7 +245,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should add pre-push hook file", func() {
 			args := &ConfigArgs{}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			prePush, err := ioutil.ReadFile(filepath.Join(hooksDir, "pre-push"))
 			Expect(err).To(BeNil())
@@ -255,7 +255,7 @@ var _ = Describe("ConfigCmd", func() {
 		It("should set core.askPass to AppName if args.NoHook is false", func() {
 			args := &ConfigArgs{NoHook: false}
 			mockRepo.EXPECT().SetConfig(repoCfg).Return(nil)
-			err = ConfigCmd(cfg, mockRepo, args)
+			err = ConfigCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 			Expect(repoCfg.Raw.Section("core").Option("askPass")).To(ContainSubstring(config.AppName))
 		})

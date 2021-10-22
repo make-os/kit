@@ -27,10 +27,13 @@ const (
 	StatusCodeRepoNotFound          = "repo_not_found"
 	StatusCodePathNotFound          = "path_not_found"
 	StatusCodePathNotAFile          = "path_not_file"
-	StatusCodeReferenceNotFound     = "reference_not_found"
 	StatusCodeBranchNotFound        = "branch_not_found"
 	StatusCodeCommitNotFound        = "commit_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
+	StatusCodeInvalidTempRepoID     = "invalid_temp_repo_id"
+	StatusCodeInvalidReferenceName  = "invalid_reference_name"
+	StatusCodeInvalidPrivateKey     = "invalid_private_key"
+	StatusCodePushFailure           = "push_failure"
 )
 
 var se = errors2.ReqErr

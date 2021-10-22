@@ -334,8 +334,8 @@ content`, "commit 2")
 			Expect(*issue.Close).To(BeTrue())
 			Expect(issue.ReplyTo).To(Equal("12345"))
 			Expect(issue.Reactions).To(Equal([]string{"smile"}))
-			Expect(*issue.Labels).To(Equal([]string{"help"}))
-			Expect(*issue.Assignees).To(Equal([]string{"pk1abc"}))
+			Expect(issue.Labels).To(Equal([]string{"help"}))
+			Expect(issue.Assignees).To(Equal([]string{"pk1abc"}))
 		})
 
 		It("case 2 - when close, labels, assignees are unset, it should be nil", func() {
@@ -367,7 +367,7 @@ content`, "commit 2")
 			Expect(str).To(Equal("---\nreplyTo: \"0x123\"\n---\n"))
 		})
 
-		It("should not 'reactions' when empty", func() {
+		It("should not set 'reactions' when empty", func() {
 			body := &plumbing.PostBody{Reactions: []string{}}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
@@ -403,17 +403,17 @@ content`, "commit 2")
 		})
 
 		It("should set 'label' when it is not nil", func() {
-			lbls := []string{}
-			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: &lbls}}
+			var lbls []string
+			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: lbls}}
 			str := plumbing.PostBodyToString(body)
-			Expect(str).To(Equal("---\nlabels: []\n---\n"))
+			Expect(str).To(Equal(""))
 		})
 	})
 
 	Describe("PostBody.IncludesAdminFields", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"val"}}}).IncludesAdminFields()).To(BeTrue())
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: &[]string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{}).IncludesAdminFields()).To(BeFalse())
 			Expect((&plumbing.PostBody{Close: &cls}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{Close: &dontClose}).IncludesAdminFields()).To(BeTrue())

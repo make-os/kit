@@ -5,13 +5,22 @@ import (
 	"os"
 	"strings"
 
+	"github.com/AlekSi/pointer"
+	"github.com/acarl005/stripansi"
 	"github.com/c-bata/go-prompt"
 	"github.com/go-git/go-git/v5"
+	gogitcfg "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/make-os/kit/cmd/issuecmd"
+	"github.com/make-os/kit/cmd/mergecmd"
+	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
 	modtypes "github.com/make-os/kit/modules/types"
 	"github.com/make-os/kit/node/services"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/server"
+	remotetypes "github.com/make-os/kit/remote/types"
 	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/api"
@@ -21,16 +30,22 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
+	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
+	"github.com/stretchr/objx"
 )
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
 	modtypes.ModuleCommon
-	logic   core.Logic
-	service services.Service
-	repoSrv core.RemoteServer
+	logic              core.Logic
+	service            services.Service
+	repoSrv            core.RemoteServer
+	PostIDFinder       pl.GetFreePostIDFunc
+	GetLocalRepo       repo.GetLocalRepoFunc
+	IssueCreate        issuecmd.IssueCreateCmdFunc
+	MergeRequestCreate mergecmd.MergeRequestCreateCmdFunc
 }
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
@@ -40,7 +55,15 @@ func NewAttachableRepoModule(client rpctypes.Client) *RepoModule {
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic core.Logic) *RepoModule {
-	return &RepoModule{service: service, logic: logic, repoSrv: repoSrv}
+	return &RepoModule{
+		service:            service,
+		logic:              logic,
+		repoSrv:            repoSrv,
+		PostIDFinder:       pl.GetFreePostID,
+		GetLocalRepo:       repo.GetWithGitModule,
+		IssueCreate:        issuecmd.IssueCreateCmd,
+		MergeRequestCreate: mergecmd.MergeRequestCreateCmd,
+	}
 }
 
 // methods are functions exposed in the special namespace of this module.
@@ -57,6 +80,10 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "untrack", Value: m.UnTrack, Description: "Untrack one or more repositories"},
 		{Name: "tracked", Value: m.GetTracked, Description: "Get a list of tracked repositories"},
 		{Name: "listByCreator", Value: m.GetReposCreatedByAddress, Description: "List repositories created by an address"},
+
+		{Name: "createIssue", Value: m.CreateIssue, Description: "Create an issue, add comments or edit an existing issue"},
+		{Name: "createMergeRequest", Value: m.CreateMergeRequest, Description: "Create a merge request, add comments or edit an existing merge request"},
+		{Name: "push", Value: m.Push, Description: "Sign and push a commit, tag or note"},
 
 		// Repository query methods.
 		{Name: "ls", Value: m.ListPath, Description: "List files and directories of a repository"},
@@ -507,7 +534,7 @@ func (m *RepoModule) ListPath(name, path string, revision ...string) []util.Map 
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -553,7 +580,7 @@ func (m *RepoModule) ReadFileLines(name, filePath string, revision ...string) []
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -599,7 +626,7 @@ func (m *RepoModule) ReadFile(name, filePath string, revision ...string) string 
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -638,7 +665,7 @@ func (m *RepoModule) GetBranches(name string) []string {
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -671,7 +698,7 @@ func (m *RepoModule) GetLatestBranchCommit(name, branch string) util.Map {
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -704,7 +731,7 @@ func (m *RepoModule) GetCommits(name, branch string, limit ...int) []util.Map {
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -740,7 +767,7 @@ func (m *RepoModule) GetCommit(name, hash string) util.Map {
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -772,7 +799,7 @@ func (m *RepoModule) CountCommits(name, ref string) int {
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -804,7 +831,7 @@ func (m *RepoModule) GetCommitAncestors(name, commitHash string, limit ...int) [
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -840,7 +867,7 @@ func (m *RepoModule) GetParentsAndCommitDiff(name string, commitHash string) uti
 	}
 
 	repoPath := m.logic.Config().GetRepoPath(name)
-	r, err := repo.GetWithGitModule(m.logic.Config().Node.GitBinPath, repoPath)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
 	if err != nil {
 		if err == git.ErrRepositoryNotExists {
 			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
@@ -857,4 +884,270 @@ func (m *RepoModule) GetParentsAndCommitDiff(name string, commitHash string) uti
 	}
 
 	return util.ToMap(res)
+}
+
+// CreateIssue creates an issue or adds a comment to an issue.
+//  - name: The name of the repository.
+//  - params: Issue parameters.
+//    - id: The new issue ID or ID of an existing issue to reply to.
+//    - title: The title of the issue.
+//    - body: The body of the issue.
+//    - replyHash: The commit hash of a comment being replied to.
+//    - reactions: An array of unicode emojis.
+//    - labels: A list of labels.
+//    - assignees: A list of assignees.
+//    - close: Closes the issue status.
+func (m *RepoModule) CreateIssue(name string, params map[string]interface{}) util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	// Generate a new issue ID
+	o := objx.New(params)
+	id := cast.ToInt(o.Get("id").Inter())
+	if id == 0 {
+		id, err = m.PostIDFinder(r, 1, pl.IssueBranchPrefix)
+		if err != nil {
+			panic(se(500, StatusCodeServerErr, "", err.Error()))
+		}
+	}
+
+	// Clone the repository and the issue reference.
+	// Determine the full issue reference name and check
+	// if it exists. If it does not reset to empty string.
+	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: pl.MakeIssueReference(id)}
+	_, err = r.RefGet(cloneOpts.ReferenceName)
+	if err != nil {
+		cloneOpts.ReferenceName = ""
+	}
+	cloned, _, err := r.Clone(cloneOpts)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", errors.Wrap(err, "failed to clone repo").Error()))
+	}
+
+	// Create the issue
+	args := &issuecmd.IssueCreateArgs{
+		ID:                 id,
+		Title:              o.Get("title").Str(),
+		Body:               o.Get("body").Str(),
+		ReplyHash:          o.Get("replyHash").Str(),
+		Reactions:          cast.ToStringSlice(o.Get("reactions").Inter()),
+		Labels:             cast.ToStringSlice(o.Get("labels").Inter()),
+		Assignees:          cast.ToStringSlice(o.Get("assignees").Inter()),
+		PostCommentCreator: pl.CreatePostCommit,
+	}
+	closeIssue := o.Get("close")
+	if !closeIssue.IsNil() {
+		args.Close = pointer.ToBool(closeIssue.Bool())
+	}
+
+	res, err := m.IssueCreate(cloned, args)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	refHash, err := cloned.RefGet(res.Reference)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Add cloned repo path to temp repo manager.
+	tempRepoID := m.repoSrv.GetTempRepoManager().Add(cloned.GetPath())
+
+	return map[string]interface{}{
+		"hash":      refHash,
+		"reference": res.Reference,
+		"repoID":    tempRepoID,
+	}
+}
+
+// CreateMergeRequest creates a merge request or adds a comment to an existing merge request.
+//  - name: The name of the repository.
+//  - params: Issue parameters.
+//    - id: The new issue ID or ID of an existing issue to reply to.
+//    - base: The base branch name.
+//    - baseHash: The base branch hash.
+//    - target: The target branch name.
+//    - targetHash: The target branch hash.
+//    - title: The title of the issue.
+//    - body: The body of the issue.
+//    - replyHash: The commit hash of a comment being replied to.
+//    - reactions: An array of unicode emojis.
+//    - close: Closes the issue status.
+func (m *RepoModule) CreateMergeRequest(name string, params map[string]interface{}) util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	repoPath := m.logic.Config().GetRepoPath(name)
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, repoPath)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	// Generate a new issue ID
+	o := objx.New(params)
+	id := cast.ToInt(o.Get("id").Inter())
+	if id == 0 {
+		id, err = m.PostIDFinder(r, 1, pl.MergeRequestBranchPrefix)
+		if err != nil {
+			panic(se(500, StatusCodeServerErr, "", err.Error()))
+		}
+	}
+
+	// Clone the repository and the merge request reference.
+	// Determine the full issue reference name and check
+	// if it exists. If it does not reset to empty string.
+	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: pl.MakeMergeRequestReference(id)}
+	_, err = r.RefGet(cloneOpts.ReferenceName)
+	if err != nil {
+		cloneOpts.ReferenceName = ""
+	}
+	cloned, _, err := r.Clone(cloneOpts)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", errors.Wrap(err, "failed to clone repo").Error()))
+	}
+
+	args := &mergecmd.MergeRequestCreateArgs{
+		ID:                 id,
+		Title:              o.Get("title").Str(),
+		Body:               o.Get("body").Str(),
+		ReplyHash:          o.Get("replyHash").Str(),
+		Reactions:          cast.ToStringSlice(o.Get("reactions").Inter()),
+		Base:               o.Get("base").Str(),
+		BaseHash:           o.Get("baseHash").Str(),
+		Target:             o.Get("target").Str(),
+		TargetHash:         o.Get("targetHash").Str(),
+		PostCommentCreator: pl.CreatePostCommit,
+	}
+
+	closeIssue := o.Get("close")
+	if !closeIssue.IsNil() {
+		args.Close = pointer.ToBool(closeIssue.Bool())
+	}
+
+	res, err := m.MergeRequestCreate(cloned, args)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	refHash, err := cloned.RefGet(res.Reference)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Add cloned repo path to temp repo manager.
+	tempRepoID := m.repoSrv.GetTempRepoManager().Add(cloned.GetPath())
+
+	return map[string]interface{}{
+		"hash":      refHash,
+		"reference": res.Reference,
+		"repoID":    tempRepoID,
+	}
+}
+
+// Push signs and pushes a reference in a temporary repository identified by ID.
+//   params <map>
+//     - id: The unique temporary manager ID of the target repository.
+//     - reference: The full reference name of the commit, tag or note to be pushed.
+//     - hash: The latest hash of the reference.
+//     - value: Set transaction value (if applicable)
+//     - fee: Set the transaction fee
+//     - nonce: Set the next transaction nonce of the push key owner (optional).
+// 	 privateKey: The private key for signing the transaction
+// Blocks until push succeeds.
+// Returns the transaction hash on success.
+func (m *RepoModule) Push(params map[string]interface{}, privateKey string) string {
+
+	o := objx.New(params)
+	tempRepoMgr := m.repoSrv.GetTempRepoManager()
+	path := tempRepoMgr.GetPath(o.Get("id").Str())
+	if path == "" {
+		panic(se(404, StatusCodeInvalidTempRepoID, "id", "id is expired or invalid"))
+	}
+
+	// Get the reference to be pushed and ensure it is valid.
+	reference := plumbing.ReferenceName(o.Get("reference").Str())
+	if !reference.IsBranch() && !reference.IsNote() && !reference.IsTag() {
+		panic(se(400, StatusCodeInvalidReferenceName, "reference", "reference name is not valid"))
+	}
+
+	// Decode the private key and ensure it is valid.
+	if privateKey == "" {
+		panic(se(400, StatusCodeInvalidPrivateKey, "privateKey", "private key is required"))
+	}
+	privKey, err := ed25519.PrivKeyFromBase58(privateKey)
+	if err != nil {
+		panic(se(400, StatusCodeInvalidPrivateKey, "privKey", "private key is not valid"))
+	}
+
+	// Get the working repository
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, path)
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeRepoNotFound, "name", err.Error()))
+		}
+		panic(se(500, StatusCodeServerErr, "name", err.Error()))
+	}
+
+	// Construct a push token
+	txDetail := &remotetypes.TxDetail{
+		RepoName:  r.GetName(),
+		Fee:       util.String(o.Get("fee").Str()),
+		Value:     util.String(o.Get("value").Str()),
+		Nonce:     cast.ToUint64(o.Get("nonce").Str()),
+		PushKeyID: privKey.Wrap().PushAddr().String(),
+		Reference: reference.String(),
+		Head:      o.Get("hash").Str(),
+	}
+
+	// Get the next nonce, if not set
+	if txDetail.Nonce == 0 {
+		senderAcct := m.logic.AccountKeeper().Get(privKey.Wrap().Addr())
+		txDetail.Nonce = senderAcct.Nonce.UInt64() + 1
+	}
+
+	// Construct and set the remote address.
+	// The remote (origin) must point to a remote server.
+	remoteAddr := config.DefaultRemoteServerAddress
+	if remoteAddr[:1] == ":" {
+		remoteAddr = "127.0.0.1" + remoteAddr
+	}
+	url := fmt.Sprintf("http://%s/r/%s", remoteAddr, txDetail.RepoName)
+	curConfig, err := r.Config()
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+	curConfig.Remotes["origin"] = &gogitcfg.RemoteConfig{Name: "origin", URLs: []string{url}}
+	if err = r.SetConfig(curConfig); err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Create a push token and execute a push request.
+	token := server.MakePushTokenFromKey(privKey.Wrap(), txDetail)
+	progress, err := r.Push(remotetypes.PushOptions{
+		RefSpec: fmt.Sprintf("+%s:%s", reference, reference),
+		Token:   token,
+	})
+	if err != nil {
+		panic(se(500, StatusCodePushFailure, "", err.Error()))
+	}
+
+	tempRepoMgr.Remove(o.Get("id").Str())
+
+	hash := strings.Split(progress.String(), "hash: ")[1]
+	hash = strings.TrimSpace(stripansi.Strip(hash))
+	return hash
 }

@@ -202,7 +202,7 @@ var repoConfigCmd = &cobra.Command{
 			}
 		}
 
-		targetRepo, client := common.GetRepoAndClient(cmd, cfg, targetRepoDir)
+		targetRepo, _ := common.GetRepoAndClient(cmd, cfg, targetRepoDir)
 		if targetRepo == nil {
 			log.Fatal("no repository found in current directory")
 		}
@@ -220,14 +220,11 @@ var repoConfigCmd = &cobra.Command{
 			Value:          &value,
 			Nonce:          &nonce,
 			Fee:            &fee,
-			RPCClient:      client,
 			PushKey:        &pushKey,
 			SigningKey:     &signingKey,
 			SigningKeyPass: &signingKeyPass,
 			NoHook:         noSign,
 			Remotes:        remoteObjs,
-			KeyUnlocker:    common.UnlockKey,
-			GetNextNonce:   api.GetNextNonceOfAccount,
 			PassAgentUp:    agent.IsUp,
 			PassAgentSet:   agent.Set,
 			PassAgentPort:  &passAgentPort,
@@ -257,7 +254,7 @@ var repoConfigCmd = &cobra.Command{
 			configArgs.SigningKeyPass = nil
 		}
 
-		if err := ConfigCmd(cfg, targetRepo, configArgs); err != nil {
+		if err := ConfigCmd(targetRepo, configArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

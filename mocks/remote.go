@@ -13,6 +13,7 @@ import (
 	logger "github.com/make-os/kit/pkgs/logger"
 	fetcher "github.com/make-os/kit/remote/fetcher"
 	types "github.com/make-os/kit/remote/push/types"
+	temprepomgr "github.com/make-os/kit/remote/temprepomgr"
 	types0 "github.com/make-os/kit/remote/types"
 	rpc "github.com/make-os/kit/rpc"
 	core "github.com/make-os/kit/types/core"
@@ -332,6 +333,20 @@ func (m *MockRemoteServer) GetFetcher() fetcher.ObjectFetcher {
 func (mr *MockRemoteServerMockRecorder) GetFetcher() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFetcher", reflect.TypeOf((*MockRemoteServer)(nil).GetFetcher))
+}
+
+// GetTempRepoManager mocks base method
+func (m *MockRemoteServer) GetTempRepoManager() temprepomgr.TempRepoManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTempRepoManager")
+	ret0, _ := ret[0].(temprepomgr.TempRepoManager)
+	return ret0
+}
+
+// GetTempRepoManager indicates an expected call of GetTempRepoManager
+func (mr *MockRemoteServerMockRecorder) GetTempRepoManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTempRepoManager", reflect.TypeOf((*MockRemoteServer)(nil).GetTempRepoManager))
 }
 
 // CheckNote mocks base method

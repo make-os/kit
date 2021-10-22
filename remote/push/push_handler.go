@@ -263,7 +263,7 @@ func (h *BasicHandler) HandleReferences() error {
 	return nil
 }
 
-// HandleRepoSize implements Handler. Performs garbage collection and repo size limit check.
+// HandleGCAndSizeCheck implements Handler. Performs garbage collection and repo size limit check.
 func (h *BasicHandler) HandleGCAndSizeCheck() error {
 
 	// Perform garbage collection to:
