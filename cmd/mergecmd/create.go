@@ -210,7 +210,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) (*Me
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		MergeRequestFields: types.MergeRequestFields{
+		MergeRequestFields: &types.MergeRequestFields{
 			BaseBranch:       args.Base,
 			BaseBranchHash:   args.BaseHash,
 			TargetBranch:     args.Target,

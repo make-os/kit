@@ -1,6 +1,6 @@
 module github.com/make-os/kit
 
-go 1.13
+go 1.17
 
 replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
@@ -49,7 +49,7 @@ require (
 	github.com/ipfs/go-ds-badger2 v0.1.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
-	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
+	github.com/jinzhu/copier v0.3.2
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
@@ -105,5 +105,5 @@ require (
 	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 // indirect
 	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

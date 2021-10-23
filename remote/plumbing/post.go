@@ -17,13 +17,13 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Comments is a collection of Comment objects
 type Comments []*Comment
 
-// Reverse reverse the posts
+// Reverse reverses the posts
 func (c *Comments) Reverse() {
 	for i, j := 0, len(*c)-1; i < j; i, j = i+1, j-1 {
 		(*c)[i], (*c)[j] = (*c)[j], (*c)[i]
@@ -355,10 +355,18 @@ type PostBody struct {
 	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty"`
 
 	// Issue Specific Fields
-	types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
+	*types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 
 	// Merge Request Fields
-	types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
+	*types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
+}
+
+// NewEmptyPostBody returns a PostBody instance that is empty
+func NewEmptyPostBody() *PostBody {
+	return &PostBody{
+		IssueFields:        &types.IssueFields{},
+		MergeRequestFields: &types.MergeRequestFields{},
+	}
 }
 
 // WantOpen checks whether close=false
@@ -368,7 +376,17 @@ func (b *PostBody) WantOpen() bool {
 
 // IncludesAdminFields checks whether administrative fields where set
 func (b *PostBody) IncludesAdminFields() bool {
-	return b.Labels != nil || b.Assignees != nil || b.Close != nil || b.MergeRequestFields != (types.MergeRequestFields{})
+	if b.Close != nil {
+		return true
+	}
+	if b.IssueFields != nil && (len(b.Labels) > 0 || len(b.Assignees) > 0) {
+		return true
+	}
+	if b.MergeRequestFields != nil && (len(b.BaseBranch) > 0 || len(b.BaseBranchHash) > 0 ||
+		len(b.TargetBranch) > 0 || len(b.TargetBranchHash) > 0) {
+		return true
+	}
+	return false
 }
 
 // PostBodyFromContentFrontMatter attempts to load the instance from
@@ -377,7 +395,7 @@ func (b *PostBody) IncludesAdminFields() bool {
 // or return any error.
 func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBody {
 	ob := objx.New(cfm.FrontMatter)
-	b := &PostBody{}
+	b := NewEmptyPostBody()
 	b.Content = cfm.Content
 	b.Title = ob.Get("title").String()
 	b.ReplyTo = ob.Get("replyTo").String()

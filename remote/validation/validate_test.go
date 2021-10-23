@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -22,6 +23,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func TestValidation(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Validation Suite")
+}
 
 var testPushKeyGetter = func(pubKey *ed25519.PubKey, err error) func(pushKeyID string) (ed25519.PublicKey, error) {
 	return func(pushKeyID string) (ed25519.PublicKey, error) {

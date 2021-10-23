@@ -397,14 +397,17 @@ content`, "commit 2")
 		})
 
 		It("should not set 'label' when it is nil", func() {
-			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: nil}}
+			body := &plumbing.PostBody{Close: nil,
+				IssueFields:        &types.IssueFields{Labels: nil},
+				MergeRequestFields: &types.MergeRequestFields{},
+			}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
 		})
 
 		It("should set 'label' when it is not nil", func() {
 			var lbls []string
-			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: lbls}}
+			body := &plumbing.PostBody{Close: nil, IssueFields: &types.IssueFields{Labels: lbls}}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
 		})
@@ -412,13 +415,13 @@ content`, "commit 2")
 
 	Describe("PostBody.IncludesAdminFields", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
-			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: &types.IssueFields{Labels: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: &types.IssueFields{Assignees: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{}).IncludesAdminFields()).To(BeFalse())
 			Expect((&plumbing.PostBody{Close: &cls}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{Close: &dontClose}).IncludesAdminFields()).To(BeTrue())
-			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{}}).IncludesAdminFields()).To(BeFalse())
-			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{BaseBranch: "base1"}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{}}).IncludesAdminFields()).To(BeFalse())
+			Expect((&plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{BaseBranch: "base1"}}).IncludesAdminFields()).To(BeTrue())
 		})
 	})
 

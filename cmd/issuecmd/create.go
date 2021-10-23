@@ -207,7 +207,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResul
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		IssueFields: types.IssueFields{
+		IssueFields: &types.IssueFields{
 			Labels:    args.Labels,
 			Assignees: args.Assignees,
 		},

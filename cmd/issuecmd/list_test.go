@@ -59,7 +59,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -67,7 +67,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},
@@ -98,7 +98,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -106,7 +106,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},
@@ -138,7 +138,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -146,7 +146,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.PostBody{},
+						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},

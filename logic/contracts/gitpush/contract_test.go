@@ -91,7 +91,7 @@ var _ = Describe("Contract", func() {
 
 		When("pushed reference did not previously exist (new reference)", func() {
 			It("should add pusher as creator of the reference", func() {
-				refs = []*types.PushedReference{{Name: "refs/heads/dev", Data: &remotetypes.ReferenceData{}, Fee: "1"}}
+				refs = []*types.PushedReference{{Name: "refs/heads/dev", Fee: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
@@ -171,7 +171,7 @@ var _ = Describe("Contract", func() {
 				refs = []*types.PushedReference{{
 					Name: ref,
 					Fee:  "1",
-					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: remotetypes.IssueFields{Labels: labels, Assignees: assignees}},
+					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: &remotetypes.IssueFields{Labels: labels, Assignees: assignees}},
 				}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -208,7 +208,7 @@ var _ = Describe("Contract", func() {
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Labels: []string{"-label1"}}},
+						Data: &remotetypes.ReferenceData{IssueFields: &remotetypes.IssueFields{Labels: []string{"-label1"}}},
 					}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -226,7 +226,7 @@ var _ = Describe("Contract", func() {
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Assignees: []string{"-key1"}}}}}
+						Data: &remotetypes.ReferenceData{IssueFields: &remotetypes.IssueFields{Assignees: []string{"-key1"}}}}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},
@@ -243,7 +243,7 @@ var _ = Describe("Contract", func() {
 			It("should add new proposal", func() {
 				ref := plumbing.MakeMergeRequestReference(1)
 				mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
-				refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr}, Fee: "1", Value: "1"}}
+				refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: &mr}, Fee: "1", Value: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
@@ -269,7 +269,7 @@ var _ = Describe("Contract", func() {
 					})
 
 					mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
-					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr}, Fee: "1", Value: "1"}}
+					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: &mr}, Fee: "1", Value: "1"}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
@@ -294,7 +294,7 @@ var _ = Describe("Contract", func() {
 
 					mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
 					cls := true
-					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr, Close: &cls}, Fee: "1", Value: "1"}}
+					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: &mr, Close: &cls}, Fee: "1", Value: "1"}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},

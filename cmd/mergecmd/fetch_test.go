@@ -73,7 +73,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{}, nil, nil
+					return plumbing.NewEmptyPostBody(), nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -89,7 +89,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
 					return &plumbing.PostBody{
-						MergeRequestFields: types.MergeRequestFields{
+						MergeRequestFields: &types.MergeRequestFields{
 							TargetBranch: "target",
 						},
 					}, nil, nil
@@ -107,7 +107,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -123,7 +123,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)

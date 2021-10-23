@@ -1,17 +1,18 @@
 package types
 
 import (
-	"encoding/pem"
+	"reflect"
 
+	"github.com/AlekSi/pointer"
+	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TxDetail", func() {
-
-	Describe(".GetGitSigPEMHeader", func() {
-		It("should return expected header fields and their value", func() {
-			detail := &TxDetail{
+	Describe("Encode and Decode", func() {
+		It("should encode and decode correctly", func() {
+			txd := &TxDetail{
 				RepoName:        "repo1",
 				RepoNamespace:   "namespace",
 				Reference:       "refs/heads/master",
@@ -21,54 +22,86 @@ var _ = Describe("TxDetail", func() {
 				PushKeyID:       "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 				Signature:       "sig1",
 				MergeProposalID: "1000",
+				ReferenceData: &ReferenceData{
+					IssueFields: &IssueFields{
+						Labels:    []string{"lbl1", "lbl2"},
+						Assignees: []string{"ass1", "ass2"},
+					},
+					MergeRequestFields: &MergeRequestFields{
+						BaseBranch:       "base",
+						BaseBranchHash:   "baseHash",
+						TargetBranch:     "target",
+						TargetBranchHash: "targetHash",
+					},
+					Close: pointer.ToBool(true),
+				},
 			}
-			header := detail.GetGitSigPEMHeader()
-			Expect(header).To(HaveLen(1))
-			Expect(header).To(HaveKey("pkID"))
-			Expect(header["pkID"]).To(Equal("pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
+			bz := txd.Bytes()
+			Expect(txd.Bytes()).ToNot(BeEmpty())
+			var txd2 TxDetail
+			Expect(util.ToObject(bz, &txd2)).To(BeNil())
+			Expect(reflect.DeepEqual(txd.ToMap(), txd2.ToMap())).To(BeTrue())
 		})
 	})
+})
 
-	Describe(".TxDetailFromGitSigPEMHeader", func() {
-		It("should return err when pkID is not set", func() {
-			hdr := map[string]string{}
-			_, err := TxDetailFromGitSigPEMHeader(hdr)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("'pkID' is required"))
-		})
+var _ = Describe("ReferenceTxDetails", func() {
+	Describe("Get", func() {
+		It("should get a reference tx details", func() {
+			rtd := ReferenceTxDetails(map[string]*TxDetail{
+				"refs/heads/dev": {
+					RepoName:        "repo1",
+					RepoNamespace:   "namespace",
+					Reference:       "refs/heads/master",
+					Fee:             "10.2",
+					Value:           "12.3",
+					Nonce:           1,
+					PushKeyID:       "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
+					Signature:       "sig1",
+					MergeProposalID: "1000",
+					ReferenceData: &ReferenceData{
+						IssueFields: &IssueFields{
+							Labels:    []string{"lbl1", "lbl2"},
+							Assignees: []string{"ass1", "ass2"},
+						},
+						MergeRequestFields: &MergeRequestFields{
+							BaseBranch:       "base",
+							BaseBranchHash:   "baseHash",
+							TargetBranch:     "target",
+							TargetBranchHash: "targetHash",
+						},
+						Close: pointer.ToBool(true),
+					},
+				},
+			})
 
-		It("should successfully create TxDetail from PEM header", func() {
-			hdr := map[string]string{
-				"pkID": "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
-			}
-			txDetail, err := TxDetailFromGitSigPEMHeader(hdr)
-			Expect(err).To(BeNil())
-			Expect(txDetail.PushKeyID).To(Equal("pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
+			v := rtd.Get("refs/heads/dev")
+			Expect(v).To(Equal(rtd["refs/heads/dev"]))
 		})
 	})
+})
 
-	Describe(".DecodeSignatureHeader", func() {
-		It("should return error when unable to parse PEM data", func() {
-			_, err := DecodeSignatureHeader(nil)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to decode signature"))
-		})
+var _ = Describe("ReferenceData", func() {
+	Describe("Get", func() {
+		It("should get a reference tx details", func() {
+			rd := &ReferenceData{
+				IssueFields: &IssueFields{
+					Labels:    []string{"lbl1", "lbl2"},
+					Assignees: []string{"ass1", "ass2"},
+				},
+				MergeRequestFields: &MergeRequestFields{
+					BaseBranch:       "base",
+					BaseBranchHash:   "baseHash",
+					TargetBranch:     "target",
+					TargetBranchHash: "targetHash",
+				},
+				Close: pointer.ToBool(true),
+			}
 
-		It("should return error when unable to parse PEM header", func() {
-			pemData := string(pem.EncodeToMemory(&pem.Block{Headers: map[string]string{}}))
-			_, err := DecodeSignatureHeader([]byte(pemData))
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unable to parse PEM header: 'pkID' is required"))
-		})
-
-		It("should return TxDetail if successful", func() {
-			pkID := "pk1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
-			pemData := string(pem.EncodeToMemory(&pem.Block{Headers: map[string]string{
-				"pkID": pkID,
-			}}))
-			txd, err := DecodeSignatureHeader([]byte(pemData))
-			Expect(err).To(BeNil())
-			Expect(txd.PushKeyID).To(Equal(pkID))
+			bz := util.ToBytes(rd)
+			var rd2 ReferenceData
+			Expect(util.ToObject(bz, &rd2)).To(BeNil())
+			Expect(reflect.DeepEqual(rd.ToMap(), rd2.ToMap())).To(BeTrue())
 		})
 	})
 })

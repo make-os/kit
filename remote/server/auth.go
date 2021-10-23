@@ -9,17 +9,15 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/config"
-	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/remote/policy"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
-	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	errors2 "github.com/make-os/kit/util/errors"
-	"github.com/mr-tron/base58"
+	"github.com/make-os/kit/util/pushtoken"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/thoas/go-funk"
@@ -27,7 +25,6 @@ import (
 
 var (
 	ErrPushTokenRequired = fmt.Errorf("push token must be provided")
-	ErrMalformedToken    = fmt.Errorf("malformed token")
 	fe                   = errors2.FieldErrorWithIndex
 )
 
@@ -114,7 +111,7 @@ func (sv *Server) handleAuth(r *http.Request, repo *state.Repository, namespace 
 	// Decode the push request token(s)
 	txDetails = []*remotetypes.TxDetail{}
 	for i, token := range strings.Split(tokens, ",") {
-		txDetail, err := DecodePushToken(token)
+		txDetail, err := pushtoken.DecodePushToken(token)
 		if err != nil {
 			err = fmt.Errorf("malformed push token at index %d. Unable to decode", i)
 			return nil, nil, err
@@ -129,33 +126,6 @@ func (sv *Server) handleAuth(r *http.Request, repo *state.Repository, namespace 
 	}
 
 	return
-}
-
-// DecodePushToken decodes a push request token.
-func DecodePushToken(v string) (*remotetypes.TxDetail, error) {
-	bz, err := base58.Decode(v)
-	if err != nil {
-		return nil, ErrMalformedToken
-	}
-
-	var txDetail remotetypes.TxDetail
-	if err = util.ToObject(bz, &txDetail); err != nil {
-		return nil, ErrMalformedToken
-	}
-
-	return &txDetail, nil
-}
-
-// MakePushToken creates a push request token
-func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
-	return MakePushTokenFromKey(key.GetKey(), txDetail)
-}
-
-// MakePushTokenFromKey creates a push request token
-func MakePushTokenFromKey(key *ed25519.Key, txDetail *remotetypes.TxDetail) string {
-	sig, _ := key.PrivKey().Sign(txDetail.BytesNoSig())
-	txDetail.Signature = base58.Encode(sig)
-	return base58.Encode(txDetail.Bytes())
 }
 
 // MakeAndApplyPushTokenToRemoteFunc describes a function for creating, signing and
@@ -251,7 +221,7 @@ func makeAndApplyPushTokenToRepoRemote(
 	var existingTokens = make(map[string]struct{})
 	if !args.ResetTokens {
 		for _, t := range repoCfg.Tokens[remote.Name] {
-			detail, err := DecodePushToken(t)
+			detail, err := pushtoken.DecodePushToken(t)
 			if err != nil || detail.Reference == args.TxDetail.Reference {
 				continue
 			}
@@ -288,7 +258,7 @@ func makeAndApplyPushTokenToRepoRemote(
 		lastRepoName, lastRepoNS = txp.RepoName, txp.RepoNamespace
 
 		// Create, sign new token and add to existing tokens list
-		existingTokens[MakePushToken(args.PushKey, &txp)] = struct{}{}
+		existingTokens[pushtoken.MakePushToken(args.PushKey, &txp)] = struct{}{}
 
 		// Use tokens as URL username
 		remoteUrl.User = url.UserPassword(strings.Join(funk.Keys(existingTokens).([]string), ","), "-")

@@ -87,7 +87,7 @@ var _ = Describe("IssueCreate", func() {
 			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return &plumbing.PostBody{}, nil, nil
+					return plumbing.NewEmptyPostBody(), nil, nil
 				},
 				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					Expect(args.Body).To(Equal("---\nclose: true\n---\n"))
@@ -103,7 +103,7 @@ var _ = Describe("IssueCreate", func() {
 			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return &plumbing.PostBody{}, nil, nil
+					return plumbing.NewEmptyPostBody(), nil, nil
 				},
 				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					return false, "", fmt.Errorf("error")

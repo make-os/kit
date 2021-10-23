@@ -420,7 +420,7 @@ func (h *BasicHandler) createPushNote() (*types.Note, error) {
 			Fee:             h.TxDetails.Get(refName).Fee,
 			Value:           h.TxDetails.Get(refName).Value,
 			MergeProposalID: h.TxDetails.Get(refName).MergeProposalID,
-			PushSig:         h.TxDetails.Get(refName).MustSignatureAsBytes(),
+			PushSig:         h.TxDetails.Get(refName).SignatureToByte(),
 			Data:            detail.ReferenceData,
 		})
 	}

@@ -2,14 +2,9 @@ package types
 
 import (
 	"bytes"
-	"encoding/pem"
-	"fmt"
-	"strings"
 
 	"github.com/make-os/kit/util"
 	"github.com/mr-tron/base58"
-	"github.com/pkg/errors"
-	"github.com/spf13/cast"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -67,72 +62,45 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 // ReferenceData stores additional data extracted from a pushed reference.
 type ReferenceData struct {
 	util.CodecUtil
-	IssueFields
-	MergeRequestFields
+	*IssueFields
+	*MergeRequestFields
+
 	// Close indicates that the reference is closed
 	Close *bool `json:"close" msgpack:"close,omitempty"`
 }
 
 func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
-
-	var labels, assignees interface{} = nil, nil
-	if rd.Labels != nil {
-		labels = strings.Join(rd.Labels, " ")
-	}
-	if rd.Assignees != nil {
-		assignees = strings.Join(rd.Assignees, " ")
-	}
-
-	return rd.EncodeMulti(enc, []interface{}{
+	return rd.EncodeMulti(enc,
 		rd.Close,
 		rd.BaseBranch,
 		rd.BaseBranchHash,
 		rd.TargetBranch,
 		rd.TargetBranchHash,
-		labels,
-		assignees,
-	})
+		rd.Labels,
+		rd.Assignees,
+	)
 }
 
 func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-
-	var data []interface{}
-	if err = rd.DecodeMulti(dec, &data); err != nil {
-		return
+	if rd.IssueFields == nil {
+		rd.IssueFields = &IssueFields{}
 	}
-
-	if v := data[0]; v != nil {
-		cls := cast.ToBool(v)
-		rd.Close = &cls
+	if rd.MergeRequestFields == nil {
+		rd.MergeRequestFields = &MergeRequestFields{}
 	}
+	return rd.DecodeMulti(dec,
+		&rd.Close,
+		&rd.BaseBranch,
+		&rd.BaseBranchHash,
+		&rd.TargetBranch,
+		&rd.TargetBranchHash,
+		&rd.Labels,
+		&rd.Assignees,
+	)
+}
 
-	if v := data[1]; v != nil {
-		rd.BaseBranch = cast.ToString(v)
-	}
-
-	if v := data[2]; v != nil {
-		rd.BaseBranchHash = cast.ToString(v)
-	}
-
-	if v := data[3]; v != nil {
-		rd.TargetBranch = cast.ToString(v)
-	}
-
-	if v := data[4]; v != nil {
-		rd.TargetBranchHash = cast.ToString(v)
-	}
-
-	if v := data[5]; v != nil {
-		labels := strings.Fields(cast.ToString(v))
-		rd.Labels = labels
-	}
-
-	if v := data[6]; v != nil {
-		assignees := strings.Fields(cast.ToString(v))
-		rd.Assignees = assignees
-	}
-
-	return
+func (rd *ReferenceData) ToMap() map[string]interface{} {
+	return util.ToMap(rd)
 }
 
 // TxDetail represents transaction information required to generate
@@ -156,25 +124,32 @@ type TxDetail struct {
 	// operation that will require an admin update policy specific to the reference
 	FlagCheckAdminUpdatePolicy bool `json:"-" msgpack:"-" mapstructure:"-"`
 
-	// ReferenceData includes data that were extracted from the pushed reference content.
+	// ReferenceData includes data that were extracted from a pushed reference.
 	ReferenceData *ReferenceData `json:"-" msgpack:"-" mapstructure:"-"`
 }
 
-// Data initializes and returns the reference data
-func (tp *TxDetail) Data() *ReferenceData {
-	if tp.ReferenceData == nil {
-		tp.ReferenceData = &ReferenceData{}
-	}
-	return tp.ReferenceData
+func (t *TxDetail) ToMap() map[string]interface{} {
+	return util.ToMap(t)
 }
 
-// MustSignatureAsBytes returns the decoded signature.
+// GetReferenceData initializes and returns the reference data
+func (t *TxDetail) GetReferenceData() *ReferenceData {
+	if t.ReferenceData == nil {
+		t.ReferenceData = &ReferenceData{
+			IssueFields:        &IssueFields{},
+			MergeRequestFields: &MergeRequestFields{},
+		}
+	}
+	return t.ReferenceData
+}
+
+// SignatureToByte returns the signature as byte.
 // Panics if signature could not be decoded.
-func (tp *TxDetail) MustSignatureAsBytes() []byte {
-	if tp.Signature == "" {
+func (t *TxDetail) SignatureToByte() []byte {
+	if t.Signature == "" {
 		return nil
 	}
-	sig, err := base58.Decode(tp.Signature)
+	sig, err := base58.Decode(t.Signature)
 	if err != nil {
 		panic(err)
 	}
@@ -183,91 +158,61 @@ func (tp *TxDetail) MustSignatureAsBytes() []byte {
 
 // Equal checks whether this object is equal to the give object.
 // Signature and MergeProposalID fields are excluded from equality check.
-func (tp *TxDetail) Equal(o *TxDetail) bool {
-	return bytes.Equal(tp.BytesNoMergeIDAndSig(), o.BytesNoMergeIDAndSig())
-}
-
-// GetGitSigPEMHeader returns headers to be used as git signature PEM headers
-func (tp *TxDetail) GetGitSigPEMHeader() map[string]string {
-	return map[string]string{
-		"pkID": tp.PushKeyID,
-	}
-}
-
-// TxDetailFromGitSigPEMHeader constructs a TxDetail instance from a git signature PEM header
-func TxDetailFromGitSigPEMHeader(hdr map[string]string) (*TxDetail, error) {
-	if hdr["pkID"] == "" {
-		return nil, fmt.Errorf("'pkID' is required")
-	}
-	return &TxDetail{
-		PushKeyID: hdr["pkID"],
-	}, nil
+func (t *TxDetail) Equal(o *TxDetail) bool {
+	return bytes.Equal(t.BytesNoMergeIDAndSig(), o.BytesNoMergeIDAndSig())
 }
 
 // Bytes returns the serialized equivalent of tp
-func (tp *TxDetail) Bytes() []byte {
-	return util.ToBytes(tp)
+func (t *TxDetail) Bytes() []byte {
+	return util.ToBytes(t)
 }
 
 // BytesNoSig returns bytes version of tp excluding the signature
-func (tp *TxDetail) BytesNoSig() []byte {
-	sig := tp.Signature
-	tp.Signature = ""
-	bz := util.ToBytes(tp)
-	tp.Signature = sig
+func (t *TxDetail) BytesNoSig() []byte {
+	sig := t.Signature
+	t.Signature = ""
+	bz := util.ToBytes(t)
+	t.Signature = sig
 	return bz
 }
 
 // BytesNoMergeIDAndSig returns bytes version of tp excluding the signature and merge ID
-func (tp *TxDetail) BytesNoMergeIDAndSig() []byte {
-	sig, mergeID := tp.Signature, tp.MergeProposalID
-	tp.Signature, tp.MergeProposalID = "", ""
-	bz := util.ToBytes(tp)
-	tp.Signature, tp.MergeProposalID = sig, mergeID
+func (t *TxDetail) BytesNoMergeIDAndSig() []byte {
+	sig, mergeID := t.Signature, t.MergeProposalID
+	t.Signature, t.MergeProposalID = "", ""
+	bz := util.ToBytes(t)
+	t.Signature, t.MergeProposalID = sig, mergeID
 	return bz
 }
 
-func (tp *TxDetail) EncodeMsgpack(enc *msgpack.Encoder) error {
-	sig := tp.MustSignatureAsBytes()
-	return tp.EncodeMulti(enc,
-		tp.RepoName,
-		tp.RepoNamespace,
-		tp.Reference,
-		tp.Fee,
-		tp.Value,
-		tp.Nonce,
-		tp.PushKeyID,
+func (t *TxDetail) EncodeMsgpack(enc *msgpack.Encoder) error {
+	sig := t.SignatureToByte()
+	return t.EncodeMulti(enc,
+		t.RepoName,
+		t.RepoNamespace,
+		t.Reference,
+		t.Fee,
+		t.Value,
+		t.Nonce,
+		t.PushKeyID,
 		sig,
-		tp.MergeProposalID,
-		tp.Head)
+		t.MergeProposalID,
+		t.Head)
 }
 
-func (tp *TxDetail) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (t *TxDetail) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	var sig []byte
-	err = tp.DecodeMulti(dec,
-		&tp.RepoName,
-		&tp.RepoNamespace,
-		&tp.Reference,
-		&tp.Fee,
-		&tp.Value,
-		&tp.Nonce,
-		&tp.PushKeyID,
+	err = t.DecodeMulti(dec,
+		&t.RepoName,
+		&t.RepoNamespace,
+		&t.Reference,
+		&t.Fee,
+		&t.Value,
+		&t.Nonce,
+		&t.PushKeyID,
 		&sig,
-		&tp.MergeProposalID,
-		&tp.Head)
-	tp.Signature = base58.Encode(sig)
+		&t.MergeProposalID,
+		&t.Head)
+	t.Signature = base58.Encode(sig)
 	return
-}
-
-// DecodeSignatureHeader decodes the given commit/tag signature and returns a TxDetail
-func DecodeSignatureHeader(sig []byte) (*TxDetail, error) {
-	decSig, _ := pem.Decode(sig)
-	if decSig == nil {
-		return nil, fmt.Errorf("failed to decode signature")
-	}
-	txDetail, err := TxDetailFromGitSigPEMHeader(decSig.Headers)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse PEM header")
-	}
-	return txDetail, nil
 }

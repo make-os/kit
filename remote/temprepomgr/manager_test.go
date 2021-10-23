@@ -76,7 +76,7 @@ var _ = Describe("BasicTempRepoManager", func() {
 			m := New()
 			m.Add(dir)
 			Expect(m.entries).To(HaveLen(1))
-			time.Sleep(3 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond)
 			Expect(m.entries).To(HaveLen(0))
 		})
 	})

@@ -128,7 +128,7 @@ func CheckTxDetailConsistency(txd *types.TxDetail, keepers core.Keepers, index i
 
 	// Use the key to verify the tx params signature
 	pubKey, _ := ed25519.PubKeyFromBytes(pushKey.PubKey.Bytes())
-	if ok, err := pubKey.Verify(txd.BytesNoSig(), txd.MustSignatureAsBytes()); err != nil || !ok {
+	if ok, err := pubKey.Verify(txd.BytesNoSig(), txd.SignatureToByte()); err != nil || !ok {
 		return fe(index, "sig", "signature is not valid")
 	}
 

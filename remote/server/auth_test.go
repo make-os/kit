@@ -23,6 +23,7 @@ import (
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
+	"github.com/make-os/kit/util/pushtoken"
 	"github.com/mr-tron/base58"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -186,7 +187,7 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".makePusherPolicyGroups", func() {
-		var polGroups = [][]*state.Policy{}
+		var polGroups [][]*state.Policy
 		var repoPolicy *state.Policy
 		var namespacePolicy *state.ContributorPolicy
 		var contribPolicy *state.ContributorPolicy
@@ -568,54 +569,6 @@ var _ = Describe("Auth", func() {
 		})
 	})
 
-	Describe(".DecodePushToken", func() {
-		When("token is malformed (not base58 encoded)", func() {
-			It("should return err", func() {
-				_, err := DecodePushToken("invalid_token")
-				Expect(err).To(MatchError("malformed token"))
-			})
-		})
-
-		When("token is malformed (can't be deserialized to TxDetail)", func() {
-			It("should return err", func() {
-				_, err := DecodePushToken(base58.Encode([]byte("invalid data")))
-				Expect(err).To(MatchError("malformed token"))
-			})
-		})
-
-		When("token is valid", func() {
-			It("should return no error and transaction detail object", func() {
-				txDetail := &types.TxDetail{RepoName: "repo1"}
-				token := base58.Encode(txDetail.Bytes())
-				res, err := DecodePushToken(token)
-				Expect(err).To(BeNil())
-				Expect(res.Equal(txDetail)).To(BeTrue())
-			})
-		})
-	})
-
-	Describe(".MakePushToken", func() {
-		var token string
-		var txDetail *types.TxDetail
-
-		BeforeEach(func() {
-			txDetail = &types.TxDetail{RepoName: "repo1"}
-			mockStoreKey := mocks.NewMockStoredKey(ctrl)
-			mockStoreKey.EXPECT().GetKey().Return(key)
-			token = MakePushToken(mockStoreKey, txDetail)
-		})
-
-		It("should return token", func() {
-			Expect(token).ToNot(BeEmpty())
-		})
-
-		It("should decode token successfully", func() {
-			txD, err := DecodePushToken(token)
-			Expect(err).To(BeNil())
-			Expect(txD.Equal(txDetail)).To(BeTrue())
-		})
-	})
-
 	Describe(".MakeAndApplyPushTokenToRemote", func() {
 		It("should return error when unable to get repo config", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
@@ -735,7 +688,7 @@ var _ = Describe("Auth", func() {
 				Expect(err).To(BeNil(), "should be valid url")
 				Expect(urlParse.User).To(Not(BeNil()), "user info is expected")
 				Expect(urlParse.User.Username()).To(Not(BeEmpty()))
-				_, err = DecodePushToken(urlParse.User.Username())
+				_, err = pushtoken.DecodePushToken(urlParse.User.Username())
 				Expect(err).To(BeNil(), "token must be valid")
 				pass, _ := urlParse.User.Password()
 				Expect(pass).To(Equal("-"))
@@ -809,7 +762,7 @@ var _ = Describe("Auth", func() {
 			BeforeEach(func() {
 				txDetail = &types.TxDetail{RepoName: "some_repo", Reference: "refs/heads/branch"}
 				mockStoreKey.EXPECT().GetKey().Return(key).Times(3)
-				existingToken = MakePushToken(mockStoreKey, txDetail)
+				existingToken = pushtoken.MakePushToken(mockStoreKey, txDetail)
 
 				gitCfg := gogitcfg.NewConfig()
 				repoCfg = &types.LocalConfig{Tokens: map[string][]string{"origin": {existingToken}}}

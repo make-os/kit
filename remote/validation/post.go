@@ -8,7 +8,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/jinzhu/copier"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	pl "github.com/make-os/kit/remote/plumbing"
 	rr "github.com/make-os/kit/remote/repo"
@@ -103,11 +102,11 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 
 		// If ancestor is the tip (the pushed commit):
 		// - Update reference data in tx detail with post data from tip commit.
-		// - When a reference exist and it is closed, the next pushed commit is expected
+		// - When a reference exists, and it is closed, the next pushed commit is expected
 		// 	 to reopen it by setting the 'close' field to 'open'. Return error if
 		//   this is not the case.
 		if ancestor.Hash.String() == args.Change.Item.GetData() {
-			copier.Copy(args.TxDetail.Data(), post)
+			copyPostBodyToTxDetail(args.TxDetail, post)
 			if reference.Data.Closed && !post.WantOpen() {
 				return ErrCannotWriteToClosedRef
 			}
@@ -115,6 +114,13 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 	}
 
 	return nil
+}
+
+func copyPostBodyToTxDetail(txd *types.TxDetail, body *pl.PostBody) {
+	rd := txd.GetReferenceData()
+	rd.IssueFields = body.IssueFields
+	rd.MergeRequestFields = body.MergeRequestFields
+	rd.Close = body.Close
 }
 
 // CheckPostCommitArgs includes arguments for CheckPostCommit function
