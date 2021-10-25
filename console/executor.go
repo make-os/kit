@@ -72,6 +72,6 @@ func (e *Executor) exec(in interface{}) {
 
 func (e *Executor) help() {
 	for _, f := range commonFunc {
-		fmt.Println(fmt.Sprintf("%s\t\t%s", f[0], f[1]))
+		fmt.Printf(fmt.Sprintf("%s\t\t%s\n", f[0], f[1]))
 	}
 }

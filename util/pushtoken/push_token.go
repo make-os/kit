@@ -14,8 +14,8 @@ var (
 	ErrMalformedToken = fmt.Errorf("malformed token")
 )
 
-// DecodePushToken decodes a push request token.
-func DecodePushToken(v string) (*remotetypes.TxDetail, error) {
+// Decode decodes a push request token.
+func Decode(v string) (*remotetypes.TxDetail, error) {
 	bz, err := base58.Decode(v)
 	if err != nil {
 		return nil, ErrMalformedToken
@@ -29,22 +29,19 @@ func DecodePushToken(v string) (*remotetypes.TxDetail, error) {
 	return &txDetail, nil
 }
 
-// IsValidPushToken checks whether t is a valid push token
-func IsValidPushToken(t string) bool {
-	_, err := DecodePushToken(t)
-	if err != nil {
-		return false
-	}
-	return true
+// IsValid checks whether t is a valid push token
+func IsValid(t string) bool {
+	_, err := Decode(t)
+	return err == nil
 }
 
-// MakePushToken creates a push request token
-func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
-	return MakePushTokenFromKey(key.GetKey(), txDetail)
+// Make creates a push request token
+func Make(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
+	return MakeFromKey(key.GetKey(), txDetail)
 }
 
-// MakePushTokenFromKey creates a push request token
-func MakePushTokenFromKey(key *ed25519.Key, txDetail *remotetypes.TxDetail) string {
+// MakeFromKey creates a push request token
+func MakeFromKey(key *ed25519.Key, txDetail *remotetypes.TxDetail) string {
 	sig, _ := key.PrivKey().Sign(txDetail.BytesNoSig())
 	txDetail.Signature = base58.Encode(sig)
 	return base58.Encode(txDetail.Bytes())

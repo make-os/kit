@@ -19,7 +19,6 @@ import (
 	"github.com/make-os/kit/node/services"
 	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
-	"github.com/make-os/kit/remote/server"
 	remotetypes "github.com/make-os/kit/remote/types"
 	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/types"
@@ -30,6 +29,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/identifier"
+	"github.com/make-os/kit/util/pushtoken"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
@@ -120,7 +120,7 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		vm.Set(f.Name, f.Value)
+		_ = vm.Set(f.Name, f.Value)
 		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
@@ -1066,10 +1066,10 @@ func (m *RepoModule) CreateMergeRequest(name string, params map[string]interface
 //     - value: Set transaction value (if applicable)
 //     - fee: Set the transaction fee
 //     - nonce: Set the next transaction nonce of the push key owner (optional).
-// 	 privateKey: The private key for signing the transaction
+// 	 privateKeyOrPushToken: The private key or push token for signing the transaction
 // Blocks until push succeeds.
 // Returns the transaction hash on success.
-func (m *RepoModule) Push(params map[string]interface{}, privateKey string) string {
+func (m *RepoModule) Push(params map[string]interface{}, privateKeyOrPushToken string) string {
 
 	o := objx.New(params)
 	tempRepoMgr := m.repoSrv.GetTempRepoManager()
@@ -1084,13 +1084,30 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKey string) stri
 		panic(se(400, StatusCodeInvalidReferenceName, "reference", "reference name is not valid"))
 	}
 
-	// Decode the private key and ensure it is valid.
-	if privateKey == "" {
-		panic(se(400, StatusCodeInvalidPrivateKey, "privateKey", "private key is required"))
+	// Private key or push token is required
+	if privateKeyOrPushToken == "" {
+		panic(se(400, StatusCodeInvalidPrivateKey, "privateKeyOrPushToken",
+			"private key is required"))
 	}
-	privKey, err := ed25519.PrivKeyFromBase58(privateKey)
-	if err != nil {
-		panic(se(400, StatusCodeInvalidPrivateKey, "privKey", "private key is not valid"))
+
+	// Attempt to decode the privateKeyOrPushToken as though it is a push token.
+	// If we succeed, extract the push key from the token
+	var pushKeyID string
+	if txDetail, _ := pushtoken.Decode(privateKeyOrPushToken); txDetail != nil {
+		pushKeyID = txDetail.PushKeyID
+	}
+
+	// If the push key is not already known, we assume privateKeyOrPushToken is
+	// a base58 encoded private key and as such we attempt to decode it.
+	var privKey *ed25519.PrivKey
+	var err error
+	if pushKeyID == "" {
+		privKey, err = ed25519.PrivKeyFromBase58(privateKeyOrPushToken)
+		if err != nil {
+			panic(se(400, StatusCodeInvalidPrivateKey, "privateKeyOrPushToken",
+				"private key or push token is not a valid"))
+		}
+		pushKeyID = privKey.Wrap().PushAddr().String()
 	}
 
 	// Get the working repository
@@ -1102,21 +1119,27 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKey string) stri
 		panic(se(500, StatusCodeServerErr, "name", err.Error()))
 	}
 
-	// Construct a push token
-	txDetail := &remotetypes.TxDetail{
-		RepoName:  r.GetName(),
-		Fee:       util.String(o.Get("fee").Str()),
-		Value:     util.String(o.Get("value").Str()),
-		Nonce:     cast.ToUint64(o.Get("nonce").Str()),
-		PushKeyID: privKey.Wrap().PushAddr().String(),
-		Reference: reference.String(),
-		Head:      o.Get("hash").Str(),
-	}
+	// Create push token if a private key was provided
+	token := privateKeyOrPushToken
+	if privKey != nil {
+		txDetail := &remotetypes.TxDetail{
+			RepoName:  r.GetName(),
+			Fee:       util.String(o.Get("fee").Str()),
+			Value:     util.String(o.Get("value").Str()),
+			Nonce:     cast.ToUint64(o.Get("nonce").Str()),
+			PushKeyID: pushKeyID,
+			Reference: reference.String(),
+			Head:      o.Get("hash").Str(),
+		}
 
-	// Get the next nonce, if not set
-	if txDetail.Nonce == 0 {
-		senderAcct := m.logic.AccountKeeper().Get(privKey.Wrap().Addr())
-		txDetail.Nonce = senderAcct.Nonce.UInt64() + 1
+		// Get the next nonce, if not set
+		if txDetail.Nonce == 0 {
+			senderAcct := m.logic.AccountKeeper().Get(privKey.Wrap().Addr())
+			txDetail.Nonce = senderAcct.Nonce.UInt64() + 1
+		}
+
+		// Create a push token
+		token = pushtoken.MakeFromKey(privKey.Wrap(), txDetail)
 	}
 
 	// Construct and set the remote address.
@@ -1125,7 +1148,7 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKey string) stri
 	if remoteAddr[:1] == ":" {
 		remoteAddr = "127.0.0.1" + remoteAddr
 	}
-	url := fmt.Sprintf("http://%s/r/%s", remoteAddr, txDetail.RepoName)
+	url := fmt.Sprintf("http://%s/r/%s", remoteAddr, r.GetName())
 	curConfig, err := r.Config()
 	if err != nil {
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
@@ -1135,8 +1158,7 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKey string) stri
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
-	// Create a push token and execute a push request.
-	token := server.MakePushTokenFromKey(privKey.Wrap(), txDetail)
+	// Push to remote
 	progress, err := r.Push(remotetypes.PushOptions{
 		RefSpec: fmt.Sprintf("+%s:%s", reference, reference),
 		Token:   token,
@@ -1145,7 +1167,7 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKey string) stri
 		panic(se(500, StatusCodePushFailure, "", err.Error()))
 	}
 
-	tempRepoMgr.Remove(o.Get("id").Str())
+	_ = tempRepoMgr.Remove(o.Get("id").Str())
 
 	hash := strings.Split(progress.String(), "hash: ")[1]
 	hash = strings.TrimSpace(stripansi.Strip(hash))

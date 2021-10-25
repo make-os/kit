@@ -15,7 +15,7 @@ import (
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
-	fmt2 "github.com/make-os/kit/util/colorfmt"
+	cf "github.com/make-os/kit/util/colorfmt"
 	errors2 "github.com/make-os/kit/util/errors"
 	"github.com/make-os/kit/util/pushtoken"
 	"github.com/pkg/errors"
@@ -29,7 +29,7 @@ var (
 )
 
 // AuthenticatorFunc describes a function for performing authentication.
-// txDetails: The transaction details for pushed references
+// txDetails: The transaction details for all pushed references
 // repo: The target repository state.
 // namespace: The target namespace.
 // keepers: The application states keeper
@@ -82,7 +82,7 @@ func authenticate(
 
 // isPullRequest checks whether a request is a pull request
 func isPullRequest(r *http.Request) bool {
-	return r.Method == "GET" || strings.Index(r.URL.Path, "git-upload-pack") != -1
+	return r.Method == "GET" || strings.Contains(r.URL.Path, "git-upload-pack")
 }
 
 // handleAuth validates a request using the push request token provided in the url username.
@@ -111,7 +111,7 @@ func (sv *Server) handleAuth(r *http.Request, repo *state.Repository, namespace 
 	// Decode the push request token(s)
 	txDetails = []*remotetypes.TxDetail{}
 	for i, token := range strings.Split(tokens, ",") {
-		txDetail, err := pushtoken.DecodePushToken(token)
+		txDetail, err := pushtoken.Decode(token)
 		if err != nil {
 			err = fmt.Errorf("malformed push token at index %d. Unable to decode", i)
 			return nil, nil, err
@@ -170,7 +170,7 @@ func MakeAndApplyPushTokenToRemote(repo remotetypes.LocalRepo, args *MakeAndAppl
 	}
 
 	// For each current repository remote:
-	// - Check that the remote was chosen, if at least one one was chosen.
+	// - Check that the remote was chosen, if at least one was chosen.
 	// - Prepare the remote URL(s)
 	for name, remote := range gitCfg.Remotes {
 		if len(chosenRemotes) > 0 && !funk.ContainsString(chosenRemotes, name) {
@@ -221,7 +221,7 @@ func makeAndApplyPushTokenToRepoRemote(
 	var existingTokens = make(map[string]struct{})
 	if !args.ResetTokens {
 		for _, t := range repoCfg.Tokens[remote.Name] {
-			detail, err := pushtoken.DecodePushToken(t)
+			detail, err := pushtoken.Decode(t)
 			if err != nil || detail.Reference == args.TxDetail.Reference {
 				continue
 			}
@@ -233,7 +233,7 @@ func makeAndApplyPushTokenToRepoRemote(
 	for i, v := range remote.URLs {
 		remoteUrl, err := url.Parse(v)
 		if err != nil {
-			_, _ = fmt.Fprintf(args.Stderr, fmt2.RedString("Bad remote remoteUrl (%s) found and skipped", v))
+			_, _ = args.Stderr.Write([]byte(cf.RedString("Bad remote remoteUrl (%s) found and skipped", v)))
 			continue
 		}
 
@@ -258,7 +258,7 @@ func makeAndApplyPushTokenToRepoRemote(
 		lastRepoName, lastRepoNS = txp.RepoName, txp.RepoNamespace
 
 		// Create, sign new token and add to existing tokens list
-		existingTokens[pushtoken.MakePushToken(args.PushKey, &txp)] = struct{}{}
+		existingTokens[pushtoken.Make(args.PushKey, &txp)] = struct{}{}
 
 		// Use tokens as URL username
 		remoteUrl.User = url.UserPassword(strings.Join(funk.Keys(existingTokens).([]string), ","), "-")

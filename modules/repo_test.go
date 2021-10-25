@@ -27,6 +27,7 @@ import (
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	"github.com/make-os/kit/util/errors"
+	"github.com/make-os/kit/util/pushtoken"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/robertkrimen/otto"
@@ -1228,12 +1229,12 @@ index 0000000..3b0c2f1
 			mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
 			mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr).Times(2)
 			mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo").Times(2)
-			err := &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key is required", Field: "privateKey"}
+			err := &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key is required", Field: "privateKeyOrPushToken"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Push(param, "")
 			})
 
-			err = &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key is not valid", Field: "privKey"}
+			err = &errors.ReqError{Code: "invalid_private_key", HttpCode: 400, Msg: "private key or push token is not a valid", Field: "privateKeyOrPushToken"}
 			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
 				m.Push(param, "invalid_pk")
 			})
@@ -1285,7 +1286,7 @@ index 0000000..3b0c2f1
 			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
 
 			// expect origin remote to be set with correct url
-			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().GetName().Return("repo1").Times(2)
 			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error here"))
 
 			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
@@ -1315,7 +1316,7 @@ index 0000000..3b0c2f1
 			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
 
 			// expect origin remote to be set with correct url
-			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().GetName().Return("repo1").Times(2)
 			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
 			mockRepo.EXPECT().SetConfig(gomock.Any()).Return(fmt.Errorf("error here"))
 
@@ -1349,7 +1350,7 @@ index 0000000..3b0c2f1
 			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
 
 			// expect origin remote to be set with correct url
-			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().GetName().Return("repo1").Times(2)
 			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
 			mockRepo.EXPECT().SetConfig(gomock.Any()).Do(func(cfg *config2.Config) {
 				Expect(cfg.Remotes).To(HaveLen(1))
@@ -1395,7 +1396,7 @@ index 0000000..3b0c2f1
 			mockAccountKeeper.EXPECT().Get(key.PubKey().Addr()).Return(state.NewBareAccount())
 
 			// expect origin remote to be set with correct url
-			mockRepo.EXPECT().GetName().Return("repo1")
+			mockRepo.EXPECT().GetName().Return("repo1").Times(2)
 			mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
 			mockRepo.EXPECT().SetConfig(gomock.Any())
 
@@ -1409,5 +1410,54 @@ index 0000000..3b0c2f1
 			})
 		})
 
+		When("push token is provided as key", func() {
+			It("should use push token directly", func() {
+				key := ed25519.NewKeyFromIntSeed(1)
+				token := pushtoken.MakeFromKey(key, &remotetypes.TxDetail{
+					RepoName:  "repo1",
+					PushKeyID: key.PushAddr().String(),
+				})
+
+				param := map[string]interface{}{
+					"id":        "repo_123",
+					"reference": "refs/heads/master",
+					"nonce":     "0",
+				}
+				mockTempRepoMgr := mocks.NewMockTempRepoManager(ctrl)
+				mockRepoSrv.EXPECT().GetTempRepoManager().Return(mockTempRepoMgr)
+				mockTempRepoMgr.EXPECT().GetPath(param["id"]).Return("/path/repo")
+
+				var mockRepo = mocks.NewMockLocalRepo(ctrl)
+				m.GetLocalRepo = func(_, path string) (remotetypes.LocalRepo, error) {
+					Expect(path).To(Equal("/path/repo"))
+					return mockRepo, nil
+				}
+
+				// expect origin remote to be set with correct url
+				mockRepo.EXPECT().GetName().Return("repo1")
+				mockRepo.EXPECT().Config().Return(&config2.Config{Remotes: map[string]*config2.RemoteConfig{}}, nil)
+				mockRepo.EXPECT().SetConfig(gomock.Any()).Do(func(cfg *config2.Config) {
+					Expect(cfg.Remotes).To(HaveLen(1))
+					Expect(cfg.Remotes).To(HaveKey("origin"))
+					Expect(cfg.Remotes["origin"].URLs).To(HaveLen(1))
+					Expect(cfg.Remotes["origin"].URLs[0]).To(Equal("http://127.0.0.1:9002/r/repo1"))
+				})
+
+				mockRepo.EXPECT().Push(gomock.Any()).DoAndReturn(func(opts remotetypes.PushOptions) (bytes.Buffer, error) {
+					Expect(opts.RemoteName).To(BeEmpty())
+					Expect(opts.Token).To(Equal(token))
+					Expect(opts.RefSpec).To(Equal(fmt.Sprintf("+%s:%s", param["reference"], param["reference"])))
+					return *bytes.NewBuffer([]byte("hash: tx_hash_123")), nil
+				})
+
+				// it should remove repo from temp. repo manager cache
+				mockTempRepoMgr.EXPECT().Remove(param["id"])
+
+				assert.NotPanics(GinkgoT(), func() {
+					txHash := m.Push(param, token)
+					Expect(txHash).To(Equal("tx_hash_123"))
+				})
+			})
+		})
 	})
 })

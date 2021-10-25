@@ -688,7 +688,7 @@ var _ = Describe("Auth", func() {
 				Expect(err).To(BeNil(), "should be valid url")
 				Expect(urlParse.User).To(Not(BeNil()), "user info is expected")
 				Expect(urlParse.User.Username()).To(Not(BeEmpty()))
-				_, err = pushtoken.DecodePushToken(urlParse.User.Username())
+				_, err = pushtoken.Decode(urlParse.User.Username())
 				Expect(err).To(BeNil(), "token must be valid")
 				pass, _ := urlParse.User.Password()
 				Expect(pass).To(Equal("-"))
@@ -762,7 +762,7 @@ var _ = Describe("Auth", func() {
 			BeforeEach(func() {
 				txDetail = &types.TxDetail{RepoName: "some_repo", Reference: "refs/heads/branch"}
 				mockStoreKey.EXPECT().GetKey().Return(key).Times(3)
-				existingToken = pushtoken.MakePushToken(mockStoreKey, txDetail)
+				existingToken = pushtoken.Make(mockStoreKey, txDetail)
 
 				gitCfg := gogitcfg.NewConfig()
 				repoCfg = &types.LocalConfig{Tokens: map[string][]string{"origin": {existingToken}}}
