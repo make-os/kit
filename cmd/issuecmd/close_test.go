@@ -39,7 +39,7 @@ var _ = Describe("IssueCreate", func() {
 		It("should return error when unable to get reference", func() {
 			ref := plumbing.MakeIssueReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", fmt.Errorf("error"))
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{Reference: ref})
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{Reference: ref})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -47,7 +47,7 @@ var _ = Describe("IssueCreate", func() {
 		It("should return error when issue reference does not exist", func() {
 			ref := plumbing.MakeIssueReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{Reference: ref})
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{Reference: ref})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("issue not found"))
 		})
@@ -56,7 +56,7 @@ var _ = Describe("IssueCreate", func() {
 			ref := plumbing.MakeIssueReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return nil, nil, fmt.Errorf("error")
@@ -70,7 +70,7 @@ var _ = Describe("IssueCreate", func() {
 			ref := plumbing.MakeIssueReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					closed := true
@@ -84,7 +84,7 @@ var _ = Describe("IssueCreate", func() {
 		Specify("that the correct body was created", func() {
 			ref := plumbing.MakeIssueReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return plumbing.NewEmptyPostBody(), nil, nil
@@ -100,7 +100,7 @@ var _ = Describe("IssueCreate", func() {
 		It("should return error when unable to post comment", func() {
 			ref := plumbing.MakeIssueReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
-			err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
+			_, err := issuecmd.IssueCloseCmd(mockRepo, &issuecmd.IssueCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return plumbing.NewEmptyPostBody(), nil, nil

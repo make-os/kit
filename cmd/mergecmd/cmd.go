@@ -250,7 +250,7 @@ var mergeReqCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = MergeReqCloseCmd(curRepo, &MergeReqCloseArgs{
+		if _, err = MergeReqCloseCmd(curRepo, &MergeReqCloseArgs{
 			Reference:          NormalMergeReferenceName(curRepo, args),
 			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,

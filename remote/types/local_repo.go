@@ -102,6 +102,9 @@ type LocalRepo interface {
 	// GetPath returns the repository's path
 	GetPath() string
 
+	// Delete will delete the repository from disk
+	Delete() error
+
 	// Clone clones the repository into a temporary directory.
 	// It returns the cloned repo, the temp directory where it was cloned
 	// into and a nil error on success.

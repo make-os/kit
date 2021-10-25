@@ -208,7 +208,7 @@ var issueCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = IssueCloseCmd(curRepo, &IssueCloseArgs{
+		if _, err = IssueCloseCmd(curRepo, &IssueCloseArgs{
 			Reference:          NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,

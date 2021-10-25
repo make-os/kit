@@ -129,6 +129,11 @@ func (r *Repo) GetPath() string {
 	return r.Path
 }
 
+// Delete will delete the repository from disk
+func (r *Repo) Delete() error {
+	return os.RemoveAll(r.Path)
+}
+
 // Clone implements types.LocalRepo
 func (r *Repo) Clone(option types.CloneOptions) (types.LocalRepo, string, error) {
 	dir, err := ioutil.TempDir("", "")

@@ -24,23 +24,30 @@ type MergeReqCloseArgs struct {
 	Force bool
 }
 
+type MergeReqCloseResult struct {
+	Reference string
+}
+
+// MergeReqCloseCmdFunc describes MergeReqCloseCmd function signature
+type MergeReqCloseCmdFunc func(r types.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error)
+
 // MergeReqCloseCmd adds a close directive
-func MergeReqCloseCmd(r types.LocalRepo, args *MergeReqCloseArgs) error {
+func MergeReqCloseCmd(r types.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error) {
 
 	// Ensure the merge request reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return fmt.Errorf("merge request not found")
+			return nil, fmt.Errorf("merge request not found")
 		}
-		return err
+		return nil, err
 	}
 
 	pb, _, err := args.ReadPostBody(r, recentCommentHash)
 	if err != nil {
-		return errors.Wrap(err, "failed to read recent comment")
+		return nil, errors.Wrap(err, "failed to read recent comment")
 	} else if pb.Close != nil && *pb.Close {
-		return fmt.Errorf("already closed")
+		return nil, fmt.Errorf("already closed")
 	}
 
 	// Create the post body
@@ -48,15 +55,15 @@ func MergeReqCloseCmd(r types.LocalRepo, args *MergeReqCloseArgs) error {
 	postBody := plumbing.PostBodyToString(&plumbing.PostBody{Close: &cls})
 
 	// Create a new comment using the post body
-	_, _, err = args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+	_, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:  plumbing.MergeRequestBranchPrefix,
 		ID:    args.Reference,
 		Body:  postBody,
 		Force: args.Force,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to create or add new close comment")
+		return nil, errors.Wrap(err, "failed to create or add new close comment")
 	}
 
-	return nil
+	return &MergeReqCloseResult{Reference: ref}, nil
 }

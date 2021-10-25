@@ -229,10 +229,10 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResul
 
 	if newIssue {
 		fmt.Fprintln(args.StdOut, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ New issue created!"))
-		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
+		fmt.Fprint(args.StdOut, fmt.Sprintf("%s#0\n", ref))
 	} else {
 		fmt.Fprintln(args.StdOut, fmt2.NewColor(aurora.Green, aurora.Bold).Sprint("✅ New comment added!"))
-		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, numComments))
+		fmt.Fprint(args.StdOut, fmt.Sprintf("%s#%d\n", ref, numComments))
 	}
 
 	return &IssueCreateResult{

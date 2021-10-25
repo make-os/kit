@@ -25,6 +25,8 @@ const (
 	StatusCodeMempoolAddFail        = "err_mempool"
 	StatusCodePushKeyNotFound       = "push_key_not_found"
 	StatusCodeRepoNotFound          = "repo_not_found"
+	StatusCodeIssueNotFound         = "issue_not_found"
+	StatusCodeMergeRequestNotFound  = "merge_request_not_found"
 	StatusCodePathNotFound          = "path_not_found"
 	StatusCodePathNotAFile          = "path_not_file"
 	StatusCodeBranchNotFound        = "branch_not_found"

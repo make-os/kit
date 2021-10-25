@@ -167,6 +167,10 @@ type RepoModule interface {
 	CountCommits(name, branch string) int
 	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
 	GetParentsAndCommitDiff(name string, commitHash string) util.Map
+	CreateIssue(name string, params map[string]interface{}) util.Map
+	CloseIssue(name, reference string) util.Map
+	CreateMergeRequest(name string, params map[string]interface{}) util.Map
+	Push(params map[string]interface{}, privateKeyOrPushToken string) string
 }
 type NamespaceModule interface {
 	Module

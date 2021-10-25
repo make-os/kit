@@ -24,23 +24,30 @@ type IssueCloseArgs struct {
 	Force bool
 }
 
+type IssueCloseResult struct {
+	Reference string
+}
+
+// IssueCloseCmdFunc describes IssueCloseCmd function signature
+type IssueCloseCmdFunc func(r types.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error)
+
 // IssueCloseCmd adds a close directive
-func IssueCloseCmd(r types.LocalRepo, args *IssueCloseArgs) error {
+func IssueCloseCmd(r types.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error) {
 
 	// Ensure the issue reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return fmt.Errorf("issue not found")
+			return nil, fmt.Errorf("issue not found")
 		}
-		return err
+		return nil, err
 	}
 
 	pb, _, err := args.ReadPostBody(r, recentCommentHash)
 	if err != nil {
-		return errors.Wrap(err, "failed to read recent comment")
+		return nil, errors.Wrap(err, "failed to read recent comment")
 	} else if pb.Close != nil && *pb.Close {
-		return fmt.Errorf("already closed")
+		return nil, fmt.Errorf("already closed")
 	}
 
 	// Create the post body
@@ -48,15 +55,15 @@ func IssueCloseCmd(r types.LocalRepo, args *IssueCloseArgs) error {
 	postBody := plumbing.PostBodyToString(&plumbing.PostBody{Close: &cls})
 
 	// Create a new comment using the post body
-	_, _, err = args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+	_, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:  plumbing.IssueBranchPrefix,
 		ID:    args.Reference,
 		Body:  postBody,
 		Force: args.Force,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to create or add new close comment")
+		return nil, errors.Wrap(err, "failed to create or add new close comment")
 	}
 
-	return nil
+	return &IssueCloseResult{Reference: ref}, nil
 }

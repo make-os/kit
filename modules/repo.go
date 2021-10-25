@@ -45,7 +45,9 @@ type RepoModule struct {
 	PostIDFinder       pl.GetFreePostIDFunc
 	GetLocalRepo       repo.GetLocalRepoFunc
 	IssueCreate        issuecmd.IssueCreateCmdFunc
+	IssueClose         issuecmd.IssueCloseCmdFunc
 	MergeRequestCreate mergecmd.MergeRequestCreateCmdFunc
+	MergeRequestClose  mergecmd.MergeReqCloseCmdFunc
 }
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
@@ -62,7 +64,9 @@ func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic co
 		PostIDFinder:       pl.GetFreePostID,
 		GetLocalRepo:       repo.GetWithGitModule,
 		IssueCreate:        issuecmd.IssueCreateCmd,
+		IssueClose:         issuecmd.IssueCloseCmd,
 		MergeRequestCreate: mergecmd.MergeRequestCreateCmd,
+		MergeRequestClose:  mergecmd.MergeReqCloseCmd,
 	}
 }
 
@@ -82,7 +86,9 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "listByCreator", Value: m.GetReposCreatedByAddress, Description: "List repositories created by an address"},
 
 		{Name: "createIssue", Value: m.CreateIssue, Description: "Create an issue, add comments or edit an existing issue"},
+		{Name: "closeIssue", Value: m.CloseIssue, Description: "Close an issue"},
 		{Name: "createMergeRequest", Value: m.CreateMergeRequest, Description: "Create a merge request, add comments or edit an existing merge request"},
+		{Name: "closeMergeRequest", Value: m.CloseMergeRequest, Description: "Close a merge request"},
 		{Name: "push", Value: m.Push, Description: "Sign and push a commit, tag or note"},
 
 		// Repository query methods.
@@ -952,11 +958,71 @@ func (m *RepoModule) CreateIssue(name string, params map[string]interface{}) uti
 
 	res, err := m.IssueCreate(cloned, args)
 	if err != nil {
+		_ = cloned.Delete()
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	refHash, err := cloned.RefGet(res.Reference)
 	if err != nil {
+		_ = cloned.Delete()
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Add cloned repo path to temp repo manager.
+	tempRepoID := m.repoSrv.GetTempRepoManager().Add(cloned.GetPath())
+
+	return map[string]interface{}{
+		"hash":      refHash,
+		"reference": res.Reference,
+		"repoID":    tempRepoID,
+	}
+}
+
+// CloseIssue closes an issue.
+//  - name: The name of the repository.
+//  - reference: The full issue reference name.
+func (m *RepoModule) CloseIssue(name, reference string) util.Map {
+
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, m.logic.Config().GetRepoPath(name))
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	curRefHash, err := r.RefGet(reference)
+	if err != nil && err == pl.ErrRefNotFound {
+		panic(se(404, StatusCodeIssueNotFound, "reference", "issue not found"))
+	}
+
+	// Clone the repository and the issue reference.
+	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	if curRefHash == "" {
+		cloneOpts.ReferenceName = ""
+	}
+	cloned, _, err := r.Clone(cloneOpts)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", errors.Wrap(err, "failed to clone repo").Error()))
+	}
+
+	res, err := m.IssueClose(cloned, &issuecmd.IssueCloseArgs{
+		Reference:          reference,
+		PostCommentCreator: pl.CreatePostCommit,
+		ReadPostBody:       pl.ReadPostBody,
+	})
+	if err != nil {
+		_ = cloned.Delete()
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	refHash, err := cloned.RefGet(res.Reference)
+	if err != nil {
+		_ = cloned.Delete()
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
@@ -1040,11 +1106,71 @@ func (m *RepoModule) CreateMergeRequest(name string, params map[string]interface
 
 	res, err := m.MergeRequestCreate(cloned, args)
 	if err != nil {
+		_ = cloned.Delete()
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
 	refHash, err := cloned.RefGet(res.Reference)
 	if err != nil {
+		_ = cloned.Delete()
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	// Add cloned repo path to temp repo manager.
+	tempRepoID := m.repoSrv.GetTempRepoManager().Add(cloned.GetPath())
+
+	return map[string]interface{}{
+		"hash":      refHash,
+		"reference": res.Reference,
+		"repoID":    tempRepoID,
+	}
+}
+
+// CloseMergeRequest closes a merge request.
+//  - name: The name of the repository.
+//  - reference: The full merge request reference name.
+func (m *RepoModule) CloseMergeRequest(name, reference string) util.Map {
+
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, m.logic.Config().GetRepoPath(name))
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	curRefHash, err := r.RefGet(reference)
+	if err != nil && err == pl.ErrRefNotFound {
+		panic(se(404, StatusCodeMergeRequestNotFound, "reference", "merge request not found"))
+	}
+
+	// Clone the repository and the issue reference.
+	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	if curRefHash == "" {
+		cloneOpts.ReferenceName = ""
+	}
+	cloned, _, err := r.Clone(cloneOpts)
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", errors.Wrap(err, "failed to clone repo").Error()))
+	}
+
+	res, err := m.MergeRequestClose(cloned, &mergecmd.MergeReqCloseArgs{
+		Reference:          reference,
+		PostCommentCreator: pl.CreatePostCommit,
+		ReadPostBody:       pl.ReadPostBody,
+	})
+	if err != nil {
+		_ = cloned.Delete()
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	refHash, err := cloned.RefGet(res.Reference)
+	if err != nil {
+		_ = cloned.Delete()
 		panic(se(500, StatusCodeServerErr, "", err.Error()))
 	}
 
