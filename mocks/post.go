@@ -92,9 +92,9 @@ func (mr *MockPostEntryMockRecorder) GetName() *gomock.Call {
 }
 
 // Comment mocks base method
-func (m *MockPostEntry) Comment() *plumbing.Comment {
+func (m *MockPostEntry) GetComment() *plumbing.Comment {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Comment")
+	ret := m.ctrl.Call(m, "GetComment")
 	ret0, _ := ret[0].(*plumbing.Comment)
 	return ret0
 }
@@ -102,5 +102,5 @@ func (m *MockPostEntry) Comment() *plumbing.Comment {
 // Comment indicates an expected call of Comment
 func (mr *MockPostEntryMockRecorder) Comment() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Comment", reflect.TypeOf((*MockPostEntry)(nil).Comment))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComment", reflect.TypeOf((*MockPostEntry)(nil).GetComment))
 }

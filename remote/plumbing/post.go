@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlekSi/pointer"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gohugoio/hugo/parser/pageparser"
@@ -32,33 +33,33 @@ func (c *Comments) Reverse() {
 
 // Comment represent a reference post comment
 type Comment struct {
-	Created      time.Time
-	Reference    string
-	Hash         string
-	Author       string
-	AuthorEmail  string
-	Signature    string
-	Pusher       string
-	Body         *PostBody
-	GetReactions func() map[string]int
+	CreatedAt    time.Time             `json:"createdAt"`
+	Reference    string                `json:"reference"`
+	Hash         string                `json:"hash"`
+	Author       string                `json:"author"`
+	AuthorEmail  string                `json:"authorEmail"`
+	Signature    string                `json:"signature"`
+	Pusher       string                `json:"pusher"`
+	Body         *PostBody             `json:"body,omitempty"`
+	GetReactions func() map[string]int `json:"-"`
 }
 
 // Post represents a reference post
 type Post struct {
-	Repo types.LocalRepo
+	Repo types.LocalRepo `json:"-"`
 
 	// Title is the title of the post
-	Title string
+	Title string `json:"title,omitempty"`
 
 	// Name is the full reference name of the post
-	Name string
+	Name string `json:"name,omitempty"`
 
-	// First is the first comment in the post (main comment).
-	First *Comment
+	// Comment is the first comment of the post.
+	Comment *Comment `json:"comment,omitempty"`
 }
 
-func (p *Post) Comment() *Comment {
-	return p.First
+func (p *Post) GetComment() *Comment {
+	return p.Comment
 }
 
 func (p *Post) GetTitle() string {
@@ -139,7 +140,7 @@ func (p *Post) GetComments() (comments Comments, err error) {
 			Body:        body,
 			Hash:        commit.Hash.String(),
 			Reference:   p.Name,
-			Created:     commit.Committer.When,
+			CreatedAt:   commit.Committer.When,
 			Author:      commit.Author.Name,
 			AuthorEmail: commit.Author.Email,
 			Signature:   commit.PGPSignature,
@@ -236,7 +237,7 @@ func UpdateReactions(newReactions []string, targetHash, pusherKeyID string, dest
 // Posts is a collection of Post
 type Posts []PostEntry
 
-// Reverse reverse the posts
+// Reverse reverses the posts
 func (p *Posts) Reverse() {
 	for i, j := 0, len(*p)-1; i < j; i, j = i+1, j-1 {
 		(*p)[i], (*p)[j] = (*p)[j], (*p)[i]
@@ -246,7 +247,7 @@ func (p *Posts) Reverse() {
 // SortByFirstPostCreationTimeDesc sorts the posts by their first post creation time in descending order
 func (p *Posts) SortByFirstPostCreationTimeDesc() {
 	sort.Slice(*p, func(i, j int) bool {
-		return (*p)[i].(*Post).First.Created.UnixNano() > (*p)[j].Comment().Created.UnixNano()
+		return (*p)[i].(*Post).Comment.CreatedAt.UnixNano() > (*p)[j].GetComment().CreatedAt.UnixNano()
 	})
 }
 
@@ -312,10 +313,10 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 		posts = append(posts, &Post{
 			Name:  ref.String(),
 			Title: fm.Get("title").String(),
-			First: &Comment{
+			Comment: &Comment{
 				Body:        PostBodyFromContentFrontMatter(&cfm),
 				Hash:        commit.Hash.String(),
-				Created:     commit.Committer.When,
+				CreatedAt:   commit.Committer.When,
 				Author:      commit.Author.Name,
 				AuthorEmail: commit.Author.Email,
 				Signature:   commit.PGPSignature,
@@ -340,19 +341,19 @@ func GetCommentPreview(comment *Comment) string {
 type PostBody struct {
 
 	// Content is the post's main content
-	Content []byte `yaml:"-" msgpack:"content,omitempty"`
+	Content []byte `yaml:"-" msgpack:"content,omitempty" json:"content"`
 
 	// Title is the post's title
-	Title string `yaml:"title,omitempty" msgpack:"title,omitempty"`
+	Title string `yaml:"title,omitempty" msgpack:"title,omitempty" json:"title"`
 
 	// ReplyTo is used to set the comment commit hash to reply to.
-	ReplyTo string `yaml:"replyTo,omitempty" msgpack:"replyTo,omitempty"`
+	ReplyTo string `yaml:"replyTo,omitempty" msgpack:"replyTo,omitempty" json:"replyTo,omitempty"`
 
 	// Reactions are emoji directed at a comment being replied to
-	Reactions []string `yaml:"reactions,flow,omitempty" msgpack:"reactions,omitempty"`
+	Reactions []string `yaml:"reactions,flow,omitempty" msgpack:"reactions,omitempty" json:"reactions,omitempty"`
 
 	// Close indicates that the post's thread should be closed.
-	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty"`
+	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty" json:"close,omitempty"`
 
 	// Issue Specific Fields
 	*types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
@@ -371,7 +372,7 @@ func NewEmptyPostBody() *PostBody {
 
 // WantOpen checks whether close=false
 func (b *PostBody) WantOpen() bool {
-	return b.Close != nil && *b.Close == false
+	return !pointer.GetBool(b.Close)
 }
 
 // IncludesAdminFields checks whether administrative fields where set
@@ -437,7 +438,7 @@ type PostEntry interface {
 	IsClosed() (bool, error)
 	GetTitle() string
 	GetName() string
-	Comment() *Comment
+	GetComment() *Comment
 }
 
 // GetFreePostIDFunc describes GetFreePostID function signature

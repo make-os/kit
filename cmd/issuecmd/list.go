@@ -53,6 +53,9 @@ type IssueListArgs struct {
 	StdErr io.Writer
 }
 
+// IssueListCmdFunc describes IssueListCmd function signature
+type IssueListCmdFunc func(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, error)
+
 // IssueListCmd list all issues
 func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, error) {
 
@@ -86,29 +89,29 @@ func FormatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 	for i, issue := range issues {
 
 		// Format date if date format is specified
-		date := issue.Comment().Created.String()
+		date := issue.GetComment().CreatedAt.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", issue.Comment().Created.Unix())
+				date = fmt.Sprintf("%d", issue.GetComment().CreatedAt.Unix())
 			case "utc":
-				date = issue.Comment().Created.UTC().String()
+				date = issue.GetComment().CreatedAt.UTC().String()
 			case "rfc3339":
-				date = issue.Comment().Created.Format(time.RFC3339)
+				date = issue.GetComment().CreatedAt.Format(time.RFC3339)
 			case "rfc822":
-				date = issue.Comment().Created.Format(time.RFC822)
+				date = issue.GetComment().CreatedAt.Format(time.RFC822)
 			default:
-				date = issue.Comment().Created.Format(args.DateFmt)
+				date = issue.GetComment().CreatedAt.Format(args.DateFmt)
 			}
 		}
 
 		pusherKeyFmt := ""
-		if issue.Comment().Pusher != "" {
+		if issue.GetComment().Pusher != "" {
 			pusherKeyFmt = "\nPusher: %pk"
 		}
 
 		// Extract preview
-		preview := pl.GetCommentPreview(issue.Comment())
+		preview := pl.GetCommentPreview(issue.GetComment())
 
 		// Get format or use default
 		var format = args.Format
@@ -124,15 +127,15 @@ Date:   %d
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
-			"a":  issue.Comment().Author,
-			"e":  issue.Comment().AuthorEmail,
+			"a":  issue.GetComment().Author,
+			"e":  issue.GetComment().AuthorEmail,
 			"t":  issue.GetTitle(),
 			"c":  preview,
 			"d":  date,
-			"H":  issue.Comment().Hash,
-			"h":  issue.Comment().Hash[:7],
+			"H":  issue.GetComment().Hash,
+			"h":  issue.GetComment().Hash[:7],
 			"n":  plumbing.ReferenceName(issue.GetName()).Short(),
-			"pk": issue.Comment().Pusher,
+			"pk": issue.GetComment().Pusher,
 		}
 
 		if i > 0 {

@@ -57,8 +57,8 @@ var _ = Describe("Post", func() {
 	Describe("Posts.Reverse", func() {
 		It("should reverse posts", func() {
 			posts := plumbing.Posts{
-				&plumbing.Post{Title: "t1", First: nil},
-				&plumbing.Post{Title: "t2", First: nil},
+				&plumbing.Post{Title: "t1", Comment: nil},
+				&plumbing.Post{Title: "t2", Comment: nil},
 			}
 			posts.Reverse()
 			Expect(posts[0].GetTitle()).To(Equal("t2"))
@@ -69,8 +69,8 @@ var _ = Describe("Post", func() {
 	Describe("Posts.SortByFirstPostCreationTimeDesc", func() {
 		It("should sort by first post creation time", func() {
 			posts := plumbing.Posts{
-				&plumbing.Post{Title: "t1", First: &plumbing.Comment{Created: time.Now().Add(-1 * time.Minute)}},
-				&plumbing.Post{Title: "t2", First: &plumbing.Comment{Created: time.Now()}},
+				&plumbing.Post{Title: "t1", Comment: &plumbing.Comment{CreatedAt: time.Now().Add(-1 * time.Minute)}},
+				&plumbing.Post{Title: "t2", Comment: &plumbing.Comment{CreatedAt: time.Now()}},
 			}
 			posts.SortByFirstPostCreationTimeDesc()
 			Expect(posts[0].(*plumbing.Post).Title).To(Equal("t2"))

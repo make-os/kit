@@ -125,19 +125,19 @@ func formatAndPrintIssueComments(
 	for i, comment := range comments {
 
 		// Format date if date format is specified
-		date := comment.Created.String()
+		date := comment.CreatedAt.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", comment.Created.Unix())
+				date = fmt.Sprintf("%d", comment.CreatedAt.Unix())
 			case "utc":
-				date = comment.Created.UTC().String()
+				date = comment.CreatedAt.UTC().String()
 			case "rfc3339":
-				date = comment.Created.Format(time.RFC3339)
+				date = comment.CreatedAt.Format(time.RFC3339)
 			case "rfc822":
-				date = comment.Created.Format(time.RFC822)
+				date = comment.CreatedAt.Format(time.RFC822)
 			default:
-				date = comment.Created.Format(args.DateFmt)
+				date = comment.CreatedAt.Format(args.DateFmt)
 			}
 		}
 

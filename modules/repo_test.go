@@ -1437,6 +1437,48 @@ index 0000000..3b0c2f1
 		})
 	})
 
+	Describe(".ListIssues", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListIssues("")
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListIssues("unknown")
+			})
+		})
+
+		It("should panic when unable to list issues", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.IssueList = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueListArgs) (plumbing.Posts, error) {
+				return nil, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListIssues("repo3")
+			})
+		})
+
+		It("should not panic on success", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.IssueList = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueListArgs) (plumbing.Posts, error) {
+				return []plumbing.PostEntry{
+					&plumbing.Post{Title: "title"},
+				}, nil
+			}
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.ListIssues("repo3")
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(HaveKey("title"))
+				Expect(res[0]["title"]).To(Equal("title"))
+			})
+		})
+	})
+
 	Describe(".CloseMergeRequest()", func() {
 		It("should panic when repo name was not provided", func() {
 			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
@@ -1665,6 +1707,48 @@ index 0000000..3b0c2f1
 				Expect(res["reference"]).To(Equal(ref))
 				Expect(res["hash"]).To(Equal(hash))
 				Expect(res["repoID"]).To(Equal(tempRepoId))
+			})
+		})
+	})
+
+	Describe(".ListMergeRequests", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListMergeRequests("")
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListMergeRequests("unknown")
+			})
+		})
+
+		It("should panic when unable to list issues", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.MergeRequestList = func(_ remotetypes.LocalRepo, _ *mergecmd.MergeRequestListArgs) (plumbing.Posts, error) {
+				return nil, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ListMergeRequests("repo3")
+			})
+		})
+
+		It("should not panic on success", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.MergeRequestList = func(_ remotetypes.LocalRepo, _ *mergecmd.MergeRequestListArgs) (plumbing.Posts, error) {
+				return []plumbing.PostEntry{
+					&plumbing.Post{Title: "title"},
+				}, nil
+			}
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.ListMergeRequests("repo3")
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(HaveKey("title"))
+				Expect(res[0]["title"]).To(Equal("title"))
 			})
 		})
 	})

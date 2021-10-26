@@ -57,6 +57,9 @@ type MergeRequestListArgs struct {
 	StdErr io.Writer
 }
 
+// MergeRequestListCmdFunc describes MergeRequestListCmd function signature
+type MergeRequestListCmdFunc func(targetRepo types.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error)
+
 // MergeRequestListCmd list all merge requests
 func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error) {
 
@@ -90,49 +93,49 @@ func FormatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 	for i, mr := range mergeReqs {
 
 		// Format date if date format is specified
-		date := mr.Comment().Created.String()
+		date := mr.GetComment().CreatedAt.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", mr.Comment().Created.Unix())
+				date = fmt.Sprintf("%d", mr.GetComment().CreatedAt.Unix())
 			case "utc":
-				date = mr.Comment().Created.UTC().String()
+				date = mr.GetComment().CreatedAt.UTC().String()
 			case "rfc3339":
-				date = mr.Comment().Created.Format(time.RFC3339)
+				date = mr.GetComment().CreatedAt.Format(time.RFC3339)
 			case "rfc822":
-				date = mr.Comment().Created.Format(time.RFC822)
+				date = mr.GetComment().CreatedAt.Format(time.RFC822)
 			default:
-				date = mr.Comment().Created.Format(args.DateFmt)
+				date = mr.GetComment().CreatedAt.Format(args.DateFmt)
 			}
 		}
 
 		var baseFmt string
-		if mr.Comment().Body.BaseBranch != "" {
+		if mr.GetComment().Body.BaseBranch != "" {
 			baseFmt = "\nBase Branch:    %bb"
 		}
 
 		var baseHashFmt string
-		if mr.Comment().Body.BaseBranchHash != "" {
+		if mr.GetComment().Body.BaseBranchHash != "" {
 			baseHashFmt = "\nBase Hash:      %bh"
 		}
 
 		var targetFmt string
-		if mr.Comment().Body.TargetBranch != "" {
+		if mr.GetComment().Body.TargetBranch != "" {
 			targetFmt = "\nTarget Branch:  %tb"
 		}
 
 		var targetHashFmt string
-		if mr.Comment().Body.TargetBranchHash != "" {
+		if mr.GetComment().Body.TargetBranchHash != "" {
 			targetHashFmt = "\nTarget Hash:    %th"
 		}
 
 		pusherKeyFmt := ""
-		if mr.Comment().Pusher != "" {
+		if mr.GetComment().Pusher != "" {
 			pusherKeyFmt = "\nPusher:         %pk"
 		}
 
 		// Extract preview
-		preview := pl.GetCommentPreview(mr.Comment())
+		preview := pl.GetCommentPreview(mr.GetComment())
 
 		// Get format or use default
 		var format = args.Format
@@ -148,19 +151,19 @@ Date:           %d
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
-			"bb": mr.Comment().Body.BaseBranch,
-			"bh": mr.Comment().Body.BaseBranchHash,
-			"tb": mr.Comment().Body.TargetBranch,
-			"th": mr.Comment().Body.TargetBranchHash,
-			"a":  mr.Comment().Author,
-			"e":  mr.Comment().AuthorEmail,
+			"bb": mr.GetComment().Body.BaseBranch,
+			"bh": mr.GetComment().Body.BaseBranchHash,
+			"tb": mr.GetComment().Body.TargetBranch,
+			"th": mr.GetComment().Body.TargetBranchHash,
+			"a":  mr.GetComment().Author,
+			"e":  mr.GetComment().AuthorEmail,
 			"t":  mr.GetTitle(),
 			"c":  preview,
 			"d":  date,
-			"H":  mr.Comment().Hash,
-			"h":  mr.Comment().Hash[:7],
+			"H":  mr.GetComment().Hash,
+			"h":  mr.GetComment().Hash[:7],
 			"n":  plumbing.ReferenceName(mr.GetName()).Short(),
-			"pk": mr.Comment().Pusher,
+			"pk": mr.GetComment().Pusher,
 		}
 
 		if i > 0 {
