@@ -3,6 +3,7 @@ package issuecmd
 import (
 	"fmt"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
@@ -24,23 +25,30 @@ type IssueReopenArgs struct {
 	Force bool
 }
 
+type IssueReopenResult struct {
+	Reference string
+}
+
+// IssueReopenCmdFunc describes IssueReopenCmd function signature
+type IssueReopenCmdFunc func(r types.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error)
+
 // IssueReopenCmd adds a negative close directive to an issue
-func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) error {
+func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error) {
 
 	// Ensure the issue reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return fmt.Errorf("merge request not found")
+			return nil, fmt.Errorf("merge request not found")
 		}
-		return err
+		return nil, err
 	}
 
 	pb, _, err := args.ReadPostBody(r, recentCommentHash)
 	if err != nil {
-		return errors.Wrap(err, "failed to read recent comment")
-	} else if pb.Close != nil && !(*pb.Close) {
-		return fmt.Errorf("already open")
+		return nil, errors.Wrap(err, "failed to read recent comment")
+	} else if !pointer.GetBool(pb.Close) {
+		return nil, fmt.Errorf("already open")
 	}
 
 	// Create the post body
@@ -48,15 +56,15 @@ func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) error {
 	postBody := plumbing.PostBodyToString(&plumbing.PostBody{Close: &cls})
 
 	// Create a new comment using the post body
-	_, _, err = args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+	_, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:  plumbing.IssueBranchPrefix,
 		ID:    args.Reference,
 		Body:  postBody,
 		Force: args.Force,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to add comment")
+		return nil, errors.Wrap(err, "failed to add comment")
 	}
 
-	return nil
+	return &IssueReopenResult{Reference: ref}, nil
 }

@@ -141,9 +141,10 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, rpcClient types2.Client, 
 
 // Select selects fields and their value from the given JSON string using dot notation.
 func Select(json string, selectors ...string) (map[string]interface{}, error) {
+	re, _ := regexp.Compile("(?i)^[a-z0-9/_.-]+([.][a-z0-9/_.-]+)*?$")
 	out := map[string]interface{}{}
 	for i, selector := range selectors {
-		match, _ := regexp.MatchString("(?i)^[a-z0-9/_.-]+([.][a-z0-9/_.-]+)*?$", selector)
+		match := re.MatchString(selector)
 		if !match {
 			return nil, fmt.Errorf("selector at index=%d is malformed", i)
 		}

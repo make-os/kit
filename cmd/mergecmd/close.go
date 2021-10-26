@@ -3,6 +3,7 @@ package mergecmd
 import (
 	"fmt"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
@@ -46,7 +47,7 @@ func MergeReqCloseCmd(r types.LocalRepo, args *MergeReqCloseArgs) (*MergeReqClos
 	pb, _, err := args.ReadPostBody(r, recentCommentHash)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read recent comment")
-	} else if pb.Close != nil && *pb.Close {
+	} else if pointer.GetBool(pb.Close) {
 		return nil, fmt.Errorf("already closed")
 	}
 

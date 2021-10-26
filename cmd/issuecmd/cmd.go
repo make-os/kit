@@ -232,7 +232,7 @@ var issueReopenCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = IssueReopenCmd(curRepo, &IssueReopenArgs{
+		if _, err = IssueReopenCmd(curRepo, &IssueReopenArgs{
 			Reference:          NormalizeIssueReferenceName(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,

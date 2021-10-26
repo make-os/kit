@@ -3,6 +3,7 @@ package mergecmd
 import (
 	"fmt"
 
+	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
@@ -24,23 +25,30 @@ type MergeReqReopenArgs struct {
 	Force bool
 }
 
+type MergeReqReopenResult struct {
+	Reference string
+}
+
+// MergeReqReopenCmdFunc describes MergeReqReopenCmd function signature
+type MergeReqReopenCmdFunc func(r types.LocalRepo, args *MergeReqReopenArgs) (*MergeReqReopenResult, error)
+
 // MergeReqReopenCmd adds a negative close directive to a merge request
-func MergeReqReopenCmd(r types.LocalRepo, args *MergeReqReopenArgs) error {
+func MergeReqReopenCmd(r types.LocalRepo, args *MergeReqReopenArgs) (*MergeReqReopenResult, error) {
 
 	// Ensure the merge request reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return fmt.Errorf("merge request not found")
+			return nil, fmt.Errorf("merge request not found")
 		}
-		return err
+		return nil, err
 	}
 
 	pb, _, err := args.ReadPostBody(r, recentCommentHash)
 	if err != nil {
-		return errors.Wrap(err, "failed to read recent comment")
-	} else if pb.Close != nil && !(*pb.Close) {
-		return fmt.Errorf("already open")
+		return nil, errors.Wrap(err, "failed to read recent comment")
+	} else if !pointer.GetBool(pb.Close) {
+		return nil, fmt.Errorf("already open")
 	}
 
 	// Create the post body
@@ -48,15 +56,15 @@ func MergeReqReopenCmd(r types.LocalRepo, args *MergeReqReopenArgs) error {
 	postBody := plumbing.PostBodyToString(&plumbing.PostBody{Close: &cls})
 
 	// Create a new comment using the post body
-	_, _, err = args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+	_, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:  plumbing.MergeRequestBranchPrefix,
 		ID:    args.Reference,
 		Body:  postBody,
 		Force: args.Force,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to add comment")
+		return nil, errors.Wrap(err, "failed to add comment")
 	}
 
-	return nil
+	return &MergeReqReopenResult{Reference: ref}, nil
 }
