@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
@@ -27,7 +27,7 @@ type MergeRequestListArgs struct {
 	DateFmt string
 
 	// PostGetter is the function used to get merge-request posts
-	PostGetter plumbing2.PostGetter
+	PostGetter pl.PostGetter
 
 	// PagerWrite is the function used to write to a pager
 	PagerWrite common.PagerWriter
@@ -58,14 +58,14 @@ type MergeRequestListArgs struct {
 }
 
 // MergeRequestListCmd list all merge requests
-func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs) error {
+func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error) {
 
 	// Get merge requests posts
 	mergeReqs, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsMergeRequestReference(ref.String())
+		return pl.IsMergeRequestReference(ref.String())
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get merge requests posts")
+		return nil, errors.Wrap(err, "failed to get merge requests posts")
 	}
 
 	// Sort by their first post time
@@ -81,10 +81,11 @@ func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs)
 		mergeReqs = mergeReqs[:args.Limit]
 	}
 
-	return formatAndPrintMergeRequestList(targetRepo, args, mergeReqs)
+	return mergeReqs, nil
 }
 
-func formatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeRequestListArgs, mergeReqs plumbing2.Posts) error {
+// FormatAndPrintMergeRequestList prints out merge request to stdout
+func FormatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeRequestListArgs, mergeReqs pl.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, mr := range mergeReqs {
 
@@ -131,7 +132,7 @@ func formatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 		}
 
 		// Extract preview
-		preview := plumbing2.GetCommentPreview(mr.Comment())
+		preview := pl.GetCommentPreview(mr.Comment())
 
 		// Get format or use default
 		var format = args.Format

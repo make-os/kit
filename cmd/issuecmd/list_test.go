@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -47,7 +46,7 @@ var _ = Describe("IssueList", func() {
 					return nil, fmt.Errorf("error")
 				},
 			}
-			err := issuecmd.IssueListCmd(mockRepo, args)
+			_, err := issuecmd.IssueListCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get issue posts: error"))
 		})
@@ -57,6 +56,7 @@ var _ = Describe("IssueList", func() {
 			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
+					Name:  "a",
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
@@ -65,6 +65,7 @@ var _ = Describe("IssueList", func() {
 					},
 				},
 				&plumbing2.Post{
+					Name:  "b",
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
@@ -73,22 +74,15 @@ var _ = Describe("IssueList", func() {
 					},
 				},
 			}
-			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{
-				StdErr: out, StdOut: out,
-				Format: "%H",
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
-				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
-					Expect(pagerCmd).To(Equal("pager_program"))
-				},
 			}
-			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := issuecmd.IssueListCmd(mockRepo, args)
+			res, err := issuecmd.IssueListCmd(mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash2, hash1}))
+			Expect(res[0].GetName()).To(Equal("b"))
+			Expect(res[1].GetName()).To(Equal("a"))
 		})
 
 		It("should reverse issue when Reverse=true", func() {
@@ -96,6 +90,7 @@ var _ = Describe("IssueList", func() {
 			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
+					Name:  "a",
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
@@ -104,6 +99,7 @@ var _ = Describe("IssueList", func() {
 					},
 				},
 				&plumbing2.Post{
+					Name:  "b",
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
@@ -112,26 +108,56 @@ var _ = Describe("IssueList", func() {
 					},
 				},
 			}
-			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{
-				StdErr: out, StdOut: out,
-				Format:  "%H",
 				Reverse: true,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
-				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
-					Expect(pagerCmd).To(Equal("pager_program"))
-				},
 			}
-			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := issuecmd.IssueListCmd(mockRepo, args)
+			res, err := issuecmd.IssueListCmd(mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash1, hash2}))
+			Expect(res[0].GetName()).To(Equal("a"))
+			Expect(res[1].GetName()).To(Equal("b"))
 		})
 
 		It("should limit issue when Limit=1", func() {
+			hash1 := util.RandString(40)
+			hash2 := util.RandString(40)
+			posts := []plumbing2.PostEntry{
+				&plumbing2.Post{
+					Name:  "a",
+					Title: "How to open a file",
+					First: &plumbing2.Comment{
+						Body:    plumbing2.NewEmptyPostBody(),
+						Created: time.Now().Add(-10 * time.Second),
+						Hash:    hash1,
+					},
+				},
+				&plumbing2.Post{
+					Name:  "b",
+					Title: "Remove examples",
+					First: &plumbing2.Comment{
+						Body:    plumbing2.NewEmptyPostBody(),
+						Created: time.Now().Add(-5 * time.Second),
+						Hash:    hash2,
+					},
+				},
+			}
+			args := &issuecmd.IssueListArgs{
+				Limit: 1,
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+					return posts, nil
+				},
+			}
+			res, err := issuecmd.IssueListCmd(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(1))
+			Expect(res[0].GetName()).To(Equal("b"))
+		})
+	})
+
+	Describe(".FormatAndPrintIssueList", func() {
+		It("should write to output", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
@@ -152,24 +178,24 @@ var _ = Describe("IssueList", func() {
 					},
 				},
 			}
+
 			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{
 				StdErr: out, StdOut: out,
 				Format: "%H",
-				Limit:  1,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
+					_, _ = out.ReadFrom(content)
 					Expect(pagerCmd).To(Equal("pager_program"))
 				},
 			}
 			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := issuecmd.IssueListCmd(mockRepo, args)
+
+			err = issuecmd.FormatAndPrintIssueList(mockRepo, args, posts)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(HaveLen(1))
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash2}))
+			Expect(out.Len()).To(BeNumerically(">", 0))
 		})
 	})
 })

@@ -185,7 +185,7 @@ var mergeReqListCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = MergeRequestListCmd(curRepo, &MergeRequestListArgs{
+		mrArgs := &MergeRequestListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -195,7 +195,14 @@ var mergeReqListCmd = &cobra.Command{
 			NoPager:    noPager,
 			StdOut:     os.Stdout,
 			StdErr:     os.Stderr,
-		}); err != nil {
+		}
+		res, err := MergeRequestListCmd(curRepo, mrArgs)
+
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		if err = FormatAndPrintMergeRequestList(curRepo, mrArgs, res); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

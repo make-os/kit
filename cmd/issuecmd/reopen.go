@@ -39,7 +39,7 @@ func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) (*IssueReopenResul
 	recentCommentHash, err := r.RefGet(args.Reference)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return nil, fmt.Errorf("merge request not found")
+			return nil, fmt.Errorf("issue not found")
 		}
 		return nil, err
 	}

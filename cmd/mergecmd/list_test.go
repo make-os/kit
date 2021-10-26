@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -47,91 +46,114 @@ var _ = Describe("MergeRequestList", func() {
 					return nil, fmt.Errorf("error")
 				},
 			}
-			err := mergecmd.MergeRequestListCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestListCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get merge requests posts: error"))
 		})
 
 		It("should sort merge requests posts by latest", func() {
-			hash1 := util.RandString(40)
-			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
+					Name:  "a",
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-10 * time.Second),
-						Hash:    hash1,
+						Hash:    util.RandString(40),
 					},
 				},
 				&plumbing2.Post{
+					Name:  "b",
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-5 * time.Second),
-						Hash:    hash2,
+						Hash:    util.RandString(40),
 					},
 				},
 			}
-			out := bytes.NewBuffer(nil)
 			args := &mergecmd.MergeRequestListArgs{
-				StdErr: out, StdOut: out,
-				Format: "%H",
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
-				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
-					Expect(pagerCmd).To(Equal("pager_program"))
-				},
 			}
-			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := mergecmd.MergeRequestListCmd(mockRepo, args)
+			res, err := mergecmd.MergeRequestListCmd(mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash2, hash1}))
+			Expect(res).To(HaveLen(2))
+			Expect(res[0].GetName()).To(Equal("b"))
+			Expect(res[1].GetName()).To(Equal("a"))
 		})
 
 		It("should reverse merge requests posts when Reverse=true", func() {
-			hash1 := util.RandString(40)
-			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
+					Name:  "a",
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-10 * time.Second),
-						Hash:    hash1,
+						Hash:    util.RandString(40),
 					},
 				},
 				&plumbing2.Post{
+					Name:  "b",
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    plumbing2.NewEmptyPostBody(),
 						Created: time.Now().Add(-5 * time.Second),
-						Hash:    hash2,
+						Hash:    util.RandString(40),
 					},
 				},
 			}
-			out := bytes.NewBuffer(nil)
 			args := &mergecmd.MergeRequestListArgs{
-				StdErr: out, StdOut: out,
-				Format:  "%H",
 				Reverse: true,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
-				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
-					Expect(pagerCmd).To(Equal("pager_program"))
-				},
 			}
-			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := mergecmd.MergeRequestListCmd(mockRepo, args)
+			res, err := mergecmd.MergeRequestListCmd(mockRepo, args)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash1, hash2}))
+			Expect(res).To(HaveLen(2))
+			Expect(res[0].GetName()).To(Equal("a"))
+			Expect(res[1].GetName()).To(Equal("b"))
 		})
 
 		It("should limit returned merge requests posts when Limit=1", func() {
+			posts := []plumbing2.PostEntry{
+				&plumbing2.Post{
+					Name:  "a",
+					Title: "How to open a file",
+					First: &plumbing2.Comment{
+						Body:    plumbing2.NewEmptyPostBody(),
+						Created: time.Now().Add(-10 * time.Second),
+						Hash:    util.RandString(40),
+					},
+				},
+				&plumbing2.Post{
+					Name:  "b",
+					Title: "Remove examples",
+					First: &plumbing2.Comment{
+						Body:    plumbing2.NewEmptyPostBody(),
+						Created: time.Now().Add(-5 * time.Second),
+						Hash:    util.RandString(40),
+					},
+				},
+			}
+			args := &mergecmd.MergeRequestListArgs{
+				Limit: 1,
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+					return posts, nil
+				},
+			}
+			res, err := mergecmd.MergeRequestListCmd(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(1))
+			Expect(res[0].GetName()).To(Equal("b"))
+		})
+	})
+
+	Describe(".FormatAndPrintMergeRequestList", func() {
+		It("should write to output", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
 			posts := []plumbing2.PostEntry{
@@ -156,20 +178,18 @@ var _ = Describe("MergeRequestList", func() {
 			args := &mergecmd.MergeRequestListArgs{
 				StdErr: out, StdOut: out,
 				Format: "%H",
-				Limit:  1,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-					out.ReadFrom(content)
+					_, _ = out.ReadFrom(content)
 					Expect(pagerCmd).To(Equal("pager_program"))
 				},
 			}
 			mockRepo.EXPECT().Var("GIT_PAGER").Return("pager_program", nil)
-			err := mergecmd.MergeRequestListCmd(mockRepo, args)
+			err = mergecmd.FormatAndPrintMergeRequestList(mockRepo, args, posts)
 			Expect(err).To(BeNil())
-			Expect(strings.Fields(out.String())).To(HaveLen(1))
-			Expect(strings.Fields(out.String())).To(Equal([]string{hash2}))
+			Expect(out.Len()).To(BeNumerically(">", 0))
 		})
 	})
 })

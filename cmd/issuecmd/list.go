@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing"
-	common2 "github.com/make-os/kit/cmd/common"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/cmd/common"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	cf "github.com/make-os/kit/util/colorfmt"
@@ -27,13 +27,13 @@ type IssueListArgs struct {
 	DateFmt string
 
 	// PostGetter is the function used to get issue posts
-	PostGetter plumbing2.PostGetter
+	PostGetter pl.PostGetter
 
 	// PagerWrite is the function used to write to a pager
-	PagerWrite common2.PagerWriter
+	PagerWrite common.PagerWriter
 
 	// Format specifies a format to use for generating each post output to Stdout.
-	// The following place holders are supported:
+	// The following placeholders are supported:
 	// - %i    	- Index of the post
 	// - %a 	- Author of the post
 	// - %e 	- Author email
@@ -54,14 +54,14 @@ type IssueListArgs struct {
 }
 
 // IssueListCmd list all issues
-func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) error {
+func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, error) {
 
 	// Get issue posts
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsIssueReference(ref.String())
+		return pl.IsIssueReference(ref.String())
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get issue posts")
+		return nil, errors.Wrap(err, "failed to get issue posts")
 	}
 
 	// Sort by their first post time
@@ -77,10 +77,11 @@ func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) error {
 		issues = issues[:args.Limit]
 	}
 
-	return formatAndPrintIssueList(targetRepo, args, issues)
+	return issues, nil
 }
 
-func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
+// FormatAndPrintIssueList prints out issues to stdout
+func FormatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, issues pl.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, issue := range issues {
 
@@ -107,7 +108,7 @@ func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 		}
 
 		// Extract preview
-		preview := plumbing2.GetCommentPreview(issue.Comment())
+		preview := pl.GetCommentPreview(issue.Comment())
 
 		// Get format or use default
 		var format = args.Format

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AlekSi/pointer"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/mergecmd"
@@ -81,13 +82,15 @@ var _ = Describe("MergeReqReopen", func() {
 			Expect(err).To(MatchError("already open"))
 		})
 
-		Specify("that the correct body was created", func() {
+		It("should create new comment with close=false", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
 			_, err := mergecmd.MergeReqReopenCmd(mockRepo, &mergecmd.MergeReqReopenArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return plumbing.NewEmptyPostBody(), nil, nil
+					pb := plumbing.NewEmptyPostBody()
+					pb.Close = pointer.ToBool(true)
+					return pb, nil, nil
 				},
 				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					Expect(args.Body).To(Equal("---\nclose: false\n---\n"))
@@ -103,7 +106,9 @@ var _ = Describe("MergeReqReopen", func() {
 			_, err := mergecmd.MergeReqReopenCmd(mockRepo, &mergecmd.MergeReqReopenArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return plumbing.NewEmptyPostBody(), nil, nil
+					pb := plumbing.NewEmptyPostBody()
+					pb.Close = pointer.ToBool(true)
+					return pb, nil, nil
 				},
 				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					return false, "", fmt.Errorf("error")

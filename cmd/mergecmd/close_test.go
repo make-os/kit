@@ -39,7 +39,7 @@ var _ = Describe("MergeCreate", func() {
 		It("should return error when unable to get reference", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", fmt.Errorf("error"))
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{Reference: ref})
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{Reference: ref})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
 		})
@@ -47,7 +47,7 @@ var _ = Describe("MergeCreate", func() {
 		It("should return error when merge request reference does not exist", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{Reference: ref})
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{Reference: ref})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("merge request not found"))
 		})
@@ -56,7 +56,7 @@ var _ = Describe("MergeCreate", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return nil, nil, fmt.Errorf("error")
@@ -70,7 +70,7 @@ var _ = Describe("MergeCreate", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					closed := true
@@ -84,7 +84,7 @@ var _ = Describe("MergeCreate", func() {
 		Specify("that the correct body was created", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return plumbing.NewEmptyPostBody(), nil, nil
@@ -100,7 +100,7 @@ var _ = Describe("MergeCreate", func() {
 		It("should return error when unable to post comment", func() {
 			ref := plumbing.MakeMergeRequestReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
-			err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
+			_, err := mergecmd.MergeReqCloseCmd(mockRepo, &mergecmd.MergeReqCloseArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return plumbing.NewEmptyPostBody(), nil, nil

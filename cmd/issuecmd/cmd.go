@@ -143,7 +143,7 @@ var issueListCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = IssueListCmd(curRepo, &IssueListArgs{
+		issueArgs := &IssueListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -153,7 +153,14 @@ var issueListCmd = &cobra.Command{
 			NoPager:    noPager,
 			StdOut:     os.Stdout,
 			StdErr:     os.Stderr,
-		}); err != nil {
+		}
+
+		issues, err := IssueListCmd(curRepo, issueArgs)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		if err = FormatAndPrintIssueList(curRepo, issueArgs, issues); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

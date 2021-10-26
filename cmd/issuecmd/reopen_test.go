@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AlekSi/pointer"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/cmd/issuecmd"
@@ -44,12 +45,12 @@ var _ = Describe("IssueReopen", func() {
 			Expect(err).To(MatchError("error"))
 		})
 
-		It("should return error when merge request reference does not exist", func() {
+		It("should return error when issue reference does not exist", func() {
 			ref := plumbing.MakeIssueReference(1)
 			mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
 			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{Reference: ref})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("merge request not found"))
+			Expect(err).To(MatchError("issue not found"))
 		})
 
 		It("should return error when unable to read recent commit post body", func() {
@@ -66,7 +67,7 @@ var _ = Describe("IssueReopen", func() {
 			Expect(err).To(MatchError("failed to read recent comment: error"))
 		})
 
-		It("should return error when recent commit post body includes a closed=false directive", func() {
+		It("should return error if recent post was not closed", func() {
 			ref := plumbing.MakeIssueReference(1)
 			hash := "e31992a88829f3cb70ab5f5e964597a6c8f17047"
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
@@ -81,20 +82,24 @@ var _ = Describe("IssueReopen", func() {
 			Expect(err).To(MatchError("already open"))
 		})
 
-		Specify("that the correct body was created", func() {
-			ref := plumbing.MakeIssueReference(1)
-			mockRepo.EXPECT().RefGet(ref).Return("", nil)
-			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
-				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return plumbing.NewEmptyPostBody(), nil, nil
-				},
-				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
-					Expect(args.Body).To(Equal("---\nclose: false\n---\n"))
-					return false, "", nil
-				},
+		When("recent post was closed", func() {
+			It("should create post that set close to false", func() {
+				ref := plumbing.MakeIssueReference(1)
+				mockRepo.EXPECT().RefGet(ref).Return("", nil)
+				_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
+					Reference: ref,
+					ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+						pb := plumbing.NewEmptyPostBody()
+						pb.Close = pointer.ToBool(true)
+						return pb, nil, nil
+					},
+					PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
+						Expect(args.Body).To(Equal("---\nclose: false\n---\n"))
+						return false, "", nil
+					},
+				})
+				Expect(err).To(BeNil())
 			})
-			Expect(err).To(BeNil())
 		})
 
 		It("should return error when unable to post comment", func() {
@@ -103,7 +108,9 @@ var _ = Describe("IssueReopen", func() {
 			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
 				Reference: ref,
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
-					return plumbing.NewEmptyPostBody(), nil, nil
+					pb := plumbing.NewEmptyPostBody()
+					pb.Close = pointer.ToBool(true)
+					return pb, nil, nil
 				},
 				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					return false, "", fmt.Errorf("error")
