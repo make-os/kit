@@ -11,7 +11,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
@@ -34,13 +34,13 @@ type MergeRequestReadArgs struct {
 	DateFmt string
 
 	// PostGetter is the function used to get merge request posts
-	PostGetter plumbing2.PostGetter
+	PostGetter pl.PostGetter
 
 	// PagerWrite is the function used to write to a pager
 	PagerWrite common.PagerWriter
 
 	// Format specifies a format to use for generating each comment output to Stdout.
-	// The following place holders are supported:
+	// The following placeholders are supported:
 	// - %i    	- Index of the comment
 	// - %i    	- Index of the post
 	// - %bb	- Base branch name
@@ -74,28 +74,31 @@ type MergeRequestReadArgs struct {
 	StdErr io.Writer
 }
 
+// MergeRequestReadCmdFunc describes MergeRequestReadCmd function signature
+type MergeRequestReadCmdFunc func(targetRepo types.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error)
+
 // MergeRequestReadCmd read comments in a merge request post
-func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs) error {
+func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error) {
 
 	// Find the target merge request
 	res, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsMergeRequestReference(ref.String()) && ref.String() == args.Reference
+		return pl.IsMergeRequestReference(ref.String()) && ref.String() == args.Reference
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to find merge request")
+		return nil, errors.Wrap(err, "failed to find merge request")
 	} else if len(res) == 0 {
-		return fmt.Errorf("merge request not found")
+		return nil, fmt.Errorf("merge request not found")
 	}
 
 	isClosed, err := res[0].IsClosed()
 	if err != nil {
-		return errors.Wrap(err, "failed to check close status")
+		return nil, errors.Wrap(err, "failed to check close status")
 	}
 
 	// Get all comments in the merge request
 	comments, err := res[0].GetComments()
 	if err != nil {
-		return errors.Wrap(err, "failed to get comments")
+		return nil, errors.Wrap(err, "failed to get comments")
 	}
 
 	// Reverse the merge requests if requested
@@ -108,7 +111,13 @@ func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs)
 		comments = comments[:args.Limit]
 	}
 
-	return formatAndPrintMergeRequestComments(targetRepo, args, isClosed, res[0].GetTitle(), comments)
+	if args.StdOut != nil {
+		if err = formatAndPrintMergeRequestComments(targetRepo, args, isClosed, res[0].GetTitle(), comments); err != nil {
+			return nil, err
+		}
+	}
+
+	return comments, nil
 }
 
 func formatAndPrintMergeRequestComments(
@@ -116,7 +125,7 @@ func formatAndPrintMergeRequestComments(
 	args *MergeRequestReadArgs,
 	isClosed bool,
 	title string,
-	comments plumbing2.Comments) error {
+	comments pl.Comments) error {
 
 	buf := bytes.NewBuffer(nil)
 
@@ -185,7 +194,7 @@ func formatAndPrintMergeRequestComments(
 
 		var reactions, reactionsFmt string
 		if reactionsMap := comment.GetReactions(); len(reactionsMap) > 0 {
-			reactionsCountMap := []string{}
+			var reactionsCountMap []string
 			for name, count := range reactionsMap {
 				if count > 0 {
 					if code, ok := util.EmojiCodeMap[fmt.Sprintf(":%s:", name)]; ok {

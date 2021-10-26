@@ -11,7 +11,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
@@ -34,13 +34,13 @@ type IssueReadArgs struct {
 	DateFmt string
 
 	// PostGetter is the function used to get issue posts
-	PostGetter plumbing2.PostGetter
+	PostGetter pl.PostGetter
 
 	// PagerWrite is the function used to write to a pager
 	PagerWrite common.PagerWriter
 
 	// Format specifies a format to use for generating each comment output to Stdout.
-	// The following place holders are supported:
+	// The following placeholders are supported:
 	// - %i    	- Index of the comment
 	// - %a 	- Author of the comment
 	// - %e 	- Author email
@@ -69,28 +69,31 @@ type IssueReadArgs struct {
 	StdErr io.Writer
 }
 
+// IssueReadCmdFunc describes IssueReadCmd function signature
+type IssueReadCmdFunc func(targetRepo types.LocalRepo, args *IssueReadArgs) (pl.Comments, error)
+
 // IssueReadCmd read comments in an issue
-func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) error {
+func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) (pl.Comments, error) {
 
 	// Find the target issue
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsIssueReference(ref.String()) && ref.String() == args.Reference
+		return pl.IsIssueReference(ref.String()) && ref.String() == args.Reference
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to find issue")
+		return nil, errors.Wrap(err, "failed to find issue")
 	} else if len(issues) == 0 {
-		return fmt.Errorf("issue not found")
+		return nil, fmt.Errorf("issue not found")
 	}
 
 	isClosed, err := issues[0].IsClosed()
 	if err != nil {
-		return errors.Wrap(err, "failed to check close status")
+		return nil, errors.Wrap(err, "failed to check close status")
 	}
 
 	// Get all comments in the issue
 	comments, err := issues[0].GetComments()
 	if err != nil {
-		return errors.Wrap(err, "failed to get comments")
+		return nil, errors.Wrap(err, "failed to get comments")
 	}
 
 	// Reverse issues if requested
@@ -103,15 +106,23 @@ func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) error {
 		comments = comments[:args.Limit]
 	}
 
-	return formatAndPrintIssueComments(targetRepo, args, isClosed, issues[0].GetTitle(), comments)
+	// Format and print if stdout is provided
+	if args.StdOut != nil {
+		if err = formatAndPrintIssueComments(targetRepo, args, isClosed, issues[0].GetTitle(), comments); err != nil {
+			return nil, err
+		}
+	}
+
+	return comments, nil
 }
 
+// formatAndPrintIssueComments prints out an issue to stdout
 func formatAndPrintIssueComments(
 	targetRepo types.LocalRepo,
 	args *IssueReadArgs,
 	isClosed bool,
 	title string,
-	comments plumbing2.Comments) error {
+	comments pl.Comments) error {
 
 	buf := bytes.NewBuffer(nil)
 
@@ -176,7 +187,7 @@ func formatAndPrintIssueComments(
 
 		var reactions, reactionsFmt string
 		if reactionsMap := comment.GetReactions(); len(reactionsMap) > 0 {
-			reactionsCountMap := []string{}
+			var reactionsCountMap []string
 			for name, count := range reactionsMap {
 				if count > 0 {
 					if code, ok := util.EmojiCodeMap[fmt.Sprintf(":%s:", name)]; ok {

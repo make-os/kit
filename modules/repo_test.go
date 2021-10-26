@@ -1321,6 +1321,48 @@ index 0000000..3b0c2f1
 		})
 	})
 
+	Describe(".ReadIssue", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadIssue("", plumbing.MakeIssueReference(1))
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadIssue("unknown", plumbing.MakeIssueReference(1))
+			})
+		})
+
+		It("should panic when unable to get the issue", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.IssueRead = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueReadArgs) (plumbing.Comments, error) {
+				return nil, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadIssue("repo3", plumbing.MakeIssueReference(1))
+			})
+		})
+
+		It("should not panic on success", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.IssueRead = func(_ remotetypes.LocalRepo, _ *issuecmd.IssueReadArgs) (plumbing.Comments, error) {
+				return []*plumbing.Comment{
+					{Reference: "a"},
+				}, nil
+			}
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.ReadIssue("repo3", plumbing.MakeIssueReference(1))
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(HaveKey("reference"))
+				Expect(res[0]["reference"]).To(Equal("a"))
+			})
+		})
+	})
+
 	Describe(".ReopenIssue", func() {
 		It("should panic when repo name was not provided", func() {
 			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
@@ -1749,6 +1791,48 @@ index 0000000..3b0c2f1
 				Expect(res).To(HaveLen(1))
 				Expect(res[0]).To(HaveKey("title"))
 				Expect(res[0]["title"]).To(Equal("title"))
+			})
+		})
+	})
+
+	Describe(".ReadMergeRequest()", func() {
+		It("should panic when repo name was not provided", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 400, Msg: "repo name is required", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadMergeRequest("", plumbing.MakeMergeRequestReference(1))
+			})
+		})
+
+		It("should panic when repo was not found", func() {
+			err := &errors.ReqError{Code: "invalid_param", HttpCode: 404, Msg: "repository does not exist", Field: "name"}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadMergeRequest("unknown", plumbing.MakeMergeRequestReference(1))
+			})
+		})
+
+		It("should panic when unable to get the merge request", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.MergeRequestRead = func(_ remotetypes.LocalRepo, _ *mergecmd.MergeRequestReadArgs) (plumbing.Comments, error) {
+				return nil, fmt.Errorf("error here")
+			}
+			err := &errors.ReqError{Code: "server_err", HttpCode: 500, Msg: "error here", Field: ""}
+			assert.PanicsWithError(GinkgoT(), err.Error(), func() {
+				m.ReadMergeRequest("repo3", plumbing.MakeMergeRequestReference(1))
+			})
+		})
+
+		It("should not panic on success", func() {
+			cfg.SetRepoRoot("../remote/repo/testdata")
+			m.MergeRequestRead = func(_ remotetypes.LocalRepo, _ *mergecmd.MergeRequestReadArgs) (plumbing.Comments, error) {
+				return []*plumbing.Comment{
+					{Reference: "a"},
+				}, nil
+			}
+			assert.NotPanics(GinkgoT(), func() {
+				res := m.ReadMergeRequest("repo3", plumbing.MakeMergeRequestReference(1))
+				Expect(res).To(HaveLen(1))
+				Expect(res[0]).To(HaveKey("reference"))
+				Expect(res[0]["reference"]).To(Equal("a"))
 			})
 		})
 	})

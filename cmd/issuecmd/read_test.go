@@ -43,7 +43,7 @@ var _ = Describe("IssueReadCmd", func() {
 					return nil, fmt.Errorf("error")
 				},
 			}
-			err := issuecmd.IssueReadCmd(mockRepo, args)
+			_, err := issuecmd.IssueReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to find issue: error"))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("IssueReadCmd", func() {
 					return plumbing2.Posts{}, nil
 				},
 			}
-			err := issuecmd.IssueReadCmd(mockRepo, args)
+			_, err := issuecmd.IssueReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("issue not found"))
 		})
@@ -70,7 +70,7 @@ var _ = Describe("IssueReadCmd", func() {
 					return plumbing2.Posts{post}, nil
 				},
 			}
-			err := issuecmd.IssueReadCmd(mockRepo, args)
+			_, err := issuecmd.IssueReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to check close status: error"))
 		})
@@ -86,7 +86,7 @@ var _ = Describe("IssueReadCmd", func() {
 					return plumbing2.Posts{post}, nil
 				},
 			}
-			err := issuecmd.IssueReadCmd(mockRepo, args)
+			_, err := issuecmd.IssueReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get comments: error"))
 		})

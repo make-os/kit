@@ -184,7 +184,7 @@ var issueReadCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = IssueReadCmd(curRepo, &IssueReadArgs{
+		if _, err = IssueReadCmd(curRepo, &IssueReadArgs{
 			Reference:     NormalizeIssueReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,

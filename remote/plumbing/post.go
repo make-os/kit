@@ -340,6 +340,12 @@ func GetCommentPreview(comment *Comment) string {
 
 type PostBody struct {
 
+	// Issue Specific Fields
+	*types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"issuesFields,omitempty"`
+
+	// Merge Request Fields
+	*types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"mergeRequestFields,omitempty"`
+
 	// Content is the post's main content
 	Content []byte `yaml:"-" msgpack:"content,omitempty" json:"content"`
 
@@ -354,12 +360,6 @@ type PostBody struct {
 
 	// Close indicates that the post's thread should be closed.
 	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty" json:"close,omitempty"`
-
-	// Issue Specific Fields
-	*types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
-
-	// Merge Request Fields
-	*types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 }
 
 // NewEmptyPostBody returns a PostBody instance that is empty

@@ -43,7 +43,7 @@ var _ = Describe("MergeRequestRead", func() {
 					return nil, fmt.Errorf("error")
 				},
 			}
-			err := mergecmd.MergeRequestReadCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to find merge request: error"))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("MergeRequestRead", func() {
 					return plumbing2.Posts{}, nil
 				},
 			}
-			err := mergecmd.MergeRequestReadCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("merge request not found"))
 		})
@@ -70,7 +70,7 @@ var _ = Describe("MergeRequestRead", func() {
 					return plumbing2.Posts{post}, nil
 				},
 			}
-			err := mergecmd.MergeRequestReadCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to check close status: error"))
 		})
@@ -86,7 +86,7 @@ var _ = Describe("MergeRequestRead", func() {
 					return plumbing2.Posts{post}, nil
 				},
 			}
-			err := mergecmd.MergeRequestReadCmd(mockRepo, args)
+			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get comments: error"))
 		})

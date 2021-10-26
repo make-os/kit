@@ -226,7 +226,7 @@ var mergeReqReadCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = MergeRequestReadCmd(curRepo, &MergeRequestReadArgs{
+		if _, err = MergeRequestReadCmd(curRepo, &MergeRequestReadArgs{
 			Reference:     NormalMergeReferenceName(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,

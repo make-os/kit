@@ -52,6 +52,8 @@ type RepoModule struct {
 	MergeRequestReopen mergecmd.MergeReqReopenCmdFunc
 	IssueList          issuecmd.IssueListCmdFunc
 	MergeRequestList   mergecmd.MergeRequestListCmdFunc
+	IssueRead          issuecmd.IssueReadCmdFunc
+	MergeRequestRead   mergecmd.MergeRequestReadCmdFunc
 }
 
 // NewAttachableRepoModule creates an instance of RepoModule suitable in attach mode
@@ -75,6 +77,8 @@ func NewRepoModule(service services.Service, repoSrv core.RemoteServer, logic co
 		MergeRequestReopen: mergecmd.MergeReqReopenCmd,
 		IssueList:          issuecmd.IssueListCmd,
 		MergeRequestList:   mergecmd.MergeRequestListCmd,
+		IssueRead:          issuecmd.IssueReadCmd,
+		MergeRequestRead:   mergecmd.MergeRequestReadCmd,
 	}
 }
 
@@ -108,10 +112,12 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "closeIssue", Value: m.CloseIssue, Description: "Close an issue"},
 		{Name: "reopenIssue", Value: m.ReopenIssue, Description: "Reopen an issue"},
 		{Name: "listIssues", Value: m.ListIssues, Description: "List all issues"},
+		{Name: "readIssue", Value: m.ReadIssue, Description: "Read an issue"},
 		{Name: "createMergeRequest", Value: m.CreateMergeRequest, Description: "Create a merge request, add comments or edit an existing merge request"},
 		{Name: "closeMergeRequest", Value: m.CloseMergeRequest, Description: "Close a merge request"},
 		{Name: "reopenMergeRequest", Value: m.ReopenMergeRequest, Description: "Reopen a merge request"},
 		{Name: "listMergeRequests", Value: m.ListMergeRequests, Description: "List all merge requests"},
+		{Name: "readMergeRequest", Value: m.ReadMergeRequest, Description: "Read a merge request"},
 		{Name: "push", Value: m.Push, Description: "Sign and push a commit, tag or note"},
 	}
 }
@@ -989,6 +995,33 @@ func (m *RepoModule) CreateIssue(name string, params map[string]interface{}) uti
 	}
 }
 
+// ReadIssue gets an issue.
+//  - name: The name of the repository.
+//  - reference: The full issue reference name.
+func (m *RepoModule) ReadIssue(name, reference string) []util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, m.logic.Config().GetRepoPath(name))
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	comments, err := m.IssueRead(r, &issuecmd.IssueReadArgs{
+		Reference:  reference,
+		PostGetter: pl.GetPosts,
+	})
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.StructSliceToMap(comments)
+}
+
 // CloseIssue closes an issue.
 //  - name: The name of the repository.
 //  - reference: The full issue reference name.
@@ -1220,6 +1253,33 @@ func (m *RepoModule) CreateMergeRequest(name string, params map[string]interface
 		"reference": res.Reference,
 		"repoID":    tempRepoID,
 	}
+}
+
+// ReadMergeRequest gets an issue.
+//  - name: The name of the repository.
+//  - reference: The full merge request reference name.
+func (m *RepoModule) ReadMergeRequest(name, reference string) []util.Map {
+	if name == "" {
+		panic(se(400, StatusCodeInvalidParam, "name", "repo name is required"))
+	}
+
+	r, err := m.GetLocalRepo(m.logic.Config().Node.GitBinPath, m.logic.Config().GetRepoPath(name))
+	if err != nil {
+		if err == git.ErrRepositoryNotExists {
+			panic(se(404, StatusCodeInvalidParam, "name", err.Error()))
+		}
+		panic(se(400, StatusCodeInvalidParam, "name", err.Error()))
+	}
+
+	comments, err := m.MergeRequestRead(r, &mergecmd.MergeRequestReadArgs{
+		Reference:  reference,
+		PostGetter: pl.GetPosts,
+	})
+	if err != nil {
+		panic(se(500, StatusCodeServerErr, "", err.Error()))
+	}
+
+	return util.StructSliceToMap(comments)
 }
 
 // CloseMergeRequest closes a merge request.

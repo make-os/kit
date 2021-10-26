@@ -168,10 +168,12 @@ type RepoModule interface {
 	GetCommitAncestors(name, commitHash string, limit ...int) []util.Map
 	GetParentsAndCommitDiff(name string, commitHash string) util.Map
 	CreateIssue(name string, params map[string]interface{}) util.Map
+	ReadIssue(name, reference string) []util.Map
 	CloseIssue(name, reference string) util.Map
 	ReopenIssue(name, reference string) util.Map
 	ListIssues(name string) []util.Map
 	CreateMergeRequest(name string, params map[string]interface{}) util.Map
+	ReadMergeRequest(name, reference string) []util.Map
 	CloseMergeRequest(name, reference string) util.Map
 	ListMergeRequests(name string) []util.Map
 	ReopenMergeRequest(name, reference string) util.Map
