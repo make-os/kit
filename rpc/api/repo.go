@@ -182,6 +182,114 @@ func (a *RepoAPI) getAncestors(params interface{}) (resp *rpc.Response) {
 	})
 }
 
+// push will push a temporary worktree to a repository
+func (a *RepoAPI) push(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	keyOrPushToken := m.Get("privateKeyOrPushToken").Str()
+	pushParams := m.Get("params").MSI()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.Push(pushParams, keyOrPushToken),
+	})
+}
+
+// createIssue creates an issue
+func (a *RepoAPI) createIssue(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	callParams := m.Get("params").MSI()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.CreateIssue(name, callParams),
+	})
+}
+
+// closeIssue closes an issue
+func (a *RepoAPI) closeIssue(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.CloseIssue(name, reference),
+	})
+}
+
+// reopenIssue reopens an issue
+func (a *RepoAPI) reopenIssue(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ReopenIssue(name, reference),
+	})
+}
+
+// listIssues lists issues of a repository
+func (a *RepoAPI) listIssues(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ListIssues(name),
+	})
+}
+
+// readIssue reads an issue from a repository
+func (a *RepoAPI) readIssue(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ReadIssue(name, reference),
+	})
+}
+
+// createMergeRequest creates a merge request
+func (a *RepoAPI) createMergeRequest(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	callParams := m.Get("params").MSI()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.CreateMergeRequest(name, callParams),
+	})
+}
+
+// closeMergeRequest closes a merge request
+func (a *RepoAPI) closeMergeRequest(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.CloseMergeRequest(name, reference),
+	})
+}
+
+// reopenMergeRequest reopens a merge request
+func (a *RepoAPI) reopenMergeRequest(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ReopenMergeRequest(name, reference),
+	})
+}
+
+// listMergeRequests lists merge requests of a repository
+func (a *RepoAPI) listMergeRequests(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ListIssues(name),
+	})
+}
+
+// readMergeRequest reads a merge request from a repository
+func (a *RepoAPI) readMergeRequest(params interface{}) (resp *rpc.Response) {
+	m := objx.New(cast.ToStringMap(params))
+	name := m.Get("name").Str()
+	reference := m.Get("reference").Str()
+	return rpc.Success(util.Map{
+		"data": a.mods.Repo.ReadIssue(name, reference),
+	})
+}
+
 // APIs returns all API handlers
 func (a *RepoAPI) APIs() rpc.APISet {
 	ns := constants.NamespaceRepo
@@ -207,5 +315,16 @@ func (a *RepoAPI) APIs() rpc.APISet {
 		{Name: "countCommits", Namespace: ns, Func: a.countCommits, Desc: "Get the number of commits in a reference"},
 		{Name: "getAncestors", Namespace: ns, Func: a.getAncestors, Desc: "Get ancestors of a commit in a repository"},
 		{Name: "getDiffOfCommitAndParents", Namespace: ns, Func: a.getDiffOfCommitAndParents, Desc: "Get the diff output between a commit and its parent(s)."},
+		{Name: "push", Namespace: ns, Func: a.push, Desc: "Sign and push a commit, tag or note in a temporary worktree"},
+		{Name: "createIssue", Namespace: ns, Func: a.createIssue, Desc: "Create, add comment or edit an issue"},
+		{Name: "closeIssue", Namespace: ns, Func: a.closeIssue, Desc: "Close an issue"},
+		{Name: "reopenIssue", Namespace: ns, Func: a.reopenIssue, Desc: "Reopen an issue"},
+		{Name: "listIssues", Namespace: ns, Func: a.listIssues, Desc: "List issues in a repository"},
+		{Name: "readIssue", Namespace: ns, Func: a.readIssue, Desc: "Read an issue in a repository"},
+		{Name: "createMergeRequest", Namespace: ns, Func: a.createMergeRequest, Desc: "Create, add comment or edit a merge request"},
+		{Name: "closeMergeRequest", Namespace: ns, Func: a.closeMergeRequest, Desc: "Close a merge request"},
+		{Name: "reopenMergeRequest", Namespace: ns, Func: a.reopenMergeRequest, Desc: "Reopen a merge request"},
+		{Name: "listMergeRequests", Namespace: ns, Func: a.listMergeRequests, Desc: "List merge requests in a repository"},
+		{Name: "readMergeRequest", Namespace: ns, Func: a.readMergeRequest, Desc: "Read a merge request in a repository"},
 	}
 }

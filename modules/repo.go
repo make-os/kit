@@ -108,17 +108,17 @@ func (m *RepoModule) methods() []*modtypes.VMMember {
 		{Name: "getAncestors", Value: m.GetCommitAncestors, Description: "Get ancestors of a commit in a repository"},
 		{Name: "countCommits", Value: m.CountCommits, Description: "Get a branch/reference commit count"},
 		{Name: "getDiffOfCommitAndParents", Value: m.GetParentsAndCommitDiff, Description: "Get the diff output of a commit and its parent(s)"},
-		{Name: "createIssue", Value: m.CreateIssue, Description: "Create an issue, add comments or edit an existing issue"},
+		{Name: "createIssue", Value: m.CreateIssue, Description: "Create, add comment or edit an issue"},
 		{Name: "closeIssue", Value: m.CloseIssue, Description: "Close an issue"},
 		{Name: "reopenIssue", Value: m.ReopenIssue, Description: "Reopen an issue"},
 		{Name: "listIssues", Value: m.ListIssues, Description: "List all issues"},
 		{Name: "readIssue", Value: m.ReadIssue, Description: "Read an issue"},
-		{Name: "createMergeRequest", Value: m.CreateMergeRequest, Description: "Create a merge request, add comments or edit an existing merge request"},
+		{Name: "createMergeRequest", Value: m.CreateMergeRequest, Description: "Create, add comment or edit a merge request"},
 		{Name: "closeMergeRequest", Value: m.CloseMergeRequest, Description: "Close a merge request"},
 		{Name: "reopenMergeRequest", Value: m.ReopenMergeRequest, Description: "Reopen a merge request"},
 		{Name: "listMergeRequests", Value: m.ListMergeRequests, Description: "List all merge requests"},
 		{Name: "readMergeRequest", Value: m.ReadMergeRequest, Description: "Read a merge request"},
-		{Name: "push", Value: m.Push, Description: "Sign and push a commit, tag or note"},
+		{Name: "push", Value: m.Push, Description: "Sign and push a commit, tag or note in a temporary worktree"},
 	}
 }
 
