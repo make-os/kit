@@ -34,12 +34,9 @@ func (c *Comments) Reverse() {
 // Comment represent a reference post comment
 type Comment struct {
 	CreatedAt    time.Time             `json:"createdAt"`
-	Reference    string                `json:"reference"`
 	Hash         string                `json:"hash"`
 	Author       string                `json:"author"`
 	AuthorEmail  string                `json:"authorEmail"`
-	Signature    string                `json:"signature"`
-	Pusher       string                `json:"pusher"`
 	Body         *PostBody             `json:"body,omitempty"`
 	GetReactions func() map[string]int `json:"-"`
 }
@@ -139,12 +136,9 @@ func (p *Post) GetComments() (comments Comments, err error) {
 		comments = append(comments, &Comment{
 			Body:        body,
 			Hash:        commit.Hash.String(),
-			Reference:   p.Name,
 			CreatedAt:   commit.Committer.When,
 			Author:      commit.Author.Name,
 			AuthorEmail: commit.Author.Email,
-			Signature:   commit.PGPSignature,
-			Pusher:      pusherKeyID,
 			GetReactions: func() map[string]int {
 				return GetReactionsForComment(reactions, commit.Hash.String())
 			},
@@ -263,7 +257,6 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 		return nil, err
 	}
 
-	var pusherKeyID string
 	for _, ref := range refs {
 		if ref.String() == "HEAD" {
 			continue
@@ -290,7 +283,6 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 			if p == nil {
 				return nil, fmt.Errorf("unable to decode first comment commit signature")
 			}
-			pusherKeyID = p.Headers["pkID"]
 		}
 
 		f, err := commit.File("body")
@@ -319,8 +311,6 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 				CreatedAt:   commit.Committer.When,
 				Author:      commit.Author.Name,
 				AuthorEmail: commit.Author.Email,
-				Signature:   commit.PGPSignature,
-				Pusher:      pusherKeyID,
 			},
 			Repo: targetRepo,
 		})

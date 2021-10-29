@@ -49,13 +49,11 @@ type IssueReadArgs struct {
 	// - %d 	- Date of creation
 	// - %H    	- The full hash of the comment
 	// - %h    	- The short hash of the comment
-	// - %n  	- The reference name of the post
 	// - %l 	- The label attached to the comment
 	// - %as 	- The assignees attached to the comment
 	// - %r 	- The short commit hash the current comment is replying to.
 	// - %R 	- The full commit hash the current comment is replying to.
 	// - %rs 	- The comment's reactions.
-	// - %pk 	- The push key address
 	// - %cl 	- Flag for close status of the post (true/false)
 	Format string
 
@@ -201,11 +199,6 @@ func formatAndPrintIssueComments(
 			reactionsFmt = "\nReactions:  %rs"
 		}
 
-		pusherKeyFmt := ""
-		if comment.Pusher != "" {
-			pusherKeyFmt = "\nPusher:     %pk"
-		}
-
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
@@ -220,9 +213,7 @@ func formatAndPrintIssueComments(
 			"as": assignees,
 			"R":  replyTo,
 			"r":  comment.Body.ReplyTo,
-			"n":  plumbing.ReferenceName(comment.Reference).Short(),
 			"rs": reactions,
-			"pk": comment.Pusher,
 			"cl": isClosed,
 		}
 
@@ -230,7 +221,7 @@ func formatAndPrintIssueComments(
 		var format = args.Format
 		if format == "" {
 			format = `` + fmt2.YellowString("comments %H #%i") + `
-Author:     %a <%e>` + pusherKeyFmt + `
+Author:     %a <%e>
 Title:      %t
 Date:       %d` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reactionsFmt + `
 

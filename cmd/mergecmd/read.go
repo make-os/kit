@@ -54,13 +54,11 @@ type MergeRequestReadArgs struct {
 	// - %d 	- Date of creation
 	// - %H    	- The full hash of the comment
 	// - %h    	- The short hash of the comment
-	// - %n  	- The reference name of the merge request post
 	// - %l 	- The label attached to the comment
 	// - %as 	- The assignees attached to the comment
 	// - %r 	- The short commit hash the current comment is replying to.
 	// - %R 	- The full commit hash the current comment is replying to.
 	// - %rs 	- The comment's reactions.
-	// - %pk 	- The push key address
 	// - %cl 	- Flag for close status of the post (true/false)
 	Format string
 
@@ -208,11 +206,6 @@ func formatAndPrintMergeRequestComments(
 			reactionsFmt = "\nReactions:  %rs"
 		}
 
-		pusherKeyFmt := ""
-		if comment.Pusher != "" {
-			pusherKeyFmt = "\nPusher:         %pk"
-		}
-
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
@@ -229,9 +222,7 @@ func formatAndPrintMergeRequestComments(
 			"h":  comment.Hash[:7],
 			"R":  replyTo,
 			"r":  comment.Body.ReplyTo,
-			"n":  plumbing.ReferenceName(comment.Reference).Short(),
 			"rs": reactions,
-			"pk": comment.Pusher,
 			"cl": isClosed,
 		}
 
@@ -240,7 +231,7 @@ func formatAndPrintMergeRequestComments(
 		if format == "" {
 			format = `` + fmt2.YellowString("comment %H #%i") + `
 Title:          %t` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
-Author:         %a <%e>` + pusherKeyFmt + ` 
+Author:         %a <%e> 
 Date:           %d` + replyToFmt + `` + reactionsFmt + `
 
 %c

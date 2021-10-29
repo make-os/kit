@@ -47,7 +47,6 @@ type MergeRequestListArgs struct {
 	// - %H    	- The full hash of the first comment
 	// - %h    	- The short hash of the first comment
 	// - %n  	- The reference name of the post
-	// - %pk 	- The push key address
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -129,11 +128,6 @@ func FormatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 			targetHashFmt = "\nTarget Hash:    %th"
 		}
 
-		pusherKeyFmt := ""
-		if mr.GetComment().Pusher != "" {
-			pusherKeyFmt = "\nPusher:         %pk"
-		}
-
 		// Extract preview
 		preview := pl.GetCommentPreview(mr.GetComment())
 
@@ -142,7 +136,7 @@ func FormatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeReque
 		if format == "" {
 			format = `` + fmt2.YellowString("merge-request %H %n") + `
 Title:          %t` + baseFmt + `` + baseHashFmt + `` + targetFmt + `` + targetHashFmt + `
-Author:         %a <%e>` + pusherKeyFmt + `
+Author:         %a <%e>
 Date:           %d
 %c
 `
@@ -163,7 +157,6 @@ Date:           %d
 			"H":  mr.GetComment().Hash,
 			"h":  mr.GetComment().Hash[:7],
 			"n":  plumbing.ReferenceName(mr.GetName()).Short(),
-			"pk": mr.GetComment().Pusher,
 		}
 
 		if i > 0 {

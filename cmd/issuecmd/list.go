@@ -43,7 +43,6 @@ type IssueListArgs struct {
 	// - %H    	- The full hash of the first comment
 	// - %h    	- The short hash of the first comment
 	// - %n  	- The reference name of the post
-	// - %pk 	- The push key address
 	Format string
 
 	// NoPager indicates that output must not be piped into a pager
@@ -105,11 +104,6 @@ func FormatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 			}
 		}
 
-		pusherKeyFmt := ""
-		if issue.GetComment().Pusher != "" {
-			pusherKeyFmt = "\nPusher: %pk"
-		}
-
 		// Extract preview
 		preview := pl.GetCommentPreview(issue.GetComment())
 
@@ -118,7 +112,7 @@ func FormatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 		if format == "" {
 			format = `` + cf.YellowString("issue %H %n") + `
 Title:  %t
-Author: %a <%e>` + pusherKeyFmt + `
+Author: %a <%e>
 Date:   %d
 %c
 `
@@ -126,16 +120,15 @@ Date:   %d
 
 		// Define the data for format parsing
 		data := map[string]interface{}{
-			"i":  i,
-			"a":  issue.GetComment().Author,
-			"e":  issue.GetComment().AuthorEmail,
-			"t":  issue.GetTitle(),
-			"c":  preview,
-			"d":  date,
-			"H":  issue.GetComment().Hash,
-			"h":  issue.GetComment().Hash[:7],
-			"n":  plumbing.ReferenceName(issue.GetName()).Short(),
-			"pk": issue.GetComment().Pusher,
+			"i": i,
+			"a": issue.GetComment().Author,
+			"e": issue.GetComment().AuthorEmail,
+			"t": issue.GetTitle(),
+			"c": preview,
+			"d": date,
+			"H": issue.GetComment().Hash,
+			"h": issue.GetComment().Hash[:7],
+			"n": plumbing.ReferenceName(issue.GetName()).Short(),
 		}
 
 		if i > 0 {
