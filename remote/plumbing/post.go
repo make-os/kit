@@ -272,41 +272,16 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 			return nil, err
 		}
 
-		commit, err := targetRepo.CommitObject(plumbing.NewHash(root))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get first comment")
-		}
-
-		// Get the pusher key from the signature header
-		if commit.PGPSignature != "" {
-			p, _ := pem.Decode([]byte(commit.PGPSignature))
-			if p == nil {
-				return nil, fmt.Errorf("unable to decode first comment commit signature")
-			}
-		}
-
-		f, err := commit.File("body")
-		if err != nil {
-			if err == object.ErrFileNotFound {
-				return nil, fmt.Errorf("body file is missing in %s", ref.String())
-			}
-			return nil, err
-		}
-		rdr, err := f.Reader()
+		postBody, commit, err := ReadPostBody(targetRepo, root)
 		if err != nil {
 			return nil, err
 		}
-		cfm, err := util.ParseContentFrontMatter(rdr)
-		if err != nil {
-			return nil, errors.Wrapf(err, "root commit of %s has bad body file", ref.String())
-		}
 
-		fm := objx.New(cfm.FrontMatter)
 		posts = append(posts, &Post{
 			Name:  ref.String(),
-			Title: fm.Get("title").String(),
+			Title: postBody.Title,
 			Comment: &Comment{
-				Body:        PostBodyFromContentFrontMatter(&cfm),
+				Body:        postBody,
 				Hash:        commit.Hash.String(),
 				CreatedAt:   commit.Committer.When,
 				Author:      commit.Author.Name,

@@ -173,7 +173,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResul
 	}
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
-	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
+	if len(args.Body) == 0 && !args.UseEditor && !args.NoBody {
 		if args.InputReader != nil {
 			args.Body, _ = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &io2.InputReaderArgs{
 				After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
@@ -182,7 +182,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResul
 	}
 
 	// Read body from editor if requested
-	if args.UseEditor == true {
+	if args.UseEditor {
 		var editor = args.EditorPath
 		if editor == "" {
 			editor = r.GetGitConfigOption("core.editor")

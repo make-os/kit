@@ -8,7 +8,6 @@ import (
 	"time"
 
 	plumbing2 "github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
@@ -143,18 +142,6 @@ var _ = Describe("Post", func() {
 			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get first comment: error"))
-		})
-
-		It("should return error when first comment commit signature cannot be decoded", func() {
-			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
-			mockRepo.EXPECT().GetReferences().Return(refs, nil)
-			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
-			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
-			commit := &object.Commit{PGPSignature: "malformed_signature"}
-			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(rootHash)).Return(commit, nil)
-			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unable to decode first comment commit signature"))
 		})
 
 		It("should return empty slice when no post reference is found by filter", func() {
