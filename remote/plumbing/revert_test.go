@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("plumbing.Revert", func() {
+var _ = Describe("Revert", func() {
 	var err error
 	var cfg *config.AppConfig
 	var testRepo plumbing.LocalRepo

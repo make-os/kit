@@ -350,6 +350,9 @@ func NewEmptyPostBody() *PostBody {
 
 // WantOpen checks whether close=false
 func (b *PostBody) WantOpen() bool {
+	if b.Close == nil {
+		return false
+	}
 	return !pointer.GetBool(b.Close)
 }
 

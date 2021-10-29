@@ -26,14 +26,12 @@ var _ = Describe("Changes", func() {
 	})
 
 	Describe(".GetChanges", func() {
-		When("update is nil", func() {
-			It("should return empty ref changes", func() {
-				curState := &plumbing2.State{References: plumbing2.NewObjCol(map[string]plumbing2.Item{
-					"ref": &plumbing2.Obj{Name: "abc"},
-				})}
-				changeLog := plumbing2.GetChanges(curState.References, nil)
-				Expect(changeLog).To(Equal(plumbing2.EmptyChangeResult()))
-			})
+		It("should return empty ref changes", func() {
+			curState := &plumbing2.State{References: plumbing2.NewObjCol(map[string]plumbing2.Item{
+				"ref": &plumbing2.Obj{Name: "abc"},
+			})}
+			changeLog := plumbing2.GetChanges(curState.References, nil)
+			Expect(changeLog).To(Equal(plumbing2.EmptyChangeResult()))
 		})
 	})
 

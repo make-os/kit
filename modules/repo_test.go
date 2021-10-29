@@ -1357,8 +1357,8 @@ index 0000000..3b0c2f1
 			assert.NotPanics(GinkgoT(), func() {
 				res := m.ReadIssue("repo3", plumbing.MakeIssueReference(1))
 				Expect(res).To(HaveLen(1))
-				Expect(res[0]).To(HaveKey("reference"))
-				Expect(res[0]["reference"]).To(Equal("a"))
+				Expect(res[0]).To(HaveKey("author"))
+				Expect(res[0]["author"]).To(Equal("a"))
 			})
 		})
 	})
@@ -1831,8 +1831,8 @@ index 0000000..3b0c2f1
 			assert.NotPanics(GinkgoT(), func() {
 				res := m.ReadMergeRequest("repo3", plumbing.MakeMergeRequestReference(1))
 				Expect(res).To(HaveLen(1))
-				Expect(res[0]).To(HaveKey("reference"))
-				Expect(res[0]["reference"]).To(Equal("a"))
+				Expect(res[0]).To(HaveKey("author"))
+				Expect(res[0]["author"]).To(Equal("a"))
 			})
 		})
 	})

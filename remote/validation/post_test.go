@@ -231,7 +231,7 @@ var _ = Describe("Validation", func() {
 				Expect(detail.GetReferenceData().Assignees).To(Equal([]string{"key1", "key2"}))
 			})
 
-			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {
+			It("should return error when issue reference has been previously closed and new issue commit did not set close=true", func() {
 				mockRepo.EXPECT().GetState().Return(mockRepoState)
 				mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
 
@@ -255,7 +255,7 @@ var _ = Describe("Validation", func() {
 				Expect(err).To(Equal(validation.ErrCannotWriteToClosedRef))
 			})
 
-			It("should return no error when issue reference has been previously closed and new issue commit set close=2", func() {
+			It("should return no error when issue reference has been previously closed and new issue commit set close=true", func() {
 				mockRepo.EXPECT().GetState().Return(mockRepoState)
 				mockRepo.EXPECT().GetAncestors(commitObj, "", true).Return([]*object.Commit{}, nil)
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 
 	plumbing2 "github.com/go-git/go-git/v5/plumbing"
@@ -21,11 +20,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func TestPost(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Plumbing Suite")
-}
 
 var _ = Describe("Post", func() {
 	var err error
@@ -121,7 +115,7 @@ var _ = Describe("Post", func() {
 		})
 	})
 
-	FDescribe(".GetPosts", func() {
+	Describe(".GetPosts", func() {
 		It("should return error when unable to get repo references", func() {
 			mockRepo.EXPECT().GetReferences().Return(nil, fmt.Errorf("error"))
 			_, err := plumbing.GetPosts(mockRepo, nil)
@@ -143,14 +137,42 @@ var _ = Describe("Post", func() {
 			mockRepo.EXPECT().GetReferences().Return(refs, nil)
 			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
 			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
-			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(rootHash)).Return(nil, fmt.Errorf("error"))
+			mockRepo.EXPECT().ReadPostBody(rootHash).Return(nil, nil, fmt.Errorf("error"))
 			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get first comment: error"))
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return error when unable to get an issue reference hash", func() {
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
+			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
+			mockRepo.EXPECT().ReadPostBody(rootHash).Return(&plumbing.PostBody{}, nil, nil)
+			mockRepo.EXPECT().RefGet(refs[0].String()).Return("", fmt.Errorf("error here"))
+			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error here"))
+		})
+
+		It("should return error when unable to read issue reference", func() {
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
+			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
+			mockRepo.EXPECT().ReadPostBody(rootHash).Return(&plumbing.PostBody{}, nil, nil)
+			recentHash := "a62s6d736acf90c32a3a2560b76682a262fb4"
+			mockRepo.EXPECT().RefGet(refs[0].String()).Return(recentHash, nil)
+			mockRepo.EXPECT().ReadPostBody(recentHash).Return(nil, nil, fmt.Errorf("error here"))
+			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error here"))
 		})
 
 		It("should return empty slice when no post reference is found by filter", func() {
-			post, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool { return false })
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			post, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return false })
 			Expect(err).To(BeNil())
 			Expect(post).To(BeEmpty())
 		})
@@ -174,7 +196,7 @@ var _ = Describe("Post", func() {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("body file is missing in refs/heads/issues/1"))
+			Expect(err.Error()).To(MatchRegexp("body file of commit (.*) is missing"))
 		})
 
 		It("should return err when a post reference does not include body file", func() {
@@ -185,7 +207,7 @@ var _ = Describe("Post", func() {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("root commit of refs/heads/issues/1 has bad body file"))
+			Expect(err.Error()).To(MatchRegexp("commit (.*) has bad body file: failed to unmarshal YAML.*"))
 		})
 	})
 
