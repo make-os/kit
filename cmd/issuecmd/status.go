@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +21,7 @@ type IssueStatusArgs struct {
 }
 
 // IssueStatusCmd prints the status of an issue
-func IssueStatusCmd(r types.LocalRepo, args *IssueStatusArgs) error {
+func IssueStatusCmd(r plumbing.LocalRepo, args *IssueStatusArgs) error {
 
 	// Ensure the issue reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)

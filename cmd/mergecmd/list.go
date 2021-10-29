@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
 	pl "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -57,10 +56,10 @@ type MergeRequestListArgs struct {
 }
 
 // MergeRequestListCmdFunc describes MergeRequestListCmd function signature
-type MergeRequestListCmdFunc func(targetRepo types.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error)
+type MergeRequestListCmdFunc func(targetRepo pl.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error)
 
 // MergeRequestListCmd list all merge requests
-func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error) {
+func MergeRequestListCmd(targetRepo pl.LocalRepo, args *MergeRequestListArgs) (pl.Posts, error) {
 
 	// Get merge requests posts
 	mergeReqs, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -87,7 +86,7 @@ func MergeRequestListCmd(targetRepo types.LocalRepo, args *MergeRequestListArgs)
 }
 
 // FormatAndPrintMergeRequestList prints out merge request to stdout
-func FormatAndPrintMergeRequestList(targetRepo types.LocalRepo, args *MergeRequestListArgs, mergeReqs pl.Posts) error {
+func FormatAndPrintMergeRequestList(targetRepo pl.LocalRepo, args *MergeRequestListArgs, mergeReqs pl.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, mr := range mergeReqs {
 

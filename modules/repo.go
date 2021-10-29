@@ -947,7 +947,7 @@ func (m *RepoModule) CreateIssue(name string, params map[string]interface{}) uti
 	// Clone the repository and the issue reference.
 	// Determine the full issue reference name and check
 	// if it exists. If it does not reset to empty string.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: pl.MakeIssueReference(id)}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: pl.MakeIssueReference(id)}
 	_, err = r.RefGet(cloneOpts.ReferenceName)
 	if err != nil {
 		cloneOpts.ReferenceName = ""
@@ -1045,7 +1045,7 @@ func (m *RepoModule) CloseIssue(name, reference string) util.Map {
 	}
 
 	// Clone the repository and the issue reference.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: reference}
 	if curRefHash == "" {
 		cloneOpts.ReferenceName = ""
 	}
@@ -1103,7 +1103,7 @@ func (m *RepoModule) ReopenIssue(name, reference string) util.Map {
 	}
 
 	// Clone the repository and the issue reference.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: reference}
 	if curRefHash == "" {
 		cloneOpts.ReferenceName = ""
 	}
@@ -1205,7 +1205,7 @@ func (m *RepoModule) CreateMergeRequest(name string, params map[string]interface
 	// Clone the repository and the merge request reference.
 	// Determine the full issue reference name and check
 	// if it exists. If it does not reset to empty string.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: pl.MakeMergeRequestReference(id)}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: pl.MakeMergeRequestReference(id)}
 	_, err = r.RefGet(cloneOpts.ReferenceName)
 	if err != nil {
 		cloneOpts.ReferenceName = ""
@@ -1305,7 +1305,7 @@ func (m *RepoModule) CloseMergeRequest(name, reference string) util.Map {
 	}
 
 	// Clone the repository and the issue reference.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: reference}
 	if curRefHash == "" {
 		cloneOpts.ReferenceName = ""
 	}
@@ -1363,7 +1363,7 @@ func (m *RepoModule) ReopenMergeRequest(name, reference string) util.Map {
 	}
 
 	// Clone the repository and the merge request reference.
-	cloneOpts := remotetypes.CloneOptions{Depth: 1, ReferenceName: reference}
+	cloneOpts := pl.CloneOptions{Depth: 1, ReferenceName: reference}
 	if curRefHash == "" {
 		cloneOpts.ReferenceName = ""
 	}
@@ -1526,7 +1526,7 @@ func (m *RepoModule) Push(params map[string]interface{}, privateKeyOrPushToken s
 	}
 
 	// Push to remote
-	progress, err := r.Push(remotetypes.PushOptions{
+	progress, err := r.Push(pl.PushOptions{
 		RefSpec: fmt.Sprintf("+%s:%s", reference, reference),
 		Token:   token,
 	})

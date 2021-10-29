@@ -9,8 +9,7 @@ import (
 	"github.com/make-os/kit/cmd/mergecmd"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
+	pl "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,8 +37,8 @@ var _ = Describe("MergeRequestRead", func() {
 	Describe(".MergeRequestReadCmd", func() {
 		It("should return err when unable to find the merge request", func() {
 			args := &mergecmd.MergeRequestReadArgs{
-				Reference: plumbing2.MakeMergeRequestReference(1),
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				Reference: pl.MakeMergeRequestReference(1),
+				PostGetter: func(pl.LocalRepo, func(ref plumbing.ReferenceName) bool) (pl.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -50,9 +49,9 @@ var _ = Describe("MergeRequestRead", func() {
 
 		It("should return err when merge request was not found", func() {
 			args := &mergecmd.MergeRequestReadArgs{
-				Reference: plumbing2.MakeMergeRequestReference(1),
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
-					return plumbing2.Posts{}, nil
+				Reference: pl.MakeMergeRequestReference(1),
+				PostGetter: func(pl.LocalRepo, func(ref plumbing.ReferenceName) bool) (pl.Posts, error) {
+					return pl.Posts{}, nil
 				},
 			}
 			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
@@ -61,13 +60,13 @@ var _ = Describe("MergeRequestRead", func() {
 		})
 
 		It("should return err when unable to check `close` status of merge request post", func() {
-			mrPath := plumbing2.MakeMergeRequestReference(1)
+			mrPath := pl.MakeMergeRequestReference(1)
 			args := &mergecmd.MergeRequestReadArgs{
 				Reference: mrPath,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(pl.LocalRepo, func(ref plumbing.ReferenceName) bool) (pl.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, fmt.Errorf("error"))
-					return plumbing2.Posts{post}, nil
+					return pl.Posts{post}, nil
 				},
 			}
 			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)
@@ -76,14 +75,14 @@ var _ = Describe("MergeRequestRead", func() {
 		})
 
 		It("should return err when unable to get comments", func() {
-			mrPath := plumbing2.MakeMergeRequestReference(1)
+			mrPath := pl.MakeMergeRequestReference(1)
 			args := &mergecmd.MergeRequestReadArgs{
 				Reference: mrPath,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(pl.LocalRepo, func(ref plumbing.ReferenceName) bool) (pl.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, nil)
 					post.EXPECT().GetComments().Return(nil, fmt.Errorf("error"))
-					return plumbing2.Posts{post}, nil
+					return pl.Posts{post}, nil
 				},
 			}
 			_, err := mergecmd.MergeRequestReadCmd(mockRepo, args)

@@ -12,7 +12,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gohugoio/hugo/parser/pageparser"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -43,16 +42,19 @@ type Comment struct {
 
 // Post represents a reference post
 type Post struct {
-	Repo types.LocalRepo `json:"-"`
+	Repo LocalRepo `json:"-"`
 
 	// Title is the title of the post
-	Title string `json:"title,omitempty"`
+	Title string `json:"title"`
 
 	// Name is the full reference name of the post
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
+
+	// Closed indicates whether the last post is closed.
+	Closed bool `json:"closed"`
 
 	// Comment is the first comment of the post.
-	Comment *Comment `json:"comment,omitempty"`
+	Comment *Comment `json:"comment"`
 }
 
 func (p *Post) GetComment() *Comment {
@@ -68,10 +70,10 @@ func (p *Post) GetName() string {
 }
 
 // PostBodyReader represents a function for reading a commit's post body
-type PostBodyReader func(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error)
+type PostBodyReader func(repo LocalRepo, hash string) (*PostBody, *object.Commit, error)
 
 // ReadPostBody reads the body file of a commit
-func ReadPostBody(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
+func ReadPostBody(repo LocalRepo, hash string) (*PostBody, *object.Commit, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
@@ -246,12 +248,12 @@ func (p *Posts) SortByFirstPostCreationTimeDesc() {
 }
 
 // PostGetter describes a function for finding posts
-type PostGetter func(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
+type PostGetter func(targetRepo LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
 
 // GetPosts returns references that conform to the post protocol
 // filter is used to check whether a reference is a post reference.
 // Returns a slice of posts
-func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
+func GetPosts(targetRepo LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
 	refs, err := targetRepo.GetReferences()
 	if err != nil {
 		return nil, err
@@ -272,14 +274,25 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 			return nil, err
 		}
 
-		postBody, commit, err := ReadPostBody(targetRepo, root)
+		postBody, commit, err := targetRepo.ReadPostBody(root)
+		if err != nil {
+			return nil, err
+		}
+
+		recentHash, err := targetRepo.RefGet(ref.String())
+		if err != nil {
+			return nil, err
+		}
+
+		recentPostBody, _, err := targetRepo.ReadPostBody(recentHash)
 		if err != nil {
 			return nil, err
 		}
 
 		posts = append(posts, &Post{
-			Name:  ref.String(),
-			Title: postBody.Title,
+			Name:   ref.String(),
+			Title:  postBody.Title,
+			Closed: pointer.GetBool(recentPostBody.Close),
 			Comment: &Comment{
 				Body:        postBody,
 				Hash:        commit.Hash.String(),
@@ -306,10 +319,10 @@ func GetCommentPreview(comment *Comment) string {
 type PostBody struct {
 
 	// Issue Specific Fields
-	*types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"issuesFields,omitempty"`
+	*IssueFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"issuesFields,omitempty"`
 
 	// Merge Request Fields
-	*types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"mergeRequestFields,omitempty"`
+	*MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty" json:"mergeRequestFields,omitempty"`
 
 	// Content is the post's main content
 	Content []byte `yaml:"-" msgpack:"content,omitempty" json:"content"`
@@ -330,8 +343,8 @@ type PostBody struct {
 // NewEmptyPostBody returns a PostBody instance that is empty
 func NewEmptyPostBody() *PostBody {
 	return &PostBody{
-		IssueFields:        &types.IssueFields{},
-		MergeRequestFields: &types.MergeRequestFields{},
+		IssueFields:        &IssueFields{},
+		MergeRequestFields: &MergeRequestFields{},
 	}
 }
 
@@ -407,10 +420,10 @@ type PostEntry interface {
 }
 
 // GetFreePostIDFunc describes GetFreePostID function signature
-type GetFreePostIDFunc func(repo types.LocalRepo, startID int, postRefType string) (int, error)
+type GetFreePostIDFunc func(repo LocalRepo, startID int, postRefType string) (int, error)
 
 // GetFreePostID finds and returns an ID that is unused within the post reference type
-func GetFreePostID(repo types.LocalRepo, startID int, postRefType string) (int, error) {
+func GetFreePostID(repo LocalRepo, startID int, postRefType string) (int, error) {
 	for {
 		var ref string
 		switch postRefType {
@@ -433,7 +446,7 @@ func GetFreePostID(repo types.LocalRepo, startID int, postRefType string) (int, 
 }
 
 // PostCommitCreator is a function type for creating a post commit or adding comments to an existing post reference
-type PostCommitCreator func(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error)
+type PostCommitCreator func(r LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error)
 
 // CreatePostCommitArgs includes argument for CreatePostCommit
 type CreatePostCommitArgs struct {
@@ -461,7 +474,7 @@ type CreatePostCommitArgs struct {
 }
 
 // CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
-func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
+func CreatePostCommit(r LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
 
 	// Ensure we are working in a clean repository.
 	// If args.Force is true, uncommitted changes are ignored.

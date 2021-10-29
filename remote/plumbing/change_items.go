@@ -1,4 +1,4 @@
-package types
+package plumbing
 
 import "github.com/make-os/kit/util"
 

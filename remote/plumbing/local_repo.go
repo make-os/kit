@@ -1,4 +1,4 @@
-package types
+package plumbing
 
 import (
 	"bytes"
@@ -198,6 +198,9 @@ type LocalRepo interface {
 
 	// Push performs push to the repository
 	Push(options PushOptions) (progress bytes.Buffer, err error)
+
+	// ReadPostBody reads the body file of a commit
+	ReadPostBody(hash string) (*PostBody, *object.Commit, error)
 }
 
 type PushOptions struct {

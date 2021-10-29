@@ -6,6 +6,7 @@ import (
 	"github.com/make-os/kit/cmd/common"
 	types3 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
+	types2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/server"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
@@ -14,7 +15,7 @@ import (
 )
 
 // SignTagCmd create and sign a push token for a given tag.
-func SignTagCmd(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, args *types3.SignTagArgs) error {
+func SignTagCmd(cfg *config.AppConfig, cmdArg []string, repo types2.LocalRepo, args *types3.SignTagArgs) error {
 
 	populateSignTagArgsFromRepoConfig(repo, args)
 
@@ -79,7 +80,7 @@ func SignTagCmd(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, ar
 }
 
 // populateSignTagArgsFromRepoConfig populates empty arguments field from repo config.
-func populateSignTagArgsFromRepoConfig(repo types.LocalRepo, args *types3.SignTagArgs) {
+func populateSignTagArgsFromRepoConfig(repo types2.LocalRepo, args *types3.SignTagArgs) {
 	if args.SigningKey == "" {
 		args.SigningKey = repo.GetGitConfigOption("user.signingKey")
 	}

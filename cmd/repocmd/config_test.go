@@ -13,7 +13,6 @@ import (
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
-	mocks2 "github.com/make-os/kit/util/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/thoas/go-funk"
@@ -160,7 +159,7 @@ var _ = Describe("ConfigCmd", func() {
 						return false
 					},
 					CommandCreator: func(name string, args ...string) util.Cmd {
-						mockCmd := mocks2.NewMockCmd(ctrl)
+						mockCmd := mocks.NewMockCmd(ctrl)
 						mockCmd.EXPECT().SetStdout(gomock.Any())
 						mockCmd.EXPECT().SetStderr(gomock.Any())
 						mockCmd.EXPECT().Start().Return(fmt.Errorf("error"))

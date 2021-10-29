@@ -65,9 +65,10 @@ join-gitsrc-prod: testnet-v1-init
 	docker logs -f makeos --tail=1000
 
 genmocks:
-	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/kit/remote/types GitModule,LocalRepo,Commit
+	mockgen -destination=mocks/remote_types.go -package mocks github.com/make-os/kit/remote/plumbing GitModule,LocalRepo,Commit
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks
-	mockgen -source=storage/types/types.go -destination=storage/mocks/types.go -package mocks
+	mockgen -source=types/core/node.go -destination=mocks/node.go -package mocks
+	mockgen -source=storage/types/types.go -destination=mocks/storage_types.go -package mocks
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks
 	mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks
 	mockgen -source=remote/push/types/objects.go -destination=mocks/pushpool.go -package mocks
@@ -91,7 +92,7 @@ genmocks:
 	mockgen -source=types/libp2p.go -destination=mocks/libp2p.go -package mocks
 	mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks
 	mockgen -source=rpc/types/types.go -destination=mocks/rpc/types.go -package mocks
-	mockgen -source=util/serialize_helper.go -destination=util/mocks/serialize_helper.go -package mocks
-	mockgen -source=util/wrapped_cmd.go -destination=util/mocks/wrapped_cmd.go -package mocks
+	mockgen -source=util/serialize_helper.go -destination=mocks/util/serialize_helper.go -package mocks
+	mockgen -source=util/wrapped_cmd.go -destination=mocks/wrapped_cmd.go -package mocks
 	mockgen -source=testutil/io_interfaces.go -destination=mocks/io_interfaces.go -package mocks
 

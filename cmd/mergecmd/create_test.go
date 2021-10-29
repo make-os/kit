@@ -12,16 +12,15 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	io2 "github.com/make-os/kit/util/io"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func testPostCommentCreator(isNewPost bool, reference string, err error) func(targetRepo types.LocalRepo,
+func testPostCommentCreator(isNewPost bool, reference string, err error) func(targetRepo plumbing.LocalRepo,
 	args *plumbing.CreatePostCommitArgs) (bool, string, error) {
-	return func(targetRepo types.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
+	return func(targetRepo plumbing.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
 		return isNewPost, reference, err
 	}
 }

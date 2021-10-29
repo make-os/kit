@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -15,7 +14,7 @@ import (
 // If start object is not a commit, no traversing operation happens.
 // but the object, along with its related objects (trees, blobs or target) are returned.
 // End object must exist locally; If it is a tag, its target must be a commit.
-func WalkBack(localRepo types.LocalRepo, startHash, endHash string, cb func(hash string) error) error {
+func WalkBack(localRepo LocalRepo, startHash, endHash string, cb func(hash string) error) error {
 startHashCheck:
 
 	// Unset end hash if it is a zero hash.
@@ -140,7 +139,7 @@ startHashCheck:
 }
 
 // GetTreeEntries returns all entries in a tree.
-func GetTreeEntries(repo types.LocalRepo, treeHash string) ([]string, error) {
+func GetTreeEntries(repo LocalRepo, treeHash string) ([]string, error) {
 	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
 	if err != nil {
 		return nil, err
@@ -152,7 +151,7 @@ func GetTreeEntries(repo types.LocalRepo, treeHash string) ([]string, error) {
 // returning its ancestors and other git objects they contain.
 // stopHash stops the walk when an object matching the hash is found.
 // Ancestors of the stop object will not be traversed.
-func WalkCommitHistory(repo types.LocalRepo, commit *object.Commit, stopHash string) (hashes []string, err error) {
+func WalkCommitHistory(repo LocalRepo, commit *object.Commit, stopHash string) (hashes []string, err error) {
 	err = WalkCommitHistoryWithIteratee(repo, &WalkCommitHistoryArgs{
 		Commit:   commit,
 		StopHash: stopHash,
@@ -180,7 +179,7 @@ type WalkCommitHistoryArgs struct {
 // args.Res: A callback that will be called with any found object. Return ErrExit
 // to stop immediately without error or return other error types to end immediately
 // with the specified error.
-func WalkCommitHistoryWithIteratee(repo types.LocalRepo, args *WalkCommitHistoryArgs) error {
+func WalkCommitHistoryWithIteratee(repo LocalRepo, args *WalkCommitHistoryArgs) error {
 
 	// Get stop object
 	stopObject, err := repo.GetObject(args.StopHash)

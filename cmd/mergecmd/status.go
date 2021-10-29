@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +21,7 @@ type MergeReqStatusArgs struct {
 }
 
 // MergeReqStatusCmd prints the status of the merge request
-func MergeReqStatusCmd(r types.LocalRepo, args *MergeReqStatusArgs) error {
+func MergeReqStatusCmd(r plumbing.LocalRepo, args *MergeReqStatusArgs) error {
 
 	// Ensure the merge request reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)

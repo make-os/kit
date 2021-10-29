@@ -5,22 +5,22 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
-	"github.com/make-os/kit/remote/types"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/types/constants"
 	"github.com/make-os/kit/types/core"
 )
 
 type MergeComplianceCheckFunc func(
-	repo types.LocalRepo,
-	change *types.ItemChange,
+	repo plumbing2.LocalRepo,
+	change *plumbing2.ItemChange,
 	mergeProposalID,
 	pushKeyID string,
 	keepers core.Logic) error
 
 // CheckMergeCompliance checks whether the change satisfies the given merge proposal
 func CheckMergeCompliance(
-	repo types.LocalRepo,
-	change *types.ItemChange,
+	repo plumbing2.LocalRepo,
+	change *plumbing2.ItemChange,
 	mergeProposalID,
 	pushKeyID string,
 	keepers core.Logic) error {

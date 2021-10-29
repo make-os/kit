@@ -19,7 +19,7 @@ import (
 	"github.com/make-os/kit/remote/policy"
 	"github.com/make-os/kit/remote/push"
 	pushtypes "github.com/make-os/kit/remote/push/types"
-	rr "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/types"
@@ -178,19 +178,19 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Get a reference to the local repository
-	repo, err := git.PlainOpen(repoPath)
+	targetRepo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to open repo '%s'", repoName))
 	}
 
 	// Set the target repository object
-	note.TargetRepo = &rr.Repo{
-		Repository:    repo,
-		GitModule:     rr.NewGitModule(sv.gitBinPath, repoPath),
-		Path:          repoPath,
-		NamespaceName: note.Namespace,
-		State:         repoState,
-		Namespace:     namespace,
+	note.TargetRepo = &repo.Repo{
+		Repository:     targetRepo,
+		BasicGitModule: repo.NewGitModule(sv.gitBinPath, repoPath),
+		Path:           repoPath,
+		NamespaceName:  note.Namespace,
+		State:          repoState,
+		Namespace:      namespace,
 	}
 
 	// Validate the push note.

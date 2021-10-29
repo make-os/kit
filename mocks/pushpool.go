@@ -5,49 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	util "github.com/make-os/kit/util"
-	reflect "reflect"
 )
 
-// MockEndorsement is a mock of Endorsement interface
+// MockEndorsement is a mock of Endorsement interface.
 type MockEndorsement struct {
 	ctrl     *gomock.Controller
 	recorder *MockEndorsementMockRecorder
 }
 
-// MockEndorsementMockRecorder is the mock recorder for MockEndorsement
+// MockEndorsementMockRecorder is the mock recorder for MockEndorsement.
 type MockEndorsementMockRecorder struct {
 	mock *MockEndorsement
 }
 
-// NewMockEndorsement creates a new mock instance
+// NewMockEndorsement creates a new mock instance.
 func NewMockEndorsement(ctrl *gomock.Controller) *MockEndorsement {
 	mock := &MockEndorsement{ctrl: ctrl}
 	mock.recorder = &MockEndorsementMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEndorsement) EXPECT() *MockEndorsementMockRecorder {
 	return m.recorder
 }
 
-// ID mocks base method
-func (m *MockEndorsement) ID() util.Bytes32 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(util.Bytes32)
-	return ret0
-}
-
-// ID indicates an expected call of ID
-func (mr *MockEndorsementMockRecorder) ID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockEndorsement)(nil).ID))
-}
-
-// Bytes mocks base method
+// Bytes mocks base method.
 func (m *MockEndorsement) Bytes() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Bytes")
@@ -55,13 +42,13 @@ func (m *MockEndorsement) Bytes() []byte {
 	return ret0
 }
 
-// Bytes indicates an expected call of Bytes
+// Bytes indicates an expected call of Bytes.
 func (mr *MockEndorsementMockRecorder) Bytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockEndorsement)(nil).Bytes))
 }
 
-// BytesAndID mocks base method
+// BytesAndID mocks base method.
 func (m *MockEndorsement) BytesAndID() ([]byte, util.Bytes32) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
@@ -70,8 +57,22 @@ func (m *MockEndorsement) BytesAndID() ([]byte, util.Bytes32) {
 	return ret0, ret1
 }
 
-// BytesAndID indicates an expected call of BytesAndID
+// BytesAndID indicates an expected call of BytesAndID.
 func (mr *MockEndorsementMockRecorder) BytesAndID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockEndorsement)(nil).BytesAndID))
+}
+
+// ID mocks base method.
+func (m *MockEndorsement) ID() util.Bytes32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(util.Bytes32)
+	return ret0
+}
+
+// ID indicates an expected call of ID.
+func (mr *MockEndorsementMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockEndorsement)(nil).ID))
 }

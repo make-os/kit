@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockTempRepoManager is a mock of TempRepoManager interface
+// MockTempRepoManager is a mock of TempRepoManager interface.
 type MockTempRepoManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockTempRepoManagerMockRecorder
 }
 
-// MockTempRepoManagerMockRecorder is the mock recorder for MockTempRepoManager
+// MockTempRepoManagerMockRecorder is the mock recorder for MockTempRepoManager.
 type MockTempRepoManagerMockRecorder struct {
 	mock *MockTempRepoManager
 }
 
-// NewMockTempRepoManager creates a new mock instance
+// NewMockTempRepoManager creates a new mock instance.
 func NewMockTempRepoManager(ctrl *gomock.Controller) *MockTempRepoManager {
 	mock := &MockTempRepoManager{ctrl: ctrl}
 	mock.recorder = &MockTempRepoManagerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTempRepoManager) EXPECT() *MockTempRepoManagerMockRecorder {
 	return m.recorder
 }
 
-// Add mocks base method
+// Add mocks base method.
 func (m *MockTempRepoManager) Add(path string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", path)
@@ -40,13 +41,13 @@ func (m *MockTempRepoManager) Add(path string) string {
 	return ret0
 }
 
-// Add indicates an expected call of Add
+// Add indicates an expected call of Add.
 func (mr *MockTempRepoManagerMockRecorder) Add(path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockTempRepoManager)(nil).Add), path)
 }
 
-// GetPath mocks base method
+// GetPath mocks base method.
 func (m *MockTempRepoManager) GetPath(id string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPath", id)
@@ -54,13 +55,13 @@ func (m *MockTempRepoManager) GetPath(id string) string {
 	return ret0
 }
 
-// GetPath indicates an expected call of GetPath
+// GetPath indicates an expected call of GetPath.
 func (mr *MockTempRepoManagerMockRecorder) GetPath(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockTempRepoManager)(nil).GetPath), id)
 }
 
-// Remove mocks base method
+// Remove mocks base method.
 func (m *MockTempRepoManager) Remove(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remove", id)
@@ -68,7 +69,7 @@ func (m *MockTempRepoManager) Remove(id string) error {
 	return ret0
 }
 
-// Remove indicates an expected call of Remove
+// Remove indicates an expected call of Remove.
 func (mr *MockTempRepoManagerMockRecorder) Remove(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockTempRepoManager)(nil).Remove), id)

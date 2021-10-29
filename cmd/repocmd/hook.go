@@ -12,8 +12,8 @@ import (
 	"github.com/make-os/kit/cmd/common"
 	types3 "github.com/make-os/kit/cmd/signcmd/types"
 	"github.com/make-os/kit/config"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/server"
-	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util/api"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ type HookArgs struct {
 }
 
 // HookCmd handles git hook operations
-func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error {
+func HookCmd(cfg *config.AppConfig, repo plumbing2.LocalRepo, args *HookArgs) error {
 
 	updates, err := ioutil.ReadAll(args.Stdin)
 	if err != nil {
@@ -143,7 +143,7 @@ func HookCmd(cfg *config.AppConfig, repo types.LocalRepo, args *HookArgs) error 
 // The command tries to find tokens that have been created and signed for
 // remotes where one or more of its urls have matching hostname as the url
 // git is requesting password for.
-func AskPassCmd(repo types.LocalRepo, args []string, stdout io.Writer) error {
+func AskPassCmd(repo plumbing2.LocalRepo, args []string, stdout io.Writer) error {
 
 	input := strings.Fields(args[1])
 

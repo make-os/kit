@@ -16,8 +16,8 @@ import (
 	"github.com/make-os/kit/keystore"
 	"github.com/make-os/kit/keystore/types"
 	types3 "github.com/make-os/kit/modules/types"
-	rr "github.com/make-os/kit/remote/repo"
-	remotetypes "github.com/make-os/kit/remote/types"
+	rr "github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/rpc/client"
 	types2 "github.com/make-os/kit/rpc/types"
 	api2 "github.com/make-os/kit/types/api"
@@ -64,7 +64,7 @@ type UnlockKeyArgs struct {
 
 	// TargetRepo is the target repository in the current working directory.
 	// It's config `user.passphrase` is checked for the passphrase.
-	TargetRepo remotetypes.LocalRepo
+	TargetRepo rr.LocalRepo
 
 	// NoPrompt if true, will launch a prompt if passphrase was not gotten from other means
 	NoPrompt bool
@@ -231,7 +231,7 @@ func ShowTxStatusTracker(stdout io.Writer, hash string, rpcClient types2.Client)
 // GetRPCClient returns an RPC client. If target repo is provided,
 // the RPC server information will be extracted from one of the remote URLs.
 // The target remote is set via viper's "remote.name" or "--remote" root flag.
-func GetRPCClient(cmd *cobra.Command, targetRepo remotetypes.LocalRepo) (*client.RPCClient, error) {
+func GetRPCClient(cmd *cobra.Command, targetRepo rr.LocalRepo) (*client.RPCClient, error) {
 	remoteName := viper.GetString("remote.name")
 	rpcAddress := viper.GetString("remote.address")
 	rpcUser := viper.GetString("rpc.user")
@@ -268,7 +268,7 @@ create:
 
 // GetRemoteAddrFromRepo gets remote address from the given repo.
 // It will return false if no (good) url was found.
-func GetRemoteAddrFromRepo(repo remotetypes.LocalRepo, remoteName string) (string, int, bool) {
+func GetRemoteAddrFromRepo(repo rr.LocalRepo, remoteName string) (string, int, bool) {
 	urls := repo.GetRemoteURLs(remoteName)
 	if len(urls) > 0 {
 		for _, url := range urls {
@@ -284,15 +284,15 @@ func GetRemoteAddrFromRepo(repo remotetypes.LocalRepo, remoteName string) (strin
 
 // GetRepoAndClient opens a the repository on the current working directory
 // and returns an RPC client.
-func GetRepoAndClient(cmd *cobra.Command, cfg *config.AppConfig, repoDir string) (remotetypes.LocalRepo, types2.Client) {
+func GetRepoAndClient(cmd *cobra.Command, cfg *config.AppConfig, repoDir string) (rr.LocalRepo, types2.Client) {
 
 	var err error
-	var targetRepo remotetypes.LocalRepo
+	var targetRepo rr.LocalRepo
 
 	if repoDir == "" {
-		targetRepo, err = rr.GetAtWorkingDir(cfg.Node.GitBinPath)
+		targetRepo, err = repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 	} else {
-		targetRepo, err = rr.GetWithGitModule(cfg.Node.GitBinPath, repoDir)
+		targetRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, repoDir)
 	}
 
 	rpcClient, err := GetRPCClient(cmd, targetRepo)

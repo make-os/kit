@@ -16,7 +16,6 @@ import (
 	"github.com/make-os/kit/remote/fetcher"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push/types"
-	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util/io"
 	. "github.com/onsi/ginkgo"
@@ -108,7 +107,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error {
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error {
 					return fmt.Errorf("bad packfile")
 				}
 
@@ -136,7 +135,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
 
 				fetchedCalled := false
 				f.OnPackReceived(func(s string, seeker io2.ReadSeeker) { fetchedCalled = true })
@@ -165,7 +164,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/heads/master", OldHash: plumbing2.ZeroHash.String(), NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
 
 				fetchedCalled := false
 				f.OnPackReceived(func(s string, seeker io2.ReadSeeker) { fetchedCalled = true })
@@ -298,7 +297,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/tags/v1.0", OldHash: oldHash, NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error {
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error {
 					return fmt.Errorf("bad packfile")
 				}
 
@@ -327,7 +326,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/tags/v1.0", OldHash: oldHash, NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
 
 				fetchedCalled := false
 				f.OnPackReceived(func(s string, seeker io2.ReadSeeker) { fetchedCalled = true })
@@ -357,7 +356,7 @@ var _ = Describe("ObjectFetcher", func() {
 					References: []*types.PushedReference{{Name: "refs/tags/v1.0", OldHash: plumbing2.ZeroHash.String(), NewHash: newHash}},
 				}
 
-				f.PackToRepoUnpacker = func(repo remotetypes.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
+				f.PackToRepoUnpacker = func(repo plumbing.LocalRepo, pack io.ReadSeekerCloser) error { return nil }
 
 				fetchedCalled := false
 				f.OnPackReceived(func(s string, seeker io2.ReadSeeker) { fetchedCalled = true })

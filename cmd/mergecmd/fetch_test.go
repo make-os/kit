@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -56,7 +55,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 			mergeReqCommits := []string{"4caa628d799954fc0bbcf667322719120e2a56ec"}
 			args := &mergecmd.MergeReqFetchArgs{
 				Reference: plumbing.MakeMergeRequestReference(1),
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
 					return nil, nil, fmt.Errorf("error")
 				},
@@ -71,7 +70,7 @@ var _ = Describe("MergeReqFetchCmd", func() {
 			mergeReqCommits := []string{"4caa628d799954fc0bbcf667322719120e2a56ec"}
 			args := &mergecmd.MergeReqFetchArgs{
 				Reference: plumbing.MakeMergeRequestReference(1),
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
 					return plumbing.NewEmptyPostBody(), nil, nil
 				},
@@ -86,10 +85,10 @@ var _ = Describe("MergeReqFetchCmd", func() {
 			mergeReqCommits := []string{"4caa628d799954fc0bbcf667322719120e2a56ec"}
 			args := &mergecmd.MergeReqFetchArgs{
 				Reference: plumbing.MakeMergeRequestReference(1),
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
 					return &plumbing.PostBody{
-						MergeRequestFields: &types.MergeRequestFields{
+						MergeRequestFields: &plumbing.MergeRequestFields{
 							TargetBranch: "target",
 						},
 					}, nil, nil
@@ -105,13 +104,13 @@ var _ = Describe("MergeReqFetchCmd", func() {
 			mergeReqCommits := []string{"4caa628d799954fc0bbcf667322719120e2a56ec"}
 			args := &mergecmd.MergeReqFetchArgs{
 				Reference: plumbing.MakeMergeRequestReference(1),
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: &plumbing.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(fmt.Errorf("error"))
+			mockRepo.EXPECT().RefFetch(plumbing.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(fmt.Errorf("error"))
 			err = mergecmd.MergeReqFetchCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to fetch target branch: error"))
@@ -121,13 +120,13 @@ var _ = Describe("MergeReqFetchCmd", func() {
 			mergeReqCommits := []string{"4caa628d799954fc0bbcf667322719120e2a56ec"}
 			args := &mergecmd.MergeReqFetchArgs{
 				Reference: plumbing.MakeMergeRequestReference(1),
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: &plumbing.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(nil)
+			mockRepo.EXPECT().RefFetch(plumbing.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 			err = mergecmd.MergeReqFetchCmd(mockRepo, args)
 			Expect(err).To(BeNil())
 		})

@@ -25,9 +25,9 @@ var (
 
 type ChangeValidatorFunc func(
 	keepers core.Keepers,
-	repo types.LocalRepo,
+	repo plumbing2.LocalRepo,
 	oldHash string,
-	change *types.ItemChange,
+	change *plumbing2.ItemChange,
 	txDetail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error
 
@@ -39,9 +39,9 @@ type ChangeValidatorFunc func(
 // getPushKey: The getter function for reading push key public key
 func ValidateChange(
 	keepers core.Keepers,
-	localRepo types.LocalRepo,
+	localRepo plumbing2.LocalRepo,
 	oldHash string,
-	change *types.ItemChange,
+	change *plumbing2.ItemChange,
 	detail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
 
@@ -115,7 +115,7 @@ func ValidateChange(
 // repo: The repo where the tag exists in.
 // txDetail: The pusher transaction detail
 func CheckNote(
-	repo types.LocalRepo,
+	repo plumbing2.LocalRepo,
 	txDetail *types.TxDetail) error {
 
 	// Get the note current hash

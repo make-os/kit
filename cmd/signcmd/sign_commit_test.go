@@ -13,8 +13,8 @@ import (
 	"github.com/make-os/kit/crypto/ed25519"
 	"github.com/make-os/kit/keystore/types"
 	"github.com/make-os/kit/mocks"
+	remotetypes "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/server"
-	remotetypes "github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
@@ -33,12 +33,6 @@ var testGetNextNonce = func(pushKeyID string, rpcClient types2.Client) (string, 
 func testPushKeyUnlocker(key types.StoredKey, err error) common.UnlockKeyFunc {
 	return func(cfg *config.AppConfig, a *common.UnlockKeyArgs) (types.StoredKey, error) {
 		return key, err
-	}
-}
-
-func testSetRemotePushToken(token string, err error) func(targetRepo remotetypes.LocalRepo, args *server.MakeAndApplyPushTokenToRemoteArgs) error {
-	return func(targetRepo remotetypes.LocalRepo, args *server.MakeAndApplyPushTokenToRemoteArgs) error {
-		return err
 	}
 }
 

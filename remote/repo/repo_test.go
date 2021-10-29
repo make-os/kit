@@ -12,9 +12,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/crypto/ed25519"
-	rr "github.com/make-os/kit/remote/repo"
+	rr "github.com/make-os/kit/remote/plumbing"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	state2 "github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
@@ -31,7 +31,7 @@ var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, repoName string
-	var r types.LocalRepo
+	var r rr.LocalRepo
 	var key *ed25519.Key
 
 	BeforeEach(func() {
@@ -44,7 +44,7 @@ var _ = Describe("Repo", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, path)
+		r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -149,16 +149,16 @@ var _ = Describe("Repo", func() {
 
 	Describe(".GetRemoteURLs", func() {
 		It("should get all remote URLs", func() {
-			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
-			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
+			r.(*repo.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
+			r.(*repo.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
 			urls := r.GetRemoteURLs()
 			Expect(urls).To(ContainElements("http://r.com", "http://r2.com"))
 		})
 
 		It("should get only remotes with matching name", func() {
-			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
-			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
-			r.(*rr.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r3", URLs: []string{"http://r3.com"}})
+			r.(*repo.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r1", URLs: []string{"http://r.com"}})
+			r.(*repo.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r2", URLs: []string{"http://r2.com"}})
+			r.(*repo.Repo).Repository.CreateRemote(&config2.RemoteConfig{Name: "r3", URLs: []string{"http://r3.com"}})
 			urls := r.GetRemoteURLs("r1", "r3")
 			Expect(urls).To(ContainElements("http://r.com", "http://r3.com"))
 		})
@@ -168,11 +168,11 @@ var _ = Describe("Repo", func() {
 		Specify("that .GetRepoConfig returns empty config object when no repo config file exist", func() {
 			lcfg, err := r.GetRepoConfig()
 			Expect(err).To(BeNil())
-			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{}}))
+			Expect(lcfg).To(Equal(&rr.LocalConfig{Tokens: map[string][]string{}}))
 		})
 
 		It("should update and get local config object correctly", func() {
-			repocfg := &types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b"}}}
+			repocfg := &rr.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b"}}}
 			err = r.UpdateRepoConfig(repocfg)
 			Expect(err).To(BeNil())
 
@@ -182,11 +182,11 @@ var _ = Describe("Repo", func() {
 
 			lcfg, err := r.GetRepoConfig()
 			Expect(err).To(BeNil())
-			Expect(lcfg).To(Equal(&types.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b", "something"}}}))
+			Expect(lcfg).To(Equal(&rr.LocalConfig{Tokens: map[string][]string{"origin": {"a", "b", "something"}}}))
 		})
 
 		It("should set .Token field to zero value if field does not exist", func() {
-			repocfg := &types.LocalConfig{Tokens: nil}
+			repocfg := &rr.LocalConfig{Tokens: nil}
 			err = r.UpdateRepoConfig(repocfg)
 			Expect(err).To(BeNil())
 
@@ -265,12 +265,12 @@ var _ = Describe("Repo", func() {
 
 	Describe(".IsContributor", func() {
 		It("should return true when push key is a repo contributor", func() {
-			r.(*rr.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
+			r.(*repo.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
 			Expect(r.IsContributor(key.PushAddr().String())).To(BeTrue())
 		})
 
 		It("should return true when push key is a namespace contributor", func() {
-			r.(*rr.Repo).Namespace = &state2.Namespace{Contributors: map[string]*state2.BaseContributor{key.PushAddr().String(): {}}}
+			r.(*repo.Repo).Namespace = &state2.Namespace{Contributors: map[string]*state2.BaseContributor{key.PushAddr().String(): {}}}
 			Expect(r.IsContributor(key.PushAddr().String())).To(BeTrue())
 		})
 
@@ -358,7 +358,7 @@ var _ = Describe("Repo", func() {
 
 	Describe(".ListPath", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
@@ -400,7 +400,7 @@ var _ = Describe("Repo", func() {
 
 	Describe(".ReadFileLines", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
@@ -442,25 +442,25 @@ var _ = Describe("Repo", func() {
 		It("should return 'path not found' error when path is a different case", func() {
 			_, err := r.GetFileLines("HEAD", "a/b/File3.txt")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(rr.ErrPathNotFound))
+			Expect(err).To(MatchError(repo.ErrPathNotFound))
 		})
 
 		It("should return 'path not found' error when path is unknown", func() {
 			_, err := r.GetFileLines("HEAD", "unknown")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(rr.ErrPathNotFound))
+			Expect(err).To(MatchError(repo.ErrPathNotFound))
 		})
 
 		It("should return 'path is not a file' error when path is not a file", func() {
 			_, err := r.GetFileLines("HEAD", "a")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(rr.ErrPathNotAFile))
+			Expect(err).To(MatchError(repo.ErrPathNotAFile))
 		})
 	})
 
 	Describe(".GetBranches", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
@@ -473,12 +473,12 @@ var _ = Describe("Repo", func() {
 
 	Describe(".Clone", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
 		It("should successfully create a worktree clone", func() {
-			clone, temp, err := r.Clone(types.CloneOptions{
+			clone, temp, err := r.Clone(rr.CloneOptions{
 				Bare:          true,
 				ReferenceName: "refs/heads/dev",
 				Depth:         1,
@@ -497,25 +497,25 @@ var _ = Describe("Repo", func() {
 
 	Describe(".Push", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
 		It("should successfully push", func() {
 			ref := "refs/heads/dev"
-			remote, temp, err := r.Clone(types.CloneOptions{Bare: true, ReferenceName: ref})
+			remote, temp, err := r.Clone(rr.CloneOptions{Bare: true, ReferenceName: ref})
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(temp)
 			remoteHash := testutil2.GetRecentCommitHash(remote.GetPath(), ref)
 
-			clone, temp2, err2 := remote.Clone(types.CloneOptions{ReferenceName: ref})
+			clone, temp2, err2 := remote.Clone(rr.CloneOptions{ReferenceName: ref})
 			Expect(err2).To(BeNil())
 			defer os.RemoveAll(temp2)
 			testutil2.AppendCommit(clone.GetPath(), "text.txt", "some text", "commit msg")
 			cloneHash := testutil2.GetRecentCommitHash(clone.GetPath(), ref)
 			Expect(remoteHash).ToNot(Equal(cloneHash))
 
-			_, err = clone.Push(types.PushOptions{
+			_, err = clone.Push(rr.PushOptions{
 				RemoteName: "origin",
 				RefSpec:    "+refs/heads/dev:refs/heads/dev",
 				Token:      "",
@@ -528,7 +528,7 @@ var _ = Describe("Repo", func() {
 
 	Describe(".GetLatestCommit", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
@@ -561,7 +561,7 @@ var _ = Describe("Repo", func() {
 
 	Describe(".GetCommit", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 
@@ -581,7 +581,7 @@ var _ = Describe("Repo", func() {
 
 	Describe(".GetParentAndChildCommitDiff", func() {
 		It("should return expected patch output", func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo3")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo3")
 			Expect(err).To(BeNil())
 			res, err := r.GetParentAndChildCommitDiff("8c427dcc0d582cd7387b4c529185b7c1ab28f20c")
 			Expect(err).To(BeNil())
@@ -600,7 +600,7 @@ index 0000000..3b0c2f1
 
 	Describe(".GetCommits", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo2")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo2")
 			Expect(err).To(BeNil())
 		})
 
@@ -650,7 +650,7 @@ index 0000000..3b0c2f1
 
 	Describe(".GetCommitAncestors", func() {
 		BeforeEach(func() {
-			r, err = rr.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
+			r, err = repo.GetWithGitModule(cfg.Node.GitBinPath, "testdata/repo1")
 			Expect(err).To(BeNil())
 		})
 

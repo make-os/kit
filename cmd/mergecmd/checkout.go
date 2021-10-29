@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	io2 "github.com/make-os/kit/util/io"
@@ -48,7 +47,7 @@ type MergeReqCheckoutArgs struct {
 // postBodyReader is a function for reading post body
 // useBaseAsTarget will return the base branch and hash as target
 func getMergeRequestTarget(
-	r types.LocalRepo,
+	r plumbing.LocalRepo,
 	reference string,
 	postBodyReader plumbing.PostBodyReader,
 	useBaseAsTarget bool) (target string, targetHash string, err error) {
@@ -96,7 +95,7 @@ func getMergeRequestTarget(
 }
 
 // MergeReqCheckoutCmd checkouts a merge request target or base branch
-func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
+func MergeReqCheckoutCmd(r plumbing.LocalRepo, args *MergeReqCheckoutArgs) error {
 
 	selectedBranch, selectedHash, err := getMergeRequestTarget(r, args.Reference, args.ReadPostBody, args.Base)
 	if err != nil {
@@ -120,7 +119,7 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 	}
 
 	// Fetch the target branch
-	fetchArgs := types.RefFetchArgs{Remote: args.Remote, RemoteRef: selectedBranch,
+	fetchArgs := plumbing.RefFetchArgs{Remote: args.Remote, RemoteRef: selectedBranch,
 		LocalRef: selectedBranch, Force: args.ForceFetch, Verbose: true}
 	if err := r.RefFetch(fetchArgs); err != nil {
 		return errors.Wrapf(err, "failed to fetch %s branch", targetLbl)

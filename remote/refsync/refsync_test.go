@@ -12,12 +12,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
+	repo3 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push"
 	"github.com/make-os/kit/remote/push/types"
 	types3 "github.com/make-os/kit/remote/refsync/types"
-	repo3 "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	types2 "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
@@ -214,7 +214,7 @@ var _ = Describe("RefSync", func() {
 		It("should return error when unable to get reference from local repo", func() {
 			task := &types3.RefTask{RepoName: "unknown", Ref: &types.PushedReference{Name: "refs/heads/master"}}
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
-			rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+			rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 			mockRepo.EXPECT().RefGet(task.Ref.Name).Return("", fmt.Errorf("error"))
 			err := rs.do(task)
 			Expect(err).ToNot(BeNil())
@@ -225,7 +225,7 @@ var _ = Describe("RefSync", func() {
 			It("should set task old hash to zero hash", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return("", nil)
 				updated := false
 				rs.UpdateRepoUsingNote = func(string, push.MakeReferenceUpdateRequestPackFunc, types.PushNote) error {
@@ -251,7 +251,7 @@ var _ = Describe("RefSync", func() {
 			It("should not process task and return nil error", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(newHash, nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
 				err := rs.do(task)
@@ -263,7 +263,7 @@ var _ = Describe("RefSync", func() {
 			It("should not process task and return nil error", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(localHash, nil)
 				mockRepo.EXPECT().IsAncestor(newHash, localHash).Return(nil)
 				mockRepoSyncInfoKeeper.EXPECT().GetTracked(task.RepoName).Return(nil)
@@ -276,7 +276,7 @@ var _ = Describe("RefSync", func() {
 			It("should set task old hash to the local hash", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(localHash, nil)
 				mockRepo.EXPECT().IsAncestor(task.Ref.NewHash, localHash).Return(fmt.Errorf("some error"))
 				updated := false
@@ -303,7 +303,7 @@ var _ = Describe("RefSync", func() {
 			It("should attempt to fetch objects and update repo", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				mockRepo.EXPECT().IsAncestor(newHash, oldHash).Return(fmt.Errorf("not ancestor"))
 				updated := false
@@ -327,7 +327,7 @@ var _ = Describe("RefSync", func() {
 			It("should not attempt to update repo and return error if fetch attempt failed", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				mockRepo.EXPECT().IsAncestor(newHash, oldHash).Return(fmt.Errorf("not ancestor"))
 				updated := false
@@ -357,7 +357,7 @@ var _ = Describe("RefSync", func() {
 						NoteCreator: key.PubKey().MustBytes32(),
 					}
 					mockRepo := mocks.NewMockLocalRepo(ctrl)
-					rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+					rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 					mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 					mockRepo.EXPECT().IsAncestor(newHash, oldHash).Return(fmt.Errorf("not ancestor"))
 					updated := false
@@ -379,7 +379,7 @@ var _ = Describe("RefSync", func() {
 			It("should return error when unable to update tracked repo update height", func() {
 				task := &types3.RefTask{RepoName: "repo1", Ref: &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash, NewHash: newHash}, Height: 10}
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
-				rs.RepoGetter = func(gitBinPath, path string) (types2.LocalRepo, error) { return mockRepo, nil }
+				rs.RepoGetter = func(gitBinPath, path string) (repo3.LocalRepo, error) { return mockRepo, nil }
 				mockRepo.EXPECT().RefGet(task.Ref.Name).Return(oldHash, nil)
 				mockRepo.EXPECT().IsAncestor(newHash, oldHash).Return(fmt.Errorf("not ancestor"))
 				updated := false
@@ -404,10 +404,10 @@ var _ = Describe("RefSync", func() {
 	})
 
 	Describe(".UpdateRepoUsingNote", func() {
-		var repo types2.LocalRepo
+		var testRepo repo3.LocalRepo
 
 		BeforeEach(func() {
-			repo, err = repo3.GetWithGitModule(cfg.Node.GitBinPath, path)
+			testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 			Expect(err).To(BeNil())
 		})
 
@@ -433,7 +433,7 @@ var _ = Describe("RefSync", func() {
 		})
 
 		It("should return error when generated packfile is invalid", func() {
-			note := &types.Note{TargetRepo: repo}
+			note := &types.Note{TargetRepo: testRepo}
 			buf := strings.NewReader("invalid")
 			err := UpdateRepoUsingNote(cfg.Node.GitBinPath, func(tx types.PushNote) (io.ReadSeeker, error) {
 				return buf, nil
@@ -445,7 +445,7 @@ var _ = Describe("RefSync", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
 			note := &types.Note{
-				TargetRepo: repo,
+				TargetRepo: testRepo,
 				References: []*types.PushedReference{
 					{Name: "refs/heads/master", NewHash: commitHash, OldHash: plumbing.ZeroHash.String()},
 				},

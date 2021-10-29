@@ -10,7 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/packfile"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
 	"github.com/make-os/kit/params"
-	"github.com/make-os/kit/remote/types"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 	"github.com/pkg/errors"
@@ -56,7 +56,7 @@ type ObjectObserver struct {
 
 // OnInflatedObjectHeader implements packfile.Observer.
 // Returns error if a blob object size surpasses maxBlobSize.
-func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize int64, pos int64) error {
+func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize int64, _ int64) error {
 	if t == plumbing.BlobObject && objSize > o.MaxBlobSize {
 		return fmt.Errorf("size error: a file's size exceeded the network limit")
 	}
@@ -66,7 +66,7 @@ func (o *ObjectObserver) OnInflatedObjectHeader(t plumbing.ObjectType, objSize i
 }
 
 // OnInflatedObjectContent implements packfile.Observer.
-func (o *ObjectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64, crc uint32, content []byte) error {
+func (o *ObjectObserver) OnInflatedObjectContent(h plumbing.Hash, _ int64, _ uint32, _ []byte) error {
 	o.Objects[len(o.Objects)-1].Hash = h
 	return nil
 }
@@ -82,16 +82,15 @@ func (po *PushedObjects) Hashes() (objs []string) {
 	return
 }
 
-// PushReader inspects push data from git client, extracting data such as the
+// Reader inspects push data from git client, extracting data such as the
 // pushed references, objects and object to reference mapping. It also pipes the
 // pushed stream to a destination (git-receive-pack) when finished.
 type Reader struct {
 	dst          io.WriteCloser
 	packFile     *os.File
-	buf          []byte
 	References   PackedReferences
 	Objects      PushedObjects
-	repo         types.LocalRepo
+	repo         plumbing2.LocalRepo
 	request      *packp.ReferenceUpdateRequest
 	updateReqCB  func(ur *packp.ReferenceUpdateRequest) error
 	totalObjSize int64
@@ -99,7 +98,7 @@ type Reader struct {
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*Reader, error) {
+func NewPushReader(dst io.WriteCloser, repo plumbing2.LocalRepo) (*Reader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err
@@ -143,7 +142,7 @@ func (r *Reader) Read() error {
 	var err error
 
 	// Seek to the beginning of the packfile
-	r.packFile.Seek(0, 0)
+	_, _ = r.packFile.Seek(0, 0)
 
 	// Decode the packfile into a ReferenceUpdateRequest
 	r.request = packp.NewReferenceUpdateRequest()
@@ -165,11 +164,11 @@ func (r *Reader) Read() error {
 
 	// Confirm if the next 4 bytes say 'PACK', otherwise, the packfile is invalid
 	packSig := make([]byte, 4)
-	r.packFile.Read(packSig)
+	_, _ = r.packFile.Read(packSig)
 	if string(packSig) != "PACK" {
 		goto writeInput
 	}
-	r.packFile.Seek(-4, 1)
+	_, _ = r.packFile.Seek(-4, 1)
 
 	// Read the packfile
 	scn = packfile.NewScanner(r.packFile)
@@ -185,7 +184,7 @@ writeInput:
 	defer r.dst.Close()
 	defer os.Remove(r.packFile.Name())
 
-	r.packFile.Seek(0, 0)
+	_, _ = r.packFile.Seek(0, 0)
 	if _, err = io.Copy(r.dst, r.packFile); err != nil {
 		return err
 	}

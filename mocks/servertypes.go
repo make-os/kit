@@ -5,255 +5,38 @@
 package mocks
 
 import (
+	net "net"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	log "github.com/tendermint/tendermint/libs/log"
 	p2p "github.com/tendermint/tendermint/p2p"
-	net "net"
-	reflect "reflect"
 )
 
-// MockPeer is a mock of Peer interface
+// MockPeer is a mock of Peer interface.
 type MockPeer struct {
 	ctrl     *gomock.Controller
 	recorder *MockPeerMockRecorder
 }
 
-// MockPeerMockRecorder is the mock recorder for MockPeer
+// MockPeerMockRecorder is the mock recorder for MockPeer.
 type MockPeerMockRecorder struct {
 	mock *MockPeer
 }
 
-// NewMockPeer creates a new mock instance
+// NewMockPeer creates a new mock instance.
 func NewMockPeer(ctrl *gomock.Controller) *MockPeer {
 	mock := &MockPeer{ctrl: ctrl}
 	mock.recorder = &MockPeerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPeer) EXPECT() *MockPeerMockRecorder {
 	return m.recorder
 }
 
-// Start mocks base method
-func (m *MockPeer) Start() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Start indicates an expected call of Start
-func (mr *MockPeerMockRecorder) Start() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockPeer)(nil).Start))
-}
-
-// OnStart mocks base method
-func (m *MockPeer) OnStart() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnStart")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// OnStart indicates an expected call of OnStart
-func (mr *MockPeerMockRecorder) OnStart() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStart", reflect.TypeOf((*MockPeer)(nil).OnStart))
-}
-
-// Stop mocks base method
-func (m *MockPeer) Stop() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stop")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Stop indicates an expected call of Stop
-func (mr *MockPeerMockRecorder) Stop() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPeer)(nil).Stop))
-}
-
-// OnStop mocks base method
-func (m *MockPeer) OnStop() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnStop")
-}
-
-// OnStop indicates an expected call of OnStop
-func (mr *MockPeerMockRecorder) OnStop() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStop", reflect.TypeOf((*MockPeer)(nil).OnStop))
-}
-
-// Reset mocks base method
-func (m *MockPeer) Reset() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Reset")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Reset indicates an expected call of Reset
-func (mr *MockPeerMockRecorder) Reset() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockPeer)(nil).Reset))
-}
-
-// OnReset mocks base method
-func (m *MockPeer) OnReset() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnReset")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// OnReset indicates an expected call of OnReset
-func (mr *MockPeerMockRecorder) OnReset() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnReset", reflect.TypeOf((*MockPeer)(nil).OnReset))
-}
-
-// IsRunning mocks base method
-func (m *MockPeer) IsRunning() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRunning")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsRunning indicates an expected call of IsRunning
-func (mr *MockPeerMockRecorder) IsRunning() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockPeer)(nil).IsRunning))
-}
-
-// Quit mocks base method
-func (m *MockPeer) Quit() <-chan struct{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Quit")
-	ret0, _ := ret[0].(<-chan struct{})
-	return ret0
-}
-
-// Quit indicates an expected call of Quit
-func (mr *MockPeerMockRecorder) Quit() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Quit", reflect.TypeOf((*MockPeer)(nil).Quit))
-}
-
-// String mocks base method
-func (m *MockPeer) String() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "String")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// String indicates an expected call of String
-func (mr *MockPeerMockRecorder) String() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockPeer)(nil).String))
-}
-
-// SetLogger mocks base method
-func (m *MockPeer) SetLogger(arg0 log.Logger) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLogger", arg0)
-}
-
-// SetLogger indicates an expected call of SetLogger
-func (mr *MockPeerMockRecorder) SetLogger(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLogger", reflect.TypeOf((*MockPeer)(nil).SetLogger), arg0)
-}
-
-// FlushStop mocks base method
-func (m *MockPeer) FlushStop() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "FlushStop")
-}
-
-// FlushStop indicates an expected call of FlushStop
-func (mr *MockPeerMockRecorder) FlushStop() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlushStop", reflect.TypeOf((*MockPeer)(nil).FlushStop))
-}
-
-// ID mocks base method
-func (m *MockPeer) ID() p2p.ID {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(p2p.ID)
-	return ret0
-}
-
-// ID indicates an expected call of ID
-func (mr *MockPeerMockRecorder) ID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockPeer)(nil).ID))
-}
-
-// RemoteIP mocks base method
-func (m *MockPeer) RemoteIP() net.IP {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoteIP")
-	ret0, _ := ret[0].(net.IP)
-	return ret0
-}
-
-// RemoteIP indicates an expected call of RemoteIP
-func (mr *MockPeerMockRecorder) RemoteIP() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteIP", reflect.TypeOf((*MockPeer)(nil).RemoteIP))
-}
-
-// RemoteAddr mocks base method
-func (m *MockPeer) RemoteAddr() net.Addr {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoteAddr")
-	ret0, _ := ret[0].(net.Addr)
-	return ret0
-}
-
-// RemoteAddr indicates an expected call of RemoteAddr
-func (mr *MockPeerMockRecorder) RemoteAddr() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteAddr", reflect.TypeOf((*MockPeer)(nil).RemoteAddr))
-}
-
-// IsOutbound mocks base method
-func (m *MockPeer) IsOutbound() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsOutbound")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsOutbound indicates an expected call of IsOutbound
-func (mr *MockPeerMockRecorder) IsOutbound() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOutbound", reflect.TypeOf((*MockPeer)(nil).IsOutbound))
-}
-
-// IsPersistent mocks base method
-func (m *MockPeer) IsPersistent() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPersistent")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsPersistent indicates an expected call of IsPersistent
-func (mr *MockPeerMockRecorder) IsPersistent() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPersistent", reflect.TypeOf((*MockPeer)(nil).IsPersistent))
-}
-
-// CloseConn mocks base method
+// CloseConn mocks base method.
 func (m *MockPeer) CloseConn() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CloseConn")
@@ -261,95 +44,25 @@ func (m *MockPeer) CloseConn() error {
 	return ret0
 }
 
-// CloseConn indicates an expected call of CloseConn
+// CloseConn indicates an expected call of CloseConn.
 func (mr *MockPeerMockRecorder) CloseConn() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConn", reflect.TypeOf((*MockPeer)(nil).CloseConn))
 }
 
-// NodeInfo mocks base method
-func (m *MockPeer) NodeInfo() p2p.NodeInfo {
+// FlushStop mocks base method.
+func (m *MockPeer) FlushStop() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NodeInfo")
-	ret0, _ := ret[0].(p2p.NodeInfo)
-	return ret0
+	m.ctrl.Call(m, "FlushStop")
 }
 
-// NodeInfo indicates an expected call of NodeInfo
-func (mr *MockPeerMockRecorder) NodeInfo() *gomock.Call {
+// FlushStop indicates an expected call of FlushStop.
+func (mr *MockPeerMockRecorder) FlushStop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NodeInfo", reflect.TypeOf((*MockPeer)(nil).NodeInfo))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlushStop", reflect.TypeOf((*MockPeer)(nil).FlushStop))
 }
 
-// Status mocks base method
-func (m *MockPeer) Status() p2p.ConnectionStatus {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Status")
-	ret0, _ := ret[0].(p2p.ConnectionStatus)
-	return ret0
-}
-
-// Status indicates an expected call of Status
-func (mr *MockPeerMockRecorder) Status() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Status", reflect.TypeOf((*MockPeer)(nil).Status))
-}
-
-// SocketAddr mocks base method
-func (m *MockPeer) SocketAddr() *p2p.NetAddress {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SocketAddr")
-	ret0, _ := ret[0].(*p2p.NetAddress)
-	return ret0
-}
-
-// SocketAddr indicates an expected call of SocketAddr
-func (mr *MockPeerMockRecorder) SocketAddr() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SocketAddr", reflect.TypeOf((*MockPeer)(nil).SocketAddr))
-}
-
-// Send mocks base method
-func (m *MockPeer) Send(arg0 byte, arg1 []byte) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Send indicates an expected call of Send
-func (mr *MockPeerMockRecorder) Send(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockPeer)(nil).Send), arg0, arg1)
-}
-
-// TrySend mocks base method
-func (m *MockPeer) TrySend(arg0 byte, arg1 []byte) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TrySend", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// TrySend indicates an expected call of TrySend
-func (mr *MockPeerMockRecorder) TrySend(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrySend", reflect.TypeOf((*MockPeer)(nil).TrySend), arg0, arg1)
-}
-
-// Set mocks base method
-func (m *MockPeer) Set(arg0 string, arg1 interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Set", arg0, arg1)
-}
-
-// Set indicates an expected call of Set
-func (mr *MockPeerMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockPeer)(nil).Set), arg0, arg1)
-}
-
-// Get mocks base method
+// Get mocks base method.
 func (m *MockPeer) Get(arg0 string) interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -357,8 +70,296 @@ func (m *MockPeer) Get(arg0 string) interface{} {
 	return ret0
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockPeerMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPeer)(nil).Get), arg0)
+}
+
+// ID mocks base method.
+func (m *MockPeer) ID() p2p.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(p2p.ID)
+	return ret0
+}
+
+// ID indicates an expected call of ID.
+func (mr *MockPeerMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockPeer)(nil).ID))
+}
+
+// IsOutbound mocks base method.
+func (m *MockPeer) IsOutbound() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsOutbound")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsOutbound indicates an expected call of IsOutbound.
+func (mr *MockPeerMockRecorder) IsOutbound() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOutbound", reflect.TypeOf((*MockPeer)(nil).IsOutbound))
+}
+
+// IsPersistent mocks base method.
+func (m *MockPeer) IsPersistent() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPersistent")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsPersistent indicates an expected call of IsPersistent.
+func (mr *MockPeerMockRecorder) IsPersistent() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPersistent", reflect.TypeOf((*MockPeer)(nil).IsPersistent))
+}
+
+// IsRunning mocks base method.
+func (m *MockPeer) IsRunning() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRunning")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRunning indicates an expected call of IsRunning.
+func (mr *MockPeerMockRecorder) IsRunning() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockPeer)(nil).IsRunning))
+}
+
+// NodeInfo mocks base method.
+func (m *MockPeer) NodeInfo() p2p.NodeInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NodeInfo")
+	ret0, _ := ret[0].(p2p.NodeInfo)
+	return ret0
+}
+
+// NodeInfo indicates an expected call of NodeInfo.
+func (mr *MockPeerMockRecorder) NodeInfo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NodeInfo", reflect.TypeOf((*MockPeer)(nil).NodeInfo))
+}
+
+// OnReset mocks base method.
+func (m *MockPeer) OnReset() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnReset")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnReset indicates an expected call of OnReset.
+func (mr *MockPeerMockRecorder) OnReset() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnReset", reflect.TypeOf((*MockPeer)(nil).OnReset))
+}
+
+// OnStart mocks base method.
+func (m *MockPeer) OnStart() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnStart")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnStart indicates an expected call of OnStart.
+func (mr *MockPeerMockRecorder) OnStart() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStart", reflect.TypeOf((*MockPeer)(nil).OnStart))
+}
+
+// OnStop mocks base method.
+func (m *MockPeer) OnStop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnStop")
+}
+
+// OnStop indicates an expected call of OnStop.
+func (mr *MockPeerMockRecorder) OnStop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStop", reflect.TypeOf((*MockPeer)(nil).OnStop))
+}
+
+// Quit mocks base method.
+func (m *MockPeer) Quit() <-chan struct{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Quit")
+	ret0, _ := ret[0].(<-chan struct{})
+	return ret0
+}
+
+// Quit indicates an expected call of Quit.
+func (mr *MockPeerMockRecorder) Quit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Quit", reflect.TypeOf((*MockPeer)(nil).Quit))
+}
+
+// RemoteAddr mocks base method.
+func (m *MockPeer) RemoteAddr() net.Addr {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoteAddr")
+	ret0, _ := ret[0].(net.Addr)
+	return ret0
+}
+
+// RemoteAddr indicates an expected call of RemoteAddr.
+func (mr *MockPeerMockRecorder) RemoteAddr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteAddr", reflect.TypeOf((*MockPeer)(nil).RemoteAddr))
+}
+
+// RemoteIP mocks base method.
+func (m *MockPeer) RemoteIP() net.IP {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoteIP")
+	ret0, _ := ret[0].(net.IP)
+	return ret0
+}
+
+// RemoteIP indicates an expected call of RemoteIP.
+func (mr *MockPeerMockRecorder) RemoteIP() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteIP", reflect.TypeOf((*MockPeer)(nil).RemoteIP))
+}
+
+// Reset mocks base method.
+func (m *MockPeer) Reset() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reset")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Reset indicates an expected call of Reset.
+func (mr *MockPeerMockRecorder) Reset() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockPeer)(nil).Reset))
+}
+
+// Send mocks base method.
+func (m *MockPeer) Send(arg0 byte, arg1 []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Send", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Send indicates an expected call of Send.
+func (mr *MockPeerMockRecorder) Send(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockPeer)(nil).Send), arg0, arg1)
+}
+
+// Set mocks base method.
+func (m *MockPeer) Set(arg0 string, arg1 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Set", arg0, arg1)
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockPeerMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockPeer)(nil).Set), arg0, arg1)
+}
+
+// SetLogger mocks base method.
+func (m *MockPeer) SetLogger(arg0 log.Logger) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetLogger", arg0)
+}
+
+// SetLogger indicates an expected call of SetLogger.
+func (mr *MockPeerMockRecorder) SetLogger(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLogger", reflect.TypeOf((*MockPeer)(nil).SetLogger), arg0)
+}
+
+// SocketAddr mocks base method.
+func (m *MockPeer) SocketAddr() *p2p.NetAddress {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SocketAddr")
+	ret0, _ := ret[0].(*p2p.NetAddress)
+	return ret0
+}
+
+// SocketAddr indicates an expected call of SocketAddr.
+func (mr *MockPeerMockRecorder) SocketAddr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SocketAddr", reflect.TypeOf((*MockPeer)(nil).SocketAddr))
+}
+
+// Start mocks base method.
+func (m *MockPeer) Start() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockPeerMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockPeer)(nil).Start))
+}
+
+// Status mocks base method.
+func (m *MockPeer) Status() p2p.ConnectionStatus {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Status")
+	ret0, _ := ret[0].(p2p.ConnectionStatus)
+	return ret0
+}
+
+// Status indicates an expected call of Status.
+func (mr *MockPeerMockRecorder) Status() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Status", reflect.TypeOf((*MockPeer)(nil).Status))
+}
+
+// Stop mocks base method.
+func (m *MockPeer) Stop() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stop")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockPeerMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPeer)(nil).Stop))
+}
+
+// String mocks base method.
+func (m *MockPeer) String() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "String")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// String indicates an expected call of String.
+func (mr *MockPeerMockRecorder) String() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockPeer)(nil).String))
+}
+
+// TrySend mocks base method.
+func (m *MockPeer) TrySend(arg0 byte, arg1 []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TrySend", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// TrySend indicates an expected call of TrySend.
+func (mr *MockPeerMockRecorder) TrySend(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrySend", reflect.TypeOf((*MockPeer)(nil).TrySend), arg0, arg1)
 }

@@ -12,31 +12,14 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/config"
 	pl "github.com/make-os/kit/remote/plumbing"
-	r "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	types2 "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-type fakePackfile struct {
-	name string
-}
-
-func (f *fakePackfile) Read(p []byte) (n int, err error) {
-	return
-}
-
-func (f *fakePackfile) Seek(offset int64, whence int) (int64, error) {
-	return 0, nil
-}
-
-func (f *fakePackfile) Close() error {
-	return nil
-}
 
 type gitObject struct {
 	typ plumbing.ObjectType
@@ -51,18 +34,18 @@ func (u *gitObject) Type() plumbing.ObjectType {
 	return u.typ
 }
 
-func (u *gitObject) Decode(encodedObject plumbing.EncodedObject) error {
+func (u *gitObject) Decode(_ plumbing.EncodedObject) error {
 	panic("implement me")
 }
 
-func (u *gitObject) Encode(encodedObject plumbing.EncodedObject) error {
+func (u *gitObject) Encode(_ plumbing.EncodedObject) error {
 	panic("implement me")
 }
 
 var _ = Describe("Packfile", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo types.LocalRepo
+	var testRepo pl.LocalRepo
 	var repoName, path string
 
 	BeforeEach(func() {
@@ -73,7 +56,7 @@ var _ = Describe("Packfile", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = r.GetWithGitModule(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -86,14 +69,14 @@ var _ = Describe("Packfile", func() {
 
 		It("should set default filter type if unset", func() {
 			args := &pl.PackObjectArgs{Obj: &gitObject{}}
-			_, _, err := pl.PackObject(repo, args)
+			_, _, err := pl.PackObject(testRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(args.Filter).ToNot(BeNil())
 		})
 
 		Context("object type is unknown", func() {
 			It("should return error", func() {
-				_, _, err := pl.PackObject(repo, &pl.PackObjectArgs{Obj: &gitObject{}})
+				_, _, err := pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: &gitObject{}})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("unsupported object type"))
 			})
@@ -106,8 +89,8 @@ var _ = Describe("Packfile", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-				commit, _ := repo.CommitObject(plumbing.NewHash(commitHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+				commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
+				pack, _, err = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			})
 
 			It("should successfully pack the commit", func() {
@@ -130,8 +113,8 @@ var _ = Describe("Packfile", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-				commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit, Filter: func(hash plumbing.Hash) bool {
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
+				pack, _, err = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit, Filter: func(hash plumbing.Hash) bool {
 					return hash.String() != commit.TreeHash.String()
 				}})
 			})
@@ -141,8 +124,8 @@ var _ = Describe("Packfile", func() {
 			})
 
 			It("should pack 1 object (the commit and the tree entries)", func() {
-				objs := []string{}
-				pl.UnpackPackfile(testutil.WrapReadSeeker{Rdr: pack}, func(header *packfile.ObjectHeader, read func() (object.Object, error)) error {
+				var objs []string
+				_ = pl.UnpackPackfile(testutil.WrapReadSeeker{Rdr: pack}, func(header *packfile.ObjectHeader, read func() (object.Object, error)) error {
 					obj, _ := read()
 					objs = append(objs, obj.ID().String())
 					return nil
@@ -163,8 +146,8 @@ var _ = Describe("Packfile", func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 				testutil2.AppendCommit(path, "dir/file.txt", "some text", "commit msg")
 				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-				commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
+				pack, _, err = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			})
 
 			It("should successfully pack the commit", func() {
@@ -172,8 +155,8 @@ var _ = Describe("Packfile", func() {
 			})
 
 			It("should pack 3 objects", func() {
-				objs := []string{}
-				pl.UnpackPackfile(testutil.WrapReadSeeker{Rdr: pack}, func(header *packfile.ObjectHeader, read func() (object.Object, error)) error {
+				var objs []string
+				_ = pl.UnpackPackfile(testutil.WrapReadSeeker{Rdr: pack}, func(header *packfile.ObjectHeader, read func() (object.Object, error)) error {
 					obj, _ := read()
 					objs = append(objs, obj.ID().String())
 					return nil
@@ -185,7 +168,7 @@ var _ = Describe("Packfile", func() {
 				for _, e := range tree.Entries {
 					Expect(objs).To(ContainElement(e.Hash.String()))
 					if !e.Mode.IsFile() {
-						dirObj, _ := repo.GetObject(e.Hash.String())
+						dirObj, _ := testRepo.GetObject(e.Hash.String())
 						Expect(objs).To(ContainElement(dirObj.ID().String()))
 					}
 				}
@@ -198,10 +181,10 @@ var _ = Describe("Packfile", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "some content", "commit msg", "tag1")
-				tagHash, err := repo.RefGet("refs/tags/tag1")
+				tagHash, err := testRepo.RefGet("refs/tags/tag1")
 				Expect(err).To(BeNil())
-				tag, _ := repo.TagObject(plumbing.NewHash(tagHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: tag})
+				tag, _ := testRepo.TagObject(plumbing.NewHash(tagHash))
+				pack, _, _ = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: tag})
 			})
 
 			It("should successfully pack the commit", func() {
@@ -223,10 +206,10 @@ var _ = Describe("Packfile", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "some content", "commit msg", "tag1")
 				testutil2.CreateTagPointedToTag(path, "message", "tag2", "tag1")
-				tagHash, err := repo.RefGet("refs/tags/tag2")
+				tagHash, err := testRepo.RefGet("refs/tags/tag2")
 				Expect(err).To(BeNil())
-				tag, _ := repo.TagObject(plumbing.NewHash(tagHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: tag})
+				tag, _ := testRepo.TagObject(plumbing.NewHash(tagHash))
+				pack, _, _ = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: tag})
 			})
 
 			It("should successfully pack the tag", func() {
@@ -248,10 +231,10 @@ var _ = Describe("Packfile", func() {
 			BeforeEach(func() {
 				blobHash := testutil2.CreateBlob(path, "blob.txt")
 				testutil2.CreateTagPointedToTag(path, "message", "tag2", blobHash)
-				tagHash, err := repo.RefGet("refs/tags/tag2")
+				tagHash, err := testRepo.RefGet("refs/tags/tag2")
 				Expect(err).To(BeNil())
-				tag, _ := repo.TagObject(plumbing.NewHash(tagHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: tag})
+				tag, _ := testRepo.TagObject(plumbing.NewHash(tagHash))
+				pack, _, _ = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: tag})
 			})
 
 			It("should successfully pack the tag", func() {
@@ -273,12 +256,12 @@ var _ = Describe("Packfile", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-				commit, _ := repo.CommitObject(plumbing.NewHash(commitHash))
+				commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
 				testutil2.CreateTagPointedToTag(path, "message", "tag2", commit.TreeHash.String())
-				tagHash, err := repo.RefGet("refs/tags/tag2")
+				tagHash, err := testRepo.RefGet("refs/tags/tag2")
 				Expect(err).To(BeNil())
-				tag, _ := repo.TagObject(plumbing.NewHash(tagHash))
-				pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: tag})
+				tag, _ := testRepo.TagObject(plumbing.NewHash(tagHash))
+				pack, _, _ = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: tag})
 			})
 
 			It("should successfully pack the tag", func() {
@@ -302,10 +285,10 @@ var _ = Describe("Packfile", func() {
 		BeforeEach(func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
-			pack, _, err = pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+			commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
+			pack, _, err = pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			Expect(err).To(BeNil())
-			commit, err = repo.CommitObject(plumbing.NewHash(commitHash))
+			commit, err = testRepo.CommitObject(plumbing.NewHash(commitHash))
 			Expect(err).To(BeNil())
 		})
 
@@ -372,21 +355,21 @@ var _ = Describe("Packfile", func() {
 	})
 
 	Describe(".UnpackPackfileToRepo", func() {
-		var dest types.LocalRepo
+		var dest pl.LocalRepo
 
 		BeforeEach(func() {
 			repo2Name := util.RandString(5)
 			path2 := filepath.Join(cfg.GetRepoRoot(), repo2Name)
 			testutil2.ExecGit(cfg.GetRepoRoot(), "init", repo2Name)
-			dest, err = r.GetWithGitModule(cfg.Node.GitBinPath, path2)
+			dest, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path2)
 			Expect(err).To(BeNil())
 		})
 
 		It("should write pack objects to a given repository", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			commit, _ := repo.CommitObject(plumbing.NewHash(commitHash))
-			pack, _, err := pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+			commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
+			pack, _, err := pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			Expect(err).To(BeNil())
 			err = pl.UnpackPackfileToRepo(dest, testutil.WrapReadSeekerCloser{Rdr: pack})
 			Expect(err).To(BeNil())
@@ -400,8 +383,8 @@ var _ = Describe("Packfile", func() {
 		It("should return nil if pack does not contain the given hash", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			commit, _ := repo.CommitObject(plumbing.NewHash(commitHash))
-			pack, _, err := pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+			commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
+			pack, _, err := pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			Expect(err).To(BeNil())
 			obj, err := pl.GetObjectFromPack(testutil.WrapReadSeeker{Rdr: pack}, "")
 			Expect(err).To(BeNil())
@@ -411,8 +394,8 @@ var _ = Describe("Packfile", func() {
 		It("should return object if pack contains the given hash", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			commit, _ := repo.CommitObject(plumbing.NewHash(commitHash))
-			pack, _, err := pl.PackObject(repo, &pl.PackObjectArgs{Obj: commit})
+			commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
+			pack, _, err := pl.PackObject(testRepo, &pl.PackObjectArgs{Obj: commit})
 			Expect(err).To(BeNil())
 			obj, err := pl.GetObjectFromPack(testutil.WrapReadSeeker{Rdr: pack}, commitHash)
 			Expect(err).To(BeNil())

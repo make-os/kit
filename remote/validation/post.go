@@ -10,7 +10,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	pl "github.com/make-os/kit/remote/plumbing"
-	rr "github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/util"
@@ -32,7 +31,7 @@ var (
 type ValidatePostCommitArg struct {
 	Keepers         core.Keepers
 	OldHash         string
-	Change          *types.ItemChange
+	Change          *pl.ItemChange
 	TxDetail        *types.TxDetail
 	PushKeyGetter   core.PushKeyGetter
 	CheckPostCommit PostCommitChecker
@@ -41,7 +40,7 @@ type ValidatePostCommitArg struct {
 
 // ValidatePostCommit validate a pushed post commit.
 // commit is the recent post commit in the post reference.
-func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *ValidatePostCommitArg) error {
+func ValidatePostCommit(repo pl.LocalRepo, commit pl.Commit, args *ValidatePostCommitArg) error {
 
 	// Post reference history cannot have merge commits (merge commit not permitted)
 	hasMerges, err := repo.HasMergeCommits(args.TxDetail.Reference)
@@ -91,7 +90,7 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 			pcArgs.OldHash = ancestors[i-1].Hash.String()
 		}
 
-		post, err := args.CheckPostCommit(repo, rr.WrapCommit(ancestor), pcArgs)
+		post, err := args.CheckPostCommit(repo, pl.WrapCommit(ancestor), pcArgs)
 		if err != nil {
 			return err
 		}
@@ -133,13 +132,13 @@ type CheckPostCommitArgs struct {
 
 // PostCommitChecker describes a function for validating a post commit.
 type PostCommitChecker func(
-	repo types.LocalRepo,
-	commit types.Commit,
+	repo pl.LocalRepo,
+	commit pl.Commit,
 	args *CheckPostCommitArgs) (*pl.PostBody, error)
 
 // CheckPostCommit validates new commits of a post reference. It returns nil post body
 // and error if validation failed or a post body and nil if validation passed.
-func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostCommitArgs) (*pl.PostBody, error) {
+func CheckPostCommit(repo pl.LocalRepo, commit pl.Commit, args *CheckPostCommitArgs) (*pl.PostBody, error) {
 
 	// Reference name must be valid
 	if !pl.IsIssueReference(args.Reference) && !pl.IsMergeRequestReference(args.Reference) {
@@ -206,9 +205,9 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 // content: The content from the post commit.
 func CheckPostBody(
 	keepers core.Keepers,
-	repo types.LocalRepo,
+	repo pl.LocalRepo,
 	reference string,
-	commit types.Commit,
+	commit pl.Commit,
 	isNewRef bool,
 	fm map[string]interface{},
 	content []byte) error {
@@ -255,8 +254,8 @@ func CheckPostBody(
 
 // CheckCommonPostBody performs sanity checks on common fields of a post body
 func CheckCommonPostBody(
-	repo types.LocalRepo,
-	commit types.Commit,
+	repo pl.LocalRepo,
+	commit pl.Commit,
 	isNewRef bool,
 	fm map[string]interface{},
 	content []byte) error {
@@ -338,7 +337,7 @@ func CheckCommonPostBody(
 }
 
 // CheckIssuePostBody performs sanity checks on fields of an issue post body
-func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
+func CheckIssuePostBody(commit pl.Commit, fm map[string]interface{}) error {
 
 	commitHash := commit.GetHash().String()
 
@@ -390,8 +389,8 @@ func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
 // checks on post fields specific to a merge request
 func CheckMergeRequestPostBody(
 	keepers core.Keepers,
-	repo types.LocalRepo,
-	commit types.Commit,
+	repo pl.LocalRepo,
+	commit pl.Commit,
 	reference string,
 	isNewRef bool,
 	body map[string]interface{}) error {
@@ -408,7 +407,7 @@ func CheckMergeRequestPostBody(
 // fields of a merge request post body against the network state
 func CheckMergeRequestPostBodyConsistency(
 	keepers core.Keepers,
-	repo types.LocalRepo,
+	repo pl.LocalRepo,
 	reference string,
 	isNewRef bool,
 	body map[string]interface{}) error {
@@ -487,7 +486,7 @@ func CheckMergeRequestPostBodyConsistency(
 }
 
 // checkMergeRequestPostBodySanity performs sanity checks on fields of an merge request post body
-func checkMergeRequestPostBodySanity(commit types.Commit, body map[string]interface{}, isNewRef bool) error {
+func checkMergeRequestPostBodySanity(commit pl.Commit, body map[string]interface{}, isNewRef bool) error {
 
 	var commitHash = commit.GetHash().String()
 

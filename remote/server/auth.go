@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-git/go-git/v5/config"
 	"github.com/make-os/kit/keystore/types"
+	types2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/policy"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
@@ -130,7 +131,7 @@ func (sv *Server) handleAuth(r *http.Request, repo *state.Repository, namespace 
 
 // MakeAndApplyPushTokenToRemoteFunc describes a function for creating, signing and
 // applying push tokens on a repo's remote(s)
-type MakeAndApplyPushTokenToRemoteFunc func(targetRepo remotetypes.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error
+type MakeAndApplyPushTokenToRemoteFunc func(targetRepo types2.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error
 
 // MakeAndApplyPushTokenToRemoteArgs contains arguments for MakeAndApplyPushTokenToRemote
 type MakeAndApplyPushTokenToRemoteArgs struct {
@@ -156,7 +157,7 @@ type MakeAndApplyPushTokenToRemoteArgs struct {
 //  - A URL can have multiple tokens for different references applied to it.
 // 	- If the target reference has an existing token, it is replaced with a new one.
 //  - Setting args.ResetTokens will remove all existing tokens.
-func MakeAndApplyPushTokenToRemote(repo remotetypes.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error {
+func MakeAndApplyPushTokenToRemote(repo types2.LocalRepo, args *MakeAndApplyPushTokenToRemoteArgs) error {
 
 	gitCfg, err := repo.Config()
 	if err != nil {
@@ -192,7 +193,7 @@ func MakeAndApplyPushTokenToRemote(repo remotetypes.LocalRepo, args *MakeAndAppl
 //  - Setting args.ResetTokens will remove all existing tokens.
 func makeAndApplyPushTokenToRepoRemote(
 	args *MakeAndApplyPushTokenToRemoteArgs,
-	repo remotetypes.LocalRepo,
+	repo types2.LocalRepo,
 	remote *config.RemoteConfig,
 	gitCfg *config.Config,
 ) error {

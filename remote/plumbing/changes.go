@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/crypto"
 )
@@ -40,11 +39,11 @@ func (ob *Obj) Equal(o interface{}) bool {
 
 // ObjCol implements Items. It is a collection of objects.
 type ObjCol struct {
-	items map[string]types.Item
+	items map[string]Item
 }
 
 // NewObjCol creates an ObjCol instance
-func NewObjCol(r map[string]types.Item) *ObjCol {
+func NewObjCol(r map[string]Item) *ObjCol {
 	return &ObjCol{items: r}
 }
 
@@ -54,7 +53,7 @@ func (oc *ObjCol) Has(name interface{}) bool {
 }
 
 // Get gets an object by name
-func (oc *ObjCol) Get(name interface{}) types.Item {
+func (oc *ObjCol) Get(name interface{}) Item {
 	res, ok := oc.items[name.(string)]
 	if !ok {
 		return nil
@@ -84,7 +83,7 @@ func (oc *ObjCol) Len() int64 {
 // ForEach iterates through the collection.
 // Each item is passed as the only argument to the callback.
 // Return true to break immediately
-func (oc *ObjCol) ForEach(iteratee func(i types.Item) bool) {
+func (oc *ObjCol) ForEach(iteratee func(i Item) bool) {
 	for _, v := range oc.items {
 		if iteratee(v) {
 			break
@@ -109,19 +108,19 @@ func (oc *ObjCol) Hash() util.Bytes32 {
 }
 
 // EmptyChangeResult returns an empty ChangeResult
-func EmptyChangeResult() *types.ChangeResult {
-	return &types.ChangeResult{Changes: []*types.ItemChange{}}
+func EmptyChangeResult() *ChangeResult {
+	return &ChangeResult{Changes: []*ItemChange{}}
 }
 
-func newChange(i types.Item, action types.ColChangeType) *types.ItemChange {
-	return &types.ItemChange{Item: i, Action: action}
+func newChange(i Item, action ColChangeType) *ItemChange {
+	return &ItemChange{Item: i, Action: action}
 }
 
 // GetChanges takes one old collection of items and an updated collection of
 // items and attempts to determine the changes that must be executed against
 // the old collection before it is equal to the updated collection.
-func GetChanges(old, update types.Items) *types.ChangeResult {
-	var result = new(types.ChangeResult)
+func GetChanges(old, update Items) *ChangeResult {
+	var result = new(ChangeResult)
 	if update == nil {
 		return EmptyChangeResult()
 	}
@@ -139,7 +138,7 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 	updateIsLonger := longerPtr.Equal(update)
 
 	// Now, we loop through the longer collection,
-	longerPtr.ForEach(func(curItem types.Item) bool {
+	longerPtr.ForEach(func(curItem Item) bool {
 
 		// Get the current item in the shorter collection
 		curItemInShorter := shorterPtr.Get(curItem.GetName())
@@ -148,7 +147,7 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 		// item is not in the shorter collection, it means the current item is
 		// new and unknown to the old collection.
 		if updateIsLonger && curItemInShorter == nil {
-			result.Changes = append(result.Changes, newChange(curItem, types.ChangeTypeNew))
+			result.Changes = append(result.Changes, newChange(curItem, ChangeTypeNew))
 			return false
 		}
 
@@ -156,7 +155,7 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 		// is not in the shorter collection (updated collection), it means the
 		// current was removed in the updated collection.
 		if !updateIsLonger && curItemInShorter == nil {
-			result.Changes = append(result.Changes, newChange(curItem, types.ChangeTypeRemove))
+			result.Changes = append(result.Changes, newChange(curItem, ChangeTypeRemove))
 			return false
 		}
 
@@ -169,7 +168,7 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 			if updateIsLonger {
 				updRef = curItem
 			}
-			result.Changes = append(result.Changes, newChange(updRef, types.ChangeTypeUpdate))
+			result.Changes = append(result.Changes, newChange(updRef, ChangeTypeUpdate))
 		}
 
 		return false
@@ -178,11 +177,11 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 	// When the longer pointer is not the updated collection, add whatever is
 	// in the update collection that isn't already in the old collection
 	if !updateIsLonger {
-		update.ForEach(func(curNewRef types.Item) bool {
+		update.ForEach(func(curNewRef Item) bool {
 			if old.Has(curNewRef.GetName()) {
 				return false
 			}
-			result.Changes = append(result.Changes, newChange(curNewRef, types.ChangeTypeNew))
+			result.Changes = append(result.Changes, newChange(curNewRef, ChangeTypeNew))
 			return false
 		})
 	}
@@ -191,7 +190,7 @@ func GetChanges(old, update types.Items) *types.ChangeResult {
 }
 
 // getRefChanges returns the reference changes from old to upd.
-func getRefChanges(old, update types.Items) *types.ChangeResult {
+func getRefChanges(old, update Items) *ChangeResult {
 	return GetChanges(old, update)
 }
 
@@ -202,14 +201,14 @@ type State struct {
 }
 
 // GetReferences returns the current repo references
-func (s *State) GetReferences() types.Items {
+func (s *State) GetReferences() Items {
 	return s.References
 }
 
 // MakeStateFromItem creates a GetState object from an Item.
 // If Item is nil, an empty GetState is returned
-func MakeStateFromItem(item types.Item) *State {
-	obj := map[string]types.Item{}
+func MakeStateFromItem(item Item) *State {
+	obj := map[string]Item{}
 	if item != nil {
 		obj[item.GetName()] = item
 	}
@@ -222,14 +221,14 @@ func (s *State) IsEmpty() bool {
 }
 
 // GetChanges summarizes the changes between GetState s and y.
-func (s *State) GetChanges(y types.RepoRefsState) *types.Changes {
+func (s *State) GetChanges(y RepoRefsState) *Changes {
 
-	var refChange *types.ChangeResult
+	var refChange *ChangeResult
 
 	// If y is nil, return an empty change result since
 	// there is nothing to compare s with.
 	if y == nil {
-		return &types.Changes{References: EmptyChangeResult()}
+		return &Changes{References: EmptyChangeResult()}
 	}
 
 	// As long as y has a reference collection,
@@ -238,7 +237,7 @@ func (s *State) GetChanges(y types.RepoRefsState) *types.Changes {
 		refChange = getRefChanges(s.References, y.GetReferences())
 	}
 
-	return &types.Changes{
+	return &Changes{
 		References: refChange,
 	}
 }
@@ -246,7 +245,7 @@ func (s *State) GetChanges(y types.RepoRefsState) *types.Changes {
 // GetRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func GetRepoState(repo types.LocalRepo, options ...types.KVOption) types.RepoRefsState {
+func GetRepoState(repo LocalRepo, options ...KVOption) RepoRefsState {
 
 	refMatch := ""
 	if opt := GetKVOpt("match", options); opt != nil {
@@ -254,7 +253,7 @@ func GetRepoState(repo types.LocalRepo, options ...types.KVOption) types.RepoRef
 	}
 
 	// Get references
-	refs := make(map[string]types.Item)
+	refs := make(map[string]Item)
 	if refMatch == "" || strings.HasPrefix(refMatch, "refs") {
 		refsI, _ := repo.References()
 		refsI.ForEach(func(ref *plumbing.Reference) error {

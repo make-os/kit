@@ -5,13 +5,12 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
 // NormalMergeReferenceName normalizes a reference from args[0] to one that
 // is a valid full merge request reference name.
-func NormalMergeReferenceName(curRepo types.LocalRepo, args []string) string {
+func NormalMergeReferenceName(curRepo plumbing.LocalRepo, args []string) string {
 	var ref string
 	var err error
 

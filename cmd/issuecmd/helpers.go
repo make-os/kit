@@ -5,13 +5,12 @@ import (
 	"strings"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
 // NormalizeIssueReferenceName normalizes a reference from args[0] to one that
 // is a valid full issue reference name.
-func NormalizeIssueReferenceName(curRepo types.LocalRepo, args []string) string {
+func NormalizeIssueReferenceName(curRepo plumbing.LocalRepo, args []string) string {
 	var ref string
 	var err error
 

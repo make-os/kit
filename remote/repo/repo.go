@@ -20,8 +20,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage"
-	pl "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/types/state"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ var (
 )
 
 // Get opens a local repository and returns a handle.
-func Get(path string) (types.LocalRepo, error) {
+func Get(path string) (plumbing2.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -47,20 +46,20 @@ func Get(path string) (types.LocalRepo, error) {
 }
 
 // GetLocalRepoFunc describes a function for getting a local repository handle
-type GetLocalRepoFunc func(gitBinPath, path string) (types.LocalRepo, error)
+type GetLocalRepoFunc func(gitBinPath, path string) (plumbing2.LocalRepo, error)
 
-func GetWithGitModule(gitBinPath, path string) (types.LocalRepo, error) {
+func GetWithGitModule(gitBinPath, path string) (plumbing2.LocalRepo, error) {
 	r, err := Get(path)
 	if err != nil {
 		return nil, err
 	}
-	r.(*Repo).GitModule = NewGitModule(gitBinPath, path)
+	r.(*Repo).BasicGitModule = NewGitModule(gitBinPath, path)
 	return r, nil
 }
 
 // GetAtWorkingDir returns a RepoContext instance pointed to the repository
 // in the current working directory.
-func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
+func GetAtWorkingDir(gitBinDir string) (plumbing2.LocalRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -80,7 +79,7 @@ func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
 
 // Repo provides functions for accessing and modifying a local repository.
 type Repo struct {
-	*GitModule
+	*BasicGitModule
 	*git.Repository
 	Path          string
 	NamespaceName string
@@ -135,7 +134,7 @@ func (r *Repo) Delete() error {
 }
 
 // Clone implements types.LocalRepo
-func (r *Repo) Clone(option types.CloneOptions) (types.LocalRepo, string, error) {
+func (r *Repo) Clone(option plumbing2.CloneOptions) (plumbing2.LocalRepo, string, error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, "", errors.Wrap(err, "failed to create temporary directory")
@@ -212,12 +211,12 @@ func (r *Repo) GetGitConfigOption(path string) string {
 }
 
 // WrappedCommitObject returns commit that implements types.WrappedCommit interface.
-func (r *Repo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+func (r *Repo) WrappedCommitObject(h plumbing.Hash) (plumbing2.Commit, error) {
 	commit, err := r.CommitObject(h)
 	if err != nil {
 		return nil, err
 	}
-	return &WrappedCommit{Commit: commit}, nil
+	return &plumbing2.WrappedCommit{Commit: commit}, nil
 }
 
 // SetConfig sets the repo config
@@ -385,7 +384,7 @@ func (r *Repo) NumIssueBranches() (count int, err error) {
 		return 0, err
 	}
 	refIter.ForEach(func(reference *plumbing.Reference) error {
-		if pl.IsIssueReference(reference.Name().String()) {
+		if plumbing2.IsIssueReference(reference.Name().String()) {
 			count++
 		}
 		return nil
@@ -424,7 +423,7 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 }
 
 // UpdateRepoConfig updates the repo's 'repocfg' configuration file
-func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
+func (r *Repo) UpdateRepoConfig(cfg *plumbing2.LocalConfig) (err error) {
 
 	cfgFile := filepath.Join(r.Path, ".git", "repocfg")
 	if err := os.Remove(cfgFile); err != nil && !strings.Contains(err.Error(), "no such file") {
@@ -442,11 +441,11 @@ func (r *Repo) UpdateRepoConfig(cfg *types.LocalConfig) (err error) {
 
 // GetRepoConfig returns the repo's 'repocfg' config object.
 // Returns an empty LocalConfig and nil if no repo config file was found
-func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
+func (r *Repo) GetRepoConfig() (*plumbing2.LocalConfig, error) {
 
 	cfgFile := filepath.Join(r.Path, ".git", "repocfg")
 	if !util.IsFileOk(cfgFile) {
-		return types.EmptyLocalConfig(), nil
+		return plumbing2.EmptyLocalConfig(), nil
 	}
 
 	bz, err := ioutil.ReadFile(cfgFile)
@@ -454,7 +453,7 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 		return nil, err
 	}
 
-	var cfg = types.EmptyLocalConfig()
+	var cfg = plumbing2.EmptyLocalConfig()
 	if err := json.Unmarshal(bz, cfg); err != nil {
 		return nil, err
 	}
@@ -467,7 +466,7 @@ func (r *Repo) GetRepoConfig() (*types.LocalConfig, error) {
 }
 
 // ListPath lists entries in a given path on the given reference.
-func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error) {
+func (r *Repo) ListPath(ref, path string) (res []plumbing2.ListPathValue, err error) {
 
 	reference, err := r.Reference(plumbing.ReferenceName(ref), true)
 	if err != nil {
@@ -508,7 +507,7 @@ func (r *Repo) ListPath(ref, path string) (res []types.ListPathValue, err error)
 
 handleEntry:
 	processEntry := func(entry object.TreeEntry, tree *object.Tree) {
-		item := types.ListPathValue{}
+		item := plumbing2.ListPathValue{}
 		item.Name = entry.Name
 		item.IsDir = entry.Mode == filemode.Dir
 		item.BlobHash = entry.Hash.String()
@@ -672,14 +671,14 @@ func (r *Repo) GetBranches() (branches []string, err error) {
 // child commit and its parent commit(s). If the commit has more than
 // one parent, the diff will be run for all parents.
 //  - commitHash: The child commit hash.
-func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitDiffResult, error) {
+func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*plumbing2.GetCommitDiffResult, error) {
 
 	commit, err := r.CommitObject(plumbing.NewHash(commitHash))
 	if err != nil {
 		return nil, err
 	}
 
-	res := &types.GetCommitDiffResult{Patches: []map[string]string{}}
+	res := &plumbing2.GetCommitDiffResult{Patches: []map[string]string{}}
 	commit.Parents().ForEach(func(parent *object.Commit) error {
 		out, err := r.DiffCommits(parent.Hash.String(), commit.Hash.String())
 		if err != nil {
@@ -693,7 +692,7 @@ func (r *Repo) GetParentAndChildCommitDiff(commitHash string) (*types.GetCommitD
 }
 
 // GetLatestCommit returns the recent commit of a branch
-func (r *Repo) GetLatestCommit(branch string) (*types.CommitResult, error) {
+func (r *Repo) GetLatestCommit(branch string) (*plumbing2.CommitResult, error) {
 
 	branch = strings.ToLower(branch)
 	var refname = plumbing.ReferenceName("refs/heads/" + branch)
@@ -711,19 +710,19 @@ func (r *Repo) GetLatestCommit(branch string) (*types.CommitResult, error) {
 		return nil, err
 	}
 
-	bc := &types.CommitResult{
+	bc := &plumbing2.CommitResult{
 		Message: strings.Trim(strings.TrimSpace(commit.Message), "\n"),
 		Hash:    commit.Hash.String(),
 	}
 	if commit.Committer != (object.Signature{}) {
-		bc.Committer = &types.CommitSignatory{
+		bc.Committer = &plumbing2.CommitSignatory{
 			Name:      commit.Committer.Name,
 			Email:     commit.Committer.Email,
 			Timestamp: commit.Committer.When.Unix(),
 		}
 	}
 	if commit.Author != (object.Signature{}) {
-		bc.Author = &types.CommitSignatory{
+		bc.Author = &plumbing2.CommitSignatory{
 			Name:      commit.Author.Name,
 			Email:     commit.Author.Email,
 			Timestamp: commit.Author.When.Unix(),
@@ -740,22 +739,22 @@ func (r *Repo) GetLatestCommit(branch string) (*types.CommitResult, error) {
 
 // GetCommit gets a commit by hash
 //  - hash: The commit hash
-func (r *Repo) GetCommit(hash string) (*types.CommitResult, error) {
+func (r *Repo) GetCommit(hash string) (*plumbing2.CommitResult, error) {
 	commit, err := r.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, err
 	}
 
-	res := &types.CommitResult{Message: commit.Message, Hash: commit.Hash.String()}
+	res := &plumbing2.CommitResult{Message: commit.Message, Hash: commit.Hash.String()}
 	if commit.Committer != (object.Signature{}) {
-		res.Committer = &types.CommitSignatory{
+		res.Committer = &plumbing2.CommitSignatory{
 			Name:      commit.Committer.Name,
 			Email:     commit.Committer.Email,
 			Timestamp: commit.Committer.When.Unix(),
 		}
 	}
 	if commit.Author != (object.Signature{}) {
-		res.Author = &types.CommitSignatory{
+		res.Author = &plumbing2.CommitSignatory{
 			Name:      commit.Author.Name,
 			Email:     commit.Author.Email,
 			Timestamp: commit.Author.When.Unix(),
@@ -773,7 +772,7 @@ func (r *Repo) GetCommit(hash string) (*types.CommitResult, error) {
 // GetCommits returns commits of a branch or commit hash
 //  - ref: The target reference name (branch or commit hash)
 //  - limit: The number of commit to return. 0 means all.
-func (r *Repo) GetCommits(ref string, limit int) (res []*types.CommitResult, err error) {
+func (r *Repo) GetCommits(ref string, limit int) (res []*plumbing2.CommitResult, err error) {
 
 	ref = strings.ToLower(ref)
 	var refname = plumbing.ReferenceName("refs/heads/" + ref)
@@ -814,7 +813,7 @@ func (r *Repo) GetCommits(ref string, limit int) (res []*types.CommitResult, err
 // GetCommitAncestors returns ancestors of a commit with the given hash.
 //  - commitHash: The hash of the commit.
 //  - limit: The number of commit to return. 0 means all.
-func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*types.CommitResult, err error) {
+func (r *Repo) GetCommitAncestors(commitHash string, limit int) (res []*plumbing2.CommitResult, err error) {
 	commit, err := r.CommitObject(plumbing.NewHash(commitHash))
 	if err != nil {
 		return nil, err
@@ -838,7 +837,7 @@ func iterCommit(
 	limit int,
 	ignore []plumbing.Hash,
 	skip []plumbing.Hash,
-) (res []*types.CommitResult, err error) {
+) (res []*plumbing2.CommitResult, err error) {
 	itr := object.NewCommitIterCTime(commit, nil, ignore)
 	for {
 		next, err := itr.Next()
@@ -853,16 +852,16 @@ func iterCommit(
 			continue
 		}
 
-		cr := &types.CommitResult{Message: next.Message, Hash: next.Hash.String()}
+		cr := &plumbing2.CommitResult{Message: next.Message, Hash: next.Hash.String()}
 		if next.Committer != (object.Signature{}) {
-			cr.Committer = &types.CommitSignatory{
+			cr.Committer = &plumbing2.CommitSignatory{
 				Name:      next.Committer.Name,
 				Email:     next.Committer.Email,
 				Timestamp: next.Committer.When.Unix(),
 			}
 		}
 		if next.Author != (object.Signature{}) {
-			cr.Author = &types.CommitSignatory{
+			cr.Author = &plumbing2.CommitSignatory{
 				Name:      next.Author.Name,
 				Email:     next.Author.Email,
 				Timestamp: next.Author.When.Unix(),
@@ -883,7 +882,7 @@ func iterCommit(
 }
 
 // Push performs push to the repository
-func (r *Repo) Push(options types.PushOptions) (progress bytes.Buffer, err error) {
+func (r *Repo) Push(options plumbing2.PushOptions) (progress bytes.Buffer, err error) {
 	opts := &git.PushOptions{Progress: &progress}
 	if options.RemoteName != "" {
 		opts.RemoteName = options.RemoteName
@@ -896,4 +895,9 @@ func (r *Repo) Push(options types.PushOptions) (progress bytes.Buffer, err error
 	}
 	err = r.Repository.Push(opts)
 	return
+}
+
+// ReadPostBody reads the body file of a commit
+func (r *Repo) ReadPostBody(hash string) (*plumbing2.PostBody, *object.Commit, error) {
+	return plumbing2.ReadPostBody(r, hash)
 }

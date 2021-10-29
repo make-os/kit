@@ -16,7 +16,7 @@ import (
 )
 
 // SignNoteCmd create and signs a push token for a given note
-func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *types3.SignNoteArgs) error {
+func SignNoteCmd(cfg *config.AppConfig, repo plumbing2.LocalRepo, args *types3.SignNoteArgs) error {
 
 	populateSignNoteArgsFromRepoConfig(repo, args)
 
@@ -86,7 +86,7 @@ func SignNoteCmd(cfg *config.AppConfig, repo types.LocalRepo, args *types3.SignN
 }
 
 // populateSignNoteArgsFromRepoConfig populates empty arguments field from repo config.
-func populateSignNoteArgsFromRepoConfig(repo types.LocalRepo, args *types3.SignNoteArgs) {
+func populateSignNoteArgsFromRepoConfig(repo plumbing2.LocalRepo, args *types3.SignNoteArgs) {
 	if args.SigningKey == "" {
 		args.SigningKey = repo.GetGitConfigOption("user.signingKey")
 	}

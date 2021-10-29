@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/AlekSi/pointer"
+	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,11 +24,11 @@ var _ = Describe("TxDetail", func() {
 				Signature:       "sig1",
 				MergeProposalID: "1000",
 				ReferenceData: &ReferenceData{
-					IssueFields: &IssueFields{
+					IssueFields: &plumbing.IssueFields{
 						Labels:    []string{"lbl1", "lbl2"},
 						Assignees: []string{"ass1", "ass2"},
 					},
-					MergeRequestFields: &MergeRequestFields{
+					MergeRequestFields: &plumbing.MergeRequestFields{
 						BaseBranch:       "base",
 						BaseBranchHash:   "baseHash",
 						TargetBranch:     "target",
@@ -60,11 +61,11 @@ var _ = Describe("ReferenceTxDetails", func() {
 					Signature:       "sig1",
 					MergeProposalID: "1000",
 					ReferenceData: &ReferenceData{
-						IssueFields: &IssueFields{
+						IssueFields: &plumbing.IssueFields{
 							Labels:    []string{"lbl1", "lbl2"},
 							Assignees: []string{"ass1", "ass2"},
 						},
-						MergeRequestFields: &MergeRequestFields{
+						MergeRequestFields: &plumbing.MergeRequestFields{
 							BaseBranch:       "base",
 							BaseBranchHash:   "baseHash",
 							TargetBranch:     "target",
@@ -85,11 +86,11 @@ var _ = Describe("ReferenceData", func() {
 	Describe("Get", func() {
 		It("should get a reference tx details", func() {
 			rd := &ReferenceData{
-				IssueFields: &IssueFields{
+				IssueFields: &plumbing.IssueFields{
 					Labels:    []string{"lbl1", "lbl2"},
 					Assignees: []string{"ass1", "ass2"},
 				},
-				MergeRequestFields: &MergeRequestFields{
+				MergeRequestFields: &plumbing.MergeRequestFields{
 					BaseBranch:       "base",
 					BaseBranchHash:   "baseHash",
 					TargetBranch:     "target",

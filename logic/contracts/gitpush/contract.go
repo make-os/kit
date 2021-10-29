@@ -5,7 +5,6 @@ import (
 	"github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/remote/plumbing"
 	pushtypes "github.com/make-os/kit/remote/push/types"
-	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/types"
 	"github.com/make-os/kit/types/core"
 	"github.com/make-os/kit/types/state"
@@ -41,10 +40,10 @@ func (c *Contract) Init(keepers core.Keepers, tx types.BaseTx, curChainHeight ui
 func (c *Contract) execReference(repo *state.Repository, repoName string, ref *pushtypes.PushedReference) error {
 
 	if ref.Data != nil && ref.Data.IssueFields == nil {
-		ref.Data.IssueFields = &remotetypes.IssueFields{}
+		ref.Data.IssueFields = &plumbing.IssueFields{}
 	}
 	if ref.Data != nil && ref.Data.MergeRequestFields == nil {
-		ref.Data.MergeRequestFields = &remotetypes.MergeRequestFields{}
+		ref.Data.MergeRequestFields = &plumbing.MergeRequestFields{}
 	}
 
 	// When the reference needs to be deleted, remove from repo reference

@@ -28,7 +28,7 @@ import (
 	pushtypes "github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/remote/refsync"
 	rstypes "github.com/make-os/kit/remote/refsync/types"
-	rr "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	"github.com/make-os/kit/remote/temprepomgr"
 	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
@@ -198,19 +198,19 @@ func New(
 func (sv *Server) applyRepoTrackingConfig() {
 
 	// Add repositories to the tracking list
-	for _, repo := range sv.cfg.Repo.Track {
-		_ = sv.logic.RepoSyncInfoKeeper().Track(repo)
+	for _, repository := range sv.cfg.Repo.Track {
+		_ = sv.logic.RepoSyncInfoKeeper().Track(repository)
 	}
 
 	// Remove repositories from tracking list
-	for _, repo := range sv.cfg.Repo.Untrack {
-		_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+	for _, repository := range sv.cfg.Repo.Untrack {
+		_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repository)
 	}
 
 	// If request to untrack all repos is enabled, untrack all.
 	if sv.cfg.Repo.UntrackAll {
-		for repo := range sv.logic.RepoSyncInfoKeeper().Tracked() {
-			_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repo)
+		for repository := range sv.logic.RepoSyncInfoKeeper().Tracked() {
+			_ = sv.logic.RepoSyncInfoKeeper().UnTrack(repository)
 		}
 	}
 }
@@ -348,12 +348,12 @@ func (sv *Server) GetLogic() core.Logic {
 }
 
 // GetRepo get a local repository
-func (sv *Server) GetRepo(name string) (remotetypes.LocalRepo, error) {
-	repo, err := rr.GetWithGitModule(sv.gitBinPath, sv.getRepoPath(name))
+func (sv *Server) GetRepo(name string) (plumbing.LocalRepo, error) {
+	repository, err := repo.GetWithGitModule(sv.gitBinPath, sv.getRepoPath(name))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get local repo")
 	}
-	return repo, nil
+	return repository, nil
 }
 
 // GetPrivateValidatorKey implements RepositoryManager
@@ -460,7 +460,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Attempt to load the repository at the given path
-	repo, err := sv.GetRepo(repoName)
+	targetRepo, err := sv.GetRepo(repoName)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
 		if err == git.ErrRepositoryNotExists {
@@ -477,15 +477,15 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		Operation:   op,
 		TxDetails:   txDetails,
 		PolEnforcer: polEnforcer,
-		Repo: &rr.Repo{
-			Repository:    repo.(*rr.Repo).Repository,
-			GitModule:     repo.(*rr.Repo).GitModule,
-			Path:          repo.GetPath(),
-			State:         repoState,
-			NamespaceName: namespaceName,
-			Namespace:     namespace,
+		Repo: &repo.Repo{
+			Repository:     targetRepo.(*repo.Repo).Repository,
+			BasicGitModule: targetRepo.(*repo.Repo).BasicGitModule,
+			Path:           targetRepo.GetPath(),
+			State:          repoState,
+			NamespaceName:  namespaceName,
+			Namespace:      namespace,
 		},
-		RepoDir:     repo.GetPath(),
+		RepoDir:     targetRepo.GetPath(),
 		ServiceName: getService(r),
 		GitBinPath:  sv.gitBinPath,
 		pktEnc:      pktEnc,
@@ -525,13 +525,13 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 
 // PushHandlerFunc describes a function for creating a push handler
 type PushHandlerFunc func(
-	targetRepo remotetypes.LocalRepo,
+	targetRepo plumbing.LocalRepo,
 	txDetails []*remotetypes.TxDetail,
 	enforcer policy.EnforcerFunc) pushtypes.Handler
 
 // createPushHandler creates an instance of BasicHandler
 func (sv *Server) createPushHandler(
-	targetRepo remotetypes.LocalRepo,
+	targetRepo plumbing.LocalRepo,
 	txDetails []*remotetypes.TxDetail,
 	enforcer policy.EnforcerFunc) pushtypes.Handler {
 	return push.NewHandler(targetRepo, txDetails, enforcer, sv)
@@ -543,7 +543,7 @@ func (sv *Server) Log() logger.Logger {
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.RepoRefsState, error) {
+func (sv *Server) GetRepoState(repo plumbing.LocalRepo, options ...plumbing.KVOption) (plumbing.RepoRefsState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 

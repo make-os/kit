@@ -10,7 +10,6 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,7 +38,7 @@ var _ = Describe("IssueReadCmd", func() {
 		It("should return err when unable to find the issue", func() {
 			args := &issuecmd.IssueReadArgs{
 				Reference: plumbing2.MakeIssueReference(1),
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -51,7 +50,7 @@ var _ = Describe("IssueReadCmd", func() {
 		It("should return err when issue was not found", func() {
 			args := &issuecmd.IssueReadArgs{
 				Reference: plumbing2.MakeIssueReference(1),
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return plumbing2.Posts{}, nil
 				},
 			}
@@ -64,7 +63,7 @@ var _ = Describe("IssueReadCmd", func() {
 			issuePath := plumbing2.MakeIssueReference(1)
 			args := &issuecmd.IssueReadArgs{
 				Reference: issuePath,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, fmt.Errorf("error"))
 					return plumbing2.Posts{post}, nil
@@ -79,7 +78,7 @@ var _ = Describe("IssueReadCmd", func() {
 			issuePath := plumbing2.MakeIssueReference(1)
 			args := &issuecmd.IssueReadArgs{
 				Reference: issuePath,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, nil)
 					post.EXPECT().GetComments().Return(nil, fmt.Errorf("error"))

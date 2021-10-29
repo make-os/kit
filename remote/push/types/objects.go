@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/crypto/ed25519"
+	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/types"
 	coretypes "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
@@ -19,7 +20,7 @@ type Note struct {
 	*coretypes.BasicMeta `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
-	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
+	TargetRepo plumbing2.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
 
 	// RepoName is the name of the repo. If Namespace is set, it will be the
 	// domain pointing to the actual repository.
@@ -61,12 +62,12 @@ type Note struct {
 }
 
 // GetTargetRepo returns the target repository
-func (pt *Note) GetTargetRepo() types.LocalRepo {
+func (pt *Note) GetTargetRepo() plumbing2.LocalRepo {
 	return pt.TargetRepo
 }
 
 // SetTargetRepo returns the target repository
-func (pt *Note) SetTargetRepo(repo types.LocalRepo) {
+func (pt *Note) SetTargetRepo(repo plumbing2.LocalRepo) {
 	pt.TargetRepo = repo
 }
 

@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockDecoder is a mock of Decoder interface
+// MockDecoder is a mock of Decoder interface.
 type MockDecoder struct {
 	ctrl     *gomock.Controller
 	recorder *MockDecoderMockRecorder
 }
 
-// MockDecoderMockRecorder is the mock recorder for MockDecoder
+// MockDecoderMockRecorder is the mock recorder for MockDecoder.
 type MockDecoderMockRecorder struct {
 	mock *MockDecoder
 }
 
-// NewMockDecoder creates a new mock instance
+// NewMockDecoder creates a new mock instance.
 func NewMockDecoder(ctrl *gomock.Controller) *MockDecoder {
 	mock := &MockDecoder{ctrl: ctrl}
 	mock.recorder = &MockDecoderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDecoder) EXPECT() *MockDecoderMockRecorder {
 	return m.recorder
 }
 
-// DecodeMulti mocks base method
+// DecodeMulti mocks base method.
 func (m *MockDecoder) DecodeMulti(v ...interface{}) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -44,13 +45,13 @@ func (m *MockDecoder) DecodeMulti(v ...interface{}) error {
 	return ret0
 }
 
-// DecodeMulti indicates an expected call of DecodeMulti
+// DecodeMulti indicates an expected call of DecodeMulti.
 func (mr *MockDecoderMockRecorder) DecodeMulti(v ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecodeMulti", reflect.TypeOf((*MockDecoder)(nil).DecodeMulti), v...)
 }
 
-// Skip mocks base method
+// Skip mocks base method.
 func (m *MockDecoder) Skip() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Skip")
@@ -58,36 +59,36 @@ func (m *MockDecoder) Skip() error {
 	return ret0
 }
 
-// Skip indicates an expected call of Skip
+// Skip indicates an expected call of Skip.
 func (mr *MockDecoderMockRecorder) Skip() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Skip", reflect.TypeOf((*MockDecoder)(nil).Skip))
 }
 
-// MockEncoder is a mock of Encoder interface
+// MockEncoder is a mock of Encoder interface.
 type MockEncoder struct {
 	ctrl     *gomock.Controller
 	recorder *MockEncoderMockRecorder
 }
 
-// MockEncoderMockRecorder is the mock recorder for MockEncoder
+// MockEncoderMockRecorder is the mock recorder for MockEncoder.
 type MockEncoderMockRecorder struct {
 	mock *MockEncoder
 }
 
-// NewMockEncoder creates a new mock instance
+// NewMockEncoder creates a new mock instance.
 func NewMockEncoder(ctrl *gomock.Controller) *MockEncoder {
 	mock := &MockEncoder{ctrl: ctrl}
 	mock.recorder = &MockEncoderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEncoder) EXPECT() *MockEncoderMockRecorder {
 	return m.recorder
 }
 
-// EncodeMulti mocks base method
+// EncodeMulti mocks base method.
 func (m *MockEncoder) EncodeMulti(v ...interface{}) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -99,7 +100,7 @@ func (m *MockEncoder) EncodeMulti(v ...interface{}) error {
 	return ret0
 }
 
-// EncodeMulti indicates an expected call of EncodeMulti
+// EncodeMulti indicates an expected call of EncodeMulti.
 func (mr *MockEncoderMockRecorder) EncodeMulti(v ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncodeMulti", reflect.TypeOf((*MockEncoder)(nil).EncodeMulti), v...)

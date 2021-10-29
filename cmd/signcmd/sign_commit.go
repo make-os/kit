@@ -25,7 +25,7 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 //  - cfg: App config object
 //  - repo: The target repository at the working directory
 //  - args: Arguments
-func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *types3.SignCommitArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, repo pl.LocalRepo, args *types3.SignCommitArgs) error {
 	populateSignCommitArgsFromRepoConfig(repo, args)
 
 	// Set merge ID from env if unset
@@ -111,7 +111,7 @@ func SignCommitCmd(cfg *config.AppConfig, repo types.LocalRepo, args *types3.Sig
 }
 
 // populateSignCommitArgsFromRepoConfig populates empty arguments field from repo config.
-func populateSignCommitArgsFromRepoConfig(repo types.LocalRepo, args *types3.SignCommitArgs) {
+func populateSignCommitArgsFromRepoConfig(repo pl.LocalRepo, args *types3.SignCommitArgs) {
 	if args.SigningKey == "" {
 		args.SigningKey = repo.GetGitConfigOption("user.signingKey")
 	}

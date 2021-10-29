@@ -6,9 +6,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
 	"github.com/make-os/kit/storage/common"
-	storagemocks "github.com/make-os/kit/storage/mocks"
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"
@@ -55,7 +55,7 @@ var _ = Describe("ValidatorKeeper", func() {
 
 		When("db error occurred", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockTx(ctrl)
+				mockDB := mocks.NewMockTx(ctrl)
 				mockDB.EXPECT().Get(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				valKeeper.db = mockDB
 			})
@@ -178,7 +178,7 @@ var _ = Describe("ValidatorKeeper", func() {
 
 		When("db.Put returns an error", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockTx(ctrl)
+				mockDB := mocks.NewMockTx(ctrl)
 				mockDB.EXPECT().Put(gomock.Any()).Return(fmt.Errorf("error"))
 				valKeeper.db = mockDB
 			})

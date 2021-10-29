@@ -5,13 +5,13 @@ import (
 
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/server"
-	"github.com/make-os/kit/remote/types"
 	rpctypes "github.com/make-os/kit/rpc/types"
 	"github.com/make-os/kit/util/api"
 )
 
-type SignCommitFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignCommitArgs) error
+type SignCommitFunc func(cfg *config.AppConfig, repo plumbing.LocalRepo, args *SignCommitArgs) error
 
 type SignCommitArgs struct {
 	// Fee is the network transaction fee
@@ -103,7 +103,7 @@ type SignNoteArgs struct {
 	Stderr io.Writer
 }
 
-type SignNoteFunc func(cfg *config.AppConfig, repo types.LocalRepo, args *SignNoteArgs) error
+type SignNoteFunc func(cfg *config.AppConfig, repo plumbing.LocalRepo, args *SignNoteArgs) error
 
 type SignTagArgs struct {
 	// Fee is the network transaction fee
@@ -146,4 +146,4 @@ type SignTagArgs struct {
 	Stderr io.Writer
 }
 
-type SignTagFunc func(cfg *config.AppConfig, cmdArg []string, repo types.LocalRepo, args *SignTagArgs) error
+type SignTagFunc func(cfg *config.AppConfig, cmdArg []string, repo plumbing.LocalRepo, args *SignTagArgs) error

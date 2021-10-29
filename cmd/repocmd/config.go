@@ -16,7 +16,7 @@ import (
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/cmd/passcmd/agent"
 	"github.com/make-os/kit/config"
-	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
@@ -74,7 +74,7 @@ type ConfigArgs struct {
 }
 
 // ConfigCmd configures a repository
-func ConfigCmd(repo types.LocalRepo, args *ConfigArgs) error {
+func ConfigCmd(repo plumbing.LocalRepo, args *ConfigArgs) error {
 
 	gitCfg, err := repo.Config()
 	if err != nil {

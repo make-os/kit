@@ -5,7 +5,6 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -30,10 +29,10 @@ type IssueCloseResult struct {
 }
 
 // IssueCloseCmdFunc describes IssueCloseCmd function signature
-type IssueCloseCmdFunc func(r types.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error)
+type IssueCloseCmdFunc func(r plumbing.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error)
 
 // IssueCloseCmd adds a close directive
-func IssueCloseCmd(r types.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error) {
+func IssueCloseCmd(r plumbing.LocalRepo, args *IssueCloseArgs) (*IssueCloseResult, error) {
 
 	// Ensure the issue reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)

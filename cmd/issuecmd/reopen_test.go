@@ -11,7 +11,6 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,7 +58,7 @@ var _ = Describe("IssueReopen", func() {
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
 			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(r plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return nil, nil, fmt.Errorf("error")
 				},
 			})
@@ -73,7 +72,7 @@ var _ = Describe("IssueReopen", func() {
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
 			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(r plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					closed := false
 					return &plumbing.PostBody{Close: &closed}, nil, nil
 				},
@@ -88,12 +87,12 @@ var _ = Describe("IssueReopen", func() {
 				mockRepo.EXPECT().RefGet(ref).Return("", nil)
 				_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
 					Reference: ref,
-					ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+					ReadPostBody: func(r plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 						pb := plumbing.NewEmptyPostBody()
 						pb.Close = pointer.ToBool(true)
 						return pb, nil, nil
 					},
-					PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
+					PostCommentCreator: func(r plumbing.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 						Expect(args.Body).To(Equal("---\nclose: false\n---\n"))
 						return false, "", nil
 					},
@@ -107,12 +106,12 @@ var _ = Describe("IssueReopen", func() {
 			mockRepo.EXPECT().RefGet(ref).Return("", nil)
 			_, err := issuecmd.IssueReopenCmd(mockRepo, &issuecmd.IssueReopenArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(r plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					pb := plumbing.NewEmptyPostBody()
 					pb.Close = pointer.ToBool(true)
 					return pb, nil, nil
 				},
-				PostCommentCreator: func(r types.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
+				PostCommentCreator: func(r plumbing.LocalRepo, args *plumbing.CreatePostCommitArgs) (isNew bool, reference string, err error) {
 					return false, "", fmt.Errorf("error")
 				},
 			})

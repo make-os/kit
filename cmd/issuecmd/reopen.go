@@ -5,7 +5,6 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -30,10 +29,10 @@ type IssueReopenResult struct {
 }
 
 // IssueReopenCmdFunc describes IssueReopenCmd function signature
-type IssueReopenCmdFunc func(r types.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error)
+type IssueReopenCmdFunc func(r plumbing.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error)
 
 // IssueReopenCmd adds a negative close directive to an issue
-func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error) {
+func IssueReopenCmd(r plumbing.LocalRepo, args *IssueReopenArgs) (*IssueReopenResult, error) {
 
 	// Ensure the issue reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)

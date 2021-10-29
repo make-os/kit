@@ -41,7 +41,7 @@ var testPushKeyGetter = func(pubKey *ed25519.PubKey, err error) func(pushKeyID s
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var testRepo types.LocalRepo
+	var testRepo plumbing2.LocalRepo
 	var path string
 	var pubKey *ed25519.PubKey
 	var privKey *ed25519.Key
@@ -181,7 +181,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
 				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -193,7 +193,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
 				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -205,7 +205,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
 				err = validation.ValidateChange(mockKeepers, testRepo, "", change, testTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 

@@ -6,67 +6,67 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	host "github.com/libp2p/go-libp2p-core/host"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dht0 "github.com/make-os/kit/net/dht"
-	reflect "reflect"
 )
 
-// MockDHT is a mock of DHT interface
+// MockDHT is a mock of DHT interface.
 type MockDHT struct {
 	ctrl     *gomock.Controller
 	recorder *MockDHTMockRecorder
 }
 
-// MockDHTMockRecorder is the mock recorder for MockDHT
+// MockDHTMockRecorder is the mock recorder for MockDHT.
 type MockDHTMockRecorder struct {
 	mock *MockDHT
 }
 
-// NewMockDHT creates a new mock instance
+// NewMockDHT creates a new mock instance.
 func NewMockDHT(ctrl *gomock.Controller) *MockDHT {
 	mock := &MockDHT{ctrl: ctrl}
 	mock.recorder = &MockDHTMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDHT) EXPECT() *MockDHTMockRecorder {
 	return m.recorder
 }
 
-// Store mocks base method
-func (m *MockDHT) Store(ctx context.Context, key string, value []byte) error {
+// Announce mocks base method.
+func (m *MockDHT) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Store", ctx, key, value)
-	ret0, _ := ret[0].(error)
+	ret := m.ctrl.Call(m, "Announce", objType, repo, key, doneCB)
+	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// Store indicates an expected call of Store
-func (mr *MockDHTMockRecorder) Store(ctx, key, value interface{}) *gomock.Call {
+// Announce indicates an expected call of Announce.
+func (mr *MockDHTMockRecorder) Announce(objType, repo, key, doneCB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockDHT)(nil).Store), ctx, key, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), objType, repo, key, doneCB)
 }
 
-// Lookup mocks base method
-func (m *MockDHT) Lookup(ctx context.Context, key string) ([]byte, error) {
+// DHT mocks base method.
+func (m *MockDHT) DHT() *dht.IpfsDHT {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Lookup", ctx, key)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "DHT")
+	ret0, _ := ret[0].(*dht.IpfsDHT)
+	return ret0
 }
 
-// Lookup indicates an expected call of Lookup
-func (mr *MockDHTMockRecorder) Lookup(ctx, key interface{}) *gomock.Call {
+// DHT indicates an expected call of DHT.
+func (mr *MockDHTMockRecorder) DHT() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*MockDHT)(nil).Lookup), ctx, key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHT", reflect.TypeOf((*MockDHT)(nil).DHT))
 }
 
-// GetProviders mocks base method
+// GetProviders mocks base method.
 func (m *MockDHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProviders", ctx, key)
@@ -75,67 +75,13 @@ func (m *MockDHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo
 	return ret0, ret1
 }
 
-// GetProviders indicates an expected call of GetProviders
+// GetProviders indicates an expected call of GetProviders.
 func (mr *MockDHTMockRecorder) GetProviders(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProviders", reflect.TypeOf((*MockDHT)(nil).GetProviders), ctx, key)
 }
 
-// Announce mocks base method
-func (m *MockDHT) Announce(objType int, repo string, key []byte, doneCB func(error)) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Announce", objType, repo, key, doneCB)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Announce indicates an expected call of Announce
-func (mr *MockDHTMockRecorder) Announce(objType, repo, key, doneCB interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), objType, repo, key, doneCB)
-}
-
-// NewAnnouncerSession mocks base method
-func (m *MockDHT) NewAnnouncerSession() dht0.Session {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewAnnouncerSession")
-	ret0, _ := ret[0].(dht0.Session)
-	return ret0
-}
-
-// NewAnnouncerSession indicates an expected call of NewAnnouncerSession
-func (mr *MockDHTMockRecorder) NewAnnouncerSession() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAnnouncerSession", reflect.TypeOf((*MockDHT)(nil).NewAnnouncerSession))
-}
-
-// RegisterChecker mocks base method
-func (m *MockDHT) RegisterChecker(objType int, f dht0.CheckFunc) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RegisterChecker", objType, f)
-}
-
-// RegisterChecker indicates an expected call of RegisterChecker
-func (mr *MockDHTMockRecorder) RegisterChecker(objType, f interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterChecker", reflect.TypeOf((*MockDHT)(nil).RegisterChecker), objType, f)
-}
-
-// ObjectStreamer mocks base method
-func (m *MockDHT) ObjectStreamer() dht0.Streamer {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ObjectStreamer")
-	ret0, _ := ret[0].(dht0.Streamer)
-	return ret0
-}
-
-// ObjectStreamer indicates an expected call of ObjectStreamer
-func (mr *MockDHTMockRecorder) ObjectStreamer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectStreamer", reflect.TypeOf((*MockDHT)(nil).ObjectStreamer))
-}
-
-// Host mocks base method
+// Host mocks base method.
 func (m *MockDHT) Host() host.Host {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Host")
@@ -143,41 +89,56 @@ func (m *MockDHT) Host() host.Host {
 	return ret0
 }
 
-// Host indicates an expected call of Host
+// Host indicates an expected call of Host.
 func (mr *MockDHTMockRecorder) Host() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Host", reflect.TypeOf((*MockDHT)(nil).Host))
 }
 
-// DHT mocks base method
-func (m *MockDHT) DHT() *dht.IpfsDHT {
+// Lookup mocks base method.
+func (m *MockDHT) Lookup(ctx context.Context, key string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DHT")
-	ret0, _ := ret[0].(*dht.IpfsDHT)
+	ret := m.ctrl.Call(m, "Lookup", ctx, key)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Lookup indicates an expected call of Lookup.
+func (mr *MockDHTMockRecorder) Lookup(ctx, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lookup", reflect.TypeOf((*MockDHT)(nil).Lookup), ctx, key)
+}
+
+// NewAnnouncerSession mocks base method.
+func (m *MockDHT) NewAnnouncerSession() dht0.Session {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewAnnouncerSession")
+	ret0, _ := ret[0].(dht0.Session)
 	return ret0
 }
 
-// DHT indicates an expected call of DHT
-func (mr *MockDHTMockRecorder) DHT() *gomock.Call {
+// NewAnnouncerSession indicates an expected call of NewAnnouncerSession.
+func (mr *MockDHTMockRecorder) NewAnnouncerSession() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DHT", reflect.TypeOf((*MockDHT)(nil).DHT))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewAnnouncerSession", reflect.TypeOf((*MockDHT)(nil).NewAnnouncerSession))
 }
 
-// Start mocks base method
-func (m *MockDHT) Start() error {
+// ObjectStreamer mocks base method.
+func (m *MockDHT) ObjectStreamer() dht0.Streamer {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start")
-	ret0, _ := ret[0].(error)
+	ret := m.ctrl.Call(m, "ObjectStreamer")
+	ret0, _ := ret[0].(dht0.Streamer)
 	return ret0
 }
 
-// Start indicates an expected call of Start
-func (mr *MockDHTMockRecorder) Start() *gomock.Call {
+// ObjectStreamer indicates an expected call of ObjectStreamer.
+func (mr *MockDHTMockRecorder) ObjectStreamer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockDHT)(nil).Start))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectStreamer", reflect.TypeOf((*MockDHT)(nil).ObjectStreamer))
 }
 
-// Peers mocks base method
+// Peers mocks base method.
 func (m *MockDHT) Peers() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Peers")
@@ -185,13 +146,39 @@ func (m *MockDHT) Peers() []string {
 	return ret0
 }
 
-// Peers indicates an expected call of Peers
+// Peers indicates an expected call of Peers.
 func (mr *MockDHTMockRecorder) Peers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Peers", reflect.TypeOf((*MockDHT)(nil).Peers))
 }
 
-// Stop mocks base method
+// RegisterChecker mocks base method.
+func (m *MockDHT) RegisterChecker(objType int, f dht0.CheckFunc) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterChecker", objType, f)
+}
+
+// RegisterChecker indicates an expected call of RegisterChecker.
+func (mr *MockDHTMockRecorder) RegisterChecker(objType, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterChecker", reflect.TypeOf((*MockDHT)(nil).RegisterChecker), objType, f)
+}
+
+// Start mocks base method.
+func (m *MockDHT) Start() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockDHTMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockDHT)(nil).Start))
+}
+
+// Stop mocks base method.
 func (m *MockDHT) Stop() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Stop")
@@ -199,8 +186,22 @@ func (m *MockDHT) Stop() error {
 	return ret0
 }
 
-// Stop indicates an expected call of Stop
+// Stop indicates an expected call of Stop.
 func (mr *MockDHTMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockDHT)(nil).Stop))
+}
+
+// Store mocks base method.
+func (m *MockDHT) Store(ctx context.Context, key string, value []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Store", ctx, key, value)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Store indicates an expected call of Store.
+func (mr *MockDHTMockRecorder) Store(ctx, key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockDHT)(nil).Store), ctx, key, value)
 }

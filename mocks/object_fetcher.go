@@ -5,48 +5,61 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	types "github.com/make-os/kit/remote/push/types"
 	io "io"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	types "github.com/make-os/kit/remote/push/types"
 )
 
-// MockObjectFetcher is a mock of ObjectFetcher interface
+// MockObjectFetcher is a mock of ObjectFetcher interface.
 type MockObjectFetcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockObjectFetcherMockRecorder
 }
 
-// MockObjectFetcherMockRecorder is the mock recorder for MockObjectFetcher
+// MockObjectFetcherMockRecorder is the mock recorder for MockObjectFetcher.
 type MockObjectFetcherMockRecorder struct {
 	mock *MockObjectFetcher
 }
 
-// NewMockObjectFetcher creates a new mock instance
+// NewMockObjectFetcher creates a new mock instance.
 func NewMockObjectFetcher(ctrl *gomock.Controller) *MockObjectFetcher {
 	mock := &MockObjectFetcher{ctrl: ctrl}
 	mock.recorder = &MockObjectFetcherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockObjectFetcher) EXPECT() *MockObjectFetcherMockRecorder {
 	return m.recorder
 }
 
-// FetchAsync mocks base method
+// FetchAsync mocks base method.
 func (m *MockObjectFetcher) FetchAsync(note types.PushNote, cb func(error)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "FetchAsync", note, cb)
 }
 
-// FetchAsync indicates an expected call of FetchAsync
+// FetchAsync indicates an expected call of FetchAsync.
 func (mr *MockObjectFetcherMockRecorder) FetchAsync(note, cb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAsync", reflect.TypeOf((*MockObjectFetcher)(nil).FetchAsync), note, cb)
 }
 
-// QueueSize mocks base method
+// OnPackReceived mocks base method.
+func (m *MockObjectFetcher) OnPackReceived(cb func(string, io.ReadSeeker)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnPackReceived", cb)
+}
+
+// OnPackReceived indicates an expected call of OnPackReceived.
+func (mr *MockObjectFetcherMockRecorder) OnPackReceived(cb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnPackReceived", reflect.TypeOf((*MockObjectFetcher)(nil).OnPackReceived), cb)
+}
+
+// QueueSize mocks base method.
 func (m *MockObjectFetcher) QueueSize() int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueueSize")
@@ -54,90 +67,78 @@ func (m *MockObjectFetcher) QueueSize() int {
 	return ret0
 }
 
-// QueueSize indicates an expected call of QueueSize
+// QueueSize indicates an expected call of QueueSize.
 func (mr *MockObjectFetcherMockRecorder) QueueSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueSize", reflect.TypeOf((*MockObjectFetcher)(nil).QueueSize))
 }
 
-// OnPackReceived mocks base method
-func (m *MockObjectFetcher) OnPackReceived(cb func(string, io.ReadSeeker)) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnPackReceived", cb)
-}
-
-// OnPackReceived indicates an expected call of OnPackReceived
-func (mr *MockObjectFetcherMockRecorder) OnPackReceived(cb interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnPackReceived", reflect.TypeOf((*MockObjectFetcher)(nil).OnPackReceived), cb)
-}
-
-// Start mocks base method
+// Start mocks base method.
 func (m *MockObjectFetcher) Start() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Start")
 }
 
-// Start indicates an expected call of Start
+// Start indicates an expected call of Start.
 func (mr *MockObjectFetcherMockRecorder) Start() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockObjectFetcher)(nil).Start))
 }
 
-// Stop mocks base method
+// Stop mocks base method.
 func (m *MockObjectFetcher) Stop() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Stop")
 }
 
-// Stop indicates an expected call of Stop
+// Stop indicates an expected call of Stop.
 func (mr *MockObjectFetcherMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockObjectFetcher)(nil).Stop))
 }
 
-// MockObjectFetcherService is a mock of ObjectFetcherService interface
+// MockObjectFetcherService is a mock of ObjectFetcherService interface.
 type MockObjectFetcherService struct {
 	ctrl     *gomock.Controller
 	recorder *MockObjectFetcherServiceMockRecorder
 }
 
-// MockObjectFetcherServiceMockRecorder is the mock recorder for MockObjectFetcherService
+// MockObjectFetcherServiceMockRecorder is the mock recorder for MockObjectFetcherService.
 type MockObjectFetcherServiceMockRecorder struct {
 	mock *MockObjectFetcherService
 }
 
-// NewMockObjectFetcherService creates a new mock instance
+// NewMockObjectFetcherService creates a new mock instance.
 func NewMockObjectFetcherService(ctrl *gomock.Controller) *MockObjectFetcherService {
 	mock := &MockObjectFetcherService{ctrl: ctrl}
 	mock.recorder = &MockObjectFetcherServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockObjectFetcherService) EXPECT() *MockObjectFetcherServiceMockRecorder {
 	return m.recorder
 }
 
-// FetchAsync mocks base method
+// FetchAsync mocks base method.
 func (m *MockObjectFetcherService) FetchAsync(note types.PushNote, cb func(error)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "FetchAsync", note, cb)
 }
 
-// FetchAsync indicates an expected call of FetchAsync
+// FetchAsync indicates an expected call of FetchAsync.
 func (mr *MockObjectFetcherServiceMockRecorder) FetchAsync(note, cb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAsync", reflect.TypeOf((*MockObjectFetcherService)(nil).FetchAsync), note, cb)
 }
 
-// OnPackReceived mocks base method
+// OnPackReceived mocks base method.
 func (m *MockObjectFetcherService) OnPackReceived(cb func(string, io.ReadSeeker)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnPackReceived", cb)
 }
 
-// OnPackReceived indicates an expected call of OnPackReceived
+// OnPackReceived indicates an expected call of OnPackReceived.
 func (mr *MockObjectFetcherServiceMockRecorder) OnPackReceived(cb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnPackReceived", reflect.TypeOf((*MockObjectFetcherService)(nil).OnPackReceived), cb)

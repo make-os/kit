@@ -13,7 +13,6 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/go-git/go-git/v5"
 	"github.com/make-os/kit/remote/plumbing"
-	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 )
@@ -58,22 +57,22 @@ func InitRepository(name, rootDir, gitBinPath string) error {
 	return err
 }
 
-// GitModule provides convenience methods that utilize
+// BasicGitModule provides convenience methods that utilize
 // the git tool to access and modify a repository
-type GitModule struct {
+type BasicGitModule struct {
 	gitBinPath string
 	path       string
 }
 
-// NewGitModule creates an instance of GitModule.
+// NewGitModule creates an instance of BasicGitModule.
 //  - binPath: Git executable path
 //  - path: The target repository path
-func NewGitModule(gitBinPath, path string) *GitModule {
-	return &GitModule{gitBinPath: gitBinPath, path: path}
+func NewGitModule(gitBinPath, path string) *BasicGitModule {
+	return &BasicGitModule{gitBinPath: gitBinPath, path: path}
 }
 
 // RefDelete executes `git update-ref -d <refname>` to delete a reference
-func (gm *GitModule) RefDelete(refname string) error {
+func (gm *BasicGitModule) RefDelete(refname string) error {
 	_, err := ExecGitCmd(gm.gitBinPath, gm.path, "update-ref", "-d", refname)
 	if err != nil {
 		return errors.Wrap(err, "reference delete failed")
@@ -82,7 +81,7 @@ func (gm *GitModule) RefDelete(refname string) error {
 }
 
 // RefUpdate executes `git update-ref <refname> <commit hash>` to update/create a reference
-func (gm *GitModule) RefUpdate(refname, commitHash string) error {
+func (gm *BasicGitModule) RefUpdate(refname, commitHash string) error {
 	_, err := ExecGitCmd(gm.gitBinPath, gm.path, "update-ref", refname, commitHash)
 	if err != nil {
 		return errors.Wrap(err, "reference update failed")
@@ -91,7 +90,7 @@ func (gm *GitModule) RefUpdate(refname, commitHash string) error {
 }
 
 // TagDelete executes `git tag -d <tagname>` to delete a tag
-func (gm *GitModule) TagDelete(tagname string) error {
+func (gm *BasicGitModule) TagDelete(tagname string) error {
 	_, err := ExecGitCmd(gm.gitBinPath, gm.path, "tag", "-d", tagname)
 	if err != nil {
 		return errors.Wrap(err, "tag delete failed")
@@ -101,7 +100,7 @@ func (gm *GitModule) TagDelete(tagname string) error {
 
 // RefGet returns the hash content of a reference.
 // Returns ErrRefNotFound if ref does not exist
-func (gm *GitModule) RefGet(refname string) (string, error) {
+func (gm *BasicGitModule) RefGet(refname string) (string, error) {
 	out, err := ExecGitCmd(gm.gitBinPath, gm.path, "rev-parse", "--verify", refname)
 	if err != nil {
 		if strings.Contains(err.Error(), "fatal: Needed a single revision") {
@@ -114,7 +113,7 @@ func (gm *GitModule) RefGet(refname string) (string, error) {
 
 // GetRecentCommitHash gets the hash of the recent commit
 // Returns ErrNoCommits if no commits exist
-func (gm *GitModule) GetRecentCommitHash() (string, error) {
+func (gm *BasicGitModule) GetRecentCommitHash() (string, error) {
 
 	// Get current branch
 	curBranch, err := gm.GetHEAD(true)
@@ -141,7 +140,7 @@ func (gm *GitModule) GetRecentCommitHash() (string, error) {
 
 // GetHEAD returns the reference stored in HEAD
 //  - short: When set to true, the full reference name is returned
-func (gm *GitModule) GetHEAD(short bool) (string, error) {
+func (gm *BasicGitModule) GetHEAD(short bool) (string, error) {
 
 	var args = []string{"symbolic-ref", "HEAD"}
 	if short {
@@ -160,7 +159,7 @@ func (gm *GitModule) GetHEAD(short bool) (string, error) {
 //  - msg: The commit message.
 //  - signingKey: The optional signing key. If provided, the commit is signed
 //  - env: Optional environment variables to pass to the command.
-func (gm *GitModule) CreateEmptyCommit(msg, signingKey string, env ...string) error {
+func (gm *BasicGitModule) CreateEmptyCommit(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--quiet", "--allow-empty", "--allow-empty-message", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
@@ -179,7 +178,7 @@ func (gm *GitModule) CreateEmptyCommit(msg, signingKey string, env ...string) er
 //  - msg: The tag's message which is passed to the command's stdin.
 //  - signingKey: The signing key to use
 //  - env: Optional environment variables to pass to the command.
-func (gm *GitModule) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+func (gm *BasicGitModule) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
 	if signingKey != "" {
 		args = append(args, "-u", signingKey)
 	}
@@ -194,7 +193,7 @@ func (gm *GitModule) CreateTagWithMsg(args []string, msg, signingKey string, env
 }
 
 // ListTreeObjects returns a map containing tree entries (filename: objectname)
-func (gm *GitModule) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
+func (gm *BasicGitModule) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
 	args := []string{"ls-tree", treename}
 	if recursive {
 		args = append(args, "-r")
@@ -208,7 +207,7 @@ func (gm *GitModule) ListTreeObjects(treename string, recursive bool, env ...str
 	cmd.Env = append(os.Environ(), env...)
 	err := cmd.Run()
 	if err != nil {
-		out.WriteTo(os.Stdout)
+		_, _ = out.WriteTo(os.Stdout)
 		return nil, err
 	}
 
@@ -223,7 +222,7 @@ func (gm *GitModule) ListTreeObjects(treename string, recursive bool, env ...str
 }
 
 // ListTreeObjectsSlice returns a slice containing objects name of tree entries
-func (gm *GitModule) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
+func (gm *BasicGitModule) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
 	args := []string{"ls-tree", treename}
 	if recursive {
 		args = append(args, "-r")
@@ -255,7 +254,7 @@ func (gm *GitModule) ListTreeObjectsSlice(treename string, recursive, showTrees 
 }
 
 // RemoveEntryFromNote removes a note
-func (gm *GitModule) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+func (gm *BasicGitModule) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
 	args := []string{"notes", "--ref", notename, "add", "-m", "", "-f", objectHash}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -264,7 +263,7 @@ func (gm *GitModule) RemoveEntryFromNote(notename, objectHash string, env ...str
 }
 
 // AddEntryToNote adds a note
-func (gm *GitModule) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+func (gm *BasicGitModule) AddEntryToNote(notename, objectHash, note string, env ...string) error {
 	args := []string{"notes", "--ref", notename, "add", "-m", note, "-f", objectHash}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -275,7 +274,7 @@ func (gm *GitModule) AddEntryToNote(notename, objectHash, note string, env ...st
 }
 
 // CreateBlob creates a blob object
-func (gm *GitModule) CreateBlob(content string) (string, error) {
+func (gm *BasicGitModule) CreateBlob(content string) (string, error) {
 	cmd := exec.Command(gm.gitBinPath, []string{"hash-object", "-w", "--stdin"}...)
 	cmd.Dir = gm.path
 	cmd.Stdin = strings.NewReader(content)
@@ -283,7 +282,7 @@ func (gm *GitModule) CreateBlob(content string) (string, error) {
 	cmd.Stdout = out
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		out.WriteTo(os.Stdout)
+		_, _ = out.WriteTo(os.Stdout)
 		return "", errors.Wrap(err, "failed to create blob")
 	}
 	return strings.TrimSpace(out.String()), nil
@@ -293,7 +292,7 @@ func (gm *GitModule) CreateBlob(content string) (string, error) {
 //  - msg: The commit message.
 //  - signingKey: An optional signing key
 //  - env: Optional environment variables to pass to the command.
-func (gm *GitModule) AmendRecentCommitWithMsg(msg, signingKey string, env ...string) error {
+func (gm *BasicGitModule) AmendRecentCommitWithMsg(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message",
 		"--allow-empty", "--file", "-"}
 	if signingKey != "" {
@@ -309,7 +308,7 @@ func (gm *GitModule) AmendRecentCommitWithMsg(msg, signingKey string, env ...str
 }
 
 // GetMergeCommits returns the hash of merge commits in a reference
-func (gm *GitModule) GetMergeCommits(reference string, env ...string) ([]string, error) {
+func (gm *BasicGitModule) GetMergeCommits(reference string, env ...string) ([]string, error) {
 	args := []string{"--no-pager", "log", "--merges", "--oneline", "--format=%H", reference}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -331,7 +330,7 @@ func (gm *GitModule) GetMergeCommits(reference string, env ...string) ([]string,
 }
 
 // HasMergeCommits checks whether a reference has merge commits
-func (gm *GitModule) HasMergeCommits(reference string, env ...string) (bool, error) {
+func (gm *BasicGitModule) HasMergeCommits(reference string, env ...string) (bool, error) {
 	hashes, err := gm.GetMergeCommits(reference, env...)
 	if err != nil {
 		return false, err
@@ -340,7 +339,7 @@ func (gm *GitModule) HasMergeCommits(reference string, env ...string) (bool, err
 }
 
 // CreateSingleFileCommit creates a commit tree with no parent and has only one file
-func (gm *GitModule) CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error) {
+func (gm *BasicGitModule) CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error) {
 
 	// Create body blob
 	args := []string{"hash-object", "-w", "--stdin"}
@@ -384,7 +383,7 @@ func (gm *GitModule) CreateSingleFileCommit(filename, content, commitMsg, parent
 
 // NumCommits counts the number of commits in a reference.
 // When noMerges is true, merges are not counted.
-func (gm *GitModule) NumCommits(refname string, noMerges bool) (int, error) {
+func (gm *BasicGitModule) NumCommits(refname string, noMerges bool) (int, error) {
 	args := []string{"rev-list", "--count", refname}
 	if noMerges {
 		args = append(args, "--no-merges")
@@ -407,7 +406,7 @@ func (gm *GitModule) NumCommits(refname string, noMerges bool) (int, error) {
 
 // Checkout switches HEAD to the specified reference.
 // When create is true, the -b is added
-func (gm *GitModule) Checkout(refname string, create, force bool) error {
+func (gm *BasicGitModule) Checkout(refname string, create, force bool) error {
 	args := []string{"checkout", "--quiet"}
 	if create {
 		args = append(args, "-b", refname)
@@ -434,7 +433,7 @@ func (gm *GitModule) Checkout(refname string, create, force bool) error {
 }
 
 // GetRefCommits returns the hash of all commits in the specified reference's history
-func (gm *GitModule) GetRefCommits(ref string, noMerges bool) ([]string, error) {
+func (gm *BasicGitModule) GetRefCommits(ref string, noMerges bool) ([]string, error) {
 	args := []string{"rev-list", ref}
 	if noMerges {
 		args = append(args, "--no-merges")
@@ -457,7 +456,7 @@ func (gm *GitModule) GetRefCommits(ref string, noMerges bool) ([]string, error) 
 }
 
 // GetRefRootCommit returns the hash of the root commit of the specified reference
-func (gm *GitModule) GetRefRootCommit(ref string) (string, error) {
+func (gm *BasicGitModule) GetRefRootCommit(ref string) (string, error) {
 	args := []string{"rev-list", "--max-parents=0", ref}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -478,7 +477,7 @@ func (gm *GitModule) GetRefRootCommit(ref string) (string, error) {
 var ErrGitVarNotFound = fmt.Errorf("variable not found")
 
 // Var returns the value of git's logical variables
-func (gm *GitModule) Var(name string) (string, error) {
+func (gm *BasicGitModule) Var(name string) (string, error) {
 	args := []string{"var", name}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -490,7 +489,7 @@ func (gm *GitModule) Var(name string) (string, error) {
 }
 
 // ExpandShortHash expands a short hash into its longer variant
-func (gm *GitModule) ExpandShortHash(hash string) (string, error) {
+func (gm *BasicGitModule) ExpandShortHash(hash string) (string, error) {
 	args := []string{"rev-parse", hash}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -502,7 +501,7 @@ func (gm *GitModule) ExpandShortHash(hash string) (string, error) {
 }
 
 // RefFetch fetches a remote branch into a local branch
-func (gm *GitModule) RefFetch(params remotetypes.RefFetchArgs) error {
+func (gm *BasicGitModule) RefFetch(params plumbing.RefFetchArgs) error {
 	args := []string{"fetch", params.Remote, fmt.Sprintf("%s:%s", params.RemoteRef, params.LocalRef)}
 	if params.Verbose {
 		args = append(args, "-v")
@@ -518,7 +517,7 @@ func (gm *GitModule) RefFetch(params remotetypes.RefFetchArgs) error {
 }
 
 // GC performs garbage collection
-func (gm *GitModule) GC(pruneExpire ...string) error {
+func (gm *BasicGitModule) GC(pruneExpire ...string) error {
 	args := []string{"gc"}
 	if len(pruneExpire) > 0 {
 		args = append(args, "--prune="+pruneExpire[0])
@@ -534,7 +533,7 @@ func (gm *GitModule) GC(pruneExpire ...string) error {
 }
 
 // Size returns the size of all packed, loose and garbage objects
-func (gm *GitModule) Size() (size float64, err error) {
+func (gm *BasicGitModule) Size() (size float64, err error) {
 	args := []string{"count-objects", "-vH"}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path
@@ -556,7 +555,7 @@ func (gm *GitModule) Size() (size float64, err error) {
 // GetPathLogInfo returns log info for a given path
 //  - path: The file or directory path.
 //  - revision: The references whose log is fetched (optional)
-func (gm *GitModule) GetPathLogInfo(path string, revision ...string) (*remotetypes.PathLogInfo, error) {
+func (gm *BasicGitModule) GetPathLogInfo(path string, revision ...string) (*plumbing.PathLogInfo, error) {
 	args := []string{"--no-pager", "log"}
 
 	rev := ""
@@ -585,7 +584,7 @@ func (gm *GitModule) GetPathLogInfo(path string, revision ...string) (*remotetyp
 		return nil, errors.Wrap(err, "failed to parse time")
 	}
 
-	return &remotetypes.PathLogInfo{
+	return &plumbing.PathLogInfo{
 		LastUpdateAt:      t,
 		LastCommitHash:    parts[1],
 		LastCommitMessage: parts[2],
@@ -593,7 +592,7 @@ func (gm *GitModule) GetPathLogInfo(path string, revision ...string) (*remotetyp
 }
 
 // DiffCommits returns the diff for the given commits
-func (gm *GitModule) DiffCommits(commitA, commitB string) (string, error) {
+func (gm *BasicGitModule) DiffCommits(commitA, commitB string) (string, error) {
 	args := []string{"diff", fmt.Sprintf("%s..%s", commitA, commitB)}
 	cmd := exec.Command(gm.gitBinPath, args...)
 	cmd.Dir = gm.path

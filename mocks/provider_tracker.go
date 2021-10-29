@@ -5,37 +5,142 @@
 package mocks
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	dht "github.com/make-os/kit/net/dht"
-	reflect "reflect"
-	time "time"
 )
 
-// MockProviderTracker is a mock of ProviderTracker interface
+// MockProviderTracker is a mock of ProviderTracker interface.
 type MockProviderTracker struct {
 	ctrl     *gomock.Controller
 	recorder *MockProviderTrackerMockRecorder
 }
 
-// MockProviderTrackerMockRecorder is the mock recorder for MockProviderTracker
+// MockProviderTrackerMockRecorder is the mock recorder for MockProviderTracker.
 type MockProviderTrackerMockRecorder struct {
 	mock *MockProviderTracker
 }
 
-// NewMockProviderTracker creates a new mock instance
+// NewMockProviderTracker creates a new mock instance.
 func NewMockProviderTracker(ctrl *gomock.Controller) *MockProviderTracker {
 	mock := &MockProviderTracker{ctrl: ctrl}
 	mock.recorder = &MockProviderTrackerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProviderTracker) EXPECT() *MockProviderTrackerMockRecorder {
 	return m.recorder
 }
 
-// Register mocks base method
+// Ban mocks base method.
+func (m *MockProviderTracker) Ban(peer peer.ID, dur time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Ban", peer, dur)
+}
+
+// Ban indicates an expected call of Ban.
+func (mr *MockProviderTrackerMockRecorder) Ban(peer, dur interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ban", reflect.TypeOf((*MockProviderTracker)(nil).Ban), peer, dur)
+}
+
+// DidPeerSendNope mocks base method.
+func (m *MockProviderTracker) DidPeerSendNope(id peer.ID, key []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DidPeerSendNope", id, key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// DidPeerSendNope indicates an expected call of DidPeerSendNope.
+func (mr *MockProviderTrackerMockRecorder) DidPeerSendNope(id, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DidPeerSendNope", reflect.TypeOf((*MockProviderTracker)(nil).DidPeerSendNope), id, key)
+}
+
+// Get mocks base method.
+func (m *MockProviderTracker) Get(id peer.ID, cb func(*dht.ProviderInfo)) *dht.ProviderInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id, cb)
+	ret0, _ := ret[0].(*dht.ProviderInfo)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockProviderTrackerMockRecorder) Get(id, cb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockProviderTracker)(nil).Get), id, cb)
+}
+
+// IsGood mocks base method.
+func (m *MockProviderTracker) IsGood(id peer.ID) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsGood", id)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsGood indicates an expected call of IsGood.
+func (mr *MockProviderTrackerMockRecorder) IsGood(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGood", reflect.TypeOf((*MockProviderTracker)(nil).IsGood), id)
+}
+
+// MarkFailure mocks base method.
+func (m *MockProviderTracker) MarkFailure(id peer.ID) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MarkFailure", id)
+}
+
+// MarkFailure indicates an expected call of MarkFailure.
+func (mr *MockProviderTrackerMockRecorder) MarkFailure(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkFailure", reflect.TypeOf((*MockProviderTracker)(nil).MarkFailure), id)
+}
+
+// MarkSeen mocks base method.
+func (m *MockProviderTracker) MarkSeen(id peer.ID) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MarkSeen", id)
+}
+
+// MarkSeen indicates an expected call of MarkSeen.
+func (mr *MockProviderTrackerMockRecorder) MarkSeen(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkSeen", reflect.TypeOf((*MockProviderTracker)(nil).MarkSeen), id)
+}
+
+// NumProviders mocks base method.
+func (m *MockProviderTracker) NumProviders() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumProviders")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// NumProviders indicates an expected call of NumProviders.
+func (mr *MockProviderTrackerMockRecorder) NumProviders() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumProviders", reflect.TypeOf((*MockProviderTracker)(nil).NumProviders))
+}
+
+// PeerSentNope mocks base method.
+func (m *MockProviderTracker) PeerSentNope(id peer.ID, key []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PeerSentNope", id, key)
+}
+
+// PeerSentNope indicates an expected call of PeerSentNope.
+func (mr *MockProviderTrackerMockRecorder) PeerSentNope(id, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeerSentNope", reflect.TypeOf((*MockProviderTracker)(nil).PeerSentNope), id, key)
+}
+
+// Register mocks base method.
 func (m *MockProviderTracker) Register(addrs ...peer.AddrInfo) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -45,112 +150,8 @@ func (m *MockProviderTracker) Register(addrs ...peer.AddrInfo) {
 	m.ctrl.Call(m, "Register", varargs...)
 }
 
-// Register indicates an expected call of Register
+// Register indicates an expected call of Register.
 func (mr *MockProviderTrackerMockRecorder) Register(addrs ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockProviderTracker)(nil).Register), addrs...)
-}
-
-// NumProviders mocks base method
-func (m *MockProviderTracker) NumProviders() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NumProviders")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// NumProviders indicates an expected call of NumProviders
-func (mr *MockProviderTrackerMockRecorder) NumProviders() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumProviders", reflect.TypeOf((*MockProviderTracker)(nil).NumProviders))
-}
-
-// Get mocks base method
-func (m *MockProviderTracker) Get(id peer.ID, cb func(*dht.ProviderInfo)) *dht.ProviderInfo {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id, cb)
-	ret0, _ := ret[0].(*dht.ProviderInfo)
-	return ret0
-}
-
-// Get indicates an expected call of Get
-func (mr *MockProviderTrackerMockRecorder) Get(id, cb interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockProviderTracker)(nil).Get), id, cb)
-}
-
-// IsGood mocks base method
-func (m *MockProviderTracker) IsGood(id peer.ID) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsGood", id)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsGood indicates an expected call of IsGood
-func (mr *MockProviderTrackerMockRecorder) IsGood(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGood", reflect.TypeOf((*MockProviderTracker)(nil).IsGood), id)
-}
-
-// Ban mocks base method
-func (m *MockProviderTracker) Ban(peer peer.ID, dur time.Duration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Ban", peer, dur)
-}
-
-// Ban indicates an expected call of Ban
-func (mr *MockProviderTrackerMockRecorder) Ban(peer, dur interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ban", reflect.TypeOf((*MockProviderTracker)(nil).Ban), peer, dur)
-}
-
-// MarkFailure mocks base method
-func (m *MockProviderTracker) MarkFailure(id peer.ID) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "MarkFailure", id)
-}
-
-// MarkFailure indicates an expected call of MarkFailure
-func (mr *MockProviderTrackerMockRecorder) MarkFailure(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkFailure", reflect.TypeOf((*MockProviderTracker)(nil).MarkFailure), id)
-}
-
-// MarkSeen mocks base method
-func (m *MockProviderTracker) MarkSeen(id peer.ID) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "MarkSeen", id)
-}
-
-// MarkSeen indicates an expected call of MarkSeen
-func (mr *MockProviderTrackerMockRecorder) MarkSeen(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkSeen", reflect.TypeOf((*MockProviderTracker)(nil).MarkSeen), id)
-}
-
-// PeerSentNope mocks base method
-func (m *MockProviderTracker) PeerSentNope(id peer.ID, key []byte) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PeerSentNope", id, key)
-}
-
-// PeerSentNope indicates an expected call of PeerSentNope
-func (mr *MockProviderTrackerMockRecorder) PeerSentNope(id, key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeerSentNope", reflect.TypeOf((*MockProviderTracker)(nil).PeerSentNope), id, key)
-}
-
-// DidPeerSendNope mocks base method
-func (m *MockProviderTracker) DidPeerSendNope(id peer.ID, key []byte) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DidPeerSendNope", id, key)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// DidPeerSendNope indicates an expected call of DidPeerSendNope
-func (mr *MockProviderTrackerMockRecorder) DidPeerSendNope(id, key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DidPeerSendNope", reflect.TypeOf((*MockProviderTracker)(nil).DidPeerSendNope), id, key)
 }

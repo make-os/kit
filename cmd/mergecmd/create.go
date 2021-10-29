@@ -12,7 +12,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	io2 "github.com/make-os/kit/util/io"
@@ -84,10 +83,10 @@ type MergeRequestCreateResult struct {
 }
 
 // MergeRequestCreateCmdFunc describes the MergeRequestCreateCmd function signature
-type MergeRequestCreateCmdFunc func(r types.LocalRepo, args *MergeRequestCreateArgs) (*MergeRequestCreateResult, error)
+type MergeRequestCreateCmdFunc func(r plumbing.LocalRepo, args *MergeRequestCreateArgs) (*MergeRequestCreateResult, error)
 
 // MergeRequestCreateCmd create a new merge request or adds a comment to an existing one
-func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) (*MergeRequestCreateResult, error) {
+func MergeRequestCreateCmd(r plumbing.LocalRepo, args *MergeRequestCreateArgs) (*MergeRequestCreateResult, error) {
 
 	var nComments int
 	var mrRef, mrRefHash string
@@ -210,7 +209,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) (*Me
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		MergeRequestFields: &types.MergeRequestFields{
+		MergeRequestFields: &plumbing.MergeRequestFields{
 			BaseBranch:       args.Base,
 			BaseBranchHash:   args.BaseHash,
 			TargetBranch:     args.Target,

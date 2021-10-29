@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/pktline"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
-	"github.com/make-os/kit/remote/types"
+	"github.com/make-os/kit/remote/plumbing"
 	coretypes "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
 	"github.com/make-os/kit/util/identifier"
@@ -106,8 +106,8 @@ type PushPool interface {
 
 type PushNote interface {
 	coretypes.Meta
-	GetTargetRepo() types.LocalRepo
-	SetTargetRepo(repo types.LocalRepo)
+	GetTargetRepo() plumbing.LocalRepo
+	SetTargetRepo(repo plumbing.LocalRepo)
 	GetPusherKeyID() []byte
 	GetPusherAddress() identifier.Address
 	GetPusherAccountNonce() uint64

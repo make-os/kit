@@ -20,7 +20,6 @@ import (
 	"github.com/make-os/kit/net/dht/streamer"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	types2 "github.com/make-os/kit/types"
 	io2 "github.com/make-os/kit/util/io"
@@ -156,7 +155,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return error if unable to get local repository", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
-			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+			cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
 			}
 			err := cs.OnWantRequest("repo1", hash[:], mockStream)
@@ -169,7 +168,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().ObjectExist(hash.String()).Return(false)
 			mockStream.EXPECT().Write(dht2.MakeNopeMsg())
-			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+			cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 				return mockRepo, nil
 			}
 			key := hash[:]
@@ -183,7 +182,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().ObjectExist(hash.String()).Return(false)
 			mockStream.EXPECT().Write(dht2.MakeNopeMsg()).Return(0, fmt.Errorf("write error"))
-			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+			cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 				return mockRepo, nil
 			}
 			key := hash[:]
@@ -199,7 +198,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().ObjectExist(hash.String()).Return(true)
 				mockStream.EXPECT().Write(dht2.MakeHaveMsg()).Return(0, fmt.Errorf("write error"))
-				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+				cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}
 				key := hash[:]
@@ -213,7 +212,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().ObjectExist(hash.String()).Return(true)
 				mockStream.EXPECT().Write(dht2.MakeHaveMsg()).Return(0, nil)
-				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+				cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}
 				key := hash[:]
@@ -237,7 +236,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 		It("should return error if unable to get local repository", func() {
 			mockStream.EXPECT().Conn().Return(mockConn)
 			mockStream.EXPECT().Reset()
-			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+			cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 				return nil, fmt.Errorf("failed to get repo")
 			}
 			err := cs.OnSendRequest("repo1", hash[:], mockStream)
@@ -250,7 +249,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockStream.EXPECT().Reset()
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().GetObject(hash.String()).Return(nil, fmt.Errorf("unexpected error"))
-			cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+			cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 				return mockRepo, nil
 			}
 			key := hash[:]
@@ -266,7 +265,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, plumb.ErrObjectNotFound)
 				mockStream.EXPECT().Write(dht2.MakeNopeMsg()).Return(0, fmt.Errorf("write error"))
-				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+				cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}
 				key := hash[:]
@@ -283,10 +282,10 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, nil)
 
-				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+				cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}
-				cs.PackObject = func(repo types.LocalRepo, args *plumbing.PackObjectArgs) (io.Reader, []plumb.Hash, error) {
+				cs.PackObject = func(repo plumbing.LocalRepo, args *plumbing.PackObjectArgs) (io.Reader, []plumb.Hash, error) {
 					return nil, nil, fmt.Errorf("error")
 				}
 				key := hash[:]
@@ -300,14 +299,14 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(hash.String()).Return(nil, nil)
 
-				cs.RepoGetter = func(string, string) (types.LocalRepo, error) {
+				cs.RepoGetter = func(string, string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}
 				objs := []plumb.Hash{
 					plumb.NewHash("9f00445ef94ed0f78f95fb40a96c5eba22ab1f03"),
 					plumb.NewHash("ba751747e0de82408417600288daa79221eda714"),
 				}
-				cs.PackObject = func(repo types.LocalRepo, args *plumbing.PackObjectArgs) (io.Reader, []plumb.Hash, error) {
+				cs.PackObject = func(repo plumbing.LocalRepo, args *plumbing.PackObjectArgs) (io.Reader, []plumb.Hash, error) {
 					return bytes.NewReader(nil), objs, nil
 				}
 				mockStream.EXPECT().Close()
@@ -627,7 +626,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 		It("should return error when unable to get target repository", func() {
 			cs := mocks.NewMockStreamer(ctrl)
-			_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+			_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 				return nil, fmt.Errorf("error")
 			}, dht2.GetAncestorArgs{})
 			Expect(err).ToNot(BeNil())
@@ -639,7 +638,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs := mocks.NewMockStreamer(ctrl)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(plumbing.BytesToHex(hash[:])).Return(nil, plumb.ErrObjectNotFound)
-				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					EndHash: hash[:],
@@ -652,7 +651,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs := mocks.NewMockStreamer(ctrl)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObject(plumbing.BytesToHex(hash[:])).Return(nil, fmt.Errorf("error"))
-				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					EndHash: hash[:],
@@ -666,7 +665,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				obj := object.Commit{}
 				mockRepo.EXPECT().GetObject(plumbing.BytesToHex(hash[:])).Return(&obj, nil)
-				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					EndHash: hash[:],
@@ -680,7 +679,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				obj := object.Tag{TargetType: plumb.BlobObject}
 				mockRepo.EXPECT().GetObject(plumbing.BytesToHex(hash[:])).Return(&obj, nil)
-				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					EndHash: hash[:],
@@ -703,7 +702,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					mockRepo.EXPECT().GetObject(tag2Hash.String()).Return(&tag2, nil)
 
 					cs.EXPECT().GetTag(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil, fmt.Errorf("error"))
-					streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						EndHash: hash[:],
@@ -717,7 +716,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs := mocks.NewMockStreamer(ctrl)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				cs.EXPECT().GetTag(ctx, repoName, hash[:]).Return(nil, nil, fmt.Errorf("error"))
-				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					RepoName:  repoName,
@@ -733,7 +732,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				targetTag := &object.Tag{TargetType: plumb.BlobObject}
 				tagPackfile := &fakePackfile{"pack-1"}
 				cs.EXPECT().GetTag(ctx, repoName, hash[:]).Return(tagPackfile, targetTag, nil)
-				packfiles, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					RepoName:  repoName,
@@ -752,7 +751,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					targetTag := &object.Tag{TargetType: plumb.TagObject, Target: plumb.NewHash(targetHash)}
 					cs.EXPECT().GetTag(ctx, repoName, hash[:]).Return(&fakePackfile{"pack-1"}, targetTag, nil)
 					cs.EXPECT().GetTag(ctx, repoName, plumbing.HashToBytes(targetHash)).Return(nil, nil, fmt.Errorf("error"))
-					_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						RepoName:  repoName,
@@ -771,7 +770,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					targetTag := &object.Tag{TargetType: plumb.TagObject, Target: plumb.NewHash(targetHash)}
 					cs.EXPECT().GetTag(ctx, repoName, hash[:]).Return(&fakePackfile{"pack-1"}, targetTag, nil)
 					cs.EXPECT().GetTag(ctx, repoName, plumbing.HashToBytes(targetHash)).Return(nil, nil, fmt.Errorf("error"))
-					_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					_, err := streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						RepoName:  repoName,
@@ -800,7 +799,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 						EndHash:   endTag.Target[:],
 					}).Return(nil, fmt.Errorf("error"))
 
-					streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					streamer.GetTaggedCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						RepoName:  repoName,
@@ -819,7 +818,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 		It("should return error when unable to get target repository", func() {
 			cs := mocks.NewMockStreamer(ctrl)
-			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 				return nil, fmt.Errorf("error")
 			}, dht2.GetAncestorArgs{})
 			Expect(err).ToNot(BeNil())
@@ -831,7 +830,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs := mocks.NewMockStreamer(ctrl)
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().ObjectExist(hash.String()).Return(false)
-				_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					EndHash: hash[:],
@@ -846,7 +845,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().CommitObject(hash).Return(nil, fmt.Errorf("error"))
 
-			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 				return mockRepo, nil
 			}, dht2.GetAncestorArgs{
 				StartHash: hash[:],
@@ -862,7 +861,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().CommitObject(hash).Return(&object.Commit{}, nil)
 
-				_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -882,7 +881,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo.EXPECT().CommitObject(parentHash).Return(nil, plumb.ErrObjectNotFound)
 				cs.EXPECT().GetCommit(ctx, repoName, parentHash[:]).Return(&fakePackfile{}, &object.Commit{}, nil)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -901,7 +900,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 			mockRepo.EXPECT().CommitObject(hash).Return(nil, plumb.ErrObjectNotFound)
 			cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(nil, nil, fmt.Errorf("error"))
 
-			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+			_, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 				return mockRepo, nil
 			}, dht2.GetAncestorArgs{
 				StartHash: hash[:],
@@ -921,7 +920,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo.EXPECT().CommitObject(hash).Return(nil, plumb.ErrObjectNotFound)
 				cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash:        hash[:],
@@ -943,7 +942,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo.EXPECT().CommitObject(hash).Return(nil, plumb.ErrObjectNotFound)
 				cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash:        hash[:],
@@ -965,7 +964,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				mockRepo.EXPECT().CommitObject(hash).Return(nil, plumb.ErrObjectNotFound)
 				cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -990,7 +989,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 				mockRepo.EXPECT().CommitObject(hash).Return(nil, plumb.ErrObjectNotFound)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1021,7 +1020,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 				mockRepo.EXPECT().CommitObject(parentHash).Return(nil, plumb.ErrObjectNotFound)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1046,7 +1045,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 					mockRepo.EXPECT().CommitObject(parentHash).Return(nil, fmt.Errorf("error"))
 
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash: hash[:],
@@ -1081,7 +1080,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					grandParentCommitPackfile := &fakePackfile{"pack-2"}
 					cs.EXPECT().GetCommit(ctx, repoName, grandParentHash[:]).Return(grandParentCommitPackfile, grandParentCommit, nil)
 
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash: hash[:],
@@ -1104,7 +1103,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 				mockRepo.EXPECT().ObjectExist(parentHash.String()).Return(true)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash:        hash[:],
@@ -1132,7 +1131,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					parentCommitPackfile := &fakePackfile{"pack-2"}
 					cs.EXPECT().GetCommit(ctx, repoName, parentHash[:]).Return(parentCommitPackfile, parentCommit, nil)
 
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash:        hash[:],
@@ -1171,7 +1170,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 				cs.EXPECT().GetCommit(ctx, repoName, parent2Hash[:]).Return(parent2CommitPackfile, parent2Commit, nil)
 				mockRepo.EXPECT().CommitObject(parent2Hash).Return(nil, plumb.ErrObjectNotFound)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1212,7 +1211,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 				mockRepo.EXPECT().IsAncestor(parent2Hash.String(), parentHash.String()).Return(plumb.ErrObjectNotFound)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1250,7 +1249,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 				mockRepo.EXPECT().IsAncestor(parent2Hash.String(), parentHash.String()).Return(repo.ErrNotAnAncestor)
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1280,7 +1279,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 				mockRepo.EXPECT().IsAncestor(parent2Hash.String(), parentHash.String()).Return(fmt.Errorf("bad error"))
 
-				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+				packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 					return mockRepo, nil
 				}, dht2.GetAncestorArgs{
 					StartHash: hash[:],
@@ -1308,7 +1307,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
 					var cbPackfiles []io2.ReadSeekerCloser
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash: hash[:],
@@ -1337,7 +1336,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
 					var cbPackfiles []io2.ReadSeekerCloser
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash: hash[:],
@@ -1367,7 +1366,7 @@ var _ = Describe("BasicObjectStreamer", func() {
 					cs.EXPECT().GetCommit(ctx, repoName, hash[:]).Return(startCommitPackfile, startCommit, nil)
 
 					var cbPackfiles []io2.ReadSeekerCloser
-					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (types.LocalRepo, error) {
+					packfiles, err := streamer.GetCommitWithAncestors(ctx, cs, func(gitBinPath, path string) (plumbing.LocalRepo, error) {
 						return mockRepo, nil
 					}, dht2.GetAncestorArgs{
 						StartHash: hash[:],

@@ -1,4 +1,4 @@
-package types
+package plumbing
 
 // IssueFields contains post body fields specific to issue post
 type IssueFields struct {

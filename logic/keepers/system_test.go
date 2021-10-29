@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/params"
-	storagemocks "github.com/make-os/kit/storage/mocks"
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/state"
@@ -97,7 +97,7 @@ var _ = Describe("SystemKeeper", func() {
 		When("error is returned", func() {
 			err := fmt.Errorf("bad error")
 			BeforeEach(func() {
-				db := storagemocks.NewMockTx(ctrl)
+				db := mocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(nil, err)
 				sysKeeper.db = db
 			})

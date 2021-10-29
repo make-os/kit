@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +27,7 @@ type MergeReqFetchArgs struct {
 }
 
 // MergeReqFetchCmd fetches a merge request target or base branch
-func MergeReqFetchCmd(r types.LocalRepo, args *MergeReqFetchArgs) error {
+func MergeReqFetchCmd(r plumbing.LocalRepo, args *MergeReqFetchArgs) error {
 
 	selectedBranch, selectedHash, err := getMergeRequestTarget(r, args.Reference, args.ReadPostBody, args.Base)
 	if err != nil {
@@ -52,7 +51,7 @@ func MergeReqFetchCmd(r types.LocalRepo, args *MergeReqFetchArgs) error {
 	}
 
 	// Fetch the target branch
-	fetchArgs := types.RefFetchArgs{Remote: args.Remote, RemoteRef: selectedBranch,
+	fetchArgs := plumbing.RefFetchArgs{Remote: args.Remote, RemoteRef: selectedBranch,
 		LocalRef: selectedBranch, Force: args.ForceFetch, Verbose: true}
 	if err := r.RefFetch(fetchArgs); err != nil {
 		return errors.Wrapf(err, "failed to fetch %s branch", targetLbl)

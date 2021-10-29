@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	plumbing2 "github.com/go-git/go-git/v5/plumbing"
@@ -13,19 +14,23 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/plumbing"
-	r "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
+func TestPost(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Plumbing Suite")
+}
+
 var _ = Describe("Post", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo types.LocalRepo
+	var testRepo plumbing.LocalRepo
 	var repoName, path string
 	var cls = true
 	var dontClose = false
@@ -41,7 +46,7 @@ var _ = Describe("Post", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = r.GetWithGitModule(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockRepo = mocks.NewMockLocalRepo(ctrl)
@@ -116,7 +121,7 @@ var _ = Describe("Post", func() {
 		})
 	})
 
-	Describe(".GetPosts", func() {
+	FDescribe(".GetPosts", func() {
 		It("should return error when unable to get repo references", func() {
 			mockRepo.EXPECT().GetReferences().Return(nil, fmt.Errorf("error"))
 			_, err := plumbing.GetPosts(mockRepo, nil)
@@ -145,7 +150,7 @@ var _ = Describe("Post", func() {
 		})
 
 		It("should return empty slice when no post reference is found by filter", func() {
-			post, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool { return false })
+			post, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool { return false })
 			Expect(err).To(BeNil())
 			Expect(post).To(BeEmpty())
 		})
@@ -154,7 +159,7 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "some text 1", "commit 1")
-			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			posts, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).To(BeNil())
@@ -165,7 +170,7 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "some_file", "some text 1", "commit 1")
-			_, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			_, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
@@ -176,7 +181,7 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\nbad body: {{}123\n---", "commit 2")
-			_, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			_, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
@@ -207,7 +212,7 @@ var _ = Describe("Post", func() {
 		It("should return error when commit body file cannot be read", func() {
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "useless_file", "---\n\n---\nthe content", "commit 1")
-			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			var post = &plumbing.Post{Repo: testRepo, Name: plumbing.MakeIssueReference(1)}
 			_, err := post.GetComments()
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(MatchRegexp("body file of commit (.*) is missing"))
@@ -216,7 +221,7 @@ var _ = Describe("Post", func() {
 		It("should return error when commit body content cannot be parsed", func() {
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\nfield: {bad value}:a\n---", "commit 1")
-			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			var post = &plumbing.Post{Repo: testRepo, Name: plumbing.MakeIssueReference(1)}
 			_, err := post.GetComments()
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(MatchRegexp("commit (.*) has bad body file.*"))
@@ -226,7 +231,7 @@ var _ = Describe("Post", func() {
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "", "commit 1")
 			testutil2.AppendCommit(path, "body", "---\nreplyTo: bad_short_hash\n---\ncontent", "commit 1")
-			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			var post = &plumbing.Post{Repo: testRepo, Name: plumbing.MakeIssueReference(1)}
 			_, err := post.GetComments()
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(MatchRegexp("commit (.*) reply hash could not be expanded"))
@@ -237,7 +242,7 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "body", "", "commit 1")
 			recentHash := testutil2.GetRecentCommitHash(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\nreplyTo: "+recentHash[:7]+"\n---\ncontent", "commit 1")
-			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			var post = &plumbing.Post{Repo: testRepo, Name: plumbing.MakeIssueReference(1)}
 			comments, err := post.GetComments()
 			Expect(err).To(BeNil())
 			Expect(comments[0].Body.ReplyTo).To(Equal(recentHash))
@@ -246,7 +251,7 @@ var _ = Describe("Post", func() {
 		It("should return one comment when issue contains only one commit", func() {
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\n\n---\nthe content", "commit 1")
-			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			posts, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).To(BeNil())
@@ -257,7 +262,7 @@ var _ = Describe("Post", func() {
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\n\n---\nthe content", "commit 1")
 			testutil2.AppendCommit(path, "body", "---\n\n---\ncontent updated", "commit 2")
-			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			posts, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).To(BeNil())
@@ -274,7 +279,7 @@ reactions: ["smile","anger"]
 ---
 content`, "commit 2")
 
-			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+			posts, err := plumbing.GetPosts(testRepo, func(ref plumbing2.ReferenceName) bool {
 				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).To(BeNil())
@@ -385,8 +390,8 @@ content`, "commit 2")
 
 		It("should not set 'label' when it is nil", func() {
 			body := &plumbing.PostBody{Close: nil,
-				IssueFields:        &types.IssueFields{Labels: nil},
-				MergeRequestFields: &types.MergeRequestFields{},
+				IssueFields:        &plumbing.IssueFields{Labels: nil},
+				MergeRequestFields: &plumbing.MergeRequestFields{},
 			}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
@@ -394,7 +399,7 @@ content`, "commit 2")
 
 		It("should set 'label' when it is not nil", func() {
 			var lbls []string
-			body := &plumbing.PostBody{Close: nil, IssueFields: &types.IssueFields{Labels: lbls}}
+			body := &plumbing.PostBody{Close: nil, IssueFields: &plumbing.IssueFields{Labels: lbls}}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
 		})
@@ -402,13 +407,13 @@ content`, "commit 2")
 
 	Describe("PostBody.IncludesAdminFields", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.PostBody{IssueFields: &types.IssueFields{Labels: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
-			Expect((&plumbing.PostBody{IssueFields: &types.IssueFields{Assignees: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: &plumbing.IssueFields{Labels: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: &plumbing.IssueFields{Assignees: []string{"val"}}}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{}).IncludesAdminFields()).To(BeFalse())
 			Expect((&plumbing.PostBody{Close: &cls}).IncludesAdminFields()).To(BeTrue())
 			Expect((&plumbing.PostBody{Close: &dontClose}).IncludesAdminFields()).To(BeTrue())
-			Expect((&plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{}}).IncludesAdminFields()).To(BeFalse())
-			Expect((&plumbing.PostBody{MergeRequestFields: &types.MergeRequestFields{BaseBranch: "base1"}}).IncludesAdminFields()).To(BeTrue())
+			Expect((&plumbing.PostBody{MergeRequestFields: &plumbing.MergeRequestFields{}}).IncludesAdminFields()).To(BeFalse())
+			Expect((&plumbing.PostBody{MergeRequestFields: &plumbing.MergeRequestFields{BaseBranch: "base1"}}).IncludesAdminFields()).To(BeTrue())
 		})
 	})
 
@@ -559,7 +564,7 @@ content`, "commit 2")
 			It("should return err when unable to get free post number", func() {
 				mockRepo.EXPECT().IsClean().Return(true, nil)
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, ID: 0, Body: "", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) {
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) {
 						return 0, fmt.Errorf("error")
 					},
 				}
@@ -572,7 +577,7 @@ content`, "commit 2")
 		When("args.Force=true", func() {
 			It("should return err when reference type is unknown", func() {
 				args := &plumbing.CreatePostCommitArgs{Type: "unknown", Force: true, ID: 1, Body: "", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) {
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) {
 						return 0, fmt.Errorf("error")
 					},
 				}
@@ -583,7 +588,7 @@ content`, "commit 2")
 
 			It("should return error when unable to query post reference", func() {
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0, Body: "", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 				}
 				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", fmt.Errorf("error"))
 				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
@@ -597,7 +602,7 @@ content`, "commit 2")
 						Type: plumbing.IssueBranchPrefix, ID: 0,
 						Force: true,
 						Body:  "", IsComment: true,
-						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+						GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 					}
 					mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", plumbing.ErrRefNotFound)
 					_, _, err := plumbing.CreatePostCommit(mockRepo, args)
@@ -609,7 +614,7 @@ content`, "commit 2")
 			It("should return err when unable to create a single file commit", func() {
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
 					Body: "body content", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 				}
 				hash := util.RandString(40)
 				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return(hash, nil)
@@ -629,7 +634,7 @@ content`, "commit 2")
 
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.MergeRequestBranchPrefix, Force: true, ID: 0,
 					Body: "body content", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 				}
 				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
 				Expect(err).ToNot(BeNil())
@@ -647,7 +652,7 @@ content`, "commit 2")
 
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
 					Body: "body content", IsComment: false,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 				}
 				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
 				Expect(err).ToNot(BeNil())
@@ -666,7 +671,7 @@ content`, "commit 2")
 
 					args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
 						Body: "body content", IsComment: false,
-						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+						GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 					}
 					mockRepo.EXPECT().Checkout(plumbing2.ReferenceName(refname).Short(), false, args.Force).Return(fmt.Errorf("error"))
 
@@ -686,7 +691,7 @@ content`, "commit 2")
 
 					args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
 						Body: "body content", IsComment: false,
-						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+						GetFreePostID: func(repo plumbing.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
 					}
 					mockRepo.EXPECT().Checkout(plumbing2.ReferenceName(refname).Short(), false, args.Force).Return(nil)
 

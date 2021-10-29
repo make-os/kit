@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 
+	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/util"
 	"github.com/mr-tron/base58"
 	"github.com/vmihailenco/msgpack"
@@ -62,8 +63,8 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 // ReferenceData stores additional data extracted from a pushed reference.
 type ReferenceData struct {
 	util.CodecUtil
-	*IssueFields
-	*MergeRequestFields
+	*plumbing.IssueFields
+	*plumbing.MergeRequestFields
 
 	// Close indicates that the reference is closed
 	Close *bool `json:"close" msgpack:"close,omitempty"`
@@ -83,10 +84,10 @@ func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if rd.IssueFields == nil {
-		rd.IssueFields = &IssueFields{}
+		rd.IssueFields = &plumbing.IssueFields{}
 	}
 	if rd.MergeRequestFields == nil {
-		rd.MergeRequestFields = &MergeRequestFields{}
+		rd.MergeRequestFields = &plumbing.MergeRequestFields{}
 	}
 	return rd.DecodeMulti(dec,
 		&rd.Close,
@@ -136,8 +137,8 @@ func (t *TxDetail) ToMap() map[string]interface{} {
 func (t *TxDetail) GetReferenceData() *ReferenceData {
 	if t.ReferenceData == nil {
 		t.ReferenceData = &ReferenceData{
-			IssueFields:        &IssueFields{},
-			MergeRequestFields: &MergeRequestFields{},
+			IssueFields:        &plumbing.IssueFields{},
+			MergeRequestFields: &plumbing.MergeRequestFields{},
 		}
 	}
 	return t.ReferenceData

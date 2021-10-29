@@ -5,7 +5,6 @@ import (
 
 	"github.com/AlekSi/pointer"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/pkg/errors"
 )
 
@@ -30,10 +29,10 @@ type MergeReqCloseResult struct {
 }
 
 // MergeReqCloseCmdFunc describes MergeReqCloseCmd function signature
-type MergeReqCloseCmdFunc func(r types.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error)
+type MergeReqCloseCmdFunc func(r plumbing.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error)
 
 // MergeReqCloseCmd adds a close directive
-func MergeReqCloseCmd(r types.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error) {
+func MergeReqCloseCmd(r plumbing.LocalRepo, args *MergeReqCloseArgs) (*MergeReqCloseResult, error) {
 
 	// Ensure the merge request reference exist
 	recentCommentHash, err := r.RefGet(args.Reference)

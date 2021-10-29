@@ -52,7 +52,7 @@ var _ = Describe("Reactor", func() {
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = ed25519.NewKeyFromIntSeed(1)
-	var testRepo remotetypes.LocalRepo
+	var testRepo plumbing2.LocalRepo
 	var refname = "refs/heads/master"
 
 	BeforeEach(func() {
@@ -747,7 +747,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should return error if unable to handle incoming stream", func() {
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) types.Handler {
+				svr.makePushHandler = func(targetRepo plumbing2.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 					return mockHandler
@@ -762,7 +762,7 @@ var _ = Describe("Reactor", func() {
 			It("should return error if unable to handle the pushed updates", func() {
 				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+				svr.makePushHandler = func(targetRepo plumbing2.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
@@ -778,7 +778,7 @@ var _ = Describe("Reactor", func() {
 			It("should return no error on success", func() {
 				note := &types.Note{}
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+				svr.makePushHandler = func(targetRepo plumbing2.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) types.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
 					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)

@@ -33,12 +33,12 @@ import (
 // BasicHandler implements Handler. It provides handles all phases of a push operation.
 type BasicHandler struct {
 	log                  logger.Logger
-	op                   string                    // The current git operation
-	Repo                 remotetypes.LocalRepo     // The target repository
-	Server               core.RemoteServer         // The repository remote server
-	OldState             remotetypes.RepoRefsState // The old state of the repo before the current push was written
-	PushReader           *Reader                   // The push reader for reading pushed git objects
-	NoteID               string                    // The push note unique ID
+	op                   string                 // The current git operation
+	Repo                 plumbing.LocalRepo     // The target repository
+	Server               core.RemoteServer      // The repository remote server
+	OldState             plumbing.RepoRefsState // The old state of the repo before the current push was written
+	PushReader           *Reader                // The push reader for reading pushed git objects
+	NoteID               string                 // The push note unique ID
 	reversed             bool
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
@@ -53,7 +53,7 @@ type BasicHandler struct {
 
 // NewHandler returns an instance of BasicHandler
 func NewHandler(
-	repo remotetypes.LocalRepo,
+	repo plumbing.LocalRepo,
 	txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *BasicHandler {
@@ -485,7 +485,7 @@ func (h *BasicHandler) HandleReversion() []error {
 }
 
 // GetChange computes and returns the change made to the given reference
-func (h *BasicHandler) GetChange(ref string) (*remotetypes.ItemChange, error) {
+func (h *BasicHandler) GetChange(ref string) (*plumbing.ItemChange, error) {
 
 	// Get the old version of the reference prior to the push
 	// and create a lone state object of the old state
@@ -499,7 +499,7 @@ func (h *BasicHandler) GetChange(ref string) (*remotetypes.ItemChange, error) {
 
 	// Now, compute the changes from the target reference old state to its current.
 	changes := oldRefState.GetChanges(curState.(*plumbing.State))
-	var change *remotetypes.ItemChange
+	var change *plumbing.ItemChange
 	if len(changes.References.Changes) > 0 {
 		change = changes.References.Changes[0]
 	}

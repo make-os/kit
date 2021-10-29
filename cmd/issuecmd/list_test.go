@@ -12,8 +12,7 @@ import (
 	"github.com/make-os/kit/cmd/issuecmd"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
-	plumbing2 "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
+	plumbing3 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
@@ -42,7 +41,7 @@ var _ = Describe("IssueList", func() {
 	Describe(".IssueListCmd", func() {
 		It("should return err when unable to fetch issues", func() {
 			args := &issuecmd.IssueListArgs{
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing3.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing3.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -54,28 +53,28 @@ var _ = Describe("IssueList", func() {
 		It("should sort issue posts by latest", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.PostEntry{
-				&plumbing2.Post{
+			posts := []plumbing3.PostEntry{
+				&plumbing3.Post{
 					Name:  "a",
 					Title: "How to open a file",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-10 * time.Second),
 						Hash:      hash1,
 					},
 				},
-				&plumbing2.Post{
+				&plumbing3.Post{
 					Name:  "b",
 					Title: "Remove examples",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-5 * time.Second),
 						Hash:      hash2,
 					},
 				},
 			}
 			args := &issuecmd.IssueListArgs{
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing3.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing3.Posts, error) {
 					return posts, nil
 				},
 			}
@@ -88,21 +87,21 @@ var _ = Describe("IssueList", func() {
 		It("should reverse issue when Reverse=true", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.PostEntry{
-				&plumbing2.Post{
+			posts := []plumbing3.PostEntry{
+				&plumbing3.Post{
 					Name:  "a",
 					Title: "How to open a file",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-10 * time.Second),
 						Hash:      hash1,
 					},
 				},
-				&plumbing2.Post{
+				&plumbing3.Post{
 					Name:  "b",
 					Title: "Remove examples",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-5 * time.Second),
 						Hash:      hash2,
 					},
@@ -110,7 +109,7 @@ var _ = Describe("IssueList", func() {
 			}
 			args := &issuecmd.IssueListArgs{
 				Reverse: true,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing3.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing3.Posts, error) {
 					return posts, nil
 				},
 			}
@@ -123,21 +122,21 @@ var _ = Describe("IssueList", func() {
 		It("should limit issue when Limit=1", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.PostEntry{
-				&plumbing2.Post{
+			posts := []plumbing3.PostEntry{
+				&plumbing3.Post{
 					Name:  "a",
 					Title: "How to open a file",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-10 * time.Second),
 						Hash:      hash1,
 					},
 				},
-				&plumbing2.Post{
+				&plumbing3.Post{
 					Name:  "b",
 					Title: "Remove examples",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-5 * time.Second),
 						Hash:      hash2,
 					},
@@ -145,7 +144,7 @@ var _ = Describe("IssueList", func() {
 			}
 			args := &issuecmd.IssueListArgs{
 				Limit: 1,
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing3.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing3.Posts, error) {
 					return posts, nil
 				},
 			}
@@ -160,19 +159,19 @@ var _ = Describe("IssueList", func() {
 		It("should write to output", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.PostEntry{
-				&plumbing2.Post{
+			posts := []plumbing3.PostEntry{
+				&plumbing3.Post{
 					Title: "How to open a file",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-10 * time.Second),
 						Hash:      hash1,
 					},
 				},
-				&plumbing2.Post{
+				&plumbing3.Post{
 					Title: "Remove examples",
-					Comment: &plumbing2.Comment{
-						Body:      plumbing2.NewEmptyPostBody(),
+					Comment: &plumbing3.Comment{
+						Body:      plumbing3.NewEmptyPostBody(),
 						CreatedAt: time.Now().Add(-5 * time.Second),
 						Hash:      hash2,
 					},
@@ -183,7 +182,7 @@ var _ = Describe("IssueList", func() {
 			args := &issuecmd.IssueListArgs{
 				StdErr: out, StdOut: out,
 				Format: "%H",
-				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(plumbing3.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing3.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {

@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/format/packfile"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
 	io2 "github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
@@ -25,7 +24,7 @@ var (
 // Tree   -> tree object, tree entries object.
 // Tag    -> tag object, pointed object [, objects of pointed object].
 func GetPackableObjects(
-	repo types.LocalRepo,
+	repo LocalRepo,
 	obj object.Object,
 	objFilter ...func(hash plumbing.Hash) bool) (objs []plumbing.Hash, err error) {
 
@@ -158,13 +157,13 @@ type PackObjectArgs struct {
 }
 
 // CommitPacker describes a function for packing an object into a packfile.
-type CommitPacker func(repo types.LocalRepo, args *PackObjectArgs) (io.Reader, []plumbing.Hash, error)
+type CommitPacker func(repo LocalRepo, args *PackObjectArgs) (io.Reader, []plumbing.Hash, error)
 
 // PackObject creates a packfile from the given object.
 // A commit is packed along with its tree and blobs.
 // An annotated tag is packed along with its referenced commit object.
 // Caller must ensure commit exist in the repo's object database.
-func PackObject(repo types.LocalRepo, args *PackObjectArgs) (pack io.Reader, objs []plumbing.Hash, err error) {
+func PackObject(repo LocalRepo, args *PackObjectArgs) (pack io.Reader, objs []plumbing.Hash, err error) {
 
 	// Set default object filter if caller did not set it
 	if args.Filter == nil {
@@ -287,10 +286,10 @@ func decodeObject(o plumbing.EncodedObject) (object.Object, error) {
 }
 
 // PackToRepoUnpacker describes a function for writing a packfile into a repository
-type PackToRepoUnpacker func(repo types.LocalRepo, pack io2.ReadSeekerCloser) error
+type PackToRepoUnpacker func(repo LocalRepo, pack io2.ReadSeekerCloser) error
 
 // UnpackPackfileToRepo unpacks the packfile into the given repository.
-func UnpackPackfileToRepo(repo types.LocalRepo, pack io2.ReadSeekerCloser) error {
+func UnpackPackfileToRepo(repo LocalRepo, pack io2.ReadSeekerCloser) error {
 	return UnpackPackfile(pack, func(header *packfile.ObjectHeader, read func() (object.Object, error)) error {
 		obj, err := read()
 		if err != nil {

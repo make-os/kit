@@ -13,9 +13,8 @@ import (
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/push"
 	"github.com/make-os/kit/remote/push/types"
-	repo3 "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
@@ -24,7 +23,7 @@ import (
 
 var _ = Describe("PackHelpers", func() {
 	var cfg *config.AppConfig
-	var repo remotetypes.LocalRepo
+	var testRepo plumbing2.LocalRepo
 	var path string
 	var err error
 
@@ -34,7 +33,7 @@ var _ = Describe("PackHelpers", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo3.GetWithGitModule(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -50,7 +49,7 @@ var _ = Describe("PackHelpers", func() {
 				note := types.Note{References: []*types.PushedReference{
 					{Name: "refs/heads/master", NewHash: plumbing.ZeroHash.String(), OldHash: "e070e3147d617e026e6ac08f1aac9ca3d0ae561a"},
 				}}
-				note.SetTargetRepo(repo)
+				note.SetTargetRepo(testRepo)
 				pack, err = push.MakeReferenceUpdateRequestPack(&note)
 				Expect(err).To(BeNil())
 			})
@@ -85,7 +84,7 @@ var _ = Describe("PackHelpers", func() {
 					{Name: "refs/heads/master", NewHash: commit2Hash, OldHash: plumbing.ZeroHash.String()},
 				}}
 
-				note.SetTargetRepo(repo)
+				note.SetTargetRepo(testRepo)
 				pack, err = push.MakeReferenceUpdateRequestPack(&note)
 				Expect(err).To(BeNil())
 			})
@@ -124,21 +123,21 @@ var _ = Describe("PackHelpers", func() {
 			note := types.Note{References: []*types.PushedReference{
 				{Name: "refs/heads/master", NewHash: commit1Hash, OldHash: plumbing.ZeroHash.String()},
 			}}
-			note.SetTargetRepo(repo)
+			note.SetTargetRepo(testRepo)
 			size, err := push.GetSizeOfObjects(&note)
 			Expect(err).To(BeNil())
 
 			commit1TotalSize := uint64(0)
-			commit1, _ := repo.CommitObject(plumbing.NewHash(commit1Hash))
-			commitSize, _ := repo.GetStorer().EncodedObjectSize(commit1.Hash)
+			commit1, _ := testRepo.CommitObject(plumbing.NewHash(commit1Hash))
+			commitSize, _ := testRepo.GetStorer().EncodedObjectSize(commit1.Hash)
 			commit1TotalSize += uint64(commitSize)
 
-			treeSize, _ := repo.GetStorer().EncodedObjectSize(commit1.TreeHash)
+			treeSize, _ := testRepo.GetStorer().EncodedObjectSize(commit1.TreeHash)
 			commit1TotalSize += uint64(treeSize)
 
 			tree, _ := commit1.Tree()
 			for _, ent := range tree.Entries {
-				treeSize, _ := repo.GetStorer().EncodedObjectSize(ent.Hash)
+				treeSize, _ := testRepo.GetStorer().EncodedObjectSize(ent.Hash)
 				commit1TotalSize += uint64(treeSize)
 			}
 

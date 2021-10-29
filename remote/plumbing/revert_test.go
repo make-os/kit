@@ -7,9 +7,8 @@ import (
 	"github.com/bitfield/script"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
-	r "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/util"
 	. "github.com/onsi/ginkgo"
@@ -19,7 +18,7 @@ import (
 var _ = Describe("plumbing.Revert", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo types.LocalRepo
+	var testRepo plumbing.LocalRepo
 	var repoName, path string
 
 	BeforeEach(func() {
@@ -30,7 +29,7 @@ var _ = Describe("plumbing.Revert", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = r.GetWithGitModule(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -40,7 +39,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (head references)", func() {
-		var prevState types.RepoRefsState
+		var prevState plumbing.RepoRefsState
 
 		When("a repo has 1 ref and 4 commits; plumbing.Revert the 4th commit", func() {
 
@@ -50,7 +49,7 @@ var _ = Describe("plumbing.Revert", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 2\n", "commit 2")
 				testutil2.AppendCommit(path, "file.txt", "line 3\n", "commit 3")
 
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 
 				// update the file.txt in a new commit
 				testutil2.AppendCommit(path, "file.txt", "line 4\n", "commit 4")
@@ -59,9 +58,9 @@ var _ = Describe("plumbing.Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -71,7 +70,7 @@ var _ = Describe("plumbing.Revert", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 				testutil2.AppendCommit(path, "file.txt", "line 2\n", "commit 2")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.AppendCommit(path, "file.txt", "line 3\n", "commit 3")
 
 				// update the file.txt in a new commit
@@ -81,9 +80,9 @@ var _ = Describe("plumbing.Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -94,7 +93,7 @@ var _ = Describe("plumbing.Revert", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 				testutil2.AppendCommit(path, "file.txt", "line 2\n", "commit 2")
 				prevState = &plumbing.State{
-					References: plumbing.NewObjCol(map[string]types.Item{
+					References: plumbing.NewObjCol(map[string]plumbing.Item{
 						"refs/heads/master": &plumbing.Obj{
 							Type: "ref",
 							Name: "refs/heads/master",
@@ -105,7 +104,7 @@ var _ = Describe("plumbing.Revert", func() {
 			})
 
 			It("should return err='exec failed: hard reset failed'", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("exec failed: reference update failed"))
 			})
@@ -117,17 +116,17 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCheckoutBranch(path, "branch2")
 				testutil2.AppendCommit(path, "file.txt", "line 2", "commit 2")
 			})
 
 			It("should return err=nil and only 1 reference should exist and current state equal previous state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(1))
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -140,16 +139,16 @@ var _ = Describe("plumbing.Revert", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1 of master branch")
 				testutil2.CreateCheckoutBranch(path, "branch2")
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1 of branch 2")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.ExecGit(path, "update-ref", "-d", "refs/heads/branch2")
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(2))
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState).To(Equal(prevState))
 			})
 		})
@@ -166,37 +165,37 @@ var _ = Describe("plumbing.Revert", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1 of branch 3")
 				testutil2.CreateCheckoutBranch(path, "branch4")
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1 of branch 4")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.ExecGit(path, "update-ref", "-d", "refs/heads/branch2")
 				testutil2.ExecGit(path, "update-ref", "-d", "refs/heads/branch3")
 				testutil2.ExecGit(path, "update-ref", "-d", "refs/heads/branch4")
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(4))
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState).To(Equal(prevState))
 			})
 		})
 	})
 
 	Describe(".Revert (annotated tags)", func() {
-		var prevState types.RepoRefsState
+		var prevState plumbing.RepoRefsState
 
 		When("repo old state has 0 tags; new state has 1 tag", func() {
 			BeforeEach(func() {
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				Expect(prevState.IsEmpty()).To(BeTrue())
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1")
 			})
 
 			It("should remove the new tag and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -205,16 +204,16 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 2", "v2")
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 3", "v3")
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 4", "v4")
 			})
 
 			It("should remove the new tags and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -223,14 +222,14 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "updated file", "second commit", "v1")
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -239,14 +238,14 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndLightWeightTag(path, "file.txt", "first file", "first commit", "v1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCommitAndLightWeightTag(path, "file.txt", "updated file", "second commit", "v1")
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -256,15 +255,15 @@ var _ = Describe("plumbing.Revert", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "file1", "first commit", "v1")
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "file2", "second commit", "v2")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "file3", "third commit", "v1")
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "file4", "fourth commit", "v2")
 			})
 
 			It("should update the reference value of the tags to their old value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -273,34 +272,34 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.DeleteTag(path, "v1")
 			})
 
 			It("should reset the tag value to the old tag value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 	})
 
 	Describe(".Revert (notes)", func() {
-		var prevState types.RepoRefsState
+		var prevState plumbing.RepoRefsState
 
 		When("repo old state has 0 notes; new state has 1 note", func() {
 
 			BeforeEach(func() {
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				Expect(prevState.IsEmpty()).To(BeTrue())
 				testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
 			})
 
 			It("should remove the new note reference and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -309,14 +308,14 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v2 commit", "note1")
 			})
 
 			It("should reset the note reference to the previous value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -325,14 +324,14 @@ var _ = Describe("plumbing.Revert", func() {
 
 			BeforeEach(func() {
 				testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
-				prevState = plumbing.GetRepoState(repo)
+				prevState = plumbing.GetRepoState(testRepo)
 				testutil2.DeleteRef(path, "refs/notes/note1")
 			})
 
 			It("should reset the note reference to the initial value and old state should equal current state", func() {
-				_, err := plumbing.Revert(repo, prevState)
+				_, err := plumbing.Revert(testRepo, prevState)
 				Expect(err).To(BeNil())
-				curState := plumbing.GetRepoState(repo)
+				curState := plumbing.GetRepoState(testRepo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -341,7 +340,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetBranchRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &plumbing.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/heads/branch"},
 				}
@@ -355,7 +354,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetTagRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &plumbing.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/tags/tagname"},
 				}
@@ -369,7 +368,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetNoteRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &plumbing.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/notes/notename"},
 				}

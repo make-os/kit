@@ -8,9 +8,9 @@ import (
 	dht2 "github.com/make-os/kit/net/dht"
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/fetcher"
+	"github.com/make-os/kit/remote/plumbing"
 	pushtypes "github.com/make-os/kit/remote/push/types"
 	"github.com/make-os/kit/remote/temprepomgr"
-	remotetypes "github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/rpc"
 )
 
@@ -39,7 +39,7 @@ type RemoteServer interface {
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.RepoRefsState, error)
+	GetRepoState(target plumbing.LocalRepo, options ...plumbing.KVOption) (plumbing.RepoRefsState, error)
 
 	// GetPushKeyGetter returns getter function for fetching a push key
 	GetPushKeyGetter() PushKeyGetter
@@ -48,7 +48,7 @@ type RemoteServer interface {
 	GetLogic() Logic
 
 	// GetRepo get a local repository
-	GetRepo(name string) (remotetypes.LocalRepo, error)
+	GetRepo(name string) (plumbing.LocalRepo, error)
 
 	// GetPrivateValidatorKey returns the node's private key
 	GetPrivateValidatorKey() *ed25519.Key

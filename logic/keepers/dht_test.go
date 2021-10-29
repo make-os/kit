@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
+	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/storage"
-	"github.com/make-os/kit/storage/mocks"
 	storagetypes "github.com/make-os/kit/storage/types"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/core"

@@ -11,7 +11,6 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,7 +58,7 @@ var _ = Describe("IssueStatus", func() {
 			mockRepo.EXPECT().RefGet(ref).Return(hash, nil)
 			err := issuecmd.IssueStatusCmd(mockRepo, &issuecmd.IssueStatusArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					return nil, nil, fmt.Errorf("error")
 				},
 			})
@@ -74,7 +73,7 @@ var _ = Describe("IssueStatus", func() {
 			buf := bytes.NewBuffer(nil)
 			err := issuecmd.IssueStatusCmd(mockRepo, &issuecmd.IssueStatusArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					closed := false
 					return &plumbing.PostBody{Close: &closed}, nil, nil
 				},
@@ -91,7 +90,7 @@ var _ = Describe("IssueStatus", func() {
 			buf := bytes.NewBuffer(nil)
 			err := issuecmd.IssueStatusCmd(mockRepo, &issuecmd.IssueStatusArgs{
 				Reference: ref,
-				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
+				ReadPostBody: func(repo plumbing.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					closed := true
 					return &plumbing.PostBody{Close: &closed}, nil, nil
 				},

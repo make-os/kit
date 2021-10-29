@@ -12,7 +12,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	pl "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -73,10 +72,10 @@ type MergeRequestReadArgs struct {
 }
 
 // MergeRequestReadCmdFunc describes MergeRequestReadCmd function signature
-type MergeRequestReadCmdFunc func(targetRepo types.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error)
+type MergeRequestReadCmdFunc func(targetRepo pl.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error)
 
 // MergeRequestReadCmd read comments in a merge request post
-func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error) {
+func MergeRequestReadCmd(targetRepo pl.LocalRepo, args *MergeRequestReadArgs) (pl.Comments, error) {
 
 	// Find the target merge request
 	res, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -119,7 +118,7 @@ func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs)
 }
 
 func formatAndPrintMergeRequestComments(
-	targetRepo types.LocalRepo,
+	targetRepo pl.LocalRepo,
 	args *MergeRequestReadArgs,
 	isClosed bool,
 	title string,

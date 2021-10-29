@@ -12,9 +12,8 @@ import (
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/mocks"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
-	rr "github.com/make-os/kit/remote/repo"
+	"github.com/make-os/kit/remote/repo"
 	testutil2 "github.com/make-os/kit/remote/testutil"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	types2 "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util"
@@ -26,7 +25,7 @@ var _ = Describe("Traverse", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var testRepo types.LocalRepo
+	var testRepo plumbing2.LocalRepo
 	var ctrl *gomock.Controller
 	var mockRepo *mocks.MockLocalRepo
 
@@ -38,7 +37,7 @@ var _ = Describe("Traverse", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		testRepo, err = rr.GetWithGitModule(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithGitModule(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockRepo = mocks.NewMockLocalRepo(ctrl)

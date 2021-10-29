@@ -9,7 +9,6 @@ import (
 	mr "github.com/make-os/kit/logic/contracts/mergerequest"
 	"github.com/make-os/kit/mocks"
 	plumbing2 "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/remote/validation"
 	"github.com/make-os/kit/testutil"
 	"github.com/make-os/kit/types/constants"
@@ -48,7 +47,7 @@ var _ = Describe("Merge", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "0001hash"}}
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
 
@@ -62,7 +61,7 @@ var _ = Describe("Merge", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetState().Return(state.BareRepository())
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
 
@@ -83,7 +82,7 @@ var _ = Describe("Merge", func() {
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{Address: "address_xyz"})
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -106,7 +105,7 @@ var _ = Describe("Merge", func() {
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).
 					Return(false, fmt.Errorf("error"))
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -128,7 +127,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(true, nil)
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -155,7 +154,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -181,7 +180,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -208,7 +207,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
@@ -235,7 +234,7 @@ var _ = Describe("Merge", func() {
 				repo.EXPECT().GetState().Return(repoState)
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "0001hash"}}
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
 
@@ -261,7 +260,7 @@ var _ = Describe("Merge", func() {
 				repo.EXPECT().GetState().Return(repoState)
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
-				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "000hash"}}
+				change := &plumbing2.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "000hash"}}
 				err = validation.CheckMergeCompliance(repo, change, "1", "push_key_id", mockLogic)
 			})
 

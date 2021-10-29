@@ -1,9 +1,8 @@
-package repo
+package plumbing
 
 import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/make-os/kit/remote/types"
 )
 
 // WrappedCommit wraps a go-git commit to ensure it conforms to types.WrappedCommit
@@ -22,7 +21,7 @@ func (c *WrappedCommit) UnWrap() *object.Commit {
 }
 
 // Parent returns the ith parent of a commit.
-func (c *WrappedCommit) Parent(i int) (types.Commit, error) {
+func (c *WrappedCommit) Parent(i int) (Commit, error) {
 	parent, err := c.Commit.Parent(i)
 	if err != nil {
 		return nil, err
@@ -31,7 +30,7 @@ func (c *WrappedCommit) Parent(i int) (types.Commit, error) {
 }
 
 // IsParent checks whether the specified hash is a parent of the commit
-func (c *WrappedCommit) IsParent(hash string) (bool, types.Commit) {
+func (c *WrappedCommit) IsParent(hash string) (bool, Commit) {
 	for i := 0; i < c.NumParents(); i++ {
 		if parent, _ := c.Parent(i); parent != nil && parent.GetHash().String() == hash {
 			return true, parent
@@ -60,7 +59,7 @@ func (c *WrappedCommit) GetHash() plumbing.Hash {
 	return c.Hash
 }
 
-// Tree returns the tree from the commit
+// GetTree returns the tree from the commit
 func (c *WrappedCommit) GetTree() (*object.Tree, error) {
 	return c.Tree()
 }

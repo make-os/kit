@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/make-os/kit/cmd/common"
 	pl "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	cf "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -53,10 +52,10 @@ type IssueListArgs struct {
 }
 
 // IssueListCmdFunc describes IssueListCmd function signature
-type IssueListCmdFunc func(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, error)
+type IssueListCmdFunc func(targetRepo pl.LocalRepo, args *IssueListArgs) (pl.Posts, error)
 
 // IssueListCmd list all issues
-func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, error) {
+func IssueListCmd(targetRepo pl.LocalRepo, args *IssueListArgs) (pl.Posts, error) {
 
 	// Get issue posts
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -83,7 +82,7 @@ func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) (pl.Posts, er
 }
 
 // FormatAndPrintIssueList prints out issues to stdout
-func FormatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, issues pl.Posts) error {
+func FormatAndPrintIssueList(targetRepo pl.LocalRepo, args *IssueListArgs, issues pl.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, issue := range issues {
 

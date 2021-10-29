@@ -12,7 +12,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/make-os/kit/util/crypto"
@@ -80,10 +79,10 @@ type IssueCreateResult struct {
 }
 
 // IssueCreateCmdFunc describes the IssueCreateCmd signature
-type IssueCreateCmdFunc func(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResult, error)
+type IssueCreateCmdFunc func(r plumbing.LocalRepo, args *IssueCreateArgs) (*IssueCreateResult, error)
 
 // IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
-func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResult, error) {
+func IssueCreateCmd(r plumbing.LocalRepo, args *IssueCreateArgs) (*IssueCreateResult, error) {
 	var numComments int
 	var issueRef, issueRefHash string
 	var err error
@@ -207,7 +206,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) (*IssueCreateResul
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		IssueFields: &types.IssueFields{
+		IssueFields: &plumbing.IssueFields{
 			Labels:    args.Labels,
 			Assignees: args.Assignees,
 		},

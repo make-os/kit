@@ -12,7 +12,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/make-os/kit/cmd/common"
 	pl "github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/util"
 	fmt2 "github.com/make-os/kit/util/colorfmt"
 	"github.com/pkg/errors"
@@ -68,10 +67,10 @@ type IssueReadArgs struct {
 }
 
 // IssueReadCmdFunc describes IssueReadCmd function signature
-type IssueReadCmdFunc func(targetRepo types.LocalRepo, args *IssueReadArgs) (pl.Comments, error)
+type IssueReadCmdFunc func(targetRepo pl.LocalRepo, args *IssueReadArgs) (pl.Comments, error)
 
 // IssueReadCmd read comments in an issue
-func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) (pl.Comments, error) {
+func IssueReadCmd(targetRepo pl.LocalRepo, args *IssueReadArgs) (pl.Comments, error) {
 
 	// Find the target issue
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -116,7 +115,7 @@ func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) (pl.Comments,
 
 // formatAndPrintIssueComments prints out an issue to stdout
 func formatAndPrintIssueComments(
-	targetRepo types.LocalRepo,
+	targetRepo pl.LocalRepo,
 	args *IssueReadArgs,
 	isClosed bool,
 	title string,

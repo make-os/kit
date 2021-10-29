@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/make-os/kit/config"
 	"github.com/make-os/kit/remote/plumbing"
-	"github.com/make-os/kit/remote/types"
 	"github.com/make-os/kit/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,7 +38,7 @@ var _ = Describe("Common", func() {
 
 	Describe(".ChangesOpt", func() {
 		It("should create ChangesOpt with expected key and value", func() {
-			cs := &types.Changes{References: &types.ChangeResult{}}
+			cs := &plumbing.Changes{References: &plumbing.ChangeResult{}}
 			opt := plumbing.ChangesOpt(cs)
 			Expect(opt.Key).To(Equal("changes"))
 			Expect(opt.Value).To(Equal(cs))

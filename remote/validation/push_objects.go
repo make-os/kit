@@ -42,7 +42,7 @@ type RefMismatchErr struct {
 // ref is the pushed reference.
 //
 // repoState is the repository's network state.
-func CheckPushedReferenceConsistency(targetRepo remotetypes.LocalRepo,
+func CheckPushedReferenceConsistency(targetRepo plumbing2.LocalRepo,
 	ref *pptyp.PushedReference,
 	repoState *state.Repository) error {
 

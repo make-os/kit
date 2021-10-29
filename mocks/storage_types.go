@@ -5,50 +5,65 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/make-os/kit/storage/common"
 	types "github.com/make-os/kit/storage/types"
-	reflect "reflect"
 )
 
-// MockEngine is a mock of Engine interface
+// MockEngine is a mock of Engine interface.
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
 }
 
-// MockEngineMockRecorder is the mock recorder for MockEngine
+// MockEngineMockRecorder is the mock recorder for MockEngine.
 type MockEngineMockRecorder struct {
 	mock *MockEngine
 }
 
-// NewMockEngine creates a new mock instance
+// NewMockEngine creates a new mock instance.
 func NewMockEngine(ctrl *gomock.Controller) *MockEngine {
 	mock := &MockEngine{ctrl: ctrl}
 	mock.recorder = &MockEngineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEngine) EXPECT() *MockEngineMockRecorder {
 	return m.recorder
 }
 
-// Put mocks base method
-func (m *MockEngine) Put(record *common.Record) error {
+// Close mocks base method.
+func (m *MockEngine) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", record)
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Put indicates an expected call of Put
-func (mr *MockEngineMockRecorder) Put(record interface{}) *gomock.Call {
+// Close indicates an expected call of Close.
+func (mr *MockEngineMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockEngine)(nil).Put), record)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockEngine)(nil).Close))
 }
 
-// Get mocks base method
+// Del mocks base method.
+func (m *MockEngine) Del(key []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Del", key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Del indicates an expected call of Del.
+func (mr *MockEngineMockRecorder) Del(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockEngine)(nil).Del), key)
+}
+
+// Get mocks base method.
 func (m *MockEngine) Get(key []byte) (*common.Record, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
@@ -57,53 +72,25 @@ func (m *MockEngine) Get(key []byte) (*common.Record, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockEngineMockRecorder) Get(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockEngine)(nil).Get), key)
 }
 
-// Del mocks base method
-func (m *MockEngine) Del(key []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Del", key)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Del indicates an expected call of Del
-func (mr *MockEngineMockRecorder) Del(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockEngine)(nil).Del), key)
-}
-
-// Iterate mocks base method
+// Iterate mocks base method.
 func (m *MockEngine) Iterate(prefix []byte, first bool, iterFunc func(*common.Record) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Iterate", prefix, first, iterFunc)
 }
 
-// Iterate indicates an expected call of Iterate
+// Iterate indicates an expected call of Iterate.
 func (mr *MockEngineMockRecorder) Iterate(prefix, first, iterFunc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Iterate", reflect.TypeOf((*MockEngine)(nil).Iterate), prefix, first, iterFunc)
 }
 
-// RawIterator mocks base method
-func (m *MockEngine) RawIterator(opts interface{}) interface{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RawIterator", opts)
-	ret0, _ := ret[0].(interface{})
-	return ret0
-}
-
-// RawIterator indicates an expected call of RawIterator
-func (mr *MockEngineMockRecorder) RawIterator(opts interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockEngine)(nil).RawIterator), opts)
-}
-
-// NewBatch mocks base method
+// NewBatch mocks base method.
 func (m *MockEngine) NewBatch() interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBatch")
@@ -111,13 +98,13 @@ func (m *MockEngine) NewBatch() interface{} {
 	return ret0
 }
 
-// NewBatch indicates an expected call of NewBatch
+// NewBatch indicates an expected call of NewBatch.
 func (mr *MockEngineMockRecorder) NewBatch() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewBatch", reflect.TypeOf((*MockEngine)(nil).NewBatch))
 }
 
-// NewTx mocks base method
+// NewTx mocks base method.
 func (m *MockEngine) NewTx(autoFinish, renew bool) types.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewTx", autoFinish, renew)
@@ -125,50 +112,64 @@ func (m *MockEngine) NewTx(autoFinish, renew bool) types.Tx {
 	return ret0
 }
 
-// NewTx indicates an expected call of NewTx
+// NewTx indicates an expected call of NewTx.
 func (mr *MockEngineMockRecorder) NewTx(autoFinish, renew interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTx", reflect.TypeOf((*MockEngine)(nil).NewTx), autoFinish, renew)
 }
 
-// Close mocks base method
-func (m *MockEngine) Close() error {
+// Put mocks base method.
+func (m *MockEngine) Put(record *common.Record) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Put", record)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Close indicates an expected call of Close
-func (mr *MockEngineMockRecorder) Close() *gomock.Call {
+// Put indicates an expected call of Put.
+func (mr *MockEngineMockRecorder) Put(record interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockEngine)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockEngine)(nil).Put), record)
 }
 
-// MockTxCommitDiscarder is a mock of TxCommitDiscarder interface
+// RawIterator mocks base method.
+func (m *MockEngine) RawIterator(opts interface{}) interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RawIterator", opts)
+	ret0, _ := ret[0].(interface{})
+	return ret0
+}
+
+// RawIterator indicates an expected call of RawIterator.
+func (mr *MockEngineMockRecorder) RawIterator(opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockEngine)(nil).RawIterator), opts)
+}
+
+// MockTxCommitDiscarder is a mock of TxCommitDiscarder interface.
 type MockTxCommitDiscarder struct {
 	ctrl     *gomock.Controller
 	recorder *MockTxCommitDiscarderMockRecorder
 }
 
-// MockTxCommitDiscarderMockRecorder is the mock recorder for MockTxCommitDiscarder
+// MockTxCommitDiscarderMockRecorder is the mock recorder for MockTxCommitDiscarder.
 type MockTxCommitDiscarderMockRecorder struct {
 	mock *MockTxCommitDiscarder
 }
 
-// NewMockTxCommitDiscarder creates a new mock instance
+// NewMockTxCommitDiscarder creates a new mock instance.
 func NewMockTxCommitDiscarder(ctrl *gomock.Controller) *MockTxCommitDiscarder {
 	mock := &MockTxCommitDiscarder{ctrl: ctrl}
 	mock.recorder = &MockTxCommitDiscarderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTxCommitDiscarder) EXPECT() *MockTxCommitDiscarderMockRecorder {
 	return m.recorder
 }
 
-// CanFinish mocks base method
+// CanFinish mocks base method.
 func (m *MockTxCommitDiscarder) CanFinish() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanFinish")
@@ -176,13 +177,13 @@ func (m *MockTxCommitDiscarder) CanFinish() bool {
 	return ret0
 }
 
-// CanFinish indicates an expected call of CanFinish
+// CanFinish indicates an expected call of CanFinish.
 func (mr *MockTxCommitDiscarderMockRecorder) CanFinish() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanFinish", reflect.TypeOf((*MockTxCommitDiscarder)(nil).CanFinish))
 }
 
-// Commit mocks base method
+// Commit mocks base method.
 func (m *MockTxCommitDiscarder) Commit() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit")
@@ -190,97 +191,97 @@ func (m *MockTxCommitDiscarder) Commit() error {
 	return ret0
 }
 
-// Commit indicates an expected call of Commit
+// Commit indicates an expected call of Commit.
 func (mr *MockTxCommitDiscarderMockRecorder) Commit() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockTxCommitDiscarder)(nil).Commit))
 }
 
-// Discard mocks base method
+// Discard mocks base method.
 func (m *MockTxCommitDiscarder) Discard() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Discard")
 }
 
-// Discard indicates an expected call of Discard
+// Discard indicates an expected call of Discard.
 func (mr *MockTxCommitDiscarderMockRecorder) Discard() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Discard", reflect.TypeOf((*MockTxCommitDiscarder)(nil).Discard))
 }
 
-// MockTxRenewer is a mock of TxRenewer interface
+// MockTxRenewer is a mock of TxRenewer interface.
 type MockTxRenewer struct {
 	ctrl     *gomock.Controller
 	recorder *MockTxRenewerMockRecorder
 }
 
-// MockTxRenewerMockRecorder is the mock recorder for MockTxRenewer
+// MockTxRenewerMockRecorder is the mock recorder for MockTxRenewer.
 type MockTxRenewerMockRecorder struct {
 	mock *MockTxRenewer
 }
 
-// NewMockTxRenewer creates a new mock instance
+// NewMockTxRenewer creates a new mock instance.
 func NewMockTxRenewer(ctrl *gomock.Controller) *MockTxRenewer {
 	mock := &MockTxRenewer{ctrl: ctrl}
 	mock.recorder = &MockTxRenewerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTxRenewer) EXPECT() *MockTxRenewerMockRecorder {
 	return m.recorder
 }
 
-// RenewTx mocks base method
+// RenewTx mocks base method.
 func (m *MockTxRenewer) RenewTx() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RenewTx")
 }
 
-// RenewTx indicates an expected call of RenewTx
+// RenewTx indicates an expected call of RenewTx.
 func (mr *MockTxRenewerMockRecorder) RenewTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenewTx", reflect.TypeOf((*MockTxRenewer)(nil).RenewTx))
 }
 
-// MockOperations is a mock of Operations interface
+// MockOperations is a mock of Operations interface.
 type MockOperations struct {
 	ctrl     *gomock.Controller
 	recorder *MockOperationsMockRecorder
 }
 
-// MockOperationsMockRecorder is the mock recorder for MockOperations
+// MockOperationsMockRecorder is the mock recorder for MockOperations.
 type MockOperationsMockRecorder struct {
 	mock *MockOperations
 }
 
-// NewMockOperations creates a new mock instance
+// NewMockOperations creates a new mock instance.
 func NewMockOperations(ctrl *gomock.Controller) *MockOperations {
 	mock := &MockOperations{ctrl: ctrl}
 	mock.recorder = &MockOperationsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOperations) EXPECT() *MockOperationsMockRecorder {
 	return m.recorder
 }
 
-// Put mocks base method
-func (m *MockOperations) Put(record *common.Record) error {
+// Del mocks base method.
+func (m *MockOperations) Del(key []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", record)
+	ret := m.ctrl.Call(m, "Del", key)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Put indicates an expected call of Put
-func (mr *MockOperationsMockRecorder) Put(record interface{}) *gomock.Call {
+// Del indicates an expected call of Del.
+func (mr *MockOperationsMockRecorder) Del(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockOperations)(nil).Put), record)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockOperations)(nil).Del), key)
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockOperations) Get(key []byte) (*common.Record, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
@@ -289,53 +290,25 @@ func (m *MockOperations) Get(key []byte) (*common.Record, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockOperationsMockRecorder) Get(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockOperations)(nil).Get), key)
 }
 
-// Del mocks base method
-func (m *MockOperations) Del(key []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Del", key)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Del indicates an expected call of Del
-func (mr *MockOperationsMockRecorder) Del(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockOperations)(nil).Del), key)
-}
-
-// Iterate mocks base method
+// Iterate mocks base method.
 func (m *MockOperations) Iterate(prefix []byte, first bool, iterFunc func(*common.Record) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Iterate", prefix, first, iterFunc)
 }
 
-// Iterate indicates an expected call of Iterate
+// Iterate indicates an expected call of Iterate.
 func (mr *MockOperationsMockRecorder) Iterate(prefix, first, iterFunc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Iterate", reflect.TypeOf((*MockOperations)(nil).Iterate), prefix, first, iterFunc)
 }
 
-// RawIterator mocks base method
-func (m *MockOperations) RawIterator(opts interface{}) interface{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RawIterator", opts)
-	ret0, _ := ret[0].(interface{})
-	return ret0
-}
-
-// RawIterator indicates an expected call of RawIterator
-func (mr *MockOperationsMockRecorder) RawIterator(opts interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockOperations)(nil).RawIterator), opts)
-}
-
-// NewBatch mocks base method
+// NewBatch mocks base method.
 func (m *MockOperations) NewBatch() interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBatch")
@@ -343,13 +316,13 @@ func (m *MockOperations) NewBatch() interface{} {
 	return ret0
 }
 
-// NewBatch indicates an expected call of NewBatch
+// NewBatch indicates an expected call of NewBatch.
 func (mr *MockOperationsMockRecorder) NewBatch() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewBatch", reflect.TypeOf((*MockOperations)(nil).NewBatch))
 }
 
-// NewTx mocks base method
+// NewTx mocks base method.
 func (m *MockOperations) NewTx(autoFinish, renew bool) types.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewTx", autoFinish, renew)
@@ -357,36 +330,64 @@ func (m *MockOperations) NewTx(autoFinish, renew bool) types.Tx {
 	return ret0
 }
 
-// NewTx indicates an expected call of NewTx
+// NewTx indicates an expected call of NewTx.
 func (mr *MockOperationsMockRecorder) NewTx(autoFinish, renew interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTx", reflect.TypeOf((*MockOperations)(nil).NewTx), autoFinish, renew)
 }
 
-// MockTx is a mock of Tx interface
+// Put mocks base method.
+func (m *MockOperations) Put(record *common.Record) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Put", record)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Put indicates an expected call of Put.
+func (mr *MockOperationsMockRecorder) Put(record interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockOperations)(nil).Put), record)
+}
+
+// RawIterator mocks base method.
+func (m *MockOperations) RawIterator(opts interface{}) interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RawIterator", opts)
+	ret0, _ := ret[0].(interface{})
+	return ret0
+}
+
+// RawIterator indicates an expected call of RawIterator.
+func (mr *MockOperationsMockRecorder) RawIterator(opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockOperations)(nil).RawIterator), opts)
+}
+
+// MockTx is a mock of Tx interface.
 type MockTx struct {
 	ctrl     *gomock.Controller
 	recorder *MockTxMockRecorder
 }
 
-// MockTxMockRecorder is the mock recorder for MockTx
+// MockTxMockRecorder is the mock recorder for MockTx.
 type MockTxMockRecorder struct {
 	mock *MockTx
 }
 
-// NewMockTx creates a new mock instance
+// NewMockTx creates a new mock instance.
 func NewMockTx(ctrl *gomock.Controller) *MockTx {
 	mock := &MockTx{ctrl: ctrl}
 	mock.recorder = &MockTxMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTx) EXPECT() *MockTxMockRecorder {
 	return m.recorder
 }
 
-// CanFinish mocks base method
+// CanFinish mocks base method.
 func (m *MockTx) CanFinish() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanFinish")
@@ -394,13 +395,13 @@ func (m *MockTx) CanFinish() bool {
 	return ret0
 }
 
-// CanFinish indicates an expected call of CanFinish
+// CanFinish indicates an expected call of CanFinish.
 func (mr *MockTxMockRecorder) CanFinish() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanFinish", reflect.TypeOf((*MockTx)(nil).CanFinish))
 }
 
-// Commit mocks base method
+// Commit mocks base method.
 func (m *MockTx) Commit() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit")
@@ -408,39 +409,39 @@ func (m *MockTx) Commit() error {
 	return ret0
 }
 
-// Commit indicates an expected call of Commit
+// Commit indicates an expected call of Commit.
 func (mr *MockTxMockRecorder) Commit() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockTx)(nil).Commit))
 }
 
-// Discard mocks base method
+// Del mocks base method.
+func (m *MockTx) Del(key []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Del", key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Del indicates an expected call of Del.
+func (mr *MockTxMockRecorder) Del(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockTx)(nil).Del), key)
+}
+
+// Discard mocks base method.
 func (m *MockTx) Discard() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Discard")
 }
 
-// Discard indicates an expected call of Discard
+// Discard indicates an expected call of Discard.
 func (mr *MockTxMockRecorder) Discard() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Discard", reflect.TypeOf((*MockTx)(nil).Discard))
 }
 
-// Put mocks base method
-func (m *MockTx) Put(record *common.Record) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", record)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Put indicates an expected call of Put
-func (mr *MockTxMockRecorder) Put(record interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockTx)(nil).Put), record)
-}
-
-// Get mocks base method
+// Get mocks base method.
 func (m *MockTx) Get(key []byte) (*common.Record, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
@@ -449,53 +450,25 @@ func (m *MockTx) Get(key []byte) (*common.Record, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockTxMockRecorder) Get(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTx)(nil).Get), key)
 }
 
-// Del mocks base method
-func (m *MockTx) Del(key []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Del", key)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Del indicates an expected call of Del
-func (mr *MockTxMockRecorder) Del(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockTx)(nil).Del), key)
-}
-
-// Iterate mocks base method
+// Iterate mocks base method.
 func (m *MockTx) Iterate(prefix []byte, first bool, iterFunc func(*common.Record) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Iterate", prefix, first, iterFunc)
 }
 
-// Iterate indicates an expected call of Iterate
+// Iterate indicates an expected call of Iterate.
 func (mr *MockTxMockRecorder) Iterate(prefix, first, iterFunc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Iterate", reflect.TypeOf((*MockTx)(nil).Iterate), prefix, first, iterFunc)
 }
 
-// RawIterator mocks base method
-func (m *MockTx) RawIterator(opts interface{}) interface{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RawIterator", opts)
-	ret0, _ := ret[0].(interface{})
-	return ret0
-}
-
-// RawIterator indicates an expected call of RawIterator
-func (mr *MockTxMockRecorder) RawIterator(opts interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockTx)(nil).RawIterator), opts)
-}
-
-// NewBatch mocks base method
+// NewBatch mocks base method.
 func (m *MockTx) NewBatch() interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewBatch")
@@ -503,13 +476,13 @@ func (m *MockTx) NewBatch() interface{} {
 	return ret0
 }
 
-// NewBatch indicates an expected call of NewBatch
+// NewBatch indicates an expected call of NewBatch.
 func (mr *MockTxMockRecorder) NewBatch() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewBatch", reflect.TypeOf((*MockTx)(nil).NewBatch))
 }
 
-// NewTx mocks base method
+// NewTx mocks base method.
 func (m *MockTx) NewTx(autoFinish, renew bool) types.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewTx", autoFinish, renew)
@@ -517,19 +490,47 @@ func (m *MockTx) NewTx(autoFinish, renew bool) types.Tx {
 	return ret0
 }
 
-// NewTx indicates an expected call of NewTx
+// NewTx indicates an expected call of NewTx.
 func (mr *MockTxMockRecorder) NewTx(autoFinish, renew interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewTx", reflect.TypeOf((*MockTx)(nil).NewTx), autoFinish, renew)
 }
 
-// RenewTx mocks base method
+// Put mocks base method.
+func (m *MockTx) Put(record *common.Record) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Put", record)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Put indicates an expected call of Put.
+func (mr *MockTxMockRecorder) Put(record interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockTx)(nil).Put), record)
+}
+
+// RawIterator mocks base method.
+func (m *MockTx) RawIterator(opts interface{}) interface{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RawIterator", opts)
+	ret0, _ := ret[0].(interface{})
+	return ret0
+}
+
+// RawIterator indicates an expected call of RawIterator.
+func (mr *MockTxMockRecorder) RawIterator(opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RawIterator", reflect.TypeOf((*MockTx)(nil).RawIterator), opts)
+}
+
+// RenewTx mocks base method.
 func (m *MockTx) RenewTx() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RenewTx")
 }
 
-// RenewTx indicates an expected call of RenewTx
+// RenewTx indicates an expected call of RenewTx.
 func (mr *MockTxMockRecorder) RenewTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenewTx", reflect.TypeOf((*MockTx)(nil).RenewTx))

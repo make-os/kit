@@ -19,7 +19,6 @@ import (
 	"github.com/make-os/kit/pkgs/logger"
 	"github.com/make-os/kit/remote/plumbing"
 	"github.com/make-os/kit/remote/repo"
-	"github.com/make-os/kit/remote/types"
 	types2 "github.com/make-os/kit/types"
 	"github.com/make-os/kit/util/io"
 	"github.com/pkg/errors"
@@ -34,11 +33,6 @@ var (
 var (
 	ObjectStreamerProtocolID = protocol.ID("/object/1.0")
 )
-
-// MakeHaveCacheKey returns a key for storing HaveCache entries.
-func MakeHaveCacheKey(repoName string, hash plumb.Hash) string {
-	return repoName + hash.String()
-}
 
 // BasicObjectStreamer implements Streamer. It provides a mechanism for
 // announcing or transferring repository objects to/from the DHT.
@@ -203,7 +197,7 @@ func GetCommitWithAncestors(
 	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
-	var r types.LocalRepo
+	var r plumbing.LocalRepo
 	r, err = repoGetter(args.GitBinPath, filepath.Join(args.ReposDir, args.RepoName))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get repo")
@@ -433,7 +427,7 @@ func GetTaggedCommitWithAncestors(
 	args dht3.GetAncestorArgs) (packfiles []io.ReadSeekerCloser, err error) {
 
 	// Get the target repo
-	var r types.LocalRepo
+	var r plumbing.LocalRepo
 	r, err = repoGetter(args.GitBinPath, filepath.Join(args.ReposDir, args.RepoName))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get repo")
@@ -598,7 +592,7 @@ func (c *BasicObjectStreamer) OnWantRequest(repo string, hash []byte, s network.
 	// Check if repo exist
 	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repo))
 	if err != nil {
-		s.Reset()
+		_ = s.Reset()
 		c.log.Debug("failed repository check", "Err", err)
 		return err
 	}
@@ -641,7 +635,7 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 	// Check if repo exist
 	r, err := c.RepoGetter(c.gitBinPath, filepath.Join(c.reposDir, repo))
 	if err != nil {
-		s.Reset()
+		_ = s.Reset()
 		c.log.Debug("failed repository check", "Err", err)
 		return err
 	}
@@ -650,7 +644,7 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 	commitHash := plumbing.BytesToHex(hash)
 	obj, err := r.GetObject(commitHash)
 	if err != nil {
-		s.Reset()
+		_ = s.Reset()
 
 		if err != plumb.ErrObjectNotFound {
 			c.log.Error("failed local object check", "Err", err)
@@ -673,14 +667,14 @@ func (c *BasicObjectStreamer) OnSendRequest(repo string, hash []byte, s network.
 	// Get the packfile representation of the object.
 	pack, objs, err := c.PackObject(r, &plumbing.PackObjectArgs{Obj: obj})
 	if err != nil {
-		s.Reset()
+		_ = s.Reset()
 		return errors.Wrap(err, "failed to generate commit packfile")
 	}
 
 	// Write the packfile to the requester
 	w := bufio.NewWriter(bufio.NewWriter(s))
 	if _, err := w.ReadFrom(pack); err != nil {
-		s.Reset()
+		_ = s.Reset()
 		c.log.Error("failed to Write commit pack", "Err", err)
 		return errors.Wrap(err, "Write commit pack error")
 	}

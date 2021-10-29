@@ -16,11 +16,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GitModule", func() {
+var _ = Describe("BasicGitModule", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var r *repo.GitModule
+	var r *repo.BasicGitModule
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
